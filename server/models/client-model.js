@@ -1,28 +1,28 @@
-const mongoose = require('mongoose')
-const bcrypt  = require('bcrypt')
-const jwt = require('jsonwebtoken')
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-const clientSchema = new mongoose.Schema({
-  
-    fullName : {
-        type : String,
-        required: [true, "Full Name is required"],
-        trim : true,
-        minlength : [3,"Full Name must atleast 3 characters"],
-        maxlength : [30,"Full Name can't exceed 30 characters"]
+const clientSchema = new mongoose.Schema(
+  {
+    fullName: {
+      type: String,
+      required: [true, "Full Name is required"],
+      trim: true,
+      minlength: [3, "Full Name must atleast 3 characters"],
+      maxlength: [30, "Full Name can't exceed 30 characters"],
     },
-    username : {
-        type : String,
-        index: true,
-        required: [true, "User Name is required"],
-        trim : true,
-        minlength : [3,"Full Name must atleast 3 characters"],
-        maxlength : [10,"Full Name can't exceed 30 characters"],
-        unique : true
+    username: {
+      type: String,
+      index: true,
+      required: [true, "User Name is required"],
+      trim: true,
+      minlength: [3, "Full Name must atleast 3 characters"],
+      maxlength: [10, "Full Name can't exceed 30 characters"],
+      unique: true,
     },
-     password : {
-        type : String,
-        required : true
+    password: {
+      type: String,
+      required: true,
     },
     email: {
       type: String,
@@ -47,17 +47,15 @@ const clientSchema = new mongoose.Schema({
     profilePicture: {
       type: String,
     },
-    gender : {
-        type:String,
-        enum : ["Male","Female","Other","Prefer not to say"],
-        default : "Prefer not to say"
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other", "Prefer not to say"],
+      default: "Prefer not to say",
     },
-    preferredLanguages : {
-        
-        type : [String],
-        enum:["Hindi","English"],
-        default :["Hindi","English"]
-        
+    preferredLanguages: {
+      type: [String],
+      enum: ["Hindi", "English"],
+      default: ["Hindi", "English"],
     },
 
     bio: {
@@ -88,45 +86,44 @@ const clientSchema = new mongoose.Schema({
         },
       },
     },
-    isBlocked : {
-        type : Boolean,
-        default : false
+    isBlocked: {
+      type: Boolean,
+      default: false,
     },
-    prefferedTopics : 
-        {
-            type:[String],
-            enum : ["Stress","mentalHealth"],
-            default : ["Stress","mentalHealth"]
-        },
-    lastLogin : {
-        type : Date
-    }
-        
+    prefferedTopics: {
+      type: [String],
+      enum: ["Stress", "mentalHealth"],
+      default: ["Stress", "mentalHealth"],
+    },
+    lastLogin: {
+      type: Date,
+    },
+  },
+  { timestamps: true }
+);
 
+clientSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
-},{timestamps:true})
+clientSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
 
-
-clientSchema.pre("save", async function(next){
-    if(!this.isModified('password')) {return next()}
-    this.password = await bcrypt.hash(this.password ,10)
-    next()
-
-})
-
-clientSchema.methods.isPasswordCorrect = async function(password){
-    return await bcrypt.compare(password , this.password)
-}
-
-clientSchema.methods.generateAccessToken = function(){
-    return jwt.sign({
-        _id : this.id
+clientSchema.methods.generateAccessToken = function () {
+  return jwt.sign(
+    {
+      _id: this.id,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
     }
-)
-}
+  );
+};
 
-module.exports = mongoose.model("Client",clientSchema)
+module.exports = mongoose.model("Client", clientSchema);
