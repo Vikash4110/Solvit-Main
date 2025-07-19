@@ -340,92 +340,137 @@ const submitCounselorApplication = wrapper(async (req, res) => {
     license,
     bankDetails,
   } = req.body;
-
   const files = req.files;
-  const requiredFields = [
-    education?.graduation?.university,
-    education?.graduation?.degree,
-    education?.graduation?.year,
-    experience,
-    professionalSummary,
-    languages,
-    bankDetails?.accountNo,
-    bankDetails?.ifscCode,
-    bankDetails?.branchName,
-    files?.resume,
-    files?.degreeCertificate,
-    files?.governmentId,
-  ];
 
-  if (requiredFields.some((field) => !field)) {
+  // Log incoming data for debugging
+  console.log("Submit Application Request Body:", req.body);
+  console.log(
+    "Submit Application Files:",
+    files ? Object.keys(files) : "No files"
+  );
+
+  // Parse JSON fields
+  let parsedEducation, parsedLanguages, parsedBankDetails, parsedLicense;
+  try {
+    parsedEducation = education ? JSON.parse(education) : null;
+    parsedLanguages = languages ? JSON.parse(languages) : null;
+    parsedBankDetails = bankDetails ? JSON.parse(bankDetails) : null;
+    parsedLicense = license ? JSON.parse(license) : {};
+  } catch (error) {
+    console.error("JSON parse error:", error.message);
     return res.status(400).json({
       status: 400,
-      message: "All required application fields must be provided",
+      message: "Invalid JSON format in form data",
     });
   }
 
-  const resumeUpload = await uploadOncloudinary(files.resume[0].path);
-  const degreeCertificateUpload = await uploadOncloudinary(
-    files.degreeCertificate[0].path
-  );
-  const governmentIdUpload = await uploadOncloudinary(
-    files.governmentId[0].path
-  );
-  let licenseCertificateUpload;
-  if (files.licenseCertificate) {
-    licenseCertificateUpload = await uploadOncloudinary(
-      files.licenseCertificate[0].path
-    );
-  }
-
-  if (!resumeUpload || !degreeCertificateUpload || !governmentIdUpload) {
-    return res.status(500).json({
-      status: 500,
-      message: "Error occurred while uploading documents",
-    });
-  }
-
-  const counselor = await Counselor.findById(req.verifiedClientId);
-  if (!counselor) {
-    return res.status(404).json({
-      status: 404,
-      message: "Counselor not found",
-    });
-  }
-
-  counselor.application = {
-    education: {
-      graduation: education.graduation,
-      postGraduation: education.postGraduation || {},
-    },
-    experience,
-    professionalSummary,
-    languages: JSON.parse(languages),
-    license: license || {},
-    bankDetails,
-    documents: {
-      resume: resumeUpload.url,
-      degreeCertificate: degreeCertificateUpload.url,
-      licenseCertificate: licenseCertificateUpload?.url || "",
-      governmentId: governmentIdUpload.url,
-    },
-    applicationStatus: "pending",
-    applicationSubmittedAt: new Date(),
+  // Validate required fields
+  const requiredFields = {
+    "education.graduation.university":
+      parsedEducation?.graduation?.university?.trim(),
+    "education.graduation.degree": parsedEducation?.graduation?.degree?.trim(),
+    "education.graduation.year": parsedEducation?.graduation?.year,
+    experience: experience?.trim(),
+    professionalSummary: professionalSummary?.trim(),
+    "languages.length": parsedLanguages?.length > 0,
+    "bankDetails.accountNo": parsedBankDetails?.accountNo?.trim(),
+    "bankDetails.ifscCode": parsedBankDetails?.ifscCode?.trim(),
+    "bankDetails.branchName": parsedBankDetails?.branchName?.trim(),
+    "files.resume": files?.resume?.[0],
+    "files.degreeCertificate": files?.degreeCertificate?.[0],
+    "files.governmentId": files?.governmentId?.[0],
   };
 
-  await counselor.save();
+  const missingFields = Object.entries(requiredFields)
+    .filter(([key, value]) => !value)
+    .map(([key]) => key);
 
-  await sendEmail(
-    counselor.email,
-    "Counselor Application Submitted",
-    "Your application has been submitted successfully. We will review it and get back to you within 24-48 hours."
-  );
+  if (missingFields.length > 0) {
+    console.log("Missing Fields:", missingFields);
+    return res.status(400).json({
+      status: 400,
+      message: `All required application fields must be provided. Missing: ${missingFields.join(
+        ", "
+      )}`,
+    });
+  }
 
-  return res.status(200).json({
-    status: 200,
-    message:
-      "Application submitted successfully. You will be notified within 24-48 hours.",
-  });
+  // Upload files to Cloudinary
+  const uploadFile = async (file, fieldName) => {
+    if (!file) {
+      throw new Error(`Missing file: ${fieldName}`);
+    }
+    const result = await uploadOncloudinary(file.path);
+    if (!result) {
+      throw new Error(`Failed to upload ${fieldName}`);
+    }
+    return result.url;
+  };
+
+  try {
+    const resumeUrl = await uploadFile(files.resume[0], "resume");
+    const degreeCertificateUrl = await uploadFile(
+      files.degreeCertificate[0],
+      "degreeCertificate"
+    );
+    const governmentIdUrl = await uploadFile(
+      files.governmentId[0],
+      "governmentId"
+    );
+    const licenseCertificateUrl = files.licenseCertificate?.[0]
+      ? await uploadFile(files.licenseCertificate[0], "licenseCertificate")
+      : null;
+
+    const counselor = await Counselor.findById(req.verifiedClientId);
+    if (!counselor) {
+      return res.status(404).json({
+        status: 404,
+        message: "Counselor not found",
+      });
+    }
+
+    // Update counselor application
+    counselor.application = {
+      education: {
+        graduation: parsedEducation.graduation,
+        postGraduation: parsedEducation.postGraduation || {},
+      },
+      experience,
+      professionalSummary,
+      languages: parsedLanguages,
+      license: parsedLicense,
+      bankDetails: parsedBankDetails,
+      documents: {
+        resume: resumeUrl,
+        degreeCertificate: degreeCertificateUrl,
+        licenseCertificate: licenseCertificateUrl || "",
+        governmentId: governmentIdUrl,
+      },
+      applicationStatus: "pending",
+      applicationSubmittedAt: new Date(),
+    };
+
+    await counselor.save();
+
+    await sendEmail(
+      counselor.email,
+      "Counselor Application Submitted",
+      "Your application has been submitted successfully. We will review it and get back to you within 24-48 hours."
+    );
+
+    return res.status(200).json({
+      status: 200,
+      message:
+        "Application submitted successfully. You will be notified within 24-48 hours.",
+    });
+  } catch (error) {
+    console.error("Application submission error:", error.message);
+    return res.status(500).json({
+      status: 500,
+      message: "Error occurred while submitting application",
+      error: error.message,
+    });
+  }
 });
 
 const logoutCounselor = wrapper(async (req, res) => {
