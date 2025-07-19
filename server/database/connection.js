@@ -1,8 +1,9 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+
 const DB_Name = "solvit";
+
 const connectDb = async () => {
   try {
-    console.log(`${process.env.MONGODB_URI}/${DB_Name}`);
     await mongoose.connect(`${process.env.MONGODB_URI}/${DB_Name}`);
     console.log("Database connected successfully");
   } catch (error) {
@@ -11,4 +12,4 @@ const connectDb = async () => {
   }
 };
 
-module.exports = connectDb;
+export default connectDb;

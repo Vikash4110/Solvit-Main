@@ -1,34 +1,28 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const connectDb = require('./database/connection.js');
-const cookieParser = require('cookie-parser')
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import connectDb from "./database/connection.js";
+import { clientRouter } from "./routes/client-routes.js";
+import { counselorRouter } from "./routes/counselor-routes.js";
+
+dotenv.config();
+
 const app = express();
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(express.static("public"));
+app.use(cookieParser());
 
-
-
-app.use(cors({
-    origin: ['http://localhost:5173',],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  }));
-
-app.use(express.json());
-app.use(cookieParser())
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Client Routes
+app.use("/api/v1/clients", clientRouter);
+app.use("/api/v1/counselors", counselorRouter);
 
 const Port = process.env.PORT || 8000;
 
@@ -39,5 +33,5 @@ connectDb()
     });
   })
   .catch((error) => {
-    console.error('Failed to connect to database:', error);
+    console.error("Failed to connect to database:", error);
   });
