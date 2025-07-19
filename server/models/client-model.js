@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const clientSchema = new mongoose.Schema(
   {
@@ -23,6 +23,7 @@ const clientSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      trim: true,
     },
     email: {
       type: String,
@@ -43,6 +44,7 @@ const clientSchema = new mongoose.Schema(
         "Please enter a valid international phone number",
       ],
       required: true,
+      trim: true,
     },
     profilePicture: {
       type: String,
@@ -126,4 +128,4 @@ clientSchema.methods.generateAccessToken = function () {
   );
 };
 
-module.exports = mongoose.model("Client", clientSchema);
+export const Client = mongoose.model("Client", clientSchema);
