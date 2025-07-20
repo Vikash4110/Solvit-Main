@@ -7,8 +7,7 @@ const clientRouter = Router();
 
 clientRouter.route('/send-otp-register-email').post(sendOtpRegisterEmail);
 clientRouter.route('/verify-otp-register-email').post(verifyOtpRegisterEmail);
-clientRouter.route('/register-client').post(
-    upload.single('profilePicture'),registerClient);
+clientRouter.route('/register-client').post(upload.single('profilePicture'),registerClient);
 clientRouter.route('/login-client').post(loginClient)
 
 //secure routes

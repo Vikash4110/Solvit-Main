@@ -22,10 +22,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    if (token) {
-      // You can add a verify token endpoint to check if token is still valid
-      setUser(JSON.parse(localStorage.getItem('user')));
+    const userStr = localStorage.getItem('user');
+    if (userStr && userStr !== "undefined") {
+      setUser(JSON.parse(userStr));
     }
     setLoading(false);
   }, []);
@@ -37,11 +36,11 @@ export const AuthProvider = ({ children }) => {
         password
       });
 
-      const { user: userData, accessToken } = response.data.data;
+      const { loggedInClient, accessToken } = response.data.data;
       
       localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(loggedInClient));
+      setUser(loggedInClient);
       
       toast.success('Login successful!');
       return { success: true };

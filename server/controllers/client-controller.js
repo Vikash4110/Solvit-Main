@@ -300,4 +300,30 @@ const logoutClient = wrapper(async(req , res)=>{
   message : "Logout succesfull"  })
 })
 
+const changeCurrentPassword = wrapper(async(req, res)=>{
+  const currentUserId  =  req.verifiedClientId
+  const {currentPassword , newPassword } = req.body
+  if(!currentPassword || !newPassword){
+    res.status(400).json({
+      status: 400,
+      message : "All fields are required"
+    })
+  }
+  const currentUser = await Client.findById(currentUserId)
+  if(!(await currentUser.isPasswordCorrect(currentPassword.trim()))){
+    res.status(400).json({
+      status: 400,
+      message : "Invalid current password"
+    })
+  }
+
+currentUser.password = newPassword
+await currentUser.save({validateBeforeSave : false})
+
+res.status(200).json({
+  status: 200,
+  message : "Password Changed Successfully"
+})
+})
+
 export { sendOtpRegisterEmail ,verifyOtpRegisterEmail , registerClient ,loginClient,logoutClient};
