@@ -73,6 +73,7 @@ import CounselorDashboard from "./pages/CounselorDashboard";
 import CounselorLogin from "./pages/CounselorLogin";
 import CounselorRegister from "./pages/CounselorRegister";
 import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
@@ -85,6 +86,7 @@ function App() {
           <div className="min-h-screen bg-gray-50">
             <Routes>
               {/* Client Routes */}
+              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route
