@@ -1,166 +1,293 @@
 import { motion } from "framer-motion";
 import React from "react";
 import {
+  FaArrowRight,
   FaCalendarCheck,
+  FaCheckCircle,
+  FaClock,
   FaComments,
   FaSearch,
+  FaShieldAlt,
   FaUserPlus,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
 
 const steps = [
   {
     icon: <FaUserPlus />,
-    title: "Sign Up",
+    title: "Create Account",
+    subtitle: "Quick & Easy Setup",
     description:
-      "Create your free account as a Client or Counselor in just a minute.",
-    color: "text-teal-500",
-    bgColor: "bg-teal-50",
+      "Join thousands of users with our streamlined registration process. Choose your role and get verified instantly.",
+    features: ["Free registration", "Email verification", "Profile setup"],
+    color: "from-emerald-500 to-teal-600",
+    bgGradient: "from-emerald-50 to-teal-50",
+    iconBg: "bg-gradient-to-r from-emerald-500 to-teal-500",
   },
   {
     icon: <FaSearch />,
-    title: "Explore Counselors",
+    title: "Find Your Expert",
+    subtitle: "Browse & Filter",
     description:
-      "Browse verified experts in mental health, career, relationships, and more.",
-    color: "text-indigo-500",
-    bgColor: "bg-indigo-50",
+      "Discover certified professionals tailored to your needs with advanced filtering and detailed profiles.",
+    features: ["Verified experts", "Detailed profiles", "Rating system"],
+    color: "from-indigo-500 to-blue-600",
+    bgGradient: "from-indigo-50 to-blue-50",
+    iconBg: "bg-gradient-to-r from-indigo-500 to-blue-500",
   },
   {
     icon: <FaCalendarCheck />,
-    title: "Book a Session",
+    title: "Schedule Session",
+    subtitle: "Flexible Booking",
     description:
-      "Pick a counselor, choose a time, and enjoy first-session discounts.",
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-50",
+      "Book appointments at your convenience with real-time availability and instant confirmations.",
+    features: ["Instant booking", "Flexible timing", "First-session discount"],
+    color: "from-purple-500 to-violet-600",
+    bgGradient: "from-purple-50 to-violet-50",
+    iconBg: "bg-gradient-to-r from-purple-500 to-violet-500",
   },
   {
     icon: <FaComments />,
-    title: "Connect & Grow",
+    title: "Start Your Journey",
+    subtitle: "Secure & Private",
     description:
-      "Join secure video calls or chats to receive tailored guidance.",
-    color: "text-purple-500",
-    bgColor: "bg-purple-50",
+      "Connect through encrypted video calls or chat sessions for personalized guidance and support.",
+    features: [
+      "End-to-end encryption",
+      "Multiple formats",
+      "Progress tracking",
+    ],
+    color: "from-rose-500 to-pink-600",
+    bgGradient: "from-rose-50 to-pink-50",
+    iconBg: "bg-gradient-to-r from-rose-500 to-pink-500",
   },
 ];
 
 const HowItWorks = () => {
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
+    visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
   };
 
   const headerVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
+      transition: { duration: 0.8, ease: "easeOut" },
     },
   };
 
   const stepVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 60, scale: 0.9 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
+      scale: 1,
+      transition: { duration: 0.7, ease: "easeOut" },
     },
-    hover: { scale: 1.05, transition: { duration: 0.3 } },
+    hover: {
+      y: -8,
+      scale: 1.02,
+      transition: { duration: 0.3 },
+    },
+  };
+
+  const floatingVariants = {
+    animate: {
+      y: [0, -20, 0],
+      transition: {
+        duration: 3,
+        repeat: Infinity,
+        ease: "easeInOut",
+      },
+    },
   };
 
   return (
-    <motion.section
-      className="py-20 bg-white"
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.3 }}
-      variants={containerVariants}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative py-24 bg-gradient-to-br from-slate-50 via-white to-indigo-50 overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-200/20 to-cyan-200/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+
+      <motion.div
+        className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={containerVariants}
+      >
         {/* Section Header */}
-        <motion.div className="text-center mb-16" variants={containerVariants}>
-          <motion.h2
-            className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 bg-clip-text  bg-gradient-to-r from-indigo-500 to-purple-600"
+        <motion.div className="text-center mb-20" variants={containerVariants}>
+          {/* Badge */}
+          <motion.div
+            className="inline-flex items-center space-x-2 bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-medium mb-6"
             variants={headerVariants}
           >
-            How It Works
+            <FaShieldAlt className="w-4 h-4" />
+            <span>Simple 4-Step Process</span>
+          </motion.div>
+
+          <motion.h2
+            className="text-5xl md:text-6xl font-black text-slate-800 mb-6 leading-tight"
+            variants={headerVariants}
+          >
+            How{" "}
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              Solvit
+            </span>{" "}
+            Works
           </motion.h2>
           <motion.p
-            className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed"
+            className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-medium"
             variants={headerVariants}
           >
-            Start your journey with Solvit in four simple steps—designed to
-            connect you with the support you need, effortlessly.
+            Transform your mental health journey with our streamlined process.
+            From registration to your first session - we make professional
+            support accessible.
           </motion.p>
         </motion.div>
 
-        {/* Steps Grid */}
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-          variants={containerVariants}
-        >
-          {steps.map((step, index) => (
-            <motion.div
-              key={index}
-              className={`relative p-6 rounded-2xl ${step.bgColor} shadow-lg hover:shadow-xl transition-all duration-300 text-center`}
-              variants={stepVariants}
-              whileHover="hover"
-            >
-              {/* Step Number */}
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md">
-                <span className="text-lg font-bold text-gray-900">
-                  {index + 1}
-                </span>
-              </div>
+        {/* Steps Container */}
+        <motion.div className="relative" variants={containerVariants}>
+          {/* Desktop Connection Line */}
+          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-slate-200 to-transparent transform -translate-y-1/2 z-0"></div>
 
-              {/* Icon */}
+          {/* Steps Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
+            {steps.map((step, index) => (
               <motion.div
-                className="flex items-center justify-center w-14 h-14 rounded-full bg-white shadow-md mb-6 mx-auto"
-                variants={headerVariants}
+                key={index}
+                className="relative group"
+                variants={stepVariants}
+                whileHover="hover"
               >
-                <span className={`text-3xl ${step.color}`}>{step.icon}</span>
+                <div
+                  className={`relative p-8 rounded-3xl bg-gradient-to-br ${step.bgGradient} backdrop-blur-sm border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-500 h-full`}
+                >
+                  {/* Step Number */}
+                  <div className="absolute -top-4 left-8 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-indigo-100">
+                    <span className="text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+
+                  {/* Icon Container */}
+                  <motion.div
+                    className={`w-16 h-16 rounded-2xl ${step.iconBg} flex items-center justify-center mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300`}
+                    variants={floatingVariants}
+                    animate="animate"
+                    transition={{ delay: index * 0.2 }}
+                  >
+                    <span className="text-2xl text-white">{step.icon}</span>
+                  </motion.div>
+
+                  {/* Content */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-800 mb-1">
+                        {step.title}
+                      </h3>
+                      <p className="text-sm font-medium text-indigo-600 mb-3">
+                        {step.subtitle}
+                      </p>
+                    </div>
+
+                    <p className="text-slate-600 leading-relaxed">
+                      {step.description}
+                    </p>
+
+                    {/* Features List */}
+                    <ul className="space-y-2">
+                      {step.features.map((feature, featureIndex) => (
+                        <li
+                          key={featureIndex}
+                          className="flex items-center space-x-2"
+                        >
+                          <FaCheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span className="text-sm text-slate-600">
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Arrow Connector (Desktop) */}
+                  {index < steps.length - 1 && (
+                    <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
+                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-indigo-100">
+                        <FaArrowRight className="w-3 h-3 text-indigo-500" />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </motion.div>
-
-              {/* Content */}
-              <motion.h3
-                className="text-xl font-semibold text-gray-900 mb-3"
-                variants={headerVariants}
-              >
-                {step.title}
-              </motion.h3>
-              <motion.p
-                className="text-gray-600 text-base leading-relaxed"
-                variants={headerVariants}
-              >
-                {step.description}
-              </motion.p>
-
-              {/* Connecting Line (Hidden on Mobile) */}
-              {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 right-0 transform translate-x-1/2 w-12 h-1 bg-gradient-to-r from-gray-200 to-transparent" />
-              )}
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </motion.div>
 
-        {/* Call-to-Action */}
+        {/* Bottom Stats & CTA */}
         <motion.div
-          className="mt-16 text-center"
+          className="mt-20 text-center space-y-12"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.6 }}
         >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold py-4 px-10 rounded-full hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-lg"
-          >
-            <Link to="/client-register"> Get Started Now</Link>
-          </motion.button>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaClock className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-slate-800">2 min</div>
+              <div className="text-slate-600">Average signup time</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaCheckCircle className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-slate-800">500+</div>
+              <div className="text-slate-600">Verified experts</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaShieldAlt className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-slate-800">100%</div>
+              <div className="text-slate-600">Secure & private</div>
+            </div>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-3"
+            >
+              <span>Start Your Journey</span>
+              <FaArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              className="font-semibold py-4 px-8 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-indigo-300 hover:text-indigo-700 transition-all duration-300"
+            >
+              Learn More
+            </motion.button>
+          </div>
+
+          {/* Trust Message */}
+          <p className="text-slate-500 text-sm max-w-md mx-auto">
+            Join 10,000+ users who trust Solvit for their mental health journey.
+            Start with a free consultation today.
+          </p>
         </motion.div>
-      </div>
-    </motion.section>
+      </motion.div>
+    </section>
   );
 };
 

@@ -15,6 +15,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
+import ServicePage from "./pages/ServicePage";
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
                 </CounselorProtectedRoute>
               }
             />
+            <Route path="/services/:serviceId" element={<ServicePage />} />
 
             {/* Redirect root to login if needed */}
             <Route path="*" element={<Navigate to="/" replace />} />
