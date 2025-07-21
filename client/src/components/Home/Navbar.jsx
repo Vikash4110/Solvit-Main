@@ -294,13 +294,13 @@ const Navbar = () => {
             ) : (
               <>
                 <Link
-                  to="/counselor-login"
+                  to="/counselor/login"
                   className="hidden lg:flex items-center px-4 py-2 rounded-md font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                 >
                   <FaUserTie className="mr-2" /> Counselor Login
                 </Link>
                 <Link
-                  to="/client-login"
+                  to="/login"
                   className="hidden lg:flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-md font-medium hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-md hover:shadow-lg"
                 >
                   <FaUser className="mr-2" /> Client Login
@@ -475,14 +475,14 @@ const Navbar = () => {
                   <>
                     <div className="border-t border-gray-200 my-2"></div>
                     <Link
-                      to="/counselor-login"
+                      to="/counselor/login"
                       className="px-4 py-3 rounded-md font-medium flex items-center justify-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
                       onClick={() => setIsOpen(false)}
                     >
                       <FaUserTie className="mr-2" /> Counselor Login
                     </Link>
                     <Link
-                      to="/client-login"
+                      to="/login"
                       className="px-4 py-3 rounded-md font-medium flex items-center justify-center bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600"
                       onClick={() => setIsOpen(false)}
                     >
