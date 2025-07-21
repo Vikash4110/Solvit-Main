@@ -122,7 +122,6 @@ const Navbar = () => {
     { to: "/services/career", text: "Career Counselling" },
     { to: "/services/relationship", text: "Relationship Counselling" },
     { to: "/services/life-coaching", text: "Life Coaching" },
-    { to: "/services/financial", text: "Financial Counselling" },
     { to: "/services/academic", text: "Academic Counselling" },
     {
       to: "/services/health-wellness",
