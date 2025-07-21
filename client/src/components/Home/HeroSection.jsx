@@ -77,7 +77,7 @@ const HeroSection = () => {
                 whileTap="tap"
               >
                 <Link
-                  to="/counselor-register"
+                  to="/counselor/register"
                   className="bg-gradient-to-r from-indigo-600 to-indigo-600 text-white px-8 py-4 rounded-full font-semibold flex items-center space-x-3 hover:from-indigo-700 hover:to-indigo-700 transition-all duration-300 shadow-lg"
                 >
                   <FaUserPlus className="w-5 h-5" />
@@ -90,7 +90,7 @@ const HeroSection = () => {
                 whileTap="tap"
               >
                 <Link
-                  to="/client-register"
+                  to="/register"
                   className="border-2 border-indigo-600 text-indigo-600 px-8 py-4 rounded-full font-semibold flex items-center space-x-3 hover:bg-indigo-50 hover:border-indigo-700 transition-all duration-300 shadow-lg"
                 >
                   <FaComments className="w-5 h-5" />
