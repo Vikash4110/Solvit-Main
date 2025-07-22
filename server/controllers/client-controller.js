@@ -8,13 +8,15 @@ import { uploadOncloudinary } from "../utils/cloudinary.js";
 const generateOTP = () => {
   let OTP = "";
   for (let i = 0; i < 6; i++) {
-    const digit = Math.floor(Math.random() * 10); // simplified
+    const digit = Math.floor(Math.random() * 10); 
     OTP += digit;
   }
   return OTP;
 };
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const phoneRegex =  /^\+?[1-9]\d{1,14}$/
+
+
 const sendOtpRegisterEmail = wrapper(async (req, res) => {
   const { email } = req.body;
 

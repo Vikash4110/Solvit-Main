@@ -1,7 +1,13 @@
-import { Router } from 'express';
-import { loginClient, logoutClient, registerClient, sendOtpRegisterEmail,verifyOtpRegisterEmail} from '../controllers/client-controller.js';
-import { upload } from '../middlewares/multer.middleware.js';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { Router } from "express";
+import {
+  loginClient,
+  logoutClient,
+  registerClient,
+  sendOtpRegisterEmail,
+  verifyOtpRegisterEmail,
+} from "../controllers/client-controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 const clientRouter = Router();
 
@@ -11,12 +17,6 @@ clientRouter.route('/register-client').post(upload.single('profilePicture'),regi
 clientRouter.route('/login-client').post(loginClient)
 
 //secure routes
-
-clientRouter.route('/logout-client').post(verifyJWT,logoutClient)
-
-
-
-
-
+clientRouter.route("/logout-client").post(verifyJWT, logoutClient);
 
 export { clientRouter };
