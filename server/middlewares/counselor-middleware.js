@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { Counselor } from "../models/counselor-model.js";
 import { wrapper } from "../utils/wrapper.js";
 
-export const verifyJWT = wrapper(async (req, res, next) => {
+export const verifyJWTCounselor = wrapper(async (req, res, next) => {
   try {
     const token =
       req.cookies?.accessToken ||

@@ -2,7 +2,7 @@ import { wrapper } from '../utils/wrapper.js'
 import { Client } from '../models/client-model.js'
 import jwt from 'jsonwebtoken'
 
-export const verifyJWT = wrapper(async(req, res , next)=>{
+export const verifyJWTClient = wrapper(async(req, res , next)=>{
     try {
         const token = req.cookies?.accessToken || req.header("Autorization")?.replace("Bearer ","")   
         console.log(token)
