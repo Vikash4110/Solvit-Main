@@ -1,6 +1,6 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import nodemailer from "nodemailer";
-dotenv.config({ path: './.env' });
+dotenv.config({ path: "./.env" });
 // Create a transporter using Gmail and environment credentials
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -11,21 +11,19 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async (to, subject, text) => {
-    try{
+  try {
+    const info = await transporter.sendMail({
+      from: `"Solvit" <${process.env.EMAIL}>`,
+      to,
+      subject,
+      text, // plain‑text body
+      // html: "<b>Hello world?</b>", // HTML body
+    });
 
-        const info = await transporter.sendMail({
-          from: `"Solvit" <${process.env.EMAIL}>`,
-          to,
-          subject,
-          text, // plain‑text body
-          // html: "<b>Hello world?</b>", // HTML body
-        });
-      
-        return info;
-    }
-    catch(error){
-        console.log("ERROR Sending OTP:" ,error)
-    }
-  };
+    return info;
+  } catch (error) {
+    console.log("ERROR Sending OTP:", error);
+  }
+};
 
 export { sendEmail };
