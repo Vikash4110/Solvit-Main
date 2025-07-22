@@ -5,6 +5,7 @@ import express from "express";
 import connectDb from "./database/connection.js";
 import { clientRouter } from "./routes/client-routes.js";
 import { counselorRouter } from "./routes/counselor-routes.js";
+import { bookingRouter } from "./routes/booking-routes.js";
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use(cookieParser());
 // Client Routes
 app.use("/api/v1/clients", clientRouter);
 app.use("/api/v1/counselors", counselorRouter);
+app.use("/api/v1/bookings", bookingRouter);
 
 const Port = process.env.PORT || 8000;
 

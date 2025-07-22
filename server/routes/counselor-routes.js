@@ -45,7 +45,7 @@ import {
   submitCounselorApplication,
   verifyOtpRegisterEmail,
 } from "../controllers/counselor-controller.js";
-import { verifyJWT } from "../middlewares/counselor-middleware.js";
+import { verifyJWTCounselor } from "../middlewares/counselor-middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const counselorRouter = Router();
@@ -59,7 +59,7 @@ counselorRouter
   .post(upload.single("profilePicture"), registerCounselor);
 counselorRouter.route("/login-counselor").post(loginCounselor);
 counselorRouter.route("/submit-application").post(
-  verifyJWT,
+  verifyJWTCounselor,
   upload.fields([
     { name: "resume", maxCount: 1 },
     { name: "degreeCertificate", maxCount: 1 },
@@ -68,6 +68,6 @@ counselorRouter.route("/submit-application").post(
   ]),
   submitCounselorApplication
 );
-counselorRouter.route("/logout-counselor").post(verifyJWT, logoutCounselor);
+counselorRouter.route("/logout-counselor").post(verifyJWTCounselor, logoutCounselor);
 
 export { counselorRouter };
