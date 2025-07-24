@@ -5,7 +5,9 @@ import express from "express";
 import connectDb from "./database/connection.js";
 import { clientRouter } from "./routes/client-routes.js";
 import { counselorRouter } from "./routes/counselor-routes.js";
-import { bookingRouter } from "./routes/booking-routes.js";
+import { availabilityRouter } from "./routes/slotManager-routes.js";
+import { startCronJobs } from "./utils/cornJob.js";
+import { demoRouter } from "./routes/demo-routes.js";
 
 dotenv.config();
 
@@ -24,7 +26,8 @@ app.use(cookieParser());
 // Client Routes
 app.use("/api/v1/clients", clientRouter);
 app.use("/api/v1/counselors", counselorRouter);
-app.use("/api/v1/bookings", bookingRouter);
+app.use("/api/v1/slotManagement", availabilityRouter);
+app.use("/api/v1/demo", demoRouter);
 
 const Port = process.env.PORT || 8000;
 
@@ -32,6 +35,7 @@ connectDb()
   .then(() => {
     app.listen(Port, () => {
       console.log(`Server is running on port ${Port}`);
+      startCronJobs();
     });
   })
   .catch((error) => {

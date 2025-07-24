@@ -7,7 +7,7 @@ export const verifyJWTCounselor = wrapper(async (req, res, next) => {
     const token =
       req.cookies?.accessToken ||
       req.header("Autorization")?.replace("Bearer ", "");
-    console.log(token);
+    
 
     if (!token) {
       return res.status(401).json({
@@ -17,6 +17,7 @@ export const verifyJWTCounselor = wrapper(async (req, res, next) => {
     }
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    
 
     const verifiedClient = await Counselor.findById(decodedToken?._id).select(
       "_id"

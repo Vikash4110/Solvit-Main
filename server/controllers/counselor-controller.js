@@ -317,16 +317,21 @@ const loginCounselor = wrapper(async (req, res) => {
     secure: true,
   };
   const accessToken = await counselor.generateAccessToken();
+  // Fetch the counselor with application object
   const loggedInCounselor = await Counselor.findOne({
     email: email.trim(),
-  }).select("_id fullName username email specialization applicationStatus");
+  }).select("_id fullName username email specialization application");
+
+  // Add applicationStatus at the root for frontend compatibility
+  const counselorData = loggedInCounselor.toObject();
+  counselorData.applicationStatus = loggedInCounselor.application?.applicationStatus;
 
   res.status(200).cookie("accessToken", accessToken, options).json({
     status: 200,
     message: "Logged in successfully",
     data: {
       accessToken,
-      loggedInCounselor,
+      loggedInCounselor: counselorData,
     },
   });
 });
