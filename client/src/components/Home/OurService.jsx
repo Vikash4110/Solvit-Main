@@ -357,6 +357,8 @@ const OurServices = () => {
   );
 };
 
+export default OurServices;
+
 // import { AnimatePresence, motion } from "framer-motion";
 // import React, { useEffect, useRef, useState } from "react";
 // import {
