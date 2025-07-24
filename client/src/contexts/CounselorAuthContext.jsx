@@ -171,7 +171,7 @@ export const CounselorAuthProvider = ({ children }) => {
       );
 
       toast.success("Application submitted successfully!");
-      setCounselor({ ...counselor, applicationStatus: "pending" });
+      setCounselor({ ...counselor, : "pending" });
       return { success: true };
     } catch (error) {
       console.error(

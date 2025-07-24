@@ -4,7 +4,6 @@ import {
   FaArrowRight,
   FaCalendarCheck,
   FaCheckCircle,
-  FaClock,
   FaComments,
   FaSearch,
   FaShieldAlt,
@@ -235,51 +234,6 @@ const HowItWorks = () => {
           viewport={{ once: true }}
           transition={{ delay: 0.6 }}
         >
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaClock className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-slate-800">2 min</div>
-              <div className="text-slate-600">Average signup time</div>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaCheckCircle className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-slate-800">500+</div>
-              <div className="text-slate-600">Verified experts</div>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaShieldAlt className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-slate-800">100%</div>
-              <div className="text-slate-600">Secure & private</div>
-            </div>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-3"
-            >
-              <span>Start Your Journey</span>
-              <FaArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="font-semibold py-4 px-8 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-indigo-300 hover:text-indigo-700 transition-all duration-300"
-            >
-              Learn More
-            </motion.button>
-          </div>
-
           {/* Trust Message */}
           <p className="text-slate-500 text-sm max-w-md mx-auto">
             Join 10,000+ users who trust Solvit for their mental health journey.
