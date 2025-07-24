@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCounselorAuth } from "../contexts/CounselorAuthContext";
 
@@ -35,6 +35,12 @@ const CounselorApplication = () => {
   });
   const { submitApplication, counselor } = useCounselorAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (counselor?.applicationStatus === "approved") {
+      navigate("/counselor/dashboard");
+    }
+  }, [counselor?.applicationStatus, navigate]);
 
   if (counselor?.applicationStatus === "pending") {
     return (
@@ -134,10 +140,8 @@ const CounselorApplication = () => {
 
     console.log("Submitting FormData:", formData); // Debug log
 
-    const result = await submitApplication(formData);
-    if (result.success) {
-      navigate("/counselor/dashboard");
-    }
+    await submitApplication(formData);
+    // Do not navigate here; let useEffect handle navigation if approved
   };
 
   return (

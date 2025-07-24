@@ -23,10 +23,7 @@ const RecurringAvailabilitySchema = new mongoose.Schema(
     timeRanges: [
       {
         startTime: { type: String }, // e.g., "10:00"
-        endTime: { type: String },
-        slotDuration: {
-          type: Number, // in minutes
-        },
+        endTime :{ type: String }
       },
     ],
     
