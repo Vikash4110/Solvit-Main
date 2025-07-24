@@ -92,6 +92,40 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const submitApplication = async (applicationData) => {
     try {
+      const token = localStorage.getItem("counselorToken");
+      if (!token) {
+        throw new Error("No authentication token found. Please log in again.");
+      }
+
+      console.log("Submitting with Token:", token); // Debug log
+
+      // Validate required fields
+      const requiredFields = {
+        "education.graduation.university":
+          applicationData.education.graduation.university?.trim(),
+        "education.graduation.degree":
+          applicationData.education.graduation.degree?.trim(),
+        "education.graduation.year": applicationData.education.graduation.year,
+        experience: applicationData.experience?.trim(),
+        professionalSummary: applicationData.professionalSummary?.trim(),
+        "languages.length": applicationData.languages.length > 0,
+        "bankDetails.accountNo": applicationData.bankDetails.accountNo?.trim(),
+        "bankDetails.ifscCode": applicationData.bankDetails.ifscCode?.trim(),
+        "bankDetails.branchName":
+          applicationData.bankDetails.branchName?.trim(),
+        resume: applicationData.resume,
+        degreeCertificate: applicationData.degreeCertificate,
+        governmentId: applicationData.governmentId,
+      };
+
+      const missingFields = Object.entries(requiredFields)
+        .filter(([key, value]) => !value)
+        .map(([key]) => key);
+
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required fields: ${missingFields.join(", ")}`);
+      }
+
       const formData = new FormData();
       formData.append("education", JSON.stringify(applicationData.education));
       formData.append("experience", applicationData.experience);
@@ -100,7 +134,10 @@ export const CounselorAuthProvider = ({ children }) => {
         applicationData.professionalSummary
       );
       formData.append("languages", JSON.stringify(applicationData.languages));
-      if (applicationData.license) {
+      if (
+        applicationData.license?.licenseNo ||
+        applicationData.license?.issuingAuthority
+      ) {
         formData.append("license", JSON.stringify(applicationData.license));
       }
       formData.append(
@@ -117,12 +154,18 @@ export const CounselorAuthProvider = ({ children }) => {
         );
       }
 
+      // Log FormData for debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(`Submit FormData - ${key}:`, value);
+      }
+
       const response = await axios.post(
         "/counselors/submit-application",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -131,8 +174,14 @@ export const CounselorAuthProvider = ({ children }) => {
       setCounselor({ ...counselor, applicationStatus: "pending" });
       return { success: true };
     } catch (error) {
+      console.error(
+        "Application submission error:",
+        error.response?.data || error
+      );
       const message =
-        error.response?.data?.message || "Application submission failed";
+        error.response?.data?.message ||
+        error.message ||
+        "Application submission failed";
       toast.error(message);
       return { success: false, error: message };
     }
