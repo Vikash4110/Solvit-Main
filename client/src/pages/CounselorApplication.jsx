@@ -102,6 +102,38 @@ const CounselorApplication = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    const requiredFields = {
+      "education.graduation.university":
+        formData.education.graduation.university?.trim(),
+      "education.graduation.degree":
+        formData.education.graduation.degree?.trim(),
+      "education.graduation.year": formData.education.graduation.year,
+      experience: formData.experience?.trim(),
+      professionalSummary: formData.professionalSummary?.trim(),
+      "languages.length": formData.languages.length > 0,
+      "bankDetails.accountNo": formData.bankDetails.accountNo?.trim(),
+      "bankDetails.ifscCode": formData.bankDetails.ifscCode?.trim(),
+      "bankDetails.branchName": formData.bankDetails.branchName?.trim(),
+      resume: formData.resume,
+      degreeCertificate: formData.degreeCertificate,
+      governmentId: formData.governmentId,
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      toast.error(
+        `Please fill in all required fields: ${missingFields.join(", ")}`
+      );
+      return;
+    }
+
+    console.log("Submitting FormData:", formData); // Debug log
+
     const result = await submitApplication(formData);
     if (result.success) {
       navigate("/counselor/dashboard");
