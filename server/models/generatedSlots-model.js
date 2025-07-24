@@ -50,6 +50,21 @@ const GeneratedSlotSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  price: 
+    {
+      price30 : {
+        type: Number,
+        default : 1500
+      },
+      price60 :{
+        type : Number,
+        default : 3000
+      }
+    }
+  
+    
+  
+,
 });
 
 export const GeneratedSlot = mongoose.model("GeneratedSlot",GeneratedSlotSchema)
