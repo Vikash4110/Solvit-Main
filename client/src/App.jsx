@@ -3,9 +3,13 @@ import { Toaster } from "react-hot-toast";
 import { Navigate, Route, Routes } from "react-router-dom";
 import CounselorProtectedRoute from "./components/CounselorProtectedRoute";
 import Navbar from "./components/Home/Navbar";
+import PrivacyPolicy from "./components/Legals/PrivacyPolicy";
+import TermCondition from "./components/Legals/TermCondition";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CounselorAuthProvider } from "./contexts/CounselorAuthContext";
+import About from "./pages/About";
 import CounselorApplication from "./pages/CounselorApplication";
 import CounselorDashboard from "./pages/CounselorDashboard";
 import CounselorLogin from "./pages/CounselorLogin";
@@ -16,16 +20,17 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import ServicePage from "./pages/ServicePage";
-
 function App() {
   return (
     <AuthProvider>
       <CounselorAuthProvider>
         <div className="min-h-screen bg-gray-50">
           <Navbar />
+          <ScrollToTop />
           <Routes>
             {/* Client Routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route
@@ -64,6 +69,9 @@ function App() {
               }
             />
             <Route path="/services/:serviceId" element={<ServicePage />} />
+
+            <Route path="/term-condition" element={<TermCondition />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
             {/* Redirect root to login if needed */}
             <Route path="*" element={<Navigate to="/" replace />} />
