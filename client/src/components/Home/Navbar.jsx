@@ -17,7 +17,7 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logo from "../../assets/react.svg"; // Updated logo path
+import logo from "../../assets/core/Red Simple.jpeg"; // Updated logo path
 import { useCounselorAuth } from "../../contexts/CounselorAuthContext";
 
 const Navbar = () => {
@@ -306,15 +306,6 @@ const Navbar = () => {
                 </Link>
               </>
             )}
-
-            {/* Search Button */}
-            <button
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2 text-gray-600 hover:text-indigo-600 transition-colors"
-              aria-label="Search"
-            >
-              <FaSearch className="w-5 h-5" />
-            </button>
 
             {/* Mobile Menu Button */}
             <button
