@@ -6,6 +6,7 @@ import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import mongoose from "mongoose";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js";
+
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 
 dayjs.extend(customParseFormat);
@@ -48,16 +49,21 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
      
       const timeStartTime = dayjs(`2000-01-01 ${day.timeRanges[i].startTime}`, 'YYYY-MM-DD hh:mm A') //dummy date
       const timeEndTime = dayjs(`2000-01-01 ${day.timeRanges[i].endTime}`, 'YYYY-MM-DD hh:mm A')
+      if(!timeStartTime.isBefore(timeEndTime)){
+         return res.status(400).json({
+            status : 400,
+            message : `Invalid time range : ${timeStartTime.format("hh:mm A")} - ${timeEndTime.format("hh:mm A")} for ${day.dayOfWeek}`
+          })
+      }
       
      
       
       for(let j=0 ; j<day.timeRanges.length ; j++ ){
         
         if(i===j) {continue};
-        console.log("yo")
+    
         const time1StartTime = dayjs(`2000-01-01 ${day.timeRanges[j].startTime}`, 'YYYY-MM-DD hh:mm A')        
         const time1EndTime = dayjs(`2000-01-01 ${day.timeRanges[j].endTime}`, 'YYYY-MM-DD hh:mm A')
-        console.log("yo")
         
 
         if(timeStartTime.isSame(time1StartTime) && timeEndTime.isSame(time1EndTime)){
@@ -80,14 +86,9 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
         }
         
       }
-    }
+    }  
     
-    
-    
-  }
-  
-
-
+  }  
   //Clean previous availability to avoid duplication
   await RecurringAvailability.deleteMany({ counselorId });
 
@@ -99,8 +100,7 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
       isAvailable: day.isAvailable,
       timeRanges: day.isAvailable ? day.timeRanges : [],
     });
-  }
-  
+  }  
 
   res.status(200).json({
     status: 200,
@@ -109,173 +109,22 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
 });
 
 
-// this is not in use
-const updateRecurringAvailability = wrapper(async (req, res) => {
-  const counselorId = req.verifiedClientId;
-  const { updatedWeeklyAvailability } = req.body;
-
-  if (!updatedWeeklyAvailability || updatedWeeklyAvailability.length === 0) {
-    return res.status(400).json({
-      status: 400,
-      message: "Update availability for at least one day",
-    });
-  }
-
-  // Check if any existing record exists for counselor
-  const availabilityExists = await RecurringAvailability.findOne({
-    counselorId,
-  });
-  if (!availabilityExists) {
-    return res.status(400).json({
-      status: 400,
-      message: "Please set availability first before updating it",
-    });
-  }
-
-  // First, validate all days
-  for (let day of updatedWeeklyAvailability) {
-    if (!day.dayOfWeek) {
-      return res.status(400).json({
-        status: 400,
-        message: "Day of the week is required",
-      });
-    }
-
-    if (day.isAvailable && (!day.timeRanges || day.timeRanges.length === 0)) {
-      return res.status(400).json({
-        status: 400,
-        message: `Please provide at least one time slot for ${day.dayOfWeek}`,
-      });
-    }
-  }
-
-  // performing updates
-  for (let day of updatedWeeklyAvailability) {
-    const current = await RecurringAvailability.findOne({
-      counselorId,
-      dayOfWeek: day.dayOfWeek,
-    });
-    if (!current) {
-      return res.status(400).json({
-        status: 400,
-        message: `No entry found for ${day.dayOfWeek}`,
-      });
-    }
-
-    current.isAvailable = day.isAvailable;
-    current.timeRanges = day.isAvailable ? day.timeRanges : [];
-    await current.save({ validateBeforeSave: false });
-  }
-  
- 
-
-  return res.status(200).json({
-    status: 200,
-    message: "Weekly availability updated successfully and required slots have been generated",
-  });
-});
-
-
-
-
 
 const getMyRecurringAvailability = wrapper(async (req, res) => {
   const counselorId = req.verifiedClientId;
   const availability = await RecurringAvailability.find({ counselorId });
+  if(!availability){
+    return res.status(404).json({
+      status : 404,
+      message : "Availability has been not set"
+    })
+  }
   res.status(200).json({
     status: 200,
     availability,
   });
 });
 
-//generating slots from recurring slots for next 30 days from current day of 30 minutes each
-
-
-// const generatingActualSlotsFromRecurringAvailability = wrapper(
-//   async (req, res) => {
-//     const startDate = dayjs().tz("Asia/Kolkata").startOf("day"); 
-//     const endDate = startDate.add(30, "day").endOf("day");
-
-//     const counselorId = req.verifiedClientId;
-
-//     let totalSlotsGenerated = 0;    
-//       const weeklyAvailability = await RecurringAvailability.find({
-//         counselorId,
-//         isAvailable: true,
-//       });
-
-//       if (!weeklyAvailability.length) {return} ;
-
-//       for (
-//         let date = startDate.clone();
-//         date.isBefore(endDate);
-//         date = date.add(1, "day")
-//       ) {
-//         const dayOfWeek = date.format("dddd");
-
-//         const availability = weeklyAvailability.find(
-//           (entry) => entry.dayOfWeek === dayOfWeek
-//         );
-
-//         if (!availability) continue;
-       
-
-//         for (const range of availability.timeRanges) {
-//           const { startTime, endTime } = range;
-          
-
-//           if (!endTime || !startTime ) continue;
-
-
-//           const slotStart = dayjs(
-//             `${date.format("YYYY-MM-DD")} ${startTime}`,
-//             "YYYY-MM-DD hh:mm A"
-//           );
-//           const slotEnd = dayjs(
-//             `${date.format("YYYY-MM-DD")} ${endTime}`,
-//             "YYYY-MM-DD hh:mm A"
-//           );
-          
-          
-
-//           let slotTime = slotStart.clone();
-        
-       
-
-//           while (slotTime.isBefore(slotEnd)) {
-//             const slotStartStr = slotTime.format("hh:mm A");
-//             const slotEndStr = slotTime.add(30, "minute").format("hh:mm A");
-
-//             const exists = await GeneratedSlot.exists({
-//               counselorId: new mongoose.Types.ObjectId(counselorId),
-//               date: date.format("YYYY-MM-DD"),
-//               startTime: slotStartStr,
-//             });
-
-//             if (!exists) {
-//               await GeneratedSlot.create({
-//                 counselorId,
-//                 date: date.format("YYYY-MM-DD"),  //acc to local IST
-//                 startTime: slotStartStr,
-//                 endTime: slotEndStr,
-//                 generatedFromRecurringId: availability._id,
-//               });
-//               totalSlotsGenerated++;
-//             }
-
-//             slotTime = slotTime.add(30, "minute");
-//           }
-//         }
-//       }
-    
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Slots generated successfully",
-//       totalSlotsGenerated,
-//     });
-//   }
-// );
 
 const generatingActualSlotsFromRecurringAvailability = wrapper(
   async (req, res) => {
@@ -292,7 +141,7 @@ const generatingActualSlotsFromRecurringAvailability = wrapper(
         counselorId,
         isAvailable: true
       });
-      //delting prior all slots
+      
       
       if (!weeklyAvailability.length) {
         console.log("No Weekly Availabliy of the counselor is found")
@@ -322,26 +171,48 @@ const generatingActualSlotsFromRecurringAvailability = wrapper(
           
 
           if (!endTime || !startTime ) continue;
+          let slotStart 
+          let slotEnd
 
+          if(date.isSame(startDate)){  
+            const currentTime = dayjs().tz("Asia/Kolkata")
+            slotStart = dayjs(`${date.format("YYYY-MM-DD")} ${startTime}`,"YYYY-MM-DD hh:mm A");
+            slotEnd = dayjs(`${date.format("YYYY-MM-DD")} ${endTime}`,"YYYY-MM-DD hh:mm A");
+            if(currentTime.isAfter(slotEnd) || currentTime.isSame(slotEnd)){
+              continue
+            } 
+            else if(currentTime.isBefore(slotEnd) && currentTime.isAfter(slotStart)){
+              const minutes = currentTime.minute();
+              const nextHalfHour = currentTime.minute(minutes < 30 ? 30 : 0).second(0).millisecond(0);
+              const finalTime = minutes < 30 ? nextHalfHour : nextHalfHour.add(1, "hour");
+              slotStart = dayjs(finalTime.format("YYYY-MM-DD hh:mm A"))
+            }
+            else if(currentTime.isSame(slotStart)){
+             slotStart = dayjs(slotStart.add(30, "minute"));
+            }              
 
-          const slotStart = dayjs(
+          }
+          else{
+            slotStart = dayjs(
             `${date.format("YYYY-MM-DD")} ${startTime}`,
             "YYYY-MM-DD hh:mm A"
           );
-          const slotEnd = dayjs(
+          slotEnd = dayjs(
             `${date.format("YYYY-MM-DD")} ${endTime}`,
             "YYYY-MM-DD hh:mm A"
-          );
-          
+          );         
+
+          }      
           
 
           let slotTime = slotStart.clone();
         
        
 
-          while (slotTime.isBefore(slotEnd)) {
+          while (slotTime.isBefore(slotEnd) && slotTime.add(45,"minutes").isBefore(slotEnd)) {       
+            
             const slotStartStr = slotTime.format("hh:mm A");
-            const slotEndStr = slotTime.add(30, "minute").format("hh:mm A");
+            const slotEndStr = slotTime.add(45, "minute").format("hh:mm A");            
 
             const exists = await GeneratedSlot.exists({
               counselorId: new mongoose.Types.ObjectId(counselorId),
@@ -357,11 +228,12 @@ const generatingActualSlotsFromRecurringAvailability = wrapper(
                 startTime: slotStartStr,
                 endTime: slotEndStr,
                 generatedFromRecurringId: availability._id,
+                
               });
               totalSlotsGenerated++;
             }
 
-            slotTime = slotTime.add(30, "minute");
+            slotTime = slotTime.add(45, "minute");
           }
         }
       }
@@ -505,7 +377,7 @@ const managingIndividualSlot = wrapper(async(req ,res)=>{
 })
 export {
   settingRecurringAvailability,
-  updateRecurringAvailability,
+ 
   getMyRecurringAvailability,
   generatingActualSlotsFromRecurringAvailability,
   cleanupOldSlots,

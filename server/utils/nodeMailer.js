@@ -26,4 +26,4 @@ const sendEmail = async (to, subject, text) => {
   }
 };
 
-export { sendEmail };
+export { sendEmail , transporter};

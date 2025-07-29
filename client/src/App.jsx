@@ -3,9 +3,12 @@ import { Toaster } from "react-hot-toast";
 import { Navigate, Route, Routes } from "react-router-dom";
 import CounselorProtectedRoute from "./components/CounselorProtectedRoute";
 import Navbar from "./components/Home/Navbar";
+
 import PrivacyPolicy from "./components/Legals/PrivacyPolicy";
 import TermCondition from "./components/Legals/TermCondition";
+
 import ProtectedRoute from "./components/ProtectedRoute";
+
 import ScrollToTop from "./components/ScrollToTop";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CounselorAuthProvider } from "./contexts/CounselorAuthContext";
@@ -20,6 +23,9 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import ServicePage from "./pages/ServicePage";
+
+import BookCounselorCalendar from "./pages/bookCounselor";
+import BrowseCounselor from "./pages/browseCounselor";
 function App() {
   return (
     <AuthProvider>
@@ -46,6 +52,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/browse-counselors"
+              element={
+                <ProtectedRoute>
+                  <BrowseCounselor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/book-counselor/:counselorId"
+              element={
+                <ProtectedRoute>
+                  <BookCounselorCalendar />
                 </ProtectedRoute>
               }
             />

@@ -111,6 +111,11 @@ const Navbar = () => {
       icon: <FaUserFriends className="text-lg" />,
     },
     {
+      to: "/browse-counselors",
+      text: "Browse Counselors",
+      icon: <FaUserFriends className="text-lg" />,
+    },
+    {
       to: "/contact",
       text: "Contact",
       icon: <FaComments className="text-lg" />,
