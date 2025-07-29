@@ -30,7 +30,7 @@ const GeneratedSlotSchema = new mongoose.Schema({
   },
   bookingId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'SessionBooking',
+    ref: 'Booking',
     default: null,
   },
   status: {
@@ -46,25 +46,14 @@ const GeneratedSlotSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'RecurringAvailability',
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  
   price: 
     {
-      price30 : {
-        type: Number,
-        default : 1500
-      },
-      price60 :{
-        type : Number,
-        default : 3000
-      }
-    }
-  
+      type : Number,
+      default : 3000
+    } ,
     
-  
-,
-});
+
+},{timestamps : true});
 
 export const GeneratedSlot = mongoose.model("GeneratedSlot",GeneratedSlotSchema)

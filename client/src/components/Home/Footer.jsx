@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import React from "react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import logo from "../../assets/react.svg";
+import logo from "../../assets/Red Simple.jpeg";
 
 const socialLinks = [
   { Icon: FaTwitter, url: "https://x.com/solvitforyou?s=21" },
@@ -22,7 +22,6 @@ const socialLinks = [
 
 // Define support links
 const supportLinks = [
-  { name: "Help Center", url: "/help-center" },
   { name: "Contact Us", url: "/contact" },
   { name: "Terms of Service", url: "/term-condition" },
   { name: "Privacy Policy", url: "/privacy-policy" },
@@ -32,7 +31,6 @@ const supportLinks = [
 const quickLinks = [
   { name: "About Us", url: "/about" },
   { name: "Counselors", url: "/counselors" },
-  { name: "Pricing", url: "/pricing" },
   { name: "Blog", url: "/blog" },
 ];
 

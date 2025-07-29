@@ -53,11 +53,10 @@ const HeroSection = () => {
               <span className="text-slate-800">Your Life with</span>
               <br />
               <span className="bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-4">
-                Expert Support
+                Expert Support.
                 <Sparkles className="w-12 h-12 text-yellow-500 animate-pulse" />
               </span>
             </h1>
-
             {/* Enhanced Subtitle */}
             <p className="text-xl text-slate-600 max-w-xl leading-relaxed font-medium">
               Connect with certified counselors, therapists, and life coaches in

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {settingRecurringAvailability ,updateRecurringAvailability, getMyRecurringAvailability,generatingActualSlotsFromRecurringAvailability, getAllgeneratedSlots, managingIndividualSlot, managingSlotsOfADay} from "../controllers/slotsManager-controller.js";
+import {settingRecurringAvailability , getMyRecurringAvailability,generatingActualSlotsFromRecurringAvailability, getAllgeneratedSlots, managingIndividualSlot, managingSlotsOfADay} from "../controllers/slotsManager-controller.js";
 
 import { verifyJWTCounselor } from "../middlewares/counselor-middleware.js";
 
@@ -10,7 +10,7 @@ const availabilityRouter = Router();
 
 //secure routes
 availabilityRouter.route("/set-recurring-availability").post(verifyJWTCounselor, settingRecurringAvailability);
-availabilityRouter.route("/update-recurring-availability").post(verifyJWTCounselor, updateRecurringAvailability);
+// availabilityRouter.route("/update-recurring-availability").post(verifyJWTCounselor, updateRecurringAvailability);
 availabilityRouter.route("/my-recurring-availability").get(verifyJWTCounselor, getMyRecurringAvailability);
 
 
