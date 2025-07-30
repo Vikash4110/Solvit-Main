@@ -1,4 +1,3 @@
-// // File: src/contexts/CounselorAuthContext.js
 // import axios from "axios";
 // import { createContext, useContext, useEffect, useState } from "react";
 // import toast from "react-hot-toast";
@@ -171,7 +170,7 @@
 //       );
 
 //       toast.success("Application submitted successfully!");
-//       setCounselor({ ...counselor, : "pending" });
+//       setCounselor({ ...counselor, status: "pending" });
 //       return { success: true };
 //     } catch (error) {
 //       console.error(
@@ -262,15 +261,31 @@ export const CounselorAuthProvider = ({ children }) => {
   const [counselor, setCounselor] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  axios.defaults.baseURL = "http://localhost:8000/api/v1";
+  // Configure axios defaults
+  axios.defaults.baseURL =
+    import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
   axios.defaults.withCredentials = true;
 
+  // Check for existing token on mount
   useEffect(() => {
-    const token = localStorage.getItem("counselorToken");
-    if (token) {
-      setCounselor(JSON.parse(localStorage.getItem("counselor")));
-    }
-    setLoading(false);
+    const initializeAuth = async () => {
+      const token = localStorage.getItem("counselorToken");
+      if (token) {
+        try {
+          const storedCounselor = localStorage.getItem("counselor");
+          if (storedCounselor) {
+            setCounselor(JSON.parse(storedCounselor));
+          }
+        } catch (error) {
+          console.error("Error initializing auth:", error);
+          localStorage.removeItem("counselorToken");
+          localStorage.removeItem("counselor");
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email, password) => {
@@ -289,7 +304,8 @@ export const CounselorAuthProvider = ({ children }) => {
       toast.success("Login successful!");
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || "Login failed";
+      const message =
+        error.response?.data?.message || "Login failed. Please try again.";
       toast.error(message);
       return { success: false, error: message };
     }
@@ -321,13 +337,62 @@ export const CounselorAuthProvider = ({ children }) => {
         }
       );
 
-      toast.success("Registration successful! Please login.");
+      toast.success("Registration successful! Please log in.");
       return { success: true };
     } catch (error) {
       console.error("Registration error:", error.response?.data || error);
       const message =
         error.response?.data?.message ||
         "Registration failed. Please try again.";
+      toast.error(message);
+      return { success: false, error: message };
+    }
+  };
+
+  const sendOtp = async (email, purpose = "register") => {
+    try {
+      const endpoint =
+        purpose === "reset"
+          ? "/counselors/forgot-password"
+          : "/counselors/send-otp-register-email";
+      await axios.post(endpoint, { email });
+      toast.success("OTP sent to your email!");
+      return { success: true };
+    } catch (error) {
+      const message = error.response?.data?.message || "Failed to send OTP";
+      toast.error(message);
+      return { success: false, error: message };
+    }
+  };
+
+  const verifyOtp = async (email, otp) => {
+    try {
+      await axios.post("/counselors/verify-otp-register-email", { email, otp });
+      toast.success("OTP verified successfully!");
+      return { success: true };
+    } catch (error) {
+      const message = error.response?.data?.message || "Invalid OTP";
+      toast.error(message);
+      return { success: false, error: message };
+    }
+  };
+
+  const forgotPassword = async (email) => {
+    return await sendOtp(email, "reset");
+  };
+
+  const resetPassword = async (email, otp, newPassword) => {
+    try {
+      const response = await axios.post("/counselors/reset-password", {
+        email,
+        otp,
+        newPassword,
+      });
+      // toast.success("Password reset successfully!");
+      return { success: true };
+    } catch (error) {
+      const message =
+        error.response?.data?.message || "Failed to reset password";
       toast.error(message);
       return { success: false, error: message };
     }
@@ -340,22 +405,21 @@ export const CounselorAuthProvider = ({ children }) => {
         throw new Error("No authentication token found. Please log in again.");
       }
 
-      console.log("Submitting with Token:", token); // Debug log
-
       // Validate required fields
       const requiredFields = {
         "education.graduation.university":
-          applicationData.education.graduation.university?.trim(),
+          applicationData.education?.graduation?.university?.trim(),
         "education.graduation.degree":
-          applicationData.education.graduation.degree?.trim(),
-        "education.graduation.year": applicationData.education.graduation.year,
+          applicationData.education?.graduation?.degree?.trim(),
+        "education.graduation.year":
+          applicationData.education?.graduation?.year,
         experience: applicationData.experience?.trim(),
         professionalSummary: applicationData.professionalSummary?.trim(),
-        "languages.length": applicationData.languages.length > 0,
-        "bankDetails.accountNo": applicationData.bankDetails.accountNo?.trim(),
-        "bankDetails.ifscCode": applicationData.bankDetails.ifscCode?.trim(),
+        "languages.length": applicationData.languages?.length > 0,
+        "bankDetails.accountNo": applicationData.bankDetails?.accountNo?.trim(),
+        "bankDetails.ifscCode": applicationData.bankDetails?.ifscCode?.trim(),
         "bankDetails.branchName":
-          applicationData.bankDetails.branchName?.trim(),
+          applicationData.bankDetails?.branchName?.trim(),
         resume: applicationData.resume,
         degreeCertificate: applicationData.degreeCertificate,
         governmentId: applicationData.governmentId,
@@ -414,7 +478,7 @@ export const CounselorAuthProvider = ({ children }) => {
       );
 
       toast.success("Application submitted successfully!");
-      setCounselor({ ...counselor, status: "pending" });
+      setCounselor({ ...counselor, applicationStatus: "pending" });
       return { success: true };
     } catch (error) {
       console.error(
@@ -430,40 +494,17 @@ export const CounselorAuthProvider = ({ children }) => {
     }
   };
 
-  const sendOtp = async (email) => {
-    try {
-      await axios.post("/counselors/send-otp-register-email", { email });
-      toast.success("OTP sent to your email!");
-      return { success: true };
-    } catch (error) {
-      const message = error.response?.data?.message || "Failed to send OTP";
-      toast.error(message);
-      return { success: false, error: message };
-    }
-  };
-
-  const verifyOtp = async (email, otp) => {
-    try {
-      await axios.post("/counselors/verify-otp-register-email", { email, otp });
-      toast.success("OTP verified successfully!");
-      return { success: true };
-    } catch (error) {
-      const message = error.response?.data?.message || "Invalid OTP";
-      toast.error(message);
-      return { success: false, error: message };
-    }
-  };
-
   const logout = async () => {
     try {
       await axios.post("/counselors/logout-counselor");
+      toast.success("Logged out successfully!");
     } catch (error) {
       console.error("Logout error:", error);
+      toast.error("Logout failed. Clearing local data.");
     } finally {
       localStorage.removeItem("counselorToken");
       localStorage.removeItem("counselor");
       setCounselor(null);
-      toast.success("Logged out successfully!");
     }
   };
 
@@ -471,9 +512,11 @@ export const CounselorAuthProvider = ({ children }) => {
     counselor,
     login,
     register,
-    submitApplication,
     sendOtp,
     verifyOtp,
+    forgotPassword,
+    resetPassword,
+    submitApplication,
     logout,
     loading,
   };

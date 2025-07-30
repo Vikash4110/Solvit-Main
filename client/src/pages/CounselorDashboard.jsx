@@ -1,17 +1,16 @@
 // File: src/pages/CounselorDashboard.jsx
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { useCounselorAuth } from "../contexts/CounselorAuthContext";
-import RecurringAvailabilityManager from "../components/counselorDashboard/RecurringAvailabilityManager";
-import MySlots from "../components/counselorDashboard/Myslots";
-import { 
-  CalendarDaysIcon, 
-  UserCircleIcon, 
-  ChartBarIcon,
-  Cog6ToothIcon,
+import {
   ArrowRightOnRectangleIcon,
-  ClockIcon
+  CalendarDaysIcon,
+  ChartBarIcon,
+  ClockIcon,
+  Cog6ToothIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
+import MySlots from "../components/counselorDashboard/Myslots";
+import RecurringAvailabilityManager from "../components/counselorDashboard/RecurringAvailabilityManager";
+import { useCounselorAuth } from "../contexts/CounselorAuthContext";
 
 const CounselorDashboard = () => {
   const { counselor, logout } = useCounselorAuth();
@@ -22,32 +21,32 @@ const CounselorDashboard = () => {
       id: "availability",
       name: "Set Availability",
       icon: CalendarDaysIcon,
-      description: "Manage your weekly schedule"
+      description: "Manage your weekly schedule",
     },
     {
       id: "slots",
       name: "My Slots",
       icon: ClockIcon,
-      description: "View upcoming appointments"
+      description: "View upcoming appointments",
     },
     {
       id: "profile",
       name: "Profile",
       icon: UserCircleIcon,
-      description: "Update your information"
+      description: "Update your information",
     },
     {
       id: "analytics",
       name: "Analytics",
       icon: ChartBarIcon,
-      description: "View your performance"
+      description: "View your performance",
     },
     {
       id: "settings",
       name: "Settings",
       icon: Cog6ToothIcon,
-      description: "Account preferences"
-    }
+      description: "Account preferences",
+    },
   ];
 
   const renderContent = () => {
@@ -55,7 +54,7 @@ const CounselorDashboard = () => {
       case "availability":
         return <RecurringAvailabilityManager />;
       case "slots":
-        return <MySlots/>;
+        return <MySlots />;
       case "profile":
         return <div className="p-6">Profile management coming soon...</div>;
       case "analytics":
@@ -75,7 +74,8 @@ const CounselorDashboard = () => {
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
               <span className="text-white font-semibold text-sm">
-                {counselor?.firstName?.charAt(0)}{counselor?.lastName?.charAt(0)}
+                {counselor?.firstName?.charAt(0)}
+                {counselor?.lastName?.charAt(0)}
               </span>
             </div>
             <div>
@@ -103,7 +103,9 @@ const CounselorDashboard = () => {
                 <Icon className="w-5 h-5 mr-3" />
                 <div>
                   <div className="font-medium">{item.name}</div>
-                  <div className="text-xs text-gray-500">{item.description}</div>
+                  <div className="text-xs text-gray-500">
+                    {item.description}
+                  </div>
                 </div>
               </button>
             );
@@ -126,17 +128,16 @@ const CounselorDashboard = () => {
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="px-6 py-4">
             <h1 className="text-2xl font-bold text-gray-900">
-              {sidebarItems.find(item => item.id === activeTab)?.name || "Dashboard"}
+              {sidebarItems.find((item) => item.id === activeTab)?.name ||
+                "Dashboard"}
             </h1>
             <p className="text-gray-600 mt-1">
-              {sidebarItems.find(item => item.id === activeTab)?.description}
+              {sidebarItems.find((item) => item.id === activeTab)?.description}
             </p>
           </div>
         </header>
 
-        <main className="flex-1">
-          {renderContent()}
-        </main>
+        <main className="flex-1">{renderContent()}</main>
       </div>
     </div>
   );

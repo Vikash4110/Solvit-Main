@@ -17,14 +17,11 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "cron": "^4.3.2",
-<<<<<<< HEAD
-=======
     "crypto": "^1.0.1",
->>>>>>> 439434c (main)
     "dayjs": "^1.11.13",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
-    "googleapis": "^154.0.0",
+    "googleapis": "^154.1.0",
     "gridfs-stream": "^1.1.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1",

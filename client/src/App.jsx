@@ -9,6 +9,10 @@ import TermCondition from "./components/Legals/TermCondition";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import ClientForgotPassword from "./components/ClientForgotPassword";
+import ClientResetPassword from "./components/ClientResetPassword";
+import CounselorForgotPassword from "./components/CounselorForgotPassword";
+import CounselorResetPassword from "./components/CounselorResetPassword";
 import ScrollToTop from "./components/ScrollToTop";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CounselorAuthProvider } from "./contexts/CounselorAuthContext";
@@ -39,6 +43,9 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ClientForgotPassword />} />
+            <Route path="/reset-password" element={<ClientResetPassword />} />
+
             <Route
               path="/dashboard"
               element={
@@ -74,6 +81,14 @@ function App() {
             {/* Counselor Routes */}
             <Route path="/counselor/login" element={<CounselorLogin />} />
             <Route path="/counselor/register" element={<CounselorRegister />} />
+            <Route
+              path="/counselor/forgot-password"
+              element={<CounselorForgotPassword />}
+            />
+            <Route
+              path="/counselor/reset-password"
+              element={<CounselorResetPassword />}
+            />
             <Route
               path="/counselor/dashboard"
               element={
