@@ -465,13 +465,13 @@ const ClientAuth = () => {
   const getFormTitle = () => {
     switch (mode) {
       case "login":
-        return "Sign in to your account";
+        return "Client Sign In";
       case "forgot":
         return "Forgot Password";
       case "reset":
         return "Reset Password";
       default:
-        return "Sign in to your account";
+        return "Client Sign In";
     }
   };
 
