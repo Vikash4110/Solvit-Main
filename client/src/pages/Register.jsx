@@ -305,7 +305,7 @@ const Register = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Preferred Languages
+                  Preferred Language
                 </label>
                 <div className="mt-2 space-y-2">
                   {["Hindi", "English"].map((lang) => (
