@@ -9,6 +9,7 @@ import {
   Loader,
   AlertTriangle,
 } from "lucide-react";
+import { API_BASE_URL, API_ENDPOINTS } from "../../config/api";
 
 const RecurringAvailabilityComponent = () => {
   const [weeklyAvailability, setWeeklyAvailability] = useState([
@@ -35,7 +36,7 @@ const RecurringAvailabilityComponent = () => {
     try {
       setInitialLoading(true);
       const response = await fetch(
-        "http://localhost:8000/api/v1/slotManagement/my-recurring-availability",
+        `${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MY_RECURRING}`,
         {
           method: "GET",
           headers: {
@@ -197,7 +198,7 @@ const RecurringAvailabilityComponent = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/api/v1/slotManagement/set-recurring-availability",
+        `${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_SET_RECURRING}`,
         {
           method: "POST",
           headers: {
@@ -215,7 +216,7 @@ const RecurringAvailabilityComponent = () => {
         
         try {
           const response = await fetch(
-            "http://localhost:8000/api/v1/slotManagement/generating-actual-slots",
+            `${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_GENERATE_SLOTS}`,
             {
               method: "POST",
               headers: {

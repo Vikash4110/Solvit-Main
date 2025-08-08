@@ -16,6 +16,7 @@ import {
   X,
   CreditCard
 } from 'lucide-react';
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
 const BookCounselorCalendar = () => {
   const { counselorId } = useParams();
@@ -54,7 +55,7 @@ const BookCounselorCalendar = () => {
   const fetchCounselorData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/v1/booking/counselor/${counselorId}/slots`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKING_COUNSELOR_SLOTS}/${counselorId}/slots`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         credentials: 'include',
       });
@@ -120,7 +121,7 @@ const BookCounselorCalendar = () => {
      
 
       // Step 1: Get Razorpay key
-      const keyResponse = await fetch('http://localhost:8000/api/v1/payment/getkey', {
+      const keyResponse = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PAYMENT_GET_KEY}`, {
       method: 'GET',
       headers: { 
         'Authorization': `Bearer ${token}`,
@@ -138,7 +139,7 @@ const BookCounselorCalendar = () => {
       //console.log(key)
 
       // Step 2: Create Razorpay order
-      const orderResponse = await fetch('http://localhost:8000/api/v1/payment/checkout', {
+      const orderResponse = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PAYMENT_CHECKOUT}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +217,7 @@ const BookCounselorCalendar = () => {
 
   const verifyPayment = async (paymentData) => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/payment/paymentverification', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PAYMENT_VERIFICATION}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

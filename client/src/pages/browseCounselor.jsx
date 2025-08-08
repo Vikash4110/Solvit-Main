@@ -11,8 +11,7 @@ import {
   CheckCircle,
   XCircle,
 } from 'lucide-react';
-
-const API = 'http://localhost:8000/api/v1/booking';
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 const todayISO = new Date().toISOString().split('T')[0];
 
 const BrowseCounselor = () => {
@@ -40,7 +39,7 @@ const BrowseCounselor = () => {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch(`${API}/available-counselors`, {
+        const r = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKING_AVAILABLE_COUNSELORS}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
           credentials: 'include',
         });

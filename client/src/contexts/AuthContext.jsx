@@ -137,6 +137,7 @@
 import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 
 const AuthContext = createContext();
 
@@ -153,8 +154,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Configure axios defaults
-  axios.defaults.baseURL =
-    import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+  axios.defaults.baseURL = API_BASE_URL;
   axios.defaults.withCredentials = true;
 
   useEffect(() => {
@@ -168,7 +168,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post("/clients/login-client", {
+      const response = await axios.post(API_ENDPOINTS.CLIENT_LOGIN, {
         email,
         password,
       });
@@ -201,7 +201,7 @@ export const AuthProvider = ({ children }) => {
         }
       });
 
-      const response = await axios.post("/clients/register-client", formData, {
+      const response = await axios.post(API_ENDPOINTS.CLIENT_REGISTER, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -220,8 +220,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const endpoint =
         purpose === "reset"
-          ? "/clients/forgot-password"
-          : "/clients/send-otp-register-email";
+          ? API_ENDPOINTS.CLIENT_FORGOT_PASSWORD
+          : API_ENDPOINTS.CLIENT_SEND_OTP;
       await axios.post(endpoint, { email });
       toast.success("OTP sent to your email!");
       return { success: true };
@@ -234,7 +234,7 @@ export const AuthProvider = ({ children }) => {
 
   const verifyOtp = async (email, otp) => {
     try {
-      await axios.post("/clients/verify-otp-register-email", { email, otp });
+      await axios.post(API_ENDPOINTS.CLIENT_VERIFY_OTP, { email, otp });
       toast.success("OTP verified successfully!");
       return { success: true };
     } catch (error) {
@@ -250,7 +250,7 @@ export const AuthProvider = ({ children }) => {
 
   const resetPassword = async (email, otp, newPassword) => {
     try {
-      const response = await axios.post("/clients/reset-password", {
+      const response = await axios.post(API_ENDPOINTS.CLIENT_RESET_PASSWORD, {
         email,
         otp,
         newPassword,
@@ -267,7 +267,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post("/clients/logout-client");
+      await axios.post(API_ENDPOINTS.CLIENT_LOGOUT);
     } catch (error) {
       console.error("Logout error:", error);
     } finally {

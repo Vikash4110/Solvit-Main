@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight, Filter, Eye, Users, CheckCircle, XCircle, AlertCircle, Settings, Trash2, MoreVertical } from 'lucide-react';
+import { API_BASE_URL, API_ENDPOINTS } from '../../config/api';
 
 const CounselorSlots = () => {
   const [slots, setSlots] = useState([]);
@@ -20,7 +21,7 @@ const CounselorSlots = () => {
   const fetchSlots = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/v1/slotManagement/get-all-generated-slots', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_GET_ALL}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -45,7 +46,7 @@ const CounselorSlots = () => {
       setActionLoading(true);
       setMessage({ type: '', text: '' });
 
-      const response = await fetch('http://localhost:8000/api/v1/slotManagement/manage-day-slots', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_DAY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ const CounselorSlots = () => {
       setActionLoading(true);
       setMessage({ type: '', text: '' });
 
-      const response = await fetch('http://localhost:8000/api/v1/slotManagement/manage-individual-slot', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_INDIVIDUAL}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

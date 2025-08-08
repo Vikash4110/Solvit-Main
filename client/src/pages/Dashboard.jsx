@@ -21,6 +21,7 @@ import {
   Trash2,
   Eye
 } from 'lucide-react';
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
 const ClientDashboard = () => {
   const [clientData, setClientData] = useState({});
@@ -39,7 +40,7 @@ const ClientDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/v1/client/dashboard', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CLIENT_DASHBOARD}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -63,7 +64,7 @@ const ClientDashboard = () => {
 
   const cancelSession = async (sessionId) => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/client/cancel-session', {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CLIENT_CANCEL_SESSION}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

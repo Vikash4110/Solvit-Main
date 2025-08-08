@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-=======
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
->>>>>>> origin/main
+
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -24,8 +20,4 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-<<<<<<< HEAD
-export default ProtectedRoute; 
-=======
 export default ProtectedRoute;
->>>>>>> origin/main

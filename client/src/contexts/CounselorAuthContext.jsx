@@ -1,6 +1,7 @@
 import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 
 const CounselorAuthContext = createContext();
 
@@ -19,8 +20,7 @@ export const CounselorAuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Configure axios defaults
-  axios.defaults.baseURL =
-    import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+  axios.defaults.baseURL = API_BASE_URL;
   axios.defaults.withCredentials = true;
 
   // Check for existing token on mount
@@ -47,7 +47,7 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post("/counselors/login-counselor", {
+      const response = await axios.post(API_ENDPOINTS.COUNSELOR_LOGIN, {
         email,
         password,
       });
@@ -85,7 +85,7 @@ export const CounselorAuthProvider = ({ children }) => {
       }
 
       const response = await axios.post(
-        "/counselors/register-counselor",
+        API_ENDPOINTS.COUNSELOR_REGISTER,
         formData,
         {
           headers: {
@@ -110,8 +110,8 @@ export const CounselorAuthProvider = ({ children }) => {
     try {
       const endpoint =
         purpose === "reset"
-          ? "/counselors/forgot-password"
-          : "/counselors/send-otp-register-email";
+          ? API_ENDPOINTS.COUNSELOR_FORGOT_PASSWORD
+          : API_ENDPOINTS.COUNSELOR_SEND_OTP;
       await axios.post(endpoint, { email });
       toast.success("OTP sent to your email!");
       return { success: true };
@@ -124,7 +124,7 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const verifyOtp = async (email, otp) => {
     try {
-      await axios.post("/counselors/verify-otp-register-email", { email, otp });
+      await axios.post(API_ENDPOINTS.COUNSELOR_VERIFY_OTP, { email, otp });
       toast.success("OTP verified successfully!");
       return { success: true };
     } catch (error) {
@@ -140,7 +140,7 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const resetPassword = async (email, otp, newPassword) => {
     try {
-      const response = await axios.post("/counselors/reset-password", {
+      const response = await axios.post(API_ENDPOINTS.COUNSELOR_RESET_PASSWORD, {
         email,
         otp,
         newPassword,
@@ -224,7 +224,7 @@ export const CounselorAuthProvider = ({ children }) => {
       }
 
       const response = await axios.post(
-        "/counselors/submit-application",
+        API_ENDPOINTS.COUNSELOR_APPLICATION,
         formData,
         {
           headers: {
@@ -253,7 +253,7 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post("/counselors/logout-counselor");
+      await axios.post(API_ENDPOINTS.COUNSELOR_LOGOUT);
       toast.success("Logged out successfully!");
     } catch (error) {
       console.error("Logout error:", error);
