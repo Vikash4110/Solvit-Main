@@ -7,7 +7,6 @@ import { clientRouter } from "./routes/client-routes.js";
 import { counselorRouter } from "./routes/counselor-routes.js";
 import { availabilityRouter } from "./routes/slotManager-routes.js";
 import { startCronJobs } from "./utils/cornJob.js";
-
 import { bookingRouter } from "./routes/booking-routes.js";
 import { paymentRouter } from "./routes/payment-router.js";
 import Razorpay from 'razorpay';
@@ -16,7 +15,7 @@ dotenv.config();
 const app = express();
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: [process.env.CORS_ORIGIN,"https://solvit-main.vercel.app"],
     credentials: true,
   })
 );
