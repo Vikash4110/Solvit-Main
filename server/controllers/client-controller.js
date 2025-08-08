@@ -748,6 +748,7 @@ const loginClient = wrapper(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: 'None'
   };
   const accessToken = await client.generateAccessToken();
   const loggedInClient = await Client.findOne({
@@ -768,6 +769,7 @@ const logoutClient = wrapper(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: 'None'
   };
   return res.status(200).clearCookie("accessToken", options).json({
     status: 200,

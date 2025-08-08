@@ -473,8 +473,8 @@ const loginCounselor = wrapper(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: 'None'
   };
   const accessToken = await counselor.generateAccessToken();
 
@@ -637,8 +637,8 @@ const submitCounselorApplication = wrapper(async (req, res) => {
 const logoutCounselor = wrapper(async (req, res) => {
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: 'None'
   };
   return res.status(200).clearCookie("accessToken", options).json({
     status: 200,
