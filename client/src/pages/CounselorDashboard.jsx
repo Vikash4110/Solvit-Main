@@ -13,7 +13,7 @@ import RecurringAvailabilityManager from "../components/counselorDashboard/Recur
 import { useCounselorAuth } from "../contexts/CounselorAuthContext";
 
 const CounselorDashboard = () => {
-  const { counselor, logout } = useCounselorAuth();
+  const { counselor, counselorLogout } = useCounselorAuth();
   const [activeTab, setActiveTab] = useState("availability");
 
   const sidebarItems = [
@@ -114,7 +114,7 @@ const CounselorDashboard = () => {
 
         <div className="absolute bottom-0 w-64 p-6 border-t border-gray-200">
           <button
-            onClick={logout}
+            onClick={counselorLogout}
             className="w-full flex items-center text-gray-700 hover:text-red-600 transition-colors"
           >
             <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />

@@ -26,13 +26,23 @@ const bookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["booked", "cancelled", "completed", "pending"],
-    default: "booked",
+    enum: [
+      'pending_payment',
+      'payment_success',
+      'scheduled',
+      'completed',
+      'counselor_no_show',
+      'client_no_show',
+      'no_show',
+      'cancelled'
+    ],
+    default: 'pending_payment'
   },
+  
   paymentStatus: {
     type: String,
-    enum: ["paid", "unpaid", "refunded"],
-    default: "unpaid",
+    enum: ["paid", "pending", "refunded","failed"],
+    default: "pending",
   },
   
   googleMeetLink : {

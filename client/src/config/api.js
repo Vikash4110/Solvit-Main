@@ -14,7 +14,14 @@ export const API_ENDPOINTS = {
   CLIENT_FORGOT_PASSWORD: "/clients/forgot-password",
   CLIENT_RESET_PASSWORD: "/clients/reset-password",
   
-  // Counselor endpoints
+
+  // 🆕 Client Dashboard MyBooking endpoints
+  CLIENT_BOOKINGS: "/client/dashboard/bookings", // GET with query params
+  CLIENT_BOOKING_DETAILS: "/client/dashboard/bookings", // GET /:id
+  CLIENT_BOOKING_CANCEL: "/client/dashboard/bookings", // POST /:id/cancel
+  CLIENT_BOOKING_RESCHEDULE: "/client/dashboard/bookings", // POST /:id/reschedule
+
+  // Counselor endpoints  
   COUNSELOR_LOGIN: "/counselors/login-counselor",
   COUNSELOR_REGISTER: "/counselors/register-counselor",
   COUNSELOR_LOGOUT: "/counselors/logout-counselor",

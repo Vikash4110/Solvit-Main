@@ -3,16 +3,16 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import { AuthProvider } from "./contexts/AuthContext";
+import { ClientAuthProvider } from "./contexts/ClientAuthContext";
 import { CounselorAuthProvider } from "./contexts/CounselorAuthContext";
 import "./index.css";
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <AuthProvider>
+    <ClientAuthProvider>
       <CounselorAuthProvider>
         <App />
       </CounselorAuthProvider>
-    </AuthProvider>
+    </ClientAuthProvider>
   </BrowserRouter>
 );

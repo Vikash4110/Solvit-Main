@@ -17,7 +17,7 @@ const CounselorRegister = () => {
     otp: "",
   });
   const [loading, setLoading] = useState(false);
-  const { sendOtp, verifyOtp, register } = useCounselorAuth();
+  const { sendOtp, verifyOtp, counselorRegister } = useCounselorAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -60,7 +60,7 @@ const CounselorRegister = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const result = await register(formData);
+      const result = await counselorRegister(formData);
       if (result.success) {
         navigate("/counselor/login");
       }

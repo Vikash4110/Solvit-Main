@@ -1,7 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useClientAuth } from "../contexts/ClientAuthContext";
 
 const ClientResetPassword = () => {
   const [formData, setFormData] = useState({
@@ -12,7 +12,7 @@ const ClientResetPassword = () => {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const { resetPassword } = useAuth();
+  const { resetPassword } = useClientAuth();
   const navigate = useNavigate();
 
   const passwordRegex =

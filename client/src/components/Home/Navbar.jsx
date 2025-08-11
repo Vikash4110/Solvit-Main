@@ -1,4 +1,3 @@
-// File: src/components/Navbar.jsx
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -17,53 +16,42 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logo from "../../assets/core/Red Simple.jpeg"; // Updated logo path
+import logo from "../../assets/core/Red Simple.jpeg";
 import { useCounselorAuth } from "../../contexts/CounselorAuthContext";
+import { useClientAuth } from "../../contexts/ClientAuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
-  const { counselor, logout, loading } = useCounselorAuth();
+  const [mobileUserDropdownOpen, setMobileUserDropdownOpen] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
   const userDropdownRef = useRef(null);
   const servicesDropdownRef = useRef(null);
 
-  // Close dropdowns when clicking outside
+  const { counselor, counselorLogout, counselorLoading } = useCounselorAuth();
+  const { client, clientLogout, clientLoading } = useClientAuth();
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        userDropdownRef.current &&
-        !userDropdownRef.current.contains(event.target)
-      ) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
         setIsUserDropdownOpen(false);
       }
-      if (
-        servicesDropdownRef.current &&
-        !servicesDropdownRef.current.contains(event.target)
-      ) {
+      if (servicesDropdownRef.current && !servicesDropdownRef.current.contains(event.target)) {
         setIsServicesDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => { document.removeEventListener("mousedown", handleClickOutside); };
   }, []);
 
-  // Scroll effect for navbar
+  // Navbar background change on scroll
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -73,53 +61,28 @@ const Navbar = () => {
     setIsOpen(false);
     setIsUserDropdownOpen(false);
     setIsServicesDropdownOpen(false);
-    setIsSearchOpen(false);
+    setMobileUserDropdownOpen(false);
   }, [location]);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success("Logged out successfully");
-      navigate("/");
-    } catch (error) {
-      toast.error("Logout failed");
-    }
+  // Logout handlers
+  const logoutCounselor = async () => {
+    await counselorLogout();
+    toast.success("Logged out successfully");
+    navigate("/");
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
-      setIsSearchOpen(false);
-    }
+  const logoutClient = async () => {
+    await clientLogout();
+    toast.success("Logged out successfully");
+    navigate("/");
   };
 
-  // Navigation links
   const navLinks = [
-    { to: "/", text: "Home", icon: <FaHome className="text-lg" /> },
-    {
-      to: "#",
-      text: "Services",
-      icon: <FaUserFriends className="text-lg" />,
-      isDropdown: true,
-    },
-    { to: "/about", text: "About", icon: <FaInfoCircle className="text-lg" /> },
-    {
-      to: "/our-counselors",
-      text: "Counselors",
-      icon: <FaUserFriends className="text-lg" />,
-    },
-    {
-      to: "/browse-counselors",
-      text: "Browse Counselors",
-      icon: <FaUserFriends className="text-lg" />,
-    },
-    {
-      to: "/contact",
-      text: "Contact",
-      icon: <FaComments className="text-lg" />,
-    },
+    { to: "/", text: "Home", icon: <FaHome /> },
+    { to: "#", text: "Services", icon: <FaUserFriends />, isDropdown: true },
+    { to: "/about", text: "About", icon: <FaInfoCircle /> },
+    { to: "/browse-counselors", text: "Counselors", icon: <FaUserFriends /> },
+    { to: "/contact", text: "Contact", icon: <FaComments /> },
   ];
 
   const servicesLinks = [
@@ -128,368 +91,204 @@ const Navbar = () => {
     { to: "/services/relationship", text: "Relationship Counselling" },
     { to: "/services/life-coaching", text: "Life Coaching" },
     { to: "/services/academic", text: "Academic Counselling" },
-    {
-      to: "/services/health-wellness",
-      text: "Health and Wellness Counselling",
-    },
+    { to: "/services/health-wellness", text: "Health and Wellness Counselling" },
   ];
 
-  // Dashboard and profile links for counselors
-  const dashboardLink = "/counselor/dashboard";
-  const profileLink = "/counselor/profile";
-  const applicationLink = "/counselor/application";
+  // Desktop User Dropdown
+  const DesktopUserDropdown = ({ user, initial, profileLink, dashboardLink, logout }) => (
+    <div className="relative hidden lg:block" ref={userDropdownRef}>
+      <button
+        onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-indigo-50"
+      >
+        <div className="w-9 h-9 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-500 flex items-center justify-center text-white font-semibold">
+          {user?.fullName?.charAt(0) || initial}
+        </div>
+        <span className="font-medium text-gray-700">{user?.fullName}</span>
+        {isUserDropdownOpen ? <FaChevronUp className="text-xs" /> : <FaChevronDown className="text-xs" />}
+      </button>
+      <AnimatePresence>
+        {isUserDropdownOpen && (
+          <motion.div
+            className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border overflow-hidden z-50"
+            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}
+          >
+            <div className="px-4 py-3 border-b">
+              <p className="text-sm font-medium">{user?.fullName}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            </div>
+            <Link to={profileLink} className="px-4 py-3 flex items-center hover:bg-indigo-50"><FaUser className="mr-3" /> Profile</Link>
+            <Link to={dashboardLink} className="px-4 py-3 flex items-center hover:bg-indigo-50"><FaHome className="mr-3" /> Dashboard</Link>
+            
+            <button onClick={logout} className="w-full px-4 py-3 flex items-center hover:bg-red-50 hover:text-red-600 border-t">
+              <FaSignOutAlt className="mr-3" /> Logout
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  // Mobile User Menu
+  const MobileUserDropdown = ({ user, profileLink, dashboardLink, extraLink, logout }) => (
+    <>
+      <button
+        onClick={() => setMobileUserDropdownOpen(!mobileUserDropdownOpen)}
+        className="px-4 py-3 rounded-md font-medium flex items-center justify-between w-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+      >
+        {user?.fullName}
+        {mobileUserDropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
+      </button>
+      <AnimatePresence>
+        {mobileUserDropdownOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}
+            className="flex flex-col bg-indigo-50 rounded-md mt-1"
+          >
+            <Link to={profileLink} className="px-6 py-2 hover:bg-indigo-100"><FaUser className="inline mr-2" /> Profile</Link>
+            <Link to={dashboardLink} className="px-6 py-2 hover:bg-indigo-100"><FaHome className="inline mr-2" /> Dashboard</Link>
+            {extraLink && (
+              <Link to={extraLink.to} className="px-6 py-2 hover:bg-indigo-100">
+                {extraLink.icon}<span className="ml-2">{extraLink.text}</span>
+              </Link>
+            )}
+            <button onClick={logout} className="px-6 py-2 text-left hover:bg-red-100 text-red-600">
+              <FaSignOutAlt className="inline mr-2" /> Logout
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
 
   return (
     <motion.nav
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white shadow-lg py-2"
-          : "bg-white/90 backdrop-blur-sm py-3"
-      }`}
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      className={`fixed top-0 left-0 w-full z-50 transition-all ${scrolled ? "bg-white shadow-lg py-2" : "bg-white/90 backdrop-blur-sm py-3"}`}
+      initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
     >
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <motion.div className="flex items-center space-x-3">
-            <Link to="/" className="flex items-center space-x-1">
-              <img src={logo} className="h-16 w-16" alt="Solvit Logo" />
-              <motion.span className="text-2xl font-bold text-gray-800">
-                <span className="text-indigo-600">Solvit</span>
-              </motion.span>
-            </Link>
-          </motion.div>
+          <Link to="/" className="flex items-center space-x-1">
+            <img src={logo} className="h-16 w-16" alt="Solvit Logo" />
+            <span className="text-2xl font-bold text-indigo-600">Solvit</span>
+          </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
-            {navLinks.map((link) => (
-              <div key={link.to} className="relative group">
-                {link.isDropdown ? (
-                  <div className="relative" ref={servicesDropdownRef}>
-                    <button
-                      onClick={() =>
-                        setIsServicesDropdownOpen(!isServicesDropdownOpen)
-                      }
-                      className={`px-4 py-2.5 rounded-md font-medium flex items-center transition-all ${
-                        isServicesDropdownOpen
-                          ? "text-indigo-600 bg-indigo-50"
-                          : "text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-                      }`}
-                    >
-                      <span className="mr-2">{link.icon}</span>
-                      {link.text}
-                      {isServicesDropdownOpen ? (
-                        <FaChevronUp className="ml-2 text-gray-500 text-xs" />
-                      ) : (
-                        <FaChevronDown className="ml-2 text-gray-500 text-xs" />
-                      )}
-                    </button>
-                    <AnimatePresence>
-                      {isServicesDropdownOpen && (
-                        <motion.div
-                          className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {servicesLinks.map((service) => (
-                            <Link
-                              key={service.text}
-                              to={service.to}
-                              className="block px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                              onClick={() => setIsServicesDropdownOpen(false)}
-                            >
-                              {service.text}
-                            </Link>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <Link
-                    to={link.to}
-                    className={`px-4 py-2.5 rounded-md font-medium flex items-center transition-all ${
-                      location.pathname === link.to
-                        ? "text-indigo-600 bg-indigo-50"
-                        : "text-gray-700 hover:text-indigo-600 hover:bg-indigo-50"
-                    }`}
-                  >
-                    <span className="mr-2">{link.icon}</span>
-                    {link.text}
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
-            {counselor && !loading ? (
-              <>
-                <div className="relative hidden lg:block" ref={userDropdownRef}>
+          {/* Desktop Nav */}
+          <div className="hidden lg:flex">
+            {navLinks.map((link) =>
+              link.isDropdown ? (
+                <div key={link.text} className="relative" ref={servicesDropdownRef}>
                   <button
-                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                    onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
+                    className={`px-4 py-2.5 flex items-center ${isServicesDropdownOpen ? "bg-indigo-50 text-indigo-600" : "hover:bg-indigo-50 hover:text-indigo-600"}`}
                   >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-500 flex items-center justify-center text-white font-semibold">
-                      {counselor?.fullName?.charAt(0) || "C"}
-                    </div>
-                    <span className="font-medium text-gray-700">
-                      {counselor?.fullName || "Counselor"}
-                    </span>
-                    {isUserDropdownOpen ? (
-                      <FaChevronUp className="text-gray-500 text-xs" />
-                    ) : (
-                      <FaChevronDown className="text-gray-500 text-xs" />
-                    )}
+                    {link.icon} <span className="ml-2">{link.text}</span>
+                    {isServicesDropdownOpen ? <FaChevronUp className="ml-2" /> : <FaChevronDown className="ml-2" />}
                   </button>
-
                   <AnimatePresence>
-                    {isUserDropdownOpen && (
+                    {isServicesDropdownOpen && (
                       <motion.div
-                        className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
+                        className="absolute mt-2 w-64 bg-white rounded-lg shadow border"
                       >
-                        <div className="px-4 py-3 border-b border-gray-100">
-                          <p className="text-sm font-medium text-gray-700">
-                            {counselor?.fullName || "Counselor"}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {counselor?.email || "counselor@example.com"}
-                          </p>
-                        </div>
-                        <Link
-                          to={profileLink}
-                          className="px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center"
-                        >
-                          <FaUser className="mr-3 text-gray-500" /> Profile
-                        </Link>
-                        <Link
-                          to={dashboardLink}
-                          className="px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center"
-                        >
-                          <FaHome className="mr-3 text-gray-500" /> Dashboard
-                        </Link>
-                        <Link
-                          to={applicationLink}
-                          className="px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center"
-                        >
-                          <FaUserTie className="mr-3 text-gray-500" />{" "}
-                          Application
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full text-left px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center border-t border-gray-100"
-                        >
-                          <FaSignOutAlt className="mr-3 text-gray-500" /> Logout
-                        </button>
+                        {servicesLinks.map((s) => (
+                          <Link key={s.text} to={s.to} onClick={() => setIsServicesDropdownOpen(false)} className="block px-4 py-3 hover:bg-indigo-50">
+                            {s.text}
+                          </Link>
+                        ))}
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-              </>
-            ) : (
+              ) : (
+                <Link key={link.to} to={link.to} className="px-4 py-2.5 hover:bg-indigo-50 hover:text-indigo-600 flex items-center">
+                  {link.icon} <span className="ml-2">{link.text}</span>
+                </Link>
+              )
+            )}
+          </div>
+
+          {/* Right Side (Desktop) */}
+          <div className="flex items-center space-x-4">
+            {counselor && !counselorLoading && (
+              <DesktopUserDropdown
+                user={counselor} initial="C"
+                profileLink="/counselor/profile"
+                dashboardLink="/counselor/dashboard"
+                logout={logoutCounselor}
+              />
+            )}
+            {client && !clientLoading && (
+              <DesktopUserDropdown
+                user={client} initial="U"
+                profileLink="/client/profile"
+                dashboardLink="/client/dashboard"
+                // extraLink={{ to: "/browse-counselors", text: "Browse Counselors", icon: <FaUserFriends /> }}
+                logout={logoutClient}
+              />
+            )}
+            {!counselor && !client && (
               <>
-                <Link
-                  to="/counselor/login"
-                  className="hidden lg:flex items-center px-4 py-2 rounded-md font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-                >
-                  <FaUserTie className="mr-2" /> Counselor Login
-                </Link>
-                <Link
-                  to="/login"
-                  className="hidden lg:flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-md font-medium hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-md hover:shadow-lg"
-                >
-                  <FaUser className="mr-2" /> Client Login
-                </Link>
+                <Link to="/counselor/login" className="hidden lg:flex"><FaUserTie className="mr-2" /> Counselor Login</Link>
+                <Link to="/login" className="hidden lg:flex bg-indigo-600 text-white px-4 py-2 rounded-md"><FaUser className="mr-2" /> Client Login</Link>
               </>
             )}
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden p-2 text-gray-600 hover:text-indigo-600 transition-colors"
-              aria-label="Menu"
-            >
-              {isOpen ? (
-                <FaTimes className="w-6 h-6" />
-              ) : (
-                <FaBars className="w-6 h-6" />
-              )}
-            </button>
+            <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden">{isOpen ? <FaTimes /> : <FaBars />}</button>
           </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Mobile Menu */}
         <AnimatePresence>
-          {isSearchOpen && (
-            <motion.div
-              className="mt-3"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  placeholder="Search counselors, topics..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full p-3 pl-10 pr-4 border border-gray-200 bg-gray-50 text-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:bg-white"
-                  autoFocus
-                />
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <button
-                  type="submit"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-600 font-medium"
-                >
-                  Search
-                </button>
-              </form>
+          {isOpen && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="lg:hidden bg-white shadow-md mt-2 rounded-md">
+              <div className="flex flex-col">
+                {navLinks.map((link) =>
+                  link.isDropdown ? (
+                    <div key={link.text}>
+                      <button onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)} className="px-4 py-3 w-full flex justify-between">
+                        {link.text} {isServicesDropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
+                      </button>
+                      {isServicesDropdownOpen && servicesLinks.map((s) => (
+                        <Link key={s.text} to={s.to} className="pl-8 py-2 block hover:bg-indigo-50">{s.text}</Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <Link key={link.to} to={link.to} className="px-4 py-3 hover:bg-indigo-50">{link.text}</Link>
+                  )
+                )}
+                {counselor && !counselorLoading && (
+                  <MobileUserDropdown
+                    user={counselor}
+                    profileLink="/counselor/profile"
+                    dashboardLink="/counselor/dashboard"
+                    extraLink={{ to: "/counselor/application", text: "Application", icon: <FaUserTie /> }}
+                    logout={logoutCounselor}
+                  />
+                )}
+                {client && !clientLoading && (
+                  <MobileUserDropdown
+                    user={client}
+                    profileLink="/client/profile"
+                    dashboardLink="/client/bookings"
+                    extraLink={{ to: "/browse-counselors", text: "Browse Counselors", icon: <FaUserFriends /> }}
+                    logout={logoutClient}
+                  />
+                )}
+                {!counselor && !client && (
+                  <>
+                    <Link to="/counselor/login" className="px-4 py-3">Counselor Login</Link>
+                    <Link to="/login" className="px-4 py-3">Client Login</Link>
+                  </>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="lg:hidden bg-white shadow-lg"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="container mx-auto px-4 py-4">
-              <div className="flex flex-col space-y-1">
-                {navLinks.map((link) => (
-                  <React.Fragment key={link.to}>
-                    {link.isDropdown ? (
-                      <div className="relative">
-                        <button
-                          onClick={() =>
-                            setIsServicesDropdownOpen(!isServicesDropdownOpen)
-                          }
-                          className={`px-4 py-3 rounded-md font-medium flex items-center w-full text-left ${
-                            isServicesDropdownOpen
-                              ? "bg-indigo-50 text-indigo-600"
-                              : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
-                          }`}
-                        >
-                          <span className="mr-3">{link.icon}</span>
-                          {link.text}
-                          {isServicesDropdownOpen ? (
-                            <FaChevronUp className="ml-auto text-gray-500 text-xs" />
-                          ) : (
-                            <FaChevronDown className="ml-auto text-gray-500 text-xs" />
-                          )}
-                        </button>
-                        <AnimatePresence>
-                          {isServicesDropdownOpen && (
-                            <motion.div
-                              className="pl-8 flex flex-col bg-indigo-50 rounded-md mt-1"
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              {servicesLinks.map((service) => (
-                                <Link
-                                  key={service.text}
-                                  to={service.to}
-                                  className="px-4 py-2 text-gray-700 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
-                                  onClick={() => {
-                                    setIsServicesDropdownOpen(false);
-                                    setIsOpen(false);
-                                  }}
-                                >
-                                  {service.text}
-                                </Link>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ) : (
-                      <Link
-                        to={link.to}
-                        className={`px-4 py-3 rounded-md font-medium flex items-center ${
-                          location.pathname === link.to
-                            ? "bg-indigo-50 text-indigo-600"
-                            : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
-                        }`}
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <span className="mr-3">{link.icon}</span>
-                        {link.text}
-                      </Link>
-                    )}
-                  </React.Fragment>
-                ))}
-                {counselor && !loading ? (
-                  <>
-                    <div className="border-t border-gray-200 my-2"></div>
-                    <Link
-                      to={profileLink}
-                      className="px-4 py-3 rounded-md font-medium flex items-center text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <FaUser className="mr-3 text-gray-500" /> Profile
-                    </Link>
-                    <Link
-                      to={dashboardLink}
-                      className="px-4 py-3 rounded-md font-medium flex items-center text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <FaHome className="mr-3 text-gray-500" /> Dashboard
-                    </Link>
-                    <Link
-                      to={applicationLink}
-                      className="px-4 py-3 rounded-md font-medium flex items-center text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <FaUserTie className="mr-3 text-gray-500" /> Application
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="px-4 py-3 rounded-md font-medium flex items-center text-gray-700 hover:bg-red-50 hover:text-red-600 text-left"
-                    >
-                      <FaSignOutAlt className="mr-3 text-gray-500" /> Logout
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="border-t border-gray-200 my-2"></div>
-                    <Link
-                      to="/counselor/login"
-                      className="px-4 py-3 rounded-md font-medium flex items-center justify-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <FaUserTie className="mr-2" /> Counselor Login
-                    </Link>
-                    <Link
-                      to="/login"
-                      className="px-4 py-3 rounded-md font-medium flex items-center justify-center bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <FaUser className="mr-2" /> Client Login
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.nav>
   );
 };
