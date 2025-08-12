@@ -20,7 +20,7 @@ import CounselorApplication from "./pages/CounselorApplication";
 import CounselorDashboard from "./pages/CounselorDashboard";
 import CounselorLogin from "./pages/CounselorLogin";
 import CounselorRegister from "./pages/CounselorRegister";
-import Dashboard from "./pages/ClientDashboard";
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
@@ -61,7 +61,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ClientDashboard />
-                  <ClientDashboard />
+                 
                 </ProtectedRoute>
               }
             />
