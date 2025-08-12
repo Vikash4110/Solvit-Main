@@ -19,7 +19,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import { useCounselorAuth } from "../../contexts/CounselorAuthContext";
 import { useClientAuth } from "../../contexts/ClientAuthContext";
-import { useClientAuth } from "../../contexts/ClientAuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,10 +41,16 @@ const Navbar = () => {
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target)
+      ) {
         setIsUserDropdownOpen(false);
       }
-      if (servicesDropdownRef.current && !servicesDropdownRef.current.contains(event.target)) {
+      if (
+        servicesDropdownRef.current &&
+        !servicesDropdownRef.current.contains(event.target)
+      ) {
         setIsServicesDropdownOpen(false);
       }
     };
@@ -54,9 +59,7 @@ const Navbar = () => {
   }, []);
 
   // Navbar background change on scroll
-  // Navbar background change on scroll
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -67,7 +70,6 @@ const Navbar = () => {
     setIsOpen(false);
     setIsUserDropdownOpen(false);
     setIsServicesDropdownOpen(false);
-    setMobileUserDropdownOpen(false);
     setMobileUserDropdownOpen(false);
   }, [location]);
 
@@ -97,7 +99,7 @@ const Navbar = () => {
   // 2. Non-authenticated users (potential clients browsing)
   // Hide from:
   // 1. Counselors (they don't need to browse other counselors)
-  const shouldShowCounselors = client; // Show to everyone except counselors
+  const shouldShowCounselors = !counselor; // Show to everyone except counselors
   
   if (shouldShowCounselors) {
     baseLinks.push({
@@ -127,7 +129,6 @@ const Navbar = () => {
 
   return baseLinks;
 };
-
 
   // ✅ Handler for protected contact access
   const handleContactClick = () => {
@@ -320,7 +321,7 @@ const Navbar = () => {
 
   return (
     <motion.nav
-      className={`fixed top-0 left-0 w-full py-4 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
         scrolled
           ? "bg-white/95 backdrop-blur-md shadow-xl py-4"
           : "bg-white/90 backdrop-blur-sm py-4"
@@ -455,7 +456,7 @@ const Navbar = () => {
                 </div>
                 
                 {/* ✅ Tooltip for non-authenticated users */}
-                <div className="absolute  left-1/2 transform -translate-x-1/2 mb-2 px-3 py- bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                   Login required to contact us
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
                 </div>
