@@ -99,7 +99,7 @@ const Navbar = () => {
   // 2. Non-authenticated users (potential clients browsing)
   // Hide from:
   // 1. Counselors (they don't need to browse other counselors)
-  const shouldShowCounselors = !counselor; // Show to everyone except counselors
+  const shouldShowCounselors = client; // Show to everyone except counselors
   
   if (shouldShowCounselors) {
     baseLinks.push({

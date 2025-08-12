@@ -29,8 +29,9 @@ import ServicePage from "./pages/ServicePage";
 import ClientDashboard from "./pages/ClientDashboard";
 import BookCounselorCalendar from "./pages/bookCounselor";
 import BrowseCounselor from "./pages/browseCounselor";
-
-
+import Blogs from "./pages/Blogs";
+import ContactUs from "./pages/ContactUs";
+import BlogPost from "./pages/BlogPost";
 function App() {
   return (
     <ClientAuthProvider>
