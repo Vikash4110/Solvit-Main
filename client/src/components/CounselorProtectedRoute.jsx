@@ -3,9 +3,9 @@ import { Navigate } from "react-router-dom";
 import { useCounselorAuth } from "../contexts/CounselorAuthContext";
 
 const CounselorProtectedRoute = ({ children }) => {
-  const { counselor, loading } = useCounselorAuth();
+  const { counselor, counselorLoading } = useCounselorAuth();
 
-  if (loading) {
+  if (counselorLoading) {
     return <div>Loading...</div>;
   }
 

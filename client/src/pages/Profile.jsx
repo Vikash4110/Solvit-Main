@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useClientAuth } from '../contexts/ClientAuthContext';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { User, Settings, ArrowLeft, Camera, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { client } = useClientAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
@@ -19,17 +19,17 @@ const Profile = () => {
     reset,
   } = useForm({
     defaultValues: {
-      fullName: user?.fullName || '',
-      username: user?.username || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-      gender: user?.gender || 'Prefer not to say',
-      bio: user?.bio || '',
-      'address.city': user?.address?.city || '',
-      'address.area': user?.address?.area || '',
-      'address.pincode': user?.address?.pincode || '',
-      preferredLanguages: user?.preferredLanguages || ['Hindi', 'English'],
-      prefferedTopics: user?.prefferedTopics || ['Stress', 'mentalHealth'],
+      fullName: client?.fullName || '',
+      username: client?.username || '',
+      email: client?.email || '',
+      phone: client?.phone || '',
+      gender: client?.gender || 'Prefer not to say',
+      bio: client?.bio || '',
+      'address.city': client?.address?.city || '',
+      'address.area': client?.address?.area || '',
+      'address.pincode': client?.address?.pincode || '',
+      preferredLanguages: client?.preferredLanguages || ['Hindi', 'English'],
+      prefferedTopics: client?.prefferedTopics || ['Stress', 'mentalHealth'],
     },
   });
 
@@ -114,8 +114,8 @@ const Profile = () => {
                   <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                     {previewImage ? (
                       <img src={previewImage} alt="Preview" className="h-24 w-24 object-cover" />
-                    ) : user?.profilePicture ? (
-                      <img src={user.profilePicture} alt="Profile" className="h-24 w-24 object-cover" />
+                    ) : client?.profilePicture ? (
+                      <img src={client.profilePicture} alt="Profile" className="h-24 w-24 object-cover" />
                     ) : (
                       <User className="h-12 w-12 text-gray-400" />
                     )}
@@ -159,7 +159,7 @@ const Profile = () => {
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{user?.fullName}</p>
+                    <p className="mt-1 text-sm text-gray-900">{client?.fullName}</p>
                   )}
                   {errors.fullName && (
                     <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
@@ -179,7 +179,7 @@ const Profile = () => {
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">@{user?.username}</p>
+                    <p className="mt-1 text-sm text-gray-900">@{client?.username}</p>
                   )}
                   {errors.username && (
                     <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
@@ -188,7 +188,7 @@ const Profile = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{user?.email}</p>
+                  <p className="mt-1 text-sm text-gray-900">{client?.email}</p>
                   <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
                 </div>
 
@@ -207,7 +207,7 @@ const Profile = () => {
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{user?.phone}</p>
+                    <p className="mt-1 text-sm text-gray-900">{client?.phone}</p>
                   )}
                   {errors.phone && (
                     <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
@@ -227,7 +227,7 @@ const Profile = () => {
                       <option value="Other">Other</option>
                     </select>
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{user?.gender}</p>
+                    <p className="mt-1 text-sm text-gray-900">{client?.gender}</p>
                   )}
                 </div>
               </div>
@@ -246,7 +246,7 @@ const Profile = () => {
                   placeholder="Tell us about yourself..."
                 />
               ) : (
-                <p className="text-sm text-gray-900">{user?.bio || 'No bio added yet.'}</p>
+                <p className="text-sm text-gray-900">{client?.bio || 'No bio added yet.'}</p>
               )}
               {errors.bio && (
                 <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
@@ -277,7 +277,7 @@ const Profile = () => {
                     </div>
                   ) : (
                     <p className="text-sm text-gray-900">
-                      {user?.preferredLanguages?.join(', ')}
+                      {client?.preferredLanguages?.join(', ')}
                     </p>
                   )}
                 </div>
@@ -302,7 +302,7 @@ const Profile = () => {
                     </div>
                   ) : (
                     <p className="text-sm text-gray-900">
-                      {user?.prefferedTopics?.join(', ')}
+                      {client?.prefferedTopics?.join(', ')}
                     </p>
                   )}
                 </div>
@@ -322,7 +322,7 @@ const Profile = () => {
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{user?.address?.city || 'Not specified'}</p>
+                    <p className="mt-1 text-sm text-gray-900">{client?.address?.city || 'Not specified'}</p>
                   )}
                 </div>
 
@@ -335,7 +335,7 @@ const Profile = () => {
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{user?.address?.area || 'Not specified'}</p>
+                    <p className="mt-1 text-sm text-gray-900">{client?.address?.area || 'Not specified'}</p>
                   )}
                 </div>
 
@@ -348,7 +348,7 @@ const Profile = () => {
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{user?.address?.pincode || 'Not specified'}</p>
+                    <p className="mt-1 text-sm text-gray-900">{client?.address?.pincode || 'Not specified'}</p>
                   )}
                 </div>
               </div>

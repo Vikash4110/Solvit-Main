@@ -9,6 +9,7 @@ import { availabilityRouter } from "./routes/slotManager-routes.js";
 import { startCronJobs } from "./utils/cornJob.js";
 import { bookingRouter } from "./routes/booking-routes.js";
 import { paymentRouter } from "./routes/payment-router.js";
+import { clientDashboardRouter } from "./routes/client-dashboard-routes.js";
 import Razorpay from 'razorpay';
 dotenv.config();
 
@@ -32,13 +33,13 @@ export const instance = new Razorpay({
 });
 
 
-// Client Routes
+
 app.use("/api/v1/clients", clientRouter);
 app.use("/api/v1/counselors", counselorRouter);
 app.use("/api/v1/slotManagement", availabilityRouter);
-
 app.use("/api/v1/booking", bookingRouter);
 app.use("/api/v1/payment", paymentRouter);
+app.use("api/v1/client/dashboard",clientDashboardRouter)
 
 const Port = process.env.PORT || 8000;
 

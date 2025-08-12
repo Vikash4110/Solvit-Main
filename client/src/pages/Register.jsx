@@ -2,7 +2,7 @@ import { ArrowLeft, Camera, Mail } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useClientAuth } from "../contexts/ClientAuthContext";
 
 const Register = () => {
   const [step, setStep] = useState(1);
@@ -12,7 +12,7 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [profilePicture, setProfilePicture] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
-  const { register: registerUser, sendOtp, verifyOtp } = useAuth();
+  const { register:  clientRegister, sendOtp, verifyOtp } = useClientAuth();
   const navigate = useNavigate();
 
   // Step 1: Email and OTP
