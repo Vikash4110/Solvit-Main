@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import React from "react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import logo from "../../assets/Red Simple.jpeg";
+import logo from "../../assets/logo.png";
 
 const socialLinks = [
   { Icon: FaTwitter, url: "https://x.com/solvitforyou?s=21" },
@@ -99,16 +99,16 @@ const Footer = () => {
               <div className="flex items-center space-x-3">
                 <motion.img
                   src={logo}
-                  className="h-14 w-14 rounded-full object-cover"
+                  className="h-28 w-28  rounded-full object-cover bg-white"
                   alt="Solvit Logo"
                   variants={sectionVariants}
                 />
-                <motion.span
+                {/* <motion.span
                   className="text-3xl font-extrabold tracking-tight text-white"
                   variants={sectionVariants}
                 >
                   Solvit
-                </motion.span>
+                </motion.span> */}
               </div>
             </motion.div>
             <motion.p

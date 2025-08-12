@@ -13,12 +13,13 @@ import CounselorResetPassword from "./components/CounselorResetPassword";
 import ScrollToTop from "./components/ScrollToTop";
 import { ClientAuthProvider } from "./contexts/ClientAuthContext";
 import { CounselorAuthProvider } from "./contexts/CounselorAuthContext";
+
+// Existing Pages
 import About from "./pages/About";
 import CounselorApplication from "./pages/CounselorApplication";
 import CounselorDashboard from "./pages/CounselorDashboard";
 import CounselorLogin from "./pages/CounselorLogin";
 import CounselorRegister from "./pages/CounselorRegister";
-import Dashboard from "./pages/ClientDashboard";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
@@ -27,7 +28,10 @@ import ServicePage from "./pages/ServicePage";
 import ClientDashboard from "./pages/ClientDashboard";
 import BookCounselorCalendar from "./pages/bookCounselor";
 import BrowseCounselor from "./pages/browseCounselor";
-
+import ContactUs from "./pages/ContactUs";
+// ✅ Blog Pages - New Addition
+import Blogs from "./pages/Blogs";
+import BlogPost from "./pages/BlogPost";
 
 function App() {
   return (
@@ -37,15 +41,22 @@ function App() {
           <Navbar />
           <ScrollToTop />
           <Routes>
-            {/* Client Routes */}
+            {/* 🌍 PUBLIC ROUTES */}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<ContactUs />} />
+            
+            {/* ✅ BLOG ROUTES - Public Access (No authentication required for viewing) */}
+            <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blogs/:slug" element={<BlogPost />} />
+
+            {/* 🔐 CLIENT AUTHENTICATION ROUTES */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ClientForgotPassword />} />
             <Route path="/reset-password" element={<ClientResetPassword />} />
 
-            {/*Client Dashboard Routes*/}
+            {/* 👤 CLIENT PROTECTED ROUTES */}
             <Route
               path="/client/dashboard/*"
               element={
@@ -54,8 +65,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-
             <Route
               path="/profile"
               element={
@@ -80,7 +89,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* Counselor Routes */}
+
+            {/* 👩‍⚕️ COUNSELOR AUTHENTICATION ROUTES */}
             <Route path="/counselor/login" element={<CounselorLogin />} />
             <Route path="/counselor/register" element={<CounselorRegister />} />
             <Route
@@ -91,6 +101,8 @@ function App() {
               path="/counselor/reset-password"
               element={<CounselorResetPassword />}
             />
+
+            {/* 👩‍⚕️ COUNSELOR PROTECTED ROUTES */}
             <Route
               path="/counselor/dashboard"
               element={
@@ -107,14 +119,19 @@ function App() {
                 </CounselorProtectedRoute>
               }
             />
+
+            {/* 🏥 SERVICE ROUTES */}
             <Route path="/services/:serviceId" element={<ServicePage />} />
 
+            {/* 📋 LEGAL ROUTES */}
             <Route path="/term-condition" element={<TermCondition />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-            {/* Redirect root to login if needed */}
+            {/* ❌ 404 FALLBACK */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+
+          {/* 🔥 TOAST NOTIFICATIONS */}
           <Toaster
             position="top-right"
             toastOptions={{

@@ -101,6 +101,7 @@ const paymentVerification = wrapper(async (req, res) => {
       });
     }
 
+    
     // Step 2: Save payment info
     const payment = await Payment.create({
       razorpay_order_id,
@@ -214,7 +215,7 @@ const processBookingAfterPayment = async (clientId, slotId) => {
       slot: slotId,
       price,
       slotDuration: 45,
-      status: 'booked',
+      status: 'scheduled',
       paymentStatus: 'paid', // Mark as paid since payment is verified
       googleMeetLink: meetLink
     });

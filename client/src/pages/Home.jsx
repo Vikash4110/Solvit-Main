@@ -46,9 +46,9 @@ const Home = () => {
         <div className="bg-gradient-to-b from-purple-50/20 to-white py-16">
           <WhySolvit />
         </div>
-        <div className="bg-gradient-to-b from-white to-blue-50/30 py-16">
+        {/* <div className="bg-gradient-to-b from-white to-blue-50/30 py-16">
           <Review />
-        </div>
+        </div> */}
         <div className="bg-gradient-to-b from-blue-50/30 to-white py-16">
           <Faq />
         </div>

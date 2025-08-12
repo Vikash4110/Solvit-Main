@@ -5,12 +5,13 @@ import {
   ChartBarIcon,
   ClockIcon,
   Cog6ToothIcon,
-  UserCircleIcon,
+  PencilSquareIcon, // ✅ Better icon for blog management
 } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import MySlots from "../components/counselorDashboard/Myslots";
 import RecurringAvailabilityManager from "../components/counselorDashboard/RecurringAvailabilityManager";
 import { useCounselorAuth } from "../contexts/CounselorAuthContext";
+import BlogManagement from "../components/counselorDashboard/BlogManagement";
 
 const CounselorDashboard = () => {
   const { counselor, counselorLogout } = useCounselorAuth();
@@ -30,10 +31,10 @@ const CounselorDashboard = () => {
       description: "View upcoming appointments",
     },
     {
-      id: "profile",
-      name: "Profile",
-      icon: UserCircleIcon,
-      description: "Update your information",
+      id: "blogManagement",
+      name: "Blog Management", // ✅ Fixed typo: "Managaement" → "Management"
+      icon: PencilSquareIcon, // ✅ More appropriate icon for blog management
+      description: "Create and manage your blog posts", // ✅ Better description
     },
     {
       id: "analytics",
@@ -55,12 +56,36 @@ const CounselorDashboard = () => {
         return <RecurringAvailabilityManager />;
       case "slots":
         return <MySlots />;
-      case "profile":
-        return <div className="p-6">Profile management coming soon...</div>;
+      case "blogManagement":
+        return <BlogManagement />; // ✅ This is correctly implemented
       case "analytics":
-        return <div className="p-6">Analytics dashboard coming soon...</div>;
+        return (
+          <div className="p-6">
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <ChartBarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Analytics Dashboard
+              </h3>
+              <p className="text-gray-600">
+                Track your blog performance, client engagement, and more. Coming soon!
+              </p>
+            </div>
+          </div>
+        );
       case "settings":
-        return <div className="p-6">Settings panel coming soon...</div>;
+        return (
+          <div className="p-6">
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <Cog6ToothIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Settings Panel
+              </h3>
+              <p className="text-gray-600">
+                Customize your account preferences and notification settings. Coming soon!
+              </p>
+            </div>
+          </div>
+        );
       default:
         return <RecurringAvailabilityManager />;
     }
@@ -69,10 +94,10 @@ const CounselorDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
+      <div className="w-64 bg-white shadow-lg flex flex-col"> {/* ✅ Added flex flex-col */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center"> {/* ✅ Added gradient */}
               <span className="text-white font-semibold text-sm">
                 {counselor?.firstName?.charAt(0)}
                 {counselor?.lastName?.charAt(0)}
@@ -87,7 +112,8 @@ const CounselorDashboard = () => {
           </div>
         </div>
 
-        <nav className="mt-6">
+        {/* Navigation */}
+        <nav className="mt-6 flex-1"> {/* ✅ Added flex-1 */}
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -112,7 +138,8 @@ const CounselorDashboard = () => {
           })}
         </nav>
 
-        <div className="absolute bottom-0 w-64 p-6 border-t border-gray-200">
+        {/* Logout Button */}
+        <div className="p-6 border-t border-gray-200"> {/* ✅ Removed absolute positioning */}
           <button
             onClick={counselorLogout}
             className="w-full flex items-center text-gray-700 hover:text-red-600 transition-colors"

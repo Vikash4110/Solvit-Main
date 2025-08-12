@@ -480,7 +480,7 @@ const loginCounselor = wrapper(async (req, res) => {
 
   const loggedInCounselor = await Counselor.findOne({
     email: email.trim(),
-  }).select("_id fullName username email specialization application");
+  }).select("_id fullName username email specialization application profilePicture");
 
   const counselorData = loggedInCounselor.toObject();
   counselorData.applicationStatus =

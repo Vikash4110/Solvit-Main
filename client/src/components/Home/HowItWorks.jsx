@@ -235,7 +235,7 @@ const HowItWorks = () => {
           transition={{ delay: 0.6 }}
         >
           {/* Trust Message */}
-          <p className="text-slate-500 text-sm max-w-md mx-auto">
+          <p className="text-slate-500 text-xl max-w-md mx-auto">
             Join 10,000+ users who trust Solvit for their mental health journey.
             Start with a free consultation today.
           </p>

@@ -126,7 +126,7 @@ const WhySolvit = () => {
         </motion.div>
 
         {/* Call-to-Action */}
-        <motion.div
+        {/* <motion.div
           className="mt-16 text-center"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -140,7 +140,7 @@ const WhySolvit = () => {
           >
             <Link to="client-register">Start Your Journey Today</Link>
           </motion.button>
-        </motion.div>
+        </motion.div> */}
       </div>
     </motion.section>
   );

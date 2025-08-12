@@ -40,7 +40,7 @@ const CounselorAuth = () => {
 
       const result = await counselorLogin(data.email, data.password);
       if (result.success) {
-        navigate("/counselor/dashboard");
+        navigate("/");
       } else {
         toast.error(result.message || "Invalid email or password");
       }

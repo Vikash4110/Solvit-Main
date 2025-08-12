@@ -14,12 +14,11 @@ export const API_ENDPOINTS = {
   CLIENT_FORGOT_PASSWORD: "/clients/forgot-password",
   CLIENT_RESET_PASSWORD: "/clients/reset-password",
   
-
-  // 🆕 Client Dashboard MyBooking endpoints
-  CLIENT_BOOKINGS: "/client/dashboard/bookings", // GET with query params
-  CLIENT_BOOKING_DETAILS: "/client/dashboard/bookings", // GET /:id
-  CLIENT_BOOKING_CANCEL: "/client/dashboard/bookings", // POST /:id/cancel
-  CLIENT_BOOKING_RESCHEDULE: "/client/dashboard/bookings", // POST /:id/reschedule
+  // Client Dashboard MyBooking endpoints
+  CLIENT_BOOKINGS: "/client/dashboard/bookings",
+  CLIENT_BOOKING_DETAILS: "/client/dashboard/bookings",
+  CLIENT_BOOKING_CANCEL: "/client/dashboard/bookings",
+  CLIENT_BOOKING_RESCHEDULE: "/client/dashboard/bookings",
 
   // Counselor endpoints  
   COUNSELOR_LOGIN: "/counselors/login-counselor",
@@ -47,4 +46,26 @@ export const API_ENDPOINTS = {
   SLOT_MANAGEMENT_MY_RECURRING: "/slotManagement/my-recurring-availability",
   SLOT_MANAGEMENT_SET_RECURRING: "/slotManagement/set-recurring-availability",
   SLOT_MANAGEMENT_GENERATE_SLOTS: "/slotManagement/generating-actual-slots",
-}; 
+
+  // ✅ CORRECTED BLOG ENDPOINTS - Unified approach
+  // Public blog endpoints (no auth required)
+  BLOGS_GET_ALL: "/blogs",                          
+  BLOGS_GET_BY_SLUG: "/blogs",                      
+  BLOGS_GET_CATEGORIES: "/blogs/categories",        
+
+  // ✅ UNIFIED endpoints for both clients and counselors
+  BLOGS_LIKE: "/blogs",                            // POST /:blogId/like - Both users
+  BLOGS_COMMENT: "/blogs",                         // POST /:blogId/comments - Both users
+
+  // Counselor blog management endpoints
+  BLOGS_CREATE: "/blogs",                          
+  BLOGS_UPDATE: "/blogs",                          
+  BLOGS_DELETE: "/blogs",                          
+
+  // Counselor dashboard blog endpoints
+  BLOGS_COUNSELOR_MY_BLOGS: "/blogs/counselor/my-blogs",  
+  BLOGS_COUNSELOR_STATS: "/blogs/counselor/stats",
+  
+  // ✅ Contact endpoint
+  CONTACT_SEND_EMAIL: "/contact/send-email",
+};

@@ -10,6 +10,8 @@ import { startCronJobs } from "./utils/cornJob.js";
 import { bookingRouter } from "./routes/booking-routes.js";
 import { paymentRouter } from "./routes/payment-router.js";
 import { clientDashboardRouter } from "./routes/client-dashboard-routes.js";
+import { blogsRouter } from "./routes/blog-routes.js";
+import { contactRouter } from './routes/contact-routes.js';
 import Razorpay from 'razorpay';
 dotenv.config();
 
@@ -39,8 +41,9 @@ app.use("/api/v1/counselors", counselorRouter);
 app.use("/api/v1/slotManagement", availabilityRouter);
 app.use("/api/v1/booking", bookingRouter);
 app.use("/api/v1/payment", paymentRouter);
-app.use("api/v1/client/dashboard",clientDashboardRouter)
-
+app.use("/api/v1/client/dashboard",clientDashboardRouter)
+app.use("/api/v1/blogs", blogsRouter);
+app.use('/api/v1/contact', contactRouter);
 const Port = process.env.PORT || 8000;
 
 connectDb()

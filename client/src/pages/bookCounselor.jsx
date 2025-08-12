@@ -91,7 +91,7 @@ const BookCounselorCalendar = () => {
 
   // Get client data for payment
   const getClientData = () => {
-    const clientData = localStorage.getItem('user');
+    const clientData = localStorage.getItem('client');
     return clientData ? JSON.parse(clientData) : null;
   };
 
@@ -108,7 +108,7 @@ const BookCounselorCalendar = () => {
         setBookingLoading(false);
         return;
       }
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('clientAccessToken');
       
       if (!token) {
         setMessage({ type: 'error', text: 'Authentication required. Please login again.' });
@@ -143,7 +143,7 @@ const BookCounselorCalendar = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('clientAccessToken')}`
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -166,7 +166,7 @@ const BookCounselorCalendar = () => {
         key: key,
         amount: orderData.order.amount,
         currency: 'INR',
-        name: 'MindCare',
+        name: 'Solvit',
         description: `Counseling Session with ${counselor.fullName}`,
         order_id: orderData.order.id,
         handler: async (response) => {
@@ -221,7 +221,7 @@ const BookCounselorCalendar = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('clientAccessToken')}`
         },
         credentials: 'include',
         body: JSON.stringify(paymentData)

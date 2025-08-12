@@ -1,263 +1,211 @@
+import React from "react";
 import {
   Brain,
   CheckCircle,
   Heart,
   MessageCircle,
   Shield,
-  Sparkles,
   Star,
   UserPlus,
   Users,
+  Calendar,
+  Award,
+  Clock,
+  ArrowRight,
 } from "lucide-react";
-import React from "react";
+import { Link } from 'react-router-dom';
+import logo from "../../assets/logo.png";
 import Img from "../../assets/vecteezy_world-mental-health-day-logo_51045099.png";
+import { useCounselorAuth } from "../../contexts/CounselorAuthContext";
+import { useClientAuth } from "../../contexts/ClientAuthContext";
 
 const HeroSection = () => {
+  const { counselor, counselorLoading } = useCounselorAuth();
+  const { client, clientLoading } = useClientAuth();
+
+  const isAuthenticated = !!(counselor || client);
+  const isLoading = counselorLoading || clientLoading;
+
   return (
-    <section className="relative py-20 min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      {/* Enhanced Background Elements */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.08),transparent_50%)]"></div>
-      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-tr from-indigo-400/15 to-cyan-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 py-20 px-4 sm:px-6 lg:px-8">
+      {/* Background floating blobs */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-indigo-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse delay-700" />
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          {/* Left Side - Content */}
-          <div className="space-y-8 animate-fade-in-up">
-            {/* Enhanced Trust Badge */}
-            <div>
-              <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 px-6 py-3 rounded-full text-sm font-semibold mb-6 shadow-lg border border-blue-200/50 backdrop-blur-sm">
-                <Shield className="w-4 h-4" />
-                <span>Verified & Licensed Professionals</span>
-                <div className="flex space-x-1 ml-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-3 h-3 text-yellow-500 fill-yellow-500"
-                    />
-                  ))}
-                </div>
-                <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
-                  4.9/5
-                </span>
-              </div>
-            </div>
-
-            {/* Enhanced Main Heading */}
-            <h1 className="text-5xl md:text-7xl font-black leading-[1.1] tracking-tight">
-              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent animate-gradient">
-                Transform
-              </span>
-              <br />
-              <span className="text-slate-800">Your Life with</span>
-              <br />
-              <span className="bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-4">
-                Expert Support.
-                <Sparkles className="w-12 h-12 text-yellow-500 animate-pulse" />
-              </span>
-            </h1>
-            {/* Enhanced Subtitle */}
-            <p className="text-xl text-slate-600 max-w-xl leading-relaxed font-medium">
-              Connect with certified counselors, therapists, and life coaches in
-              a safe, stigma-free environment. Your mental wellness journey
-              starts here with personalized care that truly understands you.
-            </p>
-
-            {/* Enhanced Trust Indicators */}
-            <div className="flex items-center space-x-8 py-4">
-              <div className="flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-4 py-3 rounded-full shadow-lg border border-slate-200/50">
-                <Users className="w-5 h-5 text-blue-600" />
-                <span className="font-bold text-slate-800 text-lg">50K+</span>
-                <span className="text-sm text-slate-600">Happy Clients</span>
-              </div>
-              <div className="flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-4 py-3 rounded-full shadow-lg border border-slate-200/50">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span className="font-bold text-slate-800 text-lg">500+</span>
-                <span className="text-sm text-slate-600">Licensed Experts</span>
-              </div>
-            </div>
-
-            {/* Enhanced CTA Buttons */}
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
-              <button className="group relative bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center space-x-3 transition-all duration-300 shadow-2xl hover:shadow-3xl hover:scale-105 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-700 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                <MessageCircle className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">Start Your Journey</span>
-                <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              </button>
-
-              <button className="group border-2 border-slate-300 bg-white/90 backdrop-blur-sm text-slate-700 px-8 py-4 rounded-2xl font-bold flex items-center justify-center space-x-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105">
-                <UserPlus className="w-5 h-5 transition-colors duration-300 group-hover:text-blue-600" />
-                <span>Join as Expert</span>
-              </button>
-            </div>
-
-            {/* Enhanced Additional Info */}
-            <div className="pt-6 flex flex-wrap items-center gap-4 text-sm">
-              <span className="flex items-center gap-2 text-slate-600 bg-white/60 px-3 py-2 rounded-full backdrop-blur-sm border border-slate-200/50">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                24/7 Available
-              </span>
-              <span className="flex items-center gap-2 text-slate-600 bg-white/60 px-3 py-2 rounded-full backdrop-blur-sm border border-slate-200/50">
-                <Shield className="w-3 h-3 text-blue-500" />
-                Secure & Private
-              </span>
-              <span className="flex items-center gap-2 text-slate-600 bg-white/60 px-3 py-2 rounded-full backdrop-blur-sm border border-slate-200/50">
-                <Heart className="w-3 h-3 text-red-500" />
-                Affordable Care
-              </span>
-            </div>
+      {/* Content container */}
+      <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+        {/* Left content - text and buttons */}
+        <div className="space-y-8 animate-fadeInUp">
+          <div className="inline-flex items-center space-x-3 rounded-full bg-blue-100 px-5 py-3 text-blue-700 font-semibold shadow-lg ring-1 ring-blue-200">
+            <Shield className="w-5 h-5" />
+            <span>Verified & Licensed Counselors</span>
           </div>
 
-          {/* Right Side - Enhanced Visual with Mental Health Background */}
-          <div className="relative lg:pl-8 animate-fade-in-right">
+          {/* Headline */}
+          <h1 className="text-5xl sm:text-6xl font-bold leading-tight tracking-tight mb-1">
+            <span className="text-gray-900">Progress in</span>
+            <br />
+            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Mental Wellness
+            </span>
+            <br />
+            <span className="text-gray-900">— with Solvit</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-xl text-gray-600 max-w-2xl">
+            Partner with certified counselors in a safe, supportive environment.
+            Start your journey towards better mental health — personalized,
+            secure, and stigma-free.
+          </p>
+
+          {/* ✅ CONDITIONAL BUTTONS - Only show when NOT authenticated */}
+          {!isAuthenticated && !isLoading && (
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                to="/login"
+                className="inline-flex items-center justify-center bg-indigo-600 text-white rounded-xl px-8 py-4 font-semibold shadow-lg hover:bg-indigo-700 transition-all duration-300 hover:scale-105"
+              >
+                <MessageCircle className="w-6 h-6 mr-2" />
+                Start Your Journey
+              </Link>
+              <Link
+                to="/counselor/login"
+                className="inline-flex items-center justify-center border-2 border-indigo-600 text-indigo-600 rounded-xl px-8 py-4 font-semibold hover:bg-indigo-50 transition-all duration-300"
+              >
+                <UserPlus className="w-6 h-6 mr-2" />
+                Join as Expert
+              </Link>
+            </div>
+          )}
+
+          {/* ✅ UPDATED: Styled welcome message aligned with hero section design */}
+          {isAuthenticated && (
             <div className="relative">
-              {/* Main Visual Container with Mental Health Background */}
-              <div className="relative bg-gradient-to-br from-white/95 to-blue-50/95 rounded-3xl p-8 shadow-2xl border border-blue-100 backdrop-blur-sm overflow-hidden">
-                {/* Mental Health Background Image */}
-
-                <img
-                  src={Img}
-                  className="absolute inset-0 opacity-20 bg-cover bg-center bg-no-repeat rounded-3xl"
-                />
-
-                {/* Gradient Overlay for better text readability */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-blue-50/80 to-indigo-50/90 rounded-3xl"></div>
-
-                {/* Content over background */}
-                <div className="relative z-10 aspect-square bg-gradient-to-br from-transparent via-white/30 to-transparent rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
-                  <div className="text-center space-y-6 p-8">
-                    <div className="relative">
-                      <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl animate-pulse">
-                        <Brain className="w-12 h-12 text-white" />
-                      </div>
-                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center animate-bounce">
-                        <Heart className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h3 className="text-2xl font-bold text-slate-800 drop-shadow-sm">
-                        Professional Mental Care
-                      </h3>
-                      <p className="text-slate-600 font-medium drop-shadow-sm">
-                        Personalized therapy and support for your unique mental
-                        wellness journey
-                      </p>
-
-                      {/* Additional mental health indicators */}
-                      <div className="flex justify-center gap-4 pt-4">
-                        <div className="flex items-center gap-2 bg-white/80 px-3 py-2 rounded-full shadow-sm backdrop-blur-sm">
-                          <MessageCircle className="w-4 h-4 text-blue-500" />
-                          <span className="text-xs font-medium text-slate-700">
-                            Therapy
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-white/80 px-3 py-2 rounded-full shadow-sm backdrop-blur-sm">
-                          <Users className="w-4 h-4 text-green-500" />
-                          <span className="text-xs font-medium text-slate-700">
-                            Support
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+              {/* Background gradient similar to floating blobs */}
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-100/50 via-blue-100/50 to-purple-100/50 rounded-2xl blur-sm" />
+              
+              {/* Main welcome card */}
+              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8">
+                {/* Welcome header with gradient text */}
+                <div className="flex items-center space-x-4 mb-6">
+                  <div className="p-3 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">
+                      <span className="text-gray-900">Welcome back, </span>
+                      <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        {counselor?.fullName || client?.fullName}
+                      </span>
+                      <span className="text-gray-900">!</span>
+                    </h2>
+                    <p className="text-gray-600 mt-1">
+                      {counselor 
+                        ? "Ready to help more clients on their wellness journey?"
+                        : "Continue your path to better mental health."
+                      }
+                    </p>
                   </div>
                 </div>
 
-                {/* Enhanced Floating Elements */}
-                <div className="absolute -top-4 -right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 rounded-full shadow-2xl animate-bounce border-2 border-white">
-                  <CheckCircle className="w-5 h-5" />
+                {/* Action buttons with hero section styling */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link
+                    to={counselor ? "/counselor/dashboard" : "/client/dashboard"}
+                    className="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl px-6 py-3 font-semibold shadow-lg hover:from-indigo-700 hover:to-blue-700 transition-all duration-300 hover:scale-105"
+                  >
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Go to Dashboard
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                  
+                  {!counselor && (
+                    <Link
+                      to="/browse-counselors"
+                      className="inline-flex items-center justify-center border-2 border-indigo-600 text-indigo-600 rounded-xl px-6 py-3 font-semibold hover:bg-indigo-50 transition-all duration-300"
+                    >
+                      <Users className="w-5 h-5 mr-2" />
+                      Find Counselors
+                    </Link>
+                  )}
+                  
+                  {/* {counselor && (
+                    <Link
+                      to="/blogs"
+                      className="inline-flex items-center justify-center border-2 border-purple-600 text-purple-600 rounded-xl px-6 py-3 font-semibold hover:bg-purple-50 transition-all duration-300"
+                    >
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      Manage Blogs
+                    </Link>
+                  )} */}
                 </div>
 
-                <div className="absolute -bottom-4 -left-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-3 rounded-full shadow-2xl animate-bounce delay-1000 border-2 border-white">
-                  <Shield className="w-5 h-5" />
-                </div>
-              </div>
-
-              {/* Enhanced Decorative Background Elements */}
-              <div className="absolute -top-12 -left-12 w-24 h-24 bg-gradient-to-br from-blue-400/30 to-purple-400/30 rounded-full blur-xl animate-pulse"></div>
-              <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-gradient-to-br from-cyan-400/30 to-blue-400/30 rounded-full blur-xl animate-pulse delay-700"></div>
-            </div>
-
-            {/* Enhanced Stats Cards */}
-            <div className="absolute -left-8 top-20 bg-white/95 backdrop-blur-sm p-5 rounded-2xl shadow-2xl border border-slate-200/50 hover:scale-110 transition-transform duration-300 cursor-pointer">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
-                  <Star className="w-6 h-6 text-green-600 fill-green-600" />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-800 text-lg">4.9/5</div>
-                  <div className="text-xs text-slate-500 font-medium">
-                    Client Rating
-                  </div>
+                {/* Status indicators matching hero badges */}
+                <div className="flex flex-wrap gap-3 mt-6">
+                  <span className="inline-flex items-center space-x-2 bg-green-100 text-green-700 px-4 py-2 rounded-full shadow-sm font-medium">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span>
+                      {counselor ? "Available for Sessions" : "Active Member"}
+                    </span>
+                  </span>
+                  
+                  <span className="inline-flex items-center space-x-2 bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full shadow-sm font-medium">
+                    <Shield className="w-4 h-4" />
+                    <span>Verified Account</span>
+                  </span>
                 </div>
               </div>
             </div>
+          )}
 
-            <div className="absolute -right-8 bottom-20 bg-white/95 backdrop-blur-sm p-5 rounded-2xl shadow-2xl border border-slate-200/50 hover:scale-110 transition-transform duration-300 cursor-pointer">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-800 text-lg">98%</div>
-                  <div className="text-xs text-slate-500 font-medium">
-                    Success Rate
-                  </div>
-                </div>
+          {/* Feature badges */}
+          <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+            <span className="inline-flex items-center space-x-2 bg-white/80 px-3 py-2 rounded-full shadow-sm">
+              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <span>24/7 Availability</span>
+            </span>
+            <span className="inline-flex items-center space-x-2 bg-white/80 px-3 py-2 rounded-full shadow-sm">
+              <Shield className="w-4 h-4 text-indigo-600" />
+              <span>Secure & Confidential</span>
+            </span>
+            <span className="inline-flex items-center space-x-2 bg-white/80 px-3 py-2 rounded-full shadow-sm">
+              <Heart className="w-4 h-4 text-red-500" />
+              <span>Affordable Care</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Right content - image with floating elements */}
+        <div className="relative flex justify-center">
+          <div className="relative">
+            <div className="rounded-3xl overflow-hidden shadow-2xl ring-1 ring-black/5">
+              <img
+                src={Img}
+                alt="Mental Health Journey"
+                className="w-full h-auto object-cover max-w-md hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+
+            {/* Floating icons */}
+            <div className="absolute -top-6 -left-6 p-4 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 shadow-lg animate-pulse">
+              <Brain className="w-8 h-8 text-white" />
+            </div>
+            <div className="absolute -bottom-6 -right-6 p-3 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 shadow-xl animate-bounce">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
+
+            <div className="absolute bottom-12 -left-12 bg-white rounded-2xl p-4 shadow-lg border border-gray-100 hover:scale-110 transition-transform duration-300">
+              <div className="text-center">
+                <div className="font-bold text-2xl text-green-600">98%</div>
+                <div className="text-xs text-gray-500">Success Rate</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fade-in-right {
-          from {
-            opacity: 0;
-            transform: translateX(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes gradient {
-          0%,
-          100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-
-        .animate-fade-in-up {
-          animation: fade-in-up 0.8s ease-out;
-        }
-
-        .animate-fade-in-right {
-          animation: fade-in-right 1s ease-out 0.3s both;
-        }
-
-        .animate-gradient {
-          background-size: 200% 200%;
-          animation: gradient 3s ease infinite;
-        }
-      `}</style>
     </section>
   );
 };
