@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ProtectedRoute from '../components/ProtectedRoute';
 import ClientDashboardTopbar from '../components/client/ClientDashboard/ClientDashbardTopbar';
-import ClientDashboardSidebar from '../components/client/clientDashboard/ClientDashboardSidebar';
+import ClientDashboardSidebar from '../components/client/ClientDashboard/ClientDashboardSidebar';
 
 // Import all dashboard components
 
