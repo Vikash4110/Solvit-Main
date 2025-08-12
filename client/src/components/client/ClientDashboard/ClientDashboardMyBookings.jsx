@@ -1,41 +1,39 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
   FaCalendarAlt,
   FaClock,
   FaUser,
   FaVideo,
   FaTimes,
+  FaEdit,
   FaReceipt,
   FaExclamationTriangle,
-  FaSpinner,
-} from "react-icons/fa";
-import { toast, Toaster } from "react-hot-toast";
-
-import { useClientAuth } from "../../../contexts/ClientAuthContext";
-import { API_BASE_URL, API_ENDPOINTS } from "../../../config/api";
+  FaSpinner
+} from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
+import { useClientAuth } from '../../../contexts/ClientAuthContext';
+import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
 
 export const ClientDashboardMyBookings = () => {
-  const [activeTab, setActiveTab] = useState("upcoming");
+  const [activeTab, setActiveTab] = useState('upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
-    totalCount: 0,
+    totalCount: 0
   });
-  const [cancelModal, setCancelModal] = useState({
-    show: false,
-    booking: null,
-  });
-  const [cancelReason, setCancelReason] = useState("");
+  const [cancelModal, setCancelModal] = useState({ show: false, booking: null });
+  const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
 
   const { client } = useClientAuth();
 
+  // ✅ REMOVED pending-payments tab
   const tabs = [
-    { key: "upcoming", label: "Upcoming" },
-    { key: "history", label: "History" },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'history', label: 'History' }
   ];
 
   useEffect(() => {
@@ -45,21 +43,21 @@ export const ClientDashboardMyBookings = () => {
   const fetchBookings = async (page = 1) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("clientAccessToken");
+      const token = localStorage.getItem('clientAccessToken');
       const queryParams = new URLSearchParams({
         filter: activeTab,
         page: page.toString(),
-        perPage: "10",
+        perPage: '10'
       });
 
       const response = await fetch(
         `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKINGS}?${queryParams}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           },
-          credentials: "include",
+          credentials: 'include'
         }
       );
 
@@ -67,13 +65,12 @@ export const ClientDashboardMyBookings = () => {
       if (data.success) {
         setBookings(data.data.bookings);
         setPagination(data.data.pagination);
-        console.log(bookings);
       } else {
-        toast.error(data.message || "Failed to load bookings");
+        toast.error(data.message || 'Failed to load bookings');
       }
     } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast.error("Failed to load bookings");
+      console.error('Error fetching bookings:', error);
+      toast.error('Failed to load bookings');
     } finally {
       setLoading(false);
     }
@@ -81,85 +78,98 @@ export const ClientDashboardMyBookings = () => {
 
   const handleCancelBooking = async () => {
     if (!cancelModal.booking || !cancelReason.trim()) {
-      toast.error("Please provide a cancellation reason");
+      toast.error('Please provide a cancellation reason');
       return;
     }
 
     try {
       setCancelLoading(true);
-      const token = localStorage.getItem("clientAccessToken");
+      const token = localStorage.getItem('clientAccessToken');
       const response = await fetch(
         `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKING_CANCEL}/${cancelModal.booking.bookingId}/cancel`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           },
-          credentials: "include",
-          body: JSON.stringify({ reason: cancelReason }),
+          credentials: 'include',
+          body: JSON.stringify({ reason: cancelReason })
         }
       );
 
       const data = await response.json();
       if (data.success) {
-        toast.success(data.message || "Booking cancelled successfully");
+        toast.success(data.message || 'Booking cancelled successfully');
         setCancelModal({ show: false, booking: null });
-        setCancelReason("");
+        setCancelReason('');
         fetchBookings();
       } else {
-        toast.error(data.message || "Failed to cancel booking");
+        toast.error(data.message || 'Failed to cancel booking');
       }
     } catch (error) {
-      console.error("Cancel error:", error);
-      toast.error("Failed to cancel booking");
+      console.error('Cancel error:', error);
+      toast.error('Failed to cancel booking');
     } finally {
       setCancelLoading(false);
     }
   };
 
-  // 🆕 Handle join session click
-  const handleJoinSession = (booking) => {
-    if (booking.canJoin && booking.meetingLink) {
-      // If can join and meeting link exists, open the link
-      window.open(booking.meetingLink, "_blank", "noopener,noreferrer");
-    } else {
-      toast("You can join the session 10 minutes before the scheduled time", {
-        icon: "ℹ️",
-      });
+  const handleRescheduleBooking = async (bookingId, newSlotId, reason) => {
+    try {
+      const token = localStorage.getItem('clientAccessToken');
+      const response = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKING_RESCHEDULE}/${bookingId}/reschedule`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ newSlotId, reason })
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message || 'Booking rescheduled successfully');
+        fetchBookings();
+      } else {
+        toast.error(data.message || 'Failed to reschedule booking');
+      }
+    } catch (error) {
+      console.error('Reschedule error:', error);
+      toast.error('Failed to reschedule booking');
     }
   };
 
   const formatDateTime = (date, startTime) => {
-    if (!date || !startTime) return { date: "TBD", time: "TBD" };
+    if (!date || !startTime) return { date: 'TBD', time: 'TBD' };
     const sessionDate = new Date(date);
     return {
-      date: sessionDate.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
+      date: sessionDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
       }),
-      time: startTime,
+      time: startTime
     };
   };
 
   const getStatusBadge = (status) => {
     const statusStyles = {
-      scheduled: "bg-blue-100 text-blue-800",
-      booked: "bg-green-100 text-green-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      completed: "bg-gray-100 text-gray-800",
-      cancelled: "bg-red-100 text-red-800",
-      "no-show": "bg-orange-100 text-orange-800",
+      scheduled: 'bg-blue-100 text-blue-800',
+      booked: 'bg-green-100 text-green-800',
+      pending: 'bg-yellow-100 text-yellow-800',
+      completed: 'bg-gray-100 text-gray-800',
+      cancelled: 'bg-red-100 text-red-800',
+      'no-show': 'bg-orange-100 text-orange-800'
     };
 
     return (
-      <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${
-          statusStyles[status] || "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {status?.replace("-", " ").toUpperCase()}
+      <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}>
+        {status?.replace('-', ' ').toUpperCase()}
       </span>
     );
   };
@@ -197,11 +207,9 @@ export const ClientDashboardMyBookings = () => {
                 </h3>
                 {getStatusBadge(booking.status)}
               </div>
-
+              
               {booking.specialization && (
-                <p className="text-sm text-gray-600 mb-2">
-                  {booking.specialization}
-                </p>
+                <p className="text-sm text-gray-600 mb-2">{booking.specialization}</p>
               )}
 
               <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -223,29 +231,18 @@ export const ClientDashboardMyBookings = () => {
 
         {/* Actions */}
         <div className="mt-4 flex flex-wrap gap-2">
-          {/* 🆕 Always show Join Session button, but with different states */}
-          {booking.status === "scheduled" && (
-            <button
-              onClick={() => handleJoinSession(booking)}
-              className={`inline-flex items-center px-4 py-2 rounded-md transition-colors ${
-                booking.canJoin && booking.meetingLink
-                  ? "bg-green-600 text-white hover:bg-green-700"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-              title={
-                booking.canJoin && booking.meetingLink
-                  ? "Click to join the session"
-                  : "Join available 10 minutes before session time"
-              }
+          {booking.canJoin && booking.meetingLink && (
+            <a
+              href={booking.meetingLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
             >
               <FaVideo className="mr-2" />
-              {booking.canJoin && booking.meetingLink
-                ? "Join Session"
-                : "Join Session"}
-            </button>
+              Join Session
+            </a>
           )}
 
-          {/* Cancel button - only for upcoming bookings */}
           {booking.canCancel && (
             <button
               onClick={() => setCancelModal({ show: true, booking })}
@@ -256,11 +253,23 @@ export const ClientDashboardMyBookings = () => {
             </button>
           )}
 
-          {/* Receipt button */}
-          <button
+          {booking.canReschedule && (
+            <button 
+              onClick={() => {
+                // Navigate to reschedule page or open modal
+                toast.info('Reschedule functionality coming soon');
+              }}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              <FaEdit className="mr-2" />
+              Reschedule
+            </button>
+          )}
+
+          <button 
             onClick={() => {
               // Navigate to receipt/invoice page
-              window.open(`/receipt/${booking.bookingId}`, "_blank");
+              window.open(`/receipt/${booking.bookingId}`, '_blank');
             }}
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
           >
@@ -269,20 +278,11 @@ export const ClientDashboardMyBookings = () => {
           </button>
         </div>
 
-        {/* Additional info */}
-        <div className="mt-3 text-xs text-gray-500 space-y-1">
-          {booking.cancellationDeadline && booking.canCancel && (
-            <div>
-              Cancel by:{" "}
-              {new Date(booking.cancellationDeadline).toLocaleString()}
-            </div>
-          )}
-          {!booking.canJoin && booking.status === "booked" && (
-            <div className="text-blue-600">
-              💡 Join button will be active 10 minutes before session time
-            </div>
-          )}
-        </div>
+        {booking.cancellationDeadline && booking.canCancel && (
+          <div className="mt-3 text-xs text-gray-500">
+            Cancel by: {new Date(booking.cancellationDeadline).toLocaleString()}
+          </div>
+        )}
       </motion.div>
     );
   };
@@ -304,8 +304,8 @@ export const ClientDashboardMyBookings = () => {
               onClick={() => setActiveTab(tab.key)}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.key
-                  ? "border-indigo-500 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               {tab.label}
@@ -328,18 +328,17 @@ export const ClientDashboardMyBookings = () => {
         <div className="text-center py-12">
           <div className="text-gray-500">
             <FaCalendarAlt className="mx-auto h-12 w-12 mb-4" />
-            <p className="text-lg">
-              No {activeTab.replace("-", " ")} bookings found
-            </p>
+            <p className="text-lg">No {activeTab.replace('-', ' ')} bookings found</p>
             <p className="text-sm mt-2">
-              {activeTab === "upcoming" &&
-                "You don't have any upcoming sessions scheduled."}
-              {activeTab === "history" && "No past sessions to show."}
+              {activeTab === 'upcoming' && "You don't have any upcoming sessions scheduled."}
+              {activeTab === 'history' && "No past sessions to show."}
             </p>
           </div>
         </div>
       ) : (
-        <div className="space-y-4">{bookings.map(renderBookingCard)}</div>
+        <div className="space-y-4">
+          {bookings.map(renderBookingCard)}
+        </div>
       )}
 
       {/* Pagination */}
@@ -364,31 +363,27 @@ export const ClientDashboardMyBookings = () => {
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700">
-                Showing{" "}
+                Showing{' '}
                 <span className="font-medium">
                   {(pagination.currentPage - 1) * 10 + 1}
-                </span>{" "}
-                to{" "}
+                </span>{' '}
+                to{' '}
                 <span className="font-medium">
                   {Math.min(pagination.currentPage * 10, pagination.totalCount)}
-                </span>{" "}
-                of <span className="font-medium">{pagination.totalCount}</span>{" "}
-                results
+                </span>{' '}
+                of <span className="font-medium">{pagination.totalCount}</span> results
               </p>
             </div>
             <div>
               <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                {Array.from(
-                  { length: pagination.totalPages },
-                  (_, i) => i + 1
-                ).map((page) => (
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => fetchBookings(page)}
                     className={`relative inline-flex items-center px-4 py-2 text-sm font-medium ${
                       page === pagination.currentPage
-                        ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                     } border`}
                   >
                     {page}
@@ -409,9 +404,7 @@ export const ClientDashboardMyBookings = () => {
             className="bg-white rounded-lg max-w-md w-full p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Cancel Booking
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Cancel Booking</h3>
               <button
                 onClick={() => setCancelModal({ show: false, booking: null })}
                 className="text-gray-400 hover:text-gray-600"
@@ -422,7 +415,7 @@ export const ClientDashboardMyBookings = () => {
 
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-2">
-                Are you sure you want to cancel your session with{" "}
+                Are you sure you want to cancel your session with{' '}
                 <strong>{cancelModal.booking?.counselorName}</strong>?
               </p>
               <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
@@ -430,9 +423,8 @@ export const ClientDashboardMyBookings = () => {
                   <FaExclamationTriangle className="h-5 w-5 text-yellow-400" />
                   <div className="ml-3">
                     <p className="text-sm text-yellow-700">
-                      Cancellation must be made at least 24 hours before the
-                      session. Refunds will be processed within 5-7 business
-                      days.
+                      Cancellation must be made at least 24 hours before the session.
+                      Refunds will be processed within 5-7 business days.
                     </p>
                   </div>
                 </div>

@@ -41,6 +41,8 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     enum: ["paid", "pending", "refunded","failed"],
     default: "pending",
+    enum: ["paid", "pending", "refunded","failed"],
+    default: "pending",
   },
   
   googleMeetLink : {

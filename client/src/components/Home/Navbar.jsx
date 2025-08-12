@@ -19,6 +19,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import { useCounselorAuth } from "../../contexts/CounselorAuthContext";
 import { useClientAuth } from "../../contexts/ClientAuthContext";
+import { useClientAuth } from "../../contexts/ClientAuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,16 +42,10 @@ const Navbar = () => {
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        userDropdownRef.current &&
-        !userDropdownRef.current.contains(event.target)
-      ) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
         setIsUserDropdownOpen(false);
       }
-      if (
-        servicesDropdownRef.current &&
-        !servicesDropdownRef.current.contains(event.target)
-      ) {
+      if (servicesDropdownRef.current && !servicesDropdownRef.current.contains(event.target)) {
         setIsServicesDropdownOpen(false);
       }
     };
@@ -59,7 +54,9 @@ const Navbar = () => {
   }, []);
 
   // Navbar background change on scroll
+  // Navbar background change on scroll
   useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -70,6 +67,7 @@ const Navbar = () => {
     setIsOpen(false);
     setIsUserDropdownOpen(false);
     setIsServicesDropdownOpen(false);
+    setMobileUserDropdownOpen(false);
     setMobileUserDropdownOpen(false);
   }, [location]);
 

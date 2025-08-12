@@ -20,6 +20,7 @@ import CounselorApplication from "./pages/CounselorApplication";
 import CounselorDashboard from "./pages/CounselorDashboard";
 import CounselorLogin from "./pages/CounselorLogin";
 import CounselorRegister from "./pages/CounselorRegister";
+import Dashboard from "./pages/ClientDashboard";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
@@ -28,10 +29,7 @@ import ServicePage from "./pages/ServicePage";
 import ClientDashboard from "./pages/ClientDashboard";
 import BookCounselorCalendar from "./pages/bookCounselor";
 import BrowseCounselor from "./pages/browseCounselor";
-import ContactUs from "./pages/ContactUs";
-// ✅ Blog Pages - New Addition
-import Blogs from "./pages/Blogs";
-import BlogPost from "./pages/BlogPost";
+
 
 function App() {
   return (
@@ -62,9 +60,12 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ClientDashboard />
+                  <ClientDashboard />
                 </ProtectedRoute>
               }
             />
+
+
             <Route
               path="/profile"
               element={
