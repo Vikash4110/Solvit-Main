@@ -1,5 +1,7 @@
-export const ClientDashboardBookNewSession = ()=>{
-    return (<>
-        <h1>BookNewSession</h1>
-    </>)
-}
+export const ClientDashboardBookNewSession = () => {
+  return (
+    <>
+      <h1>BookNewSession</h1>
+    </>
+  );
+};

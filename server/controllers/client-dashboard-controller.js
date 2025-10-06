@@ -1,75 +1,78 @@
-import mongoose from "mongoose";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-import timezone from "dayjs/plugin/timezone.js";
-import { Booking } from "../models/booking-model.js";
-import { GeneratedSlot } from "../models/generatedSlots-model.js";
-import { Payment } from "../models/payment-model.js";
-import { wrapper } from "../utils/wrapper.js";
-
+import mongoose from 'mongoose';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
+import { Booking } from '../models/booking-model.js';
+import { GeneratedSlot } from '../models/generatedSlots-model.js';
+import { Payment } from '../models/payment-model.js';
+import { wrapper } from '../utils/wrapper.js';
+import { timeZone, earlyJoinMinutesForSession, cancellationWindowHours } from '../constants.js';
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(isSameOrBefore);
 
 // Helper function to determine if booking can be canceled
 const canCancelBooking = (booking) => {
-  const now = dayjs().tz("Asia/Kolkata");
-  const sessionStart = dayjs(
-    `${dayjs(booking.date).format("YYYY-MM-DD")} ${booking.startTime}`,
-    "YYYY-MM-DD hh:mm A"
-  );
-  const hoursDiff = sessionStart.diff(now, "hour");
+  const now = dayjs().utc();
+  const startTime = dayjs.utc(booking.startTime);
+  const hoursDiff = startTime.diff(now, 'hour');
 
   // Can cancel if more than 24 hours before session
-  return hoursDiff >= 24 && ["scheduled"].includes(booking.status);
+  return hoursDiff >= cancellationWindowHours && ['confirmed'].includes(booking.status);
 };
 
 // Helper function to determine if user can join
 const canJoinSession = (booking) => {
-  if (!booking.googleMeetLink) return false;
+  if (!booking.videoSDKRoomId) return false;
 
-  const now = dayjs().tz("Asia/Kolkata");
-  const sessionStart = dayjs(
-    `${dayjs(booking.date).format("YYYY-MM-DD")} ${booking.startTime}`,
-    "YYYY-MM-DD hh:mm A"
-  );
-  const sessionEnd = dayjs(
-    `${dayjs(booking.date).format("YYYY-MM-DD")} ${booking.endTime}`,
-    "YYYY-MM-DD hh:mm A"
-  );
+  // const now = dayjs().utc();
+  // const startTime = dayjs.utc(booking.startTime);
+  // const endTime = dayjs.utc(booking.endTime);
 
   //can join 10 minutes earlier from start time
-  const minutesDiffStart = sessionStart.diff(now, "minute");
+  // const minutesDiffStart = startTime.diff(now, 'minute');
 
-  //can join until  session ends
-  const minutesDiffEnd = sessionEnd.diff(now, "minute");
+  // //can join until  session ends
+  // const minutesDiffEnd = endTime.diff(now, 'minute');
 
   // Can join 10 minutes before to 90 minutes afte
-  return minutesDiffStart <= 10 && minutesDiffEnd > 0;
+  return true;
 };
 
 // Get bookings with filters and pagination
 export const getBookings = wrapper(async (req, res) => {
-  const { filter = "upcoming", page = 1, perPage = 20 } = req.query;
-  const clientId = req.verifiedClientId;
+  const { filter = 'upcoming', page = 1, perPage = 20 } = req.query;
+  const clientId = req.verifiedClientId._id;
+  console.log(filter);
 
   // Build query based on filter
   let statusFilter = {};
 
-  const now = dayjs();
-
   switch (filter) {
-    case "upcoming":
+    case 'upcoming':
       statusFilter = {
-        status: "scheduled", // Only future bookings
+        status: 'confirmed',
       };
       break;
-    case "history":
+    case 'raiseIssue':
       statusFilter = {
-        $or: [
-          { status: "completed" },
-          { status: "cancelled" },
-          { status: "no-show" },
-        ],
+        status: 'dispute_window_open',
+      };
+      break;
+    case 'issuesRaised':
+      statusFilter = {
+        status: 'disputed',
+      };
+      break;
+    case 'completed':
+      statusFilter = {
+        status: 'completed',
+      };
+      break;
+    case 'cancelled':
+      statusFilter = {
+        status: 'cancelled',
       };
       break;
 
@@ -79,54 +82,77 @@ export const getBookings = wrapper(async (req, res) => {
 
   const skip = (parseInt(page) - 1) * parseInt(perPage);
 
+  console.log(perPage);
+  console.log(skip);
+
   // Aggregation pipeline for joining data
   const pipeline = [
     {
       $match: {
-        client: new mongoose.Types.ObjectId(clientId),
+        clientId: new mongoose.Types.ObjectId(clientId),
         ...statusFilter,
       },
     },
     {
       $lookup: {
-        from: "generatedslots",
-        localField: "slot",
-        foreignField: "_id",
-        as: "slotData",
+        from: 'payments',
+        localField: 'paymentId',
+        foreignField: '_id',
+        as: 'paymentData',
       },
     },
     {
       $lookup: {
-        from: "counselors",
-        localField: "counselor",
-        foreignField: "_id",
-        as: "counselorData",
+        from: 'sessions',
+        localField: 'sessionId',
+        foreignField: '_id',
+        as: 'sessionData',
+      },
+    },
+
+    {
+      $unwind: '$sessionData',
+    },
+    {
+      $lookup: {
+        from: 'generatedslots',
+        localField: 'slotId',
+        foreignField: '_id',
+        as: 'slotData',
+      },
+    },
+
+    {
+      $unwind: '$slotData',
+    },
+    {
+      $lookup: {
+        from: 'counselors',
+        localField: 'slotData.counselorId',
+        foreignField: '_id',
+        as: 'counselorData',
       },
     },
     {
       $addFields: {
-        slot: { $arrayElemAt: ["$slotData", 0] },
-        counselorInfo: { $arrayElemAt: ["$counselorData", 0] },
+        slotInfo: '$slotData',
+        sessionInfo: '$sessionData',
+        counselorInfo: { $arrayElemAt: ['$counselorData', 0] },
+        paymentInfo: { $arrayElemAt: ['$paymentData', 0] },
       },
     },
     {
       $project: {
-        bookingId: "$_id",
-        slotId: "$slot._id",
-        counselorId: "$counselorInfo._id",
-        counselorName: "$counselorInfo.fullName",
-        counselorPhoto: "$counselorInfo.profilePicture",
-        specialization: "$counselorInfo.specialization",
-        date: "$slot.date",
-        startTime: "$slot.startTime",
-        endTime: "$slot.endTime",
+        bookingId: '$_id',
+        counselorName: '$counselorInfo.fullName',
+        counselorPhoto: '$counselorInfo.profilePicture',
+        specialization: '$counselorInfo.specialization',
+        startTime: '$slotInfo.startTime',
+        endTime: '$slotInfo.endTime',
+        price: '$slotInfo.totalPriceAfterPlatformFee',
+        videoSDKRoomId: '$sessionInfo.videoSDKRoomId',
         status: 1,
-        paymentStatus: 1,
-        price: 1,
-        googleMeetLink: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        slotDuration: 1,
+        invoice: '$paymentInfo.invoice',
       },
     },
     {
@@ -138,32 +164,28 @@ export const getBookings = wrapper(async (req, res) => {
   ];
 
   const bookings = await Booking.aggregate(pipeline);
-  (filter ==="upcoming") ?
-  bookings.sort((a, b) => {
-    const datea = dayjs(a.date).format("YYYY-MM-DD")
-    const dateb = dayjs(b.date).format("YYYY-MM-DD")
-    const dateTimeA = dayjs(`${datea} ${a.startTime}`, "YYYY-MM-DD hh:mm A");
-    const dateTimeB = dayjs(`${dateb} ${b.startTime}`, "YYYY-MM-DD hh:mm A");
-    if (dateTimeA.isBefore(dateTimeB)) return -1;
-    if (dateTimeA.isAfter(dateTimeB)) return 1;
-    return 0;
-  }) : bookings.sort((a, b) => {
-    const datea = dayjs(a.date).format("YYYY-MM-DD")
-    const dateb = dayjs(b.date).format("YYYY-MM-DD")
-    const dateTimeA = dayjs(`${datea} ${a.startTime}`, "YYYY-MM-DD hh:mm A");
-    const dateTimeB = dayjs(`${dateb} ${b.startTime}`, "YYYY-MM-DD hh:mm A");
-    if (dateTimeA.isBefore(dateTimeB)) return 1;
-    if (dateTimeA.isAfter(dateTimeB)) return -1;
-    return 0;
-  })
 
+  filter === 'upcoming'
+    ? bookings.sort((a, b) => {
+        const startTimeA = dayjs.utc(`${a.startTime}`);
+        const startTimeB = dayjs.utc(`${b.startTime}`);
+        if (startTimeA.isSameOrBefore(startTimeB)) return -1;
+        if (startTimeA.isAfter(startTimeB)) return 1;
+        return 0;
+      })
+    : bookings.sort((a, b) => {
+        const startTimeA = dayjs.utc(`${a.startTime}`);
+        const startTimeB = dayjs.utc(`${b.startTime}`);
+        if (startTimeA.isSameOrBefore(startTimeB)) return 1;
+        if (startTimeA.isAfter(startTimeB)) return -1;
+        return 0;
+      });
 
   // Get total count for pagination
   const totalCount = await Booking.countDocuments({
-    client: clientId,
+    clientId: clientId,
     ...statusFilter,
   });
-  console.log(bookings)
 
   // Add computed fields for each booking
   const enrichedBookings = bookings.map((booking) => {
@@ -174,14 +196,17 @@ export const getBookings = wrapper(async (req, res) => {
       ...booking,
       canCancel,
       canJoin,
-      canReschedule: canCancel, // Same logic for now
-      // Obfuscate meeting link until join time
-      meetingLink: canJoin ? booking.googleMeetLink : null,
-      cancellationDeadline: booking.date
-        ? dayjs(`${dayjs(booking.date).format("YYYY-MM-DD")} ${booking.startTime}`,"YYYY-MM-DD hh:mm A").subtract(24, "hour").toISOString()
+
+      cancellationDeadline: booking.startTime
+        ? dayjs
+            .utc(booking.startTime)
+            .subtract(cancellationWindowHours, 'hour')
+            .tz(timeZone)
+            .format('YYYY-MM-DD hh:mm A')
         : null,
     };
   });
+  console.log(enrichedBookings);
 
   res.json({
     success: true,
@@ -197,25 +222,23 @@ export const getBookings = wrapper(async (req, res) => {
   });
 });
 
-
-
 // Get single booking details
 export const getBookingDetails = wrapper(async (req, res) => {
   const { id } = req.params;
-  const clientId = req.verifiedClientId;
+  const clientId = req.verifiedClientId._id;
 
   const booking = await Booking.findOne({
     _id: id,
     client: clientId,
   })
-    .populate("slot")
-    .populate("counselor", "fullName profilePicture specialization email")
-    .populate("client", "fullName email");
+    .populate('slot')
+    .populate('counselor', 'fullName profilePicture specialization email')
+    .populate('client', 'fullName email');
 
   if (!booking) {
     return res.status(404).json({
       success: false,
-      message: "Booking not found",
+      message: 'Booking not found',
     });
   }
 
@@ -231,7 +254,7 @@ export const getBookingDetails = wrapper(async (req, res) => {
       canReschedule: canCancel,
       meetingLink: canJoin ? booking.googleMeetLink : null,
       cancellationDeadline: booking.slot?.date
-        ? dayjs(booking.slot.date).subtract(24, "hour").toISOString()
+        ? dayjs(booking.slot.date).subtract(24, 'hour').toISOString()
         : null,
     },
   });
@@ -240,7 +263,7 @@ export const getBookingDetails = wrapper(async (req, res) => {
 // Cancel booking
 export const cancelBooking = wrapper(async (req, res) => {
   const { id } = req.params;
-  const clientId = req.verifiedClientId;
+  const clientId = req.verifiedClientId._id;
   const { reason } = req.body;
 
   const session = await mongoose.startSession();
@@ -252,32 +275,30 @@ export const cancelBooking = wrapper(async (req, res) => {
         _id: id,
         client: clientId,
       })
-        .populate("slot")
+        .populate('slot')
         .session(session);
 
       if (!booking) {
-        throw new Error("Booking not found");
+        throw new Error('Booking not found');
       }
 
       // Check if cancellation is allowed
       if (!canCancelBooking(booking)) {
-        throw new Error(
-          "Cancellation not allowed. Must cancel at least 24 hours before session."
-        );
+        throw new Error('Cancellation not allowed. Must cancel at least 24 hours before session.');
       }
 
-      if (!["scheduled", "booked", "pending"].includes(booking.status)) {
-        throw new Error("Cannot cancel booking with current status");
+      if (!['scheduled', 'booked', 'pending'].includes(booking.status)) {
+        throw new Error('Cannot cancel booking with current status');
       }
 
       // Update booking status
       await Booking.updateOne(
         { _id: id },
         {
-          status: "cancelled",
+          status: 'cancelled',
           cancellationReason: reason,
           cancelledAt: new Date(),
-          cancelledBy: "client",
+          cancelledBy: 'client',
         },
         { session }
       );
@@ -288,7 +309,7 @@ export const cancelBooking = wrapper(async (req, res) => {
         {
           $set: {
             isBooked: false,
-            status: "available",
+            status: 'available',
             clientId: null,
             bookingId: null,
           },
@@ -297,13 +318,13 @@ export const cancelBooking = wrapper(async (req, res) => {
       );
 
       // If payment was made, initiate refund
-      if (booking.paymentStatus === "paid") {
+      if (booking.paymentStatus === 'paid') {
         // Create refund record or trigger refund process
         // This depends on your payment system implementation
         await Payment.updateOne(
           { clientId, slotId: booking.slot._id },
           {
-            status: "refund_pending",
+            status: 'refund_pending',
             refundReason: reason,
             refundInitiatedAt: new Date(),
           },
@@ -314,8 +335,7 @@ export const cancelBooking = wrapper(async (req, res) => {
 
     res.json({
       success: true,
-      message:
-        "Booking cancelled successfully. Refund will be processed within 5-7 business days.",
+      message: 'Booking cancelled successfully. Refund will be processed within 5-7 business days.',
     });
   } catch (error) {
     res.status(400).json({
@@ -326,8 +346,6 @@ export const cancelBooking = wrapper(async (req, res) => {
     await session.endSession();
   }
 });
-
-
 
 // Request reschedule ( for future )
 export const rescheduleBooking = wrapper(async (req, res) => {
@@ -344,16 +362,16 @@ export const rescheduleBooking = wrapper(async (req, res) => {
         _id: id,
         client: clientId,
       })
-        .populate("slot")
+        .populate('slot')
         .session(session);
 
       if (!booking) {
-        throw new Error("Booking not found");
+        throw new Error('Booking not found');
       }
 
       if (!canCancelBooking(booking)) {
         throw new Error(
-          "Reschedule not allowed. Must reschedule at least 24 hours before session."
+          'Reschedule not allowed. Must reschedule at least 24 hours before session.'
         );
       }
 
@@ -361,11 +379,11 @@ export const rescheduleBooking = wrapper(async (req, res) => {
       const newSlot = await GeneratedSlot.findOne({
         _id: newSlotId,
         isBooked: false,
-        status: "available",
+        status: 'available',
       }).session(session);
 
       if (!newSlot) {
-        throw new Error("Selected slot is not available");
+        throw new Error('Selected slot is not available');
       }
 
       // Book new slot atomically
@@ -374,7 +392,7 @@ export const rescheduleBooking = wrapper(async (req, res) => {
         {
           $set: {
             isBooked: true,
-            status: "booked",
+            status: 'booked',
             clientId,
             bookingId: id,
           },
@@ -383,7 +401,7 @@ export const rescheduleBooking = wrapper(async (req, res) => {
       );
 
       if (slotUpdate.modifiedCount === 0) {
-        throw new Error("Failed to book new slot - may have been taken");
+        throw new Error('Failed to book new slot - may have been taken');
       }
 
       // Release old slot
@@ -392,7 +410,7 @@ export const rescheduleBooking = wrapper(async (req, res) => {
         {
           $set: {
             isBooked: false,
-            status: "available",
+            status: 'available',
             clientId: null,
             bookingId: null,
           },
@@ -405,10 +423,10 @@ export const rescheduleBooking = wrapper(async (req, res) => {
         { _id: id },
         {
           slot: newSlotId,
-          status: "scheduled",
+          status: 'scheduled',
           rescheduleReason: reason,
           rescheduledAt: new Date(),
-          rescheduledBy: "client",
+          rescheduledBy: 'client',
         },
         { session }
       );
@@ -416,7 +434,7 @@ export const rescheduleBooking = wrapper(async (req, res) => {
 
     res.json({
       success: true,
-      message: "Booking rescheduled successfully",
+      message: 'Booking rescheduled successfully',
     });
   } catch (error) {
     res.status(400).json({

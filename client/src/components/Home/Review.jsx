@@ -1,39 +1,35 @@
-import { motion } from "framer-motion";
-import React from "react";
-import { FaQuoteLeft, FaStar } from "react-icons/fa";
-import {
-  default as user1,
-  default as user2,
-  default as user3,
-} from "../../assets/react.svg"; // Replace with your image
+import { motion } from 'framer-motion';
+import React from 'react';
+import { FaQuoteLeft, FaStar } from 'react-icons/fa';
+import { default as user1, default as user2, default as user3 } from '../../assets/react.svg'; // Replace with your image
 
 const Review = () => {
   const testimonials = [
     {
-      name: "Anjali Sharma",
-      role: "Software Engineer",
-      location: "Mumbai",
+      name: 'Anjali Sharma',
+      role: 'Software Engineer',
+      location: 'Mumbai',
       rating: 5,
       content:
-        "Solvit helped me manage my work stress and regain my confidence. The counselor was empathetic and truly understood my challenges!",
+        'Solvit helped me manage my work stress and regain my confidence. The counselor was empathetic and truly understood my challenges!',
       image: user1,
     },
     {
-      name: "Rahul Verma",
-      role: "College Student",
-      location: "Delhi",
+      name: 'Rahul Verma',
+      role: 'College Student',
+      location: 'Delhi',
       rating: 5,
       content:
-        "I was lost about my career path, but my coach on Solvit guided me step-by-step. My grades and focus have improved so much!",
+        'I was lost about my career path, but my coach on Solvit guided me step-by-step. My grades and focus have improved so much!',
       image: user2,
     },
     {
-      name: "Priya Nair",
-      role: "Homemaker",
-      location: "Bengaluru",
+      name: 'Priya Nair',
+      role: 'Homemaker',
+      location: 'Bengaluru',
       rating: 4,
       content:
-        "The platform’s privacy gave me the courage to seek help for my anxiety. It’s been a life-changing experience—I’m happy to spend more time here!",
+        'The platform’s privacy gave me the courage to seek help for my anxiety. It’s been a life-changing experience—I’m happy to spend more time here!',
       image: user3,
     },
   ];
@@ -48,7 +44,7 @@ const Review = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
+      transition: { duration: 0.6, ease: 'easeOut' },
     },
     hover: { y: -10, transition: { duration: 0.3 } },
   };
@@ -68,8 +64,7 @@ const Review = () => {
             Voices of <span className="text-black">Transformation</span>
           </h2>
           <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
-            Discover how Solvit has empowered individuals across India to find
-            support and thrive.
+            Discover how Solvit has empowered individuals across India to find support and thrive.
           </p>
         </motion.div>
 
@@ -86,11 +81,7 @@ const Review = () => {
                 {[...Array(5)].map((_, i) => (
                   <FaStar
                     key={i}
-                    className={
-                      i < testimonial.rating
-                        ? "text-yellow-400"
-                        : "text-gray-300"
-                    }
+                    className={i < testimonial.rating ? 'text-yellow-400' : 'text-gray-300'}
                   />
                 ))}
               </div>
@@ -110,9 +101,7 @@ const Review = () => {
                   />
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900">
-                    {testimonial.name}
-                  </h4>
+                  <h4 className="text-lg font-semibold text-gray-900">{testimonial.name}</h4>
                   <p className="text-sm text-gray-600">
                     {testimonial.role}, {testimonial.location}
                   </p>

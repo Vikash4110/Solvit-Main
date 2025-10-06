@@ -14,7 +14,7 @@ export const sendContactEmail = wrapper(async (req, res) => {
     userType,
     submittedAt,
     prefilledFromProfile,
-    authenticatedUser
+    authenticatedUser,
   } = req.body;
 
   // ✅ Input validation
@@ -36,12 +36,12 @@ export const sendContactEmail = wrapper(async (req, res) => {
   try {
     // ✅ Subject mapping for better organization
     const subjectMap = {
-      'general': 'General Inquiry',
-      'booking': 'Booking Support',
-      'technical': 'Technical Issue',
+      general: 'General Inquiry',
+      booking: 'Booking Support',
+      technical: 'Technical Issue',
       'counselor-application': 'Counselor Application',
-      'billing': 'Billing Question',
-      'feedback': 'Feedback'
+      billing: 'Billing Question',
+      feedback: 'Feedback',
     };
 
     const emailSubject = `[Solvit Contact] ${subjectMap[subject] || 'General Inquiry'} - ${firstName} ${lastName}`;
@@ -119,24 +119,26 @@ Solvit Mental Health Platform
 This is an automated confirmation email. Please don't reply directly to this message.
     `;
 
-    const confirmationResult = await sendEmail(
-      email,
-      confirmationSubject,
-      confirmationContent
-    );
+    const confirmationResult = await sendEmail(email, confirmationSubject, confirmationContent);
 
     // ✅ Success response
     res.status(200).json(
-      new ApiResponse(200, {
-        submitted: true,
-        timestamp: submittedAt,
-        supportEmailSent: !!supportEmailResult,
-        confirmationEmailSent: !!confirmationResult
-      }, 'Contact form submitted successfully')
+      new ApiResponse(
+        200,
+        {
+          submitted: true,
+          timestamp: submittedAt,
+          supportEmailSent: !!supportEmailResult,
+          confirmationEmailSent: !!confirmationResult,
+        },
+        'Contact form submitted successfully'
+      )
     );
-
   } catch (error) {
     console.error('Email sending error:', error);
-    throw new ApiError(500, 'Failed to send email. Please try again or contact us directly at support@solvit.com');
+    throw new ApiError(
+      500,
+      'Failed to send email. Please try again or contact us directly at support@solvit.com'
+    );
   }
 });

@@ -1,55 +1,55 @@
-import { AnimatePresence, motion } from "framer-motion";
-import React, { useState } from "react";
-import { FiChevronDown, FiChevronUp, FiMail } from "react-icons/fi";
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { FiChevronDown, FiChevronUp, FiMail } from 'react-icons/fi';
 
 const terms = [
   {
-    title: "1. Introduction",
+    title: '1. Introduction',
     content:
-      "Welcome to Solvit, an online platform connecting users with professional counselors and coaches. By accessing or using our website, you agree to comply with these Terms & Conditions. These terms govern your use of our services and outline the rights and responsibilities of all parties involved.",
+      'Welcome to Solvit, an online platform connecting users with professional counselors and coaches. By accessing or using our website, you agree to comply with these Terms & Conditions. These terms govern your use of our services and outline the rights and responsibilities of all parties involved.',
   },
   {
-    title: "2. Services Offered",
+    title: '2. Services Offered',
     content:
-      "Solvit provides a platform to book counseling and coaching sessions with independent professionals. Solvit does not provide counseling directly; our counselors operate as independent practitioners. Users must be 18 years or older to book sessions independently, or provide parental consent if under 18.",
+      'Solvit provides a platform to book counseling and coaching sessions with independent professionals. Solvit does not provide counseling directly; our counselors operate as independent practitioners. Users must be 18 years or older to book sessions independently, or provide parental consent if under 18.',
   },
   {
-    title: "3. User Responsibilities",
+    title: '3. User Responsibilities',
     content:
       "Users are required to provide accurate and complete information during registration. Misuse of the platform, including fraudulent activities or harassment, is strictly prohibited. Cancellations and refunds are subject to Solvit's refund policy, detailed separately on our website.",
   },
   {
-    title: "4. Counselor Responsibilities",
+    title: '4. Counselor Responsibilities',
     content:
-      "Counselors must submit accurate credentials and maintain a high standard of professionalism in all interactions. Solvit reserves the right to remove any counselor from the platform for violations of our policies, including but not limited to unprofessional conduct or misrepresentation.",
+      'Counselors must submit accurate credentials and maintain a high standard of professionalism in all interactions. Solvit reserves the right to remove any counselor from the platform for violations of our policies, including but not limited to unprofessional conduct or misrepresentation.',
   },
   {
-    title: "5. Payments & Refunds",
+    title: '5. Payments & Refunds',
     content:
       "Payments for sessions are processed securely through trusted third-party payment gateways. Refunds are issued in accordance with our refund policy, such as for cancellations made within 24 hours of booking, unless otherwise specified by the counselor's terms.",
   },
   {
-    title: "6. Limitation of Liability",
+    title: '6. Limitation of Liability',
     content:
-      "Solvit is not responsible for the accuracy or outcomes of counseling advice provided by independent counselors. We do not offer medical or emergency services; users requiring immediate assistance should contact local emergency services or healthcare providers.",
+      'Solvit is not responsible for the accuracy or outcomes of counseling advice provided by independent counselors. We do not offer medical or emergency services; users requiring immediate assistance should contact local emergency services or healthcare providers.',
   },
   {
-    title: "7. Privacy & Data Protection",
+    title: '7. Privacy & Data Protection',
     content:
-      "Solvit adheres to strict data protection guidelines as outlined in our Privacy Policy. User data will not be sold or shared with third parties without explicit consent, except as required by law or to facilitate services on the platform.",
+      'Solvit adheres to strict data protection guidelines as outlined in our Privacy Policy. User data will not be sold or shared with third parties without explicit consent, except as required by law or to facilitate services on the platform.',
   },
   {
-    title: "8. Termination of Accounts",
+    title: '8. Termination of Accounts',
     content:
-      "Solvit reserves the right to suspend or terminate user accounts for violations of these Terms & Conditions, including misuse of the platform or failure to comply with payment obligations.",
+      'Solvit reserves the right to suspend or terminate user accounts for violations of these Terms & Conditions, including misuse of the platform or failure to comply with payment obligations.',
   },
   {
-    title: "9. Changes to Terms",
+    title: '9. Changes to Terms',
     content:
-      "Solvit may update these Terms & Conditions at any time. Users will be notified of significant changes, and continued use of the platform constitutes acceptance of the updated terms.",
+      'Solvit may update these Terms & Conditions at any time. Users will be notified of significant changes, and continued use of the platform constitutes acceptance of the updated terms.',
   },
   {
-    title: "10. Contact Information",
+    title: '10. Contact Information',
     content:
       "For questions, concerns, or clarifications regarding these Terms & Conditions, please reach out to us at solvitcounselling@gmail.com. We're here to assist you.",
   },
@@ -72,7 +72,7 @@ const TermCondition = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
+      transition: { duration: 0.5, ease: 'easeOut' },
     },
   };
 
@@ -90,21 +90,19 @@ const TermCondition = () => {
           <span className="text-sm font-semibold tracking-wider text-indigo-600 uppercase">
             Legal Information
           </span>
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-gray-900">
-            Terms & Conditions
-          </h1>
+          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-gray-900">Terms & Conditions</h1>
           <div className="mt-6 max-w-3xl mx-auto">
             <p className="text-lg text-gray-600 leading-relaxed">
-              Last updated:{" "}
-              {new Date().toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
+              Last updated:{' '}
+              {new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
               })}
             </p>
             <p className="mt-4 text-gray-600 leading-relaxed">
-              Please read these terms carefully before using our services. By
-              accessing or using Solvit, you agree to be bound by these terms.
+              Please read these terms carefully before using our services. By accessing or using
+              Solvit, you agree to be bound by these terms.
             </p>
           </div>
         </motion.div>
@@ -119,25 +117,19 @@ const TermCondition = () => {
             >
               <button
                 className={`w-full flex justify-between items-center p-6 text-left transition-colors ${
-                  activeIndex === index ? "bg-gray-50" : "hover:bg-gray-50"
+                  activeIndex === index ? 'bg-gray-50' : 'hover:bg-gray-50'
                 }`}
                 onClick={() => toggleAccordion(index)}
                 aria-expanded={activeIndex === index}
                 aria-controls={`term-content-${index}`}
               >
-                <h2 className="text-lg font-medium text-gray-900">
-                  {term.title}
-                </h2>
+                <h2 className="text-lg font-medium text-gray-900">{term.title}</h2>
                 <motion.div
                   animate={{ rotate: activeIndex === index ? 180 : 0 }}
                   transition={{ duration: 0.3 }}
                   className="text-gray-500"
                 >
-                  {activeIndex === index ? (
-                    <FiChevronUp size={20} />
-                  ) : (
-                    <FiChevronDown size={20} />
-                  )}
+                  {activeIndex === index ? <FiChevronUp size={20} /> : <FiChevronDown size={20} />}
                 </motion.div>
               </button>
               <AnimatePresence>
@@ -145,15 +137,13 @@ const TermCondition = () => {
                   <motion.div
                     id={`term-content-${index}`}
                     initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
+                    animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="px-6 pb-6"
                   >
                     <div className="prose prose-gray max-w-none">
-                      <p className="text-gray-600 leading-relaxed">
-                        {term.content}
-                      </p>
+                      <p className="text-gray-600 leading-relaxed">{term.content}</p>
                     </div>
                   </motion.div>
                 )}
@@ -175,8 +165,7 @@ const TermCondition = () => {
               Need clarification on our terms?
             </h3>
             <p className="text-gray-600 mb-6">
-              Our team is happy to answer any questions you may have about our
-              Terms & Conditions.
+              Our team is happy to answer any questions you may have about our Terms & Conditions.
             </p>
             <motion.a
               href="mailto:solvitcounselling@gmail.com"

@@ -1,5 +1,7 @@
-export const ClientDashboardConnectedCounselors = ()=>{
-    return (<>
-        <h1>ConnectedCounselors</h1>
-    </>)
-}
+export const ClientDashboardConnectedCounselors = () => {
+  return (
+    <>
+      <h1>ConnectedCounselors</h1>
+    </>
+  );
+};

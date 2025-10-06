@@ -39,12 +39,12 @@ const ClientDashboardTopbar = ({ setSidebarOpen, client }) => {
           <button className="p-2 text-gray-400 hover:text-gray-600">
             <FaBell className="h-5 w-5" />
           </button>
-          
+
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
               {client?.profilePicture ? (
-                <img 
-                  src={client.profilePicture} 
+                <img
+                  src={client.profilePicture}
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover"
                 />

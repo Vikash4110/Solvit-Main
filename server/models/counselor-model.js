@@ -1,22 +1,22 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 const counselorSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: [true, "Full Name is required"],
+      required: [true, 'Full Name is required'],
       trim: true,
-      minlength: [3, "Full Name must be at least 3 characters"],
+      minlength: [3, 'Full Name must be at least 3 characters'],
       maxlength: [30, "Full Name can't exceed 30 characters"],
     },
     username: {
       type: String,
       index: true,
-      required: [true, "Username is required"],
+      required: [true, 'Username is required'],
       trim: true,
-      minlength: [3, "Username must be at least 3 characters"],
+      minlength: [3, 'Username must be at least 3 characters'],
       maxlength: [10, "Username can't exceed 10 characters"],
       unique: true,
     },
@@ -33,13 +33,13 @@ const counselorSchema = new mongoose.Schema(
       trim: true,
       match: [
         /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-        "Please enter a valid email address",
+        'Please enter a valid email address',
       ],
     },
     phone: {
       type: String,
       unique: true,
-      match: [/^\+?[1-9]\d{1,14}$/, "Please enter a valid phone number"],
+      match: [/^\+?[1-9]\d{1,14}$/, 'Please enter a valid phone number'],
       required: true,
       trim: true,
     },
@@ -48,20 +48,31 @@ const counselorSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      enum: ["Male", "Female", "Other", "Prefer not to say"],
+      // enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
+      enum: ['Male', 'Female', 'Other'],
       required: true,
     },
     specialization: {
       type: String,
       enum: [
-        "Mental Health",
-        "Career Counselling",
-        "Relationship Counselling",
-        "Life Coaching",
-        "Financial Counselling",
-        "Academic Counselling",
-        "Health and Wellness Counselling",
+        'Mental Health',
+        'Career Counselling',
+        'Relationship Counselling',
+        'Life Coaching',
+        'Financial Counselling',
+        'Academic Counselling',
+        'Health and Wellness Counselling',
       ],
+      required: true,
+    },
+    experienceYears: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    experienceLevel: {
+      type: String,
+      enum: ['Beginner', 'Intermediate', 'Experienced', 'Specialist'],
       required: true,
     },
     application: {
@@ -77,20 +88,14 @@ const counselorSchema = new mongoose.Schema(
           year: { type: Number },
         },
       },
-      experience: {
-        type: String,
-        maxlength: [1000, "Experience must not exceed 1000 characters"],
-      },
+
       professionalSummary: {
         type: String,
-        maxlength: [
-          1000,
-          "Professional Summary must not exceed 1000 characters",
-        ],
+        maxlength: [1000, 'Professional Summary must not exceed 1000 characters'],
       },
       languages: {
         type: [String],
-        enum: ["English", "Hindi"],
+        enum: ['English', 'Hindi'],
       },
       license: {
         licenseNo: { type: String },
@@ -109,8 +114,8 @@ const counselorSchema = new mongoose.Schema(
       },
       applicationStatus: {
         type: String,
-        enum: ["pending", "approved", "rejected"],
-        default: "pending",
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending',
       },
       applicationSubmittedAt: {
         type: Date,
@@ -127,12 +132,16 @@ const counselorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-counselorSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    return next();
+counselorSchema.pre('save', async function () {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
   }
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+  if (this.isModified('experienceYears') && this.experienceYears != null) {
+    if (this.experienceYears < 2) this.experienceLevel = 'Beginner';
+    else if (this.experienceYears < 5) this.experienceLevel = 'Intermediate';
+    else if (this.experienceYears < 10) this.experienceLevel = 'Experienced';
+    else this.experienceLevel = 'Specialist';
+  }
 });
 
 counselorSchema.methods.isPasswordCorrect = async function (password) {
@@ -143,7 +152,7 @@ counselorSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this.id,
-      role: "counselor",
+      role: 'counselor',
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -152,4 +161,4 @@ counselorSchema.methods.generateAccessToken = function () {
   );
 };
 
-export const Counselor = mongoose.model("Counselor", counselorSchema);
+export const Counselor = mongoose.model('Counselor', counselorSchema);

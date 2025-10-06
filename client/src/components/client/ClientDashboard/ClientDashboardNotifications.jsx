@@ -1,5 +1,7 @@
-export const ClientDashboardNotifications = ()=>{
-    return (<>
-        <h1>Notifications</h1>
-    </>)
-}
+export const ClientDashboardNotifications = () => {
+  return (
+    <>
+      <h1>Notifications</h1>
+    </>
+  );
+};

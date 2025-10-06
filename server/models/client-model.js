@@ -1,22 +1,22 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 const clientSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: [true, "Full Name is required"],
+      required: [true, 'Full Name is required'],
       trim: true,
-      minlength: [3, "Full Name must atleast 3 characters"],
+      minlength: [3, 'Full Name must atleast 3 characters'],
       maxlength: [30, "Full Name can't exceed 30 characters"],
     },
     username: {
       type: String,
       index: true,
-      required: [true, "User Name is required"],
+      required: [true, 'User Name is required'],
       trim: true,
-      minlength: [3, "Full Name must atleast 3 characters"],
+      minlength: [3, 'Full Name must atleast 3 characters'],
       maxlength: [10, "Full Name can't exceed 30 characters"],
       unique: true,
     },
@@ -33,16 +33,13 @@ const clientSchema = new mongoose.Schema(
       trim: true,
       match: [
         /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-        "Please enter a valid email address",
+        'Please enter a valid email address',
       ],
     },
     phone: {
       type: String,
       unique: true,
-      match: [
-        /^\+?[1-9]\d{1,14}$/,
-        "Please enter a valid international phone number",
-      ],
+      match: [/^\+?[1-9]\d{1,14}$/, 'Please enter a valid international phone number'],
       required: true,
       trim: true,
     },
@@ -51,19 +48,19 @@ const clientSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      enum: ["Male", "Female", "Other", "Prefer not to say"],
-      default: "Prefer not to say",
+      enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
+      default: 'Prefer not to say',
     },
     preferredLanguages: {
       type: [String],
-      enum: ["Hindi", "English"],
-      default: ["Hindi", "English"],
+      enum: ['Hindi', 'English'],
+      default: ['Hindi', 'English'],
     },
 
     bio: {
       type: String,
       trim: true,
-      maxlength: [500, "Bio must not exceed 500 characters"],
+      maxlength: [500, 'Bio must not exceed 500 characters'],
     },
 
     address: {
@@ -94,8 +91,8 @@ const clientSchema = new mongoose.Schema(
     },
     prefferedTopics: {
       type: [String],
-      enum: ["Stress", "mentalHealth"],
-      default: ["Stress", "mentalHealth"],
+      enum: ['Stress', 'mentalHealth'],
+      default: ['Stress', 'mentalHealth'],
     },
     lastLogin: {
       type: Date,
@@ -104,8 +101,8 @@ const clientSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-clientSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
+clientSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
     return next();
   }
   this.password = await bcrypt.hash(this.password, 10);
@@ -128,4 +125,4 @@ clientSchema.methods.generateAccessToken = function () {
   );
 };
 
-export const Client = mongoose.model("Client", clientSchema);
+export const Client = mongoose.model('Client', clientSchema);

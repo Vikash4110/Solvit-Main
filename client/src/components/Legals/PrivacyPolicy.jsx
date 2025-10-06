@@ -1,37 +1,27 @@
-import { AnimatePresence, motion } from "framer-motion";
-import React, { useState } from "react";
-import {
-  FiChevronDown,
-  FiChevronUp,
-  FiGlobe,
-  FiLock,
-  FiMail,
-  FiUser,
-} from "react-icons/fi";
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { FiChevronDown, FiChevronUp, FiGlobe, FiLock, FiMail, FiUser } from 'react-icons/fi';
 
 const privacySections = [
   {
-    title: "1. Information We Collect",
+    title: '1. Information We Collect',
     icon: <FiUser className="text-indigo-600" />,
     content: (
       <ul className="list-disc pl-5 space-y-2">
         <li>
-          <strong>Personal Information:</strong> Name, email, phone number, and
-          payment details.
+          <strong>Personal Information:</strong> Name, email, phone number, and payment details.
         </li>
         <li>
-          <strong>Session Data:</strong> Booking history and counselor
-          preferences.
+          <strong>Session Data:</strong> Booking history and counselor preferences.
         </li>
         <li>
-          <strong>Technical Data:</strong> IP address, browser type, and device
-          information.
+          <strong>Technical Data:</strong> IP address, browser type, and device information.
         </li>
       </ul>
     ),
   },
   {
-    title: "2. How We Use Your Data",
+    title: '2. How We Use Your Data',
     icon: <FiGlobe className="text-indigo-600" />,
     content: (
       <ul className="list-disc pl-5 space-y-2">
@@ -42,29 +32,27 @@ const privacySections = [
     ),
   },
   {
-    title: "3. Data Security",
+    title: '3. Data Security',
     icon: <FiLock className="text-indigo-600" />,
     content: (
       <ul className="list-disc pl-5 space-y-2">
         <li>We use encryption and secure servers to protect user data.</li>
-        <li>
-          Payment information is processed through secure third-party gateways.
-        </li>
+        <li>Payment information is processed through secure third-party gateways.</li>
       </ul>
     ),
   },
   {
-    title: "4. Third-Party Sharing",
+    title: '4. Third-Party Sharing',
     icon: <FiUser className="text-indigo-600" />,
     content: (
       <p>
-        We do not sell or share personal data except as required for legal
-        compliance or service delivery (e.g., payment processing).
+        We do not sell or share personal data except as required for legal compliance or service
+        delivery (e.g., payment processing).
       </p>
     ),
   },
   {
-    title: "5. User Rights",
+    title: '5. User Rights',
     icon: <FiUser className="text-indigo-600" />,
     content: (
       <ul className="list-disc pl-5 space-y-2">
@@ -74,33 +62,27 @@ const privacySections = [
     ),
   },
   {
-    title: "6. Cookies & Tracking",
+    title: '6. Cookies & Tracking',
     icon: <FiGlobe className="text-indigo-600" />,
     content: (
       <ul className="list-disc pl-5 space-y-2">
-        <li>
-          We use cookies to improve website performance and personalize user
-          experience.
-        </li>
+        <li>We use cookies to improve website performance and personalize user experience.</li>
         <li>Users can disable cookies through browser settings.</li>
       </ul>
     ),
   },
   {
-    title: "7. Changes to Privacy Policy",
+    title: '7. Changes to Privacy Policy',
     icon: <FiLock className="text-indigo-600" />,
     content: <p>Updates to this policy will be posted on the website.</p>,
   },
   {
-    title: "8. Contact for Privacy Concerns",
+    title: '8. Contact for Privacy Concerns',
     icon: <FiMail className="text-indigo-600" />,
     content: (
       <p>
-        For privacy-related queries, contact{" "}
-        <a
-          href="mailto:privacy@solvit.com"
-          className="text-indigo-600 hover:underline"
-        >
+        For privacy-related queries, contact{' '}
+        <a href="mailto:privacy@solvit.com" className="text-indigo-600 hover:underline">
           privacy@solvit.com
         </a>
         .
@@ -126,7 +108,7 @@ const PrivacyPolicy = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
+      transition: { duration: 0.5, ease: 'easeOut' },
     },
   };
 
@@ -144,22 +126,19 @@ const PrivacyPolicy = () => {
           <span className="text-sm font-semibold tracking-wider text-indigo-600 uppercase">
             Data Protection
           </span>
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-gray-900">
-            Privacy Policy
-          </h1>
+          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-gray-900">Privacy Policy</h1>
           <div className="mt-6 max-w-3xl mx-auto">
             <p className="text-lg text-gray-600 leading-relaxed">
-              Last updated:{" "}
-              {new Date().toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
+              Last updated:{' '}
+              {new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
               })}
             </p>
             <p className="mt-4 text-gray-600 leading-relaxed">
-              Your privacy is important to us. This policy explains what
-              personal data we collect, how we use it, and your rights regarding
-              your information.
+              Your privacy is important to us. This policy explains what personal data we collect,
+              how we use it, and your rights regarding your information.
             </p>
           </div>
         </motion.div>
@@ -174,7 +153,7 @@ const PrivacyPolicy = () => {
             >
               <button
                 className={`w-full flex items-start text-left transition-colors ${
-                  activeIndex === index ? "bg-gray-50" : "hover:bg-gray-50"
+                  activeIndex === index ? 'bg-gray-50' : 'hover:bg-gray-50'
                 }`}
                 onClick={() => toggleAccordion(index)}
                 aria-expanded={activeIndex === index}
@@ -182,9 +161,7 @@ const PrivacyPolicy = () => {
               >
                 <div className="p-4 flex items-center">{section.icon}</div>
                 <div className="flex-1 py-4 pr-4">
-                  <h2 className="text-lg font-medium text-gray-900 text-left">
-                    {section.title}
-                  </h2>
+                  <h2 className="text-lg font-medium text-gray-900 text-left">{section.title}</h2>
                 </div>
                 <div className="p-4 flex items-center text-gray-500">
                   <motion.div
@@ -204,14 +181,12 @@ const PrivacyPolicy = () => {
                   <motion.div
                     id={`privacy-content-${index}`}
                     initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
+                    animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="px-6 pb-6 ml-14"
                   >
-                    <div className="prose prose-gray max-w-none">
-                      {section.content}
-                    </div>
+                    <div className="prose prose-gray max-w-none">{section.content}</div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -232,8 +207,8 @@ const PrivacyPolicy = () => {
               Have questions about your privacy?
             </h3>
             <p className="text-gray-600 mb-6">
-              Our data protection officer is available to address any concerns
-              you may have about how we handle your personal information.
+              Our data protection officer is available to address any concerns you may have about
+              how we handle your personal information.
             </p>
             <motion.a
               href="mailto:privacy@solvit.com"

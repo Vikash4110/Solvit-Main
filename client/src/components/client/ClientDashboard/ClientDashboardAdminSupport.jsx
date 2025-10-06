@@ -1,5 +1,7 @@
-export const ClientDashboardAdminSupport = ()=>{
-    return (<>
-        <h1>AdminSupport</h1>
-    </>)
-}
+export const ClientDashboardAdminSupport = () => {
+  return (
+    <>
+      <h1>AdminSupport</h1>
+    </>
+  );
+};

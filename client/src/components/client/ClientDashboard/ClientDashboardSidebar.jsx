@@ -12,7 +12,7 @@ import {
   FaLifeRing,
   FaBook,
   FaTools,
-  FaTimes
+  FaTimes,
 } from 'react-icons/fa';
 
 const sidebarItems = [
@@ -20,56 +20,56 @@ const sidebarItems = [
     path: '/client/dashboard',
     name: 'Home',
     icon: <FaTachometerAlt />,
-    color: 'text-blue-600'
+    color: 'text-blue-600',
   },
   {
     path: '/client/dashboard/bookings',
     name: 'My Bookings',
     icon: <FaCalendarCheck />,
-    color: 'text-green-600'
+    color: 'text-green-600',
   },
   {
     path: '/client/dashboard/payments',
     name: 'Payments',
     icon: <FaCreditCard />,
-    color: 'text-yellow-600'
+    color: 'text-yellow-600',
   },
   {
     path: '/client/dashboard/counselors',
     name: 'Connected Counselors',
     icon: <FaUserFriends />,
-    color: 'text-purple-600'
+    color: 'text-purple-600',
   },
   {
     path: '/client/dashboard/book-session',
     name: 'Book New Session',
     icon: <FaPlusCircle />,
-    color: 'text-indigo-600'
+    color: 'text-indigo-600',
   },
   {
     path: '/client/dashboard/notifications',
     name: 'Notifications',
     icon: <FaBell />,
-    color: 'text-red-600'
+    color: 'text-red-600',
   },
   {
     path: '/client/dashboard/support',
     name: 'Help & Support',
     icon: <FaLifeRing />,
-    color: 'text-orange-600'
+    color: 'text-orange-600',
   },
   {
     path: '/client/dashboard/resources',
     name: 'Resources',
     icon: <FaBook />,
-    color: 'text-teal-600'
+    color: 'text-teal-600',
   },
   {
     path: '/client/dashboard/admin',
     name: 'Admin Support',
     icon: <FaTools />,
-    color: 'text-pink-600'
-  }
+    color: 'text-pink-600',
+  },
 ];
 
 const ClientDashboardSidebar = ({ sidebarOpen, setSidebarOpen }) => {
@@ -86,9 +86,10 @@ const ClientDashboardSidebar = ({ sidebarOpen, setSidebarOpen }) => {
           <div className="mt-8 flex-grow flex flex-col">
             <nav className="flex-1 px-2 space-y-1">
               {sidebarItems.map((item) => {
-                const isActive = location.pathname === item.path || 
+                const isActive =
+                  location.pathname === item.path ||
                   (item.path === '/client/dashboard' && location.pathname === '/client/dashboard/');
-                
+
                 return (
                   <Link
                     key={item.path}
@@ -99,7 +100,9 @@ const ClientDashboardSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <span className={`mr-3 flex-shrink-0 h-6 w-6 ${isActive ? 'text-indigo-500' : item.color}`}>
+                    <span
+                      className={`mr-3 flex-shrink-0 h-6 w-6 ${isActive ? 'text-indigo-500' : item.color}`}
+                    >
                       {item.icon}
                     </span>
                     {item.name}
@@ -118,7 +121,7 @@ const ClientDashboardSidebar = ({ sidebarOpen, setSidebarOpen }) => {
         }`}
         initial={false}
         animate={{ x: sidebarOpen ? 0 : -256 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
@@ -133,7 +136,7 @@ const ClientDashboardSidebar = ({ sidebarOpen, setSidebarOpen }) => {
           <nav className="flex-1 px-2 py-4 space-y-1">
             {sidebarItems.map((item) => {
               const isActive = location.pathname === item.path;
-              
+
               return (
                 <Link
                   key={item.path}
@@ -145,7 +148,9 @@ const ClientDashboardSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <span className={`mr-3 flex-shrink-0 h-6 w-6 ${isActive ? 'text-indigo-500' : item.color}`}>
+                  <span
+                    className={`mr-3 flex-shrink-0 h-6 w-6 ${isActive ? 'text-indigo-500' : item.color}`}
+                  >
                     {item.icon}
                   </span>
                   {item.name}

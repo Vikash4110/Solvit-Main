@@ -1,37 +1,41 @@
 // File: src/App.js
-import { Toaster } from "react-hot-toast";
-import { Navigate, Route, Routes } from "react-router-dom";
-import CounselorProtectedRoute from "./components/CounselorProtectedRoute";
-import Navbar from "./components/Home/Navbar";
-import PrivacyPolicy from "./components/Legals/PrivacyPolicy";
-import TermCondition from "./components/Legals/TermCondition";
-import ProtectedRoute from "./components/ProtectedRoute";
-import ClientForgotPassword from "./components/ClientForgotPassword";
-import ClientResetPassword from "./components/ClientResetPassword";
-import CounselorForgotPassword from "./components/CounselorForgotPassword";
-import CounselorResetPassword from "./components/CounselorResetPassword";
-import ScrollToTop from "./components/ScrollToTop";
-import { ClientAuthProvider } from "./contexts/ClientAuthContext";
-import { CounselorAuthProvider } from "./contexts/CounselorAuthContext";
+import { Toaster } from '@/components/ui/sonner';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import CounselorProtectedRoute from './components/counselor/CounselorProtectedRoute';
+import Navbar from './components/Home/Navbar';
+import PrivacyPolicy from './components/Legals/PrivacyPolicy';
+import TermCondition from './components/Legals/TermCondition';
+import ProtectedRoute from './components/client/ClientProtectedRoute';
+import ClientForgotPassword from './components/client/clientLoginRegister/ClientForgotPassword';
+import ClientResetPassword from './components/client/clientLoginRegister/ClientResetPassword';
+import CounselorForgotPassword from './components/counselor/counselorLoginRegister/CounselorForgotPassword';
+import CounselorResetPassword from './components/counselor/counselorLoginRegister/CounselorResetPassword';
+import ScrollToTop from './components/general/ScrollToTop';
+import { ClientAuthProvider } from './contexts/ClientAuthContext';
+import { CounselorAuthProvider } from './contexts/CounselorAuthContext';
 
 // Existing Pages
-import About from "./pages/About";
-import CounselorApplication from "./pages/CounselorApplication";
-import CounselorDashboard from "./pages/CounselorDashboard";
-import CounselorLogin from "./pages/CounselorLogin";
-import CounselorRegister from "./pages/CounselorRegister";
+import About from './pages/general/About';
+import CounselorApplication from './pages/counselor/CounselorApplication';
+import CounselorDashboard from './pages/counselor/CounselorDashboard';
+import CounselorLogin from './pages/counselor/CounselorLogin';
+import CounselorRegister from './pages/counselor/CounselorRegister';
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Profile from "./pages/Profile";
-import Register from "./pages/Register";
-import ServicePage from "./pages/ServicePage";
-import ClientDashboard from "./pages/ClientDashboard";
-import BookCounselorCalendar from "./pages/bookCounselor";
-import BrowseCounselor from "./pages/browseCounselor";
-import Blogs from "./pages/Blogs";
-import ContactUs from "./pages/ContactUs";
-import BlogPost from "./pages/BlogPost";
+import Home from './pages/general/Home';
+import Login from './pages/client/ClientLogin';
+// import Profile from './pages/Profile';
+import Register from './pages/client/ClientRegister';
+import ServicePage from './pages/general/ServicePage';
+import ClientDashboard from './pages/client/ClientDashboard';
+import BookCounselorCalendar from './pages/client/bookCounselor';
+import BrowseCounselor from './pages/client/browseCounselor';
+import Blogs from './pages/general/Blogs';
+import ContactUs from './pages/general/ContactUs';
+import BlogPost from './pages/counselor/BlogPost';
+
+import VideoCallInterface from './videoCall/VideoCallInterface';
+// import SessionSuccess from './components/SessionSuccess';
+
 function App() {
   return (
     <ClientAuthProvider>
@@ -44,7 +48,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<ContactUs />} />
-            
+
             {/* ✅ BLOG ROUTES - Public Access (No authentication required for viewing) */}
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/blogs/:slug" element={<BlogPost />} />
@@ -55,26 +59,56 @@ function App() {
             <Route path="/forgot-password" element={<ClientForgotPassword />} />
             <Route path="/reset-password" element={<ClientResetPassword />} />
 
+            {/* ✅ VIDEO CALL ROUTES - Main implementation */}
+            <Route path="/meeting/:bookingId/:meetingId" element={<VideoCallInterface />} />
+
+            {/* Session Analytics Route */}
+            {/* <Route 
+              path="/session/:sessionId/analytics" 
+              element={
+                <ProtectedRoute allowedRoles={['client', 'counselor']}>
+                  <SessionAnalytics />
+                </ProtectedRoute>
+              } 
+            /> */}
+
+            {/* Session Recordings Route */}
+            {/* <Route 
+              path="/session/:sessionId/recordings" 
+              element={
+                <ProtectedRoute allowedRoles={['client', 'counselor']}>
+                  <SessionRecordings />
+                </ProtectedRoute>
+              } 
+            />
+           */}
+            {/* <Route
+              path="/session-success/:bookingId"
+              element={
+                <ProtectedRoute>
+                  <SessionSuccess />
+                </ProtectedRoute>
+              }
+            /> */}
+
             {/* 👤 CLIENT PROTECTED ROUTES */}
             <Route
               path="/client/dashboard/*"
               element={
                 <ProtectedRoute>
                   <ClientDashboard />
-                 
                 </ProtectedRoute>
               }
             />
 
-
-            <Route
+            {/* <Route
               path="/profile"
               element={
                 <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="/browse-counselors"
               element={
@@ -95,14 +129,8 @@ function App() {
             {/* 👩‍⚕️ COUNSELOR AUTHENTICATION ROUTES */}
             <Route path="/counselor/login" element={<CounselorLogin />} />
             <Route path="/counselor/register" element={<CounselorRegister />} />
-            <Route
-              path="/counselor/forgot-password"
-              element={<CounselorForgotPassword />}
-            />
-            <Route
-              path="/counselor/reset-password"
-              element={<CounselorResetPassword />}
-            />
+            <Route path="/counselor/forgot-password" element={<CounselorForgotPassword />} />
+            <Route path="/counselor/reset-password" element={<CounselorResetPassword />} />
 
             {/* 👩‍⚕️ COUNSELOR PROTECTED ROUTES */}
             <Route
@@ -134,16 +162,13 @@ function App() {
           </Routes>
 
           {/* 🔥 TOAST NOTIFICATIONS */}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: "#363636",
-                color: "#fff",
-              },
-            }}
-          />
+          <Toaster 
+          position="top-right"
+          closeButton
+          richColors
+          expand={false}
+          duration={4000}
+        />
         </div>
       </CounselorAuthProvider>
     </ClientAuthProvider>

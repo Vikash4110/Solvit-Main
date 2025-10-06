@@ -1,30 +1,30 @@
-import { motion } from "framer-motion";
-import React from "react";
-import { FaGlobeAsia, FaHeart, FaLock, FaUsers } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import supportImg from "../../assets/core/IMG_2648.png";
+import { motion } from 'framer-motion';
+import React from 'react';
+import { FaGlobeAsia, FaHeart, FaLock, FaUsers } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import supportImg from '../../assets/core/IMG_2648.png';
 
 const OurMission = () => {
   const missionPoints = [
     {
       icon: <FaHeart className="text-white text-xl" />,
-      title: "Empathy First",
-      content: "We listen without judgment and meet you where you are",
+      title: 'Empathy First',
+      content: 'We listen without judgment and meet you where you are',
     },
     {
       icon: <FaLock className="text-white text-xl" />,
-      title: "Privacy Matters",
-      content: "Secure, confidential sessions with end-to-end encryption",
+      title: 'Privacy Matters',
+      content: 'Secure, confidential sessions with end-to-end encryption',
     },
     {
       icon: <FaUsers className="text-white text-xl" />,
-      title: "Holistic Help",
-      content: "Support for mental health, career, and personal growth",
+      title: 'Holistic Help',
+      content: 'Support for mental health, career, and personal growth',
     },
     {
       icon: <FaGlobeAsia className="text-white text-xl" />,
-      title: "Made for India",
-      content: "Tailored to local needs, languages, and culture",
+      title: 'Made for India',
+      content: 'Tailored to local needs, languages, and culture',
     },
   ];
 
@@ -47,24 +47,21 @@ const OurMission = () => {
               <div className="absolute -left-8 -top-8 w-32 h-32 bg-indigo-400 rounded-full opacity-20 blur-xl"></div>
               <div className="relative bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/20">
                 <p className="text-lg mb-6">
-                  At Solvit, we’re committed to connecting you with trusted
-                  counselors and coaches to support your mental health, career,
-                  and personal growth journey. We believe that everyone deserves
-                  access to compassionate guidance, no matter where they are in
-                  life.
+                  At Solvit, we’re committed to connecting you with trusted counselors and coaches
+                  to support your mental health, career, and personal growth journey. We believe
+                  that everyone deserves access to compassionate guidance, no matter where they are
+                  in life.
                 </p>
                 <p className="text-lg mb-6">
-                  Our platform makes professional support accessible,
-                  affordable, and free of stigma, thoughtfully designed with
-                  India’s unique cultural context and local challenges in mind.
-                  From navigating relationships to finding career clarity, we’re
+                  Our platform makes professional support accessible, affordable, and free of
+                  stigma, thoughtfully designed with India’s unique cultural context and local
+                  challenges in mind. From navigating relationships to finding career clarity, we’re
                   here to empower you every step of the way.
                 </p>
                 <p className="text-lg">
-                  Since our inception, we’ve worked tirelessly to build a
-                  network of certified professionals who are passionate about
-                  helping individuals overcome obstacles and unlock their full
-                  potential. Solvit is more than a service—it’s a movement to
+                  Since our inception, we’ve worked tirelessly to build a network of certified
+                  professionals who are passionate about helping individuals overcome obstacles and
+                  unlock their full potential. Solvit is more than a service—it’s a movement to
                   redefine how India approaches well-being and self-improvement.
                 </p>
               </div>
@@ -97,12 +94,8 @@ const OurMission = () => {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="bg-white/20 p-3 rounded-full">
-                      {point.icon}
-                    </div>
-                    <h3 className="text-xl font-bold text-indigo-300">
-                      {point.title}
-                    </h3>
+                    <div className="bg-white/20 p-3 rounded-full">{point.icon}</div>
+                    <h3 className="text-xl font-bold text-indigo-300">{point.title}</h3>
                   </div>
                   <p className="text-white/90">{point.content}</p>
                 </motion.div>

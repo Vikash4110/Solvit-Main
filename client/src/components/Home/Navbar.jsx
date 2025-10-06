@@ -1,666 +1,818 @@
-import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
-import { toast } from "react-hot-toast";
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  FaBars,
-  FaChevronDown,
-  FaComments,
-  FaHome,
-  FaInfoCircle,
-  FaSignOutAlt,
-  FaTimes,
-  FaUser,
-  FaUserFriends,
-  FaUserTie,
-  FaBlog,
-  FaLock,
-} from "react-icons/fa";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import logo from "../../assets/logo.png";
-import { useCounselorAuth } from "../../contexts/CounselorAuthContext";
-import { useClientAuth } from "../../contexts/ClientAuthContext";
+  Home,
+  Info,
+  MessageCircle,
+  Users,
+  Menu,
+  X,
+  ChevronDown,
+  User,
+  LogOut,
+  UserCircle,
+  Briefcase,
+  BookOpen,
+  Lock,
+  Brain,
+  Heart,
+  Rocket,
+  GraduationCap,
+  Sparkles,
+} from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { showToast } from '@/components/ui/sonner';
+import logo from '../../assets/logo.png';
+import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
+import { useClientAuth } from '../../contexts/ClientAuthContext';
+
+// Animation variants
+const fadeInDown = {
+  initial: { opacity: 0, y: -20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
+  transition: { duration: 0.3 },
+};
+
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+};
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [mobileUserDropdownOpen, setMobileUserDropdownOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+
+  const servicesRef = useRef(null);
+  const userDropdownRef = useRef(null);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const userDropdownRef = useRef(null);
-  const servicesDropdownRef = useRef(null);
 
   const { counselor, counselorLogout, counselorLoading } = useCounselorAuth();
   const { client, clientLogout, clientLoading } = useClientAuth();
 
-  // Check if user is authenticated (either client or counselor)
   const isAuthenticated = !!(counselor || client);
 
-  // Close dropdowns on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        userDropdownRef.current &&
-        !userDropdownRef.current.contains(event.target)
-      ) {
-        setIsUserDropdownOpen(false);
-      }
-      if (
-        servicesDropdownRef.current &&
-        !servicesDropdownRef.current.contains(event.target)
-      ) {
-        setIsServicesDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Navbar background change on scroll
+  // Scroll effect
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close menus on route change
+  // Close mobile menu on route change
   useEffect(() => {
     setIsOpen(false);
-    setIsUserDropdownOpen(false);
-    setIsServicesDropdownOpen(false);
-    setMobileUserDropdownOpen(false);
+    setMobileServicesOpen(false); // ADD THIS LINE
   }, [location]);
 
   // Logout handlers
-  const logoutCounselor = async () => {
+  const handleLogoutCounselor = async () => {
     await counselorLogout();
-    toast.success("Logged out successfully");
-    navigate("/");
+    showToast.success('Logged out successfully');
+    navigate('/');
   };
 
-  const logoutClient = async () => {
+  const handleLogoutClient = async () => {
     await clientLogout();
-    toast.success("Logged out successfully");
-    navigate("/");
+    showToast.success('Logged out successfully');
+    navigate('/');
   };
 
-  // ✅ UPDATED: Dynamic navLinks based on authentication status
-  const getNavLinks = () => {
-  const baseLinks = [
-    { to: "#", text: "Services", icon: <FaUserFriends />, isDropdown: true },
-    { to: "/about", text: "About", icon: <FaInfoCircle /> },
-  ];
-
-  // ✅ Counselors navigation logic
-  // Show "Counselors" link to:
-  // 1. Clients (authenticated clients need to find counselors)
-  // 2. Non-authenticated users (potential clients browsing)
-  // Hide from:
-  // 1. Counselors (they don't need to browse other counselors)
-  const shouldShowCounselors = client; // Show to everyone except counselors
-  
-  if (shouldShowCounselors) {
-    baseLinks.push({
-      to: "/browse-counselors", 
-      text: "Counselors", 
-      icon: <FaUserFriends />
-    });
-  }
-
-  // ✅ Show Blogs to everyone
-  baseLinks.push({
-    to: "/blogs",
-    text: "Blogs",
-    icon: <FaBlog />,
-    protected: false,
-  });
-
-  // ✅ Only add Contact link if user is authenticated (both clients and counselors)
-  if (isAuthenticated) {
-    baseLinks.push({
-      to: "/contact",
-      text: "Contact",
-      icon: <FaComments />,
-      protected: false,
-    });
-  }
-
-  return baseLinks;
-};
-
-  // ✅ Handler for protected contact access
+  // Protected contact handler
   const handleContactClick = () => {
     if (!isAuthenticated) {
-      toast.error("Please login to access the contact form", {
-        icon: "🔒",
+      showToast.error('Please login to access the contact form', {
+        description: 'Sign in to connect with our support team',
         duration: 3000,
-        style: {
-          borderRadius: '12px',
-          background: '#FEF2F2',
-          color: '#DC2626',
-          border: '1px solid #FECACA'
-        }
       });
-      navigate("/login");
+      navigate('/login');
       return;
     }
-    navigate("/contact");
+    navigate('/contact');
   };
 
+  // Services data
   const servicesLinks = [
-    {
-      to: "/services/mental-health",
-      text: "Mental Health Counseling",
-      icon: "🧠",
-    },
-    { to: "/services/career", text: "Career Counselling", icon: "💼" },
-    {
-      to: "/services/relationship",
-      text: "Relationship Counselling",
-      icon: "❤️",
-    },
-    { to: "/services/life-coaching", text: "Life Coaching", icon: "🚀" },
-    { to: "/services/academic", text: "Academic Counselling", icon: "🎓" },
-    {
-      to: "/services/health-wellness",
-      text: "Health and Wellness",
-      icon: "💚",
-    },
+    { to: '/services/mental-health', text: 'Mental Health Counseling', icon: Brain },
+    { to: '/services/career', text: 'Career Counselling', icon: Briefcase },
+    { to: '/services/relationship', text: 'Relationship Counselling', icon: Heart },
+    { to: '/services/life-coaching', text: 'Life Coaching', icon: Rocket },
+    { to: '/services/academic', text: 'Academic Counselling', icon: GraduationCap },
+    { to: '/services/health-wellness', text: 'Health and Wellness', icon: Sparkles },
   ];
 
-  // Desktop User Dropdown
-  const DesktopUserDropdown = ({
-    user,
-    initial,
-    profileLink,
-    dashboardLink,
-    logout,
-  }) => (
-    <div className="relative hidden lg:block" ref={userDropdownRef}>
-      <motion.button
-        onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-        className="flex items-center space-x-3 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-white/50 shadow-lg hover:bg-white/90 hover:shadow-xl transition-all duration-300 hover:scale-105"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg">
-          {user?.profilePicture ? (
-            <img
-              src={user.profilePicture}
-              alt={user.fullName}
-              className="w-full h-full rounded-full object-cover"
-            />
-          ) : (
-            user?.fullName?.charAt(0) || initial
-          )}
-        </div>
-        <div className="hidden md:block">
-          <div className="font-semibold text-gray-800 text-sm">
-            {user?.fullName}
-          </div>
-          <div className="text-xs text-gray-500">Online</div>
-        </div>
-        <motion.div
-          animate={{ rotate: isUserDropdownOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+  // Desktop User Dropdown Menu
+  const UserDropdownMenu = ({ user, profileLink, dashboardLink, onLogout, userType }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+      <div className="relative hidden lg:block">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="
+          flex items-center gap-3 px-4 py-2 h-auto
+          bg-white/80 dark:bg-neutral-800/80
+          backdrop-blur-sm border border-primary-200 dark:border-primary-800
+          rounded-full shadow-md
+          hover:bg-white dark:hover:bg-neutral-800
+          hover:shadow-xl hover:scale-105
+          transition-all duration-300
+        "
+          aria-label={`${user?.fullName} account menu`}
+          aria-expanded={isOpen}
+          aria-haspopup="true"
         >
-          <FaChevronDown className="text-xs text-gray-400" />
-        </motion.div>
-      </motion.button>
-
-      <AnimatePresence>
-        {isUserDropdownOpen && (
-          <motion.div
-            className="absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/50 overflow-hidden z-50"
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="px-6 py-4 border-b border-gray-100/50 bg-gradient-to-r from-indigo-50/50 to-blue-50/50">
-              <p className="font-semibold text-gray-800">{user?.fullName}</p>
-              <p className="text-sm text-gray-500 truncate">{user?.email}</p>
-              <div className="mt-2 inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-                Active
-              </div>
-            </div>
-
-            <div className="py-2">
-              <Link
-                to={profileLink}
-                className="px-6 py-3 flex items-center hover:bg-indigo-50/50 transition-colors duration-200"
-              >
-                <FaUser className="mr-3 text-indigo-600" />
-                <span className="font-medium">Profile</span>
-              </Link>
-              <Link
-                to={dashboardLink}
-                className="px-6 py-3 flex items-center hover:bg-indigo-50/50 transition-colors duration-200"
-              >
-                <FaHome className="mr-3 text-indigo-600" />
-                <span className="font-medium">Dashboard</span>
-              </Link>
-            </div>
-
-            <div className="border-t border-gray-100/50">
-              <button
-                onClick={logout}
-                className="w-full px-6 py-3 flex items-center hover:bg-red-50/50 hover:text-red-600 transition-colors duration-200"
-              >
-                <FaSignOutAlt className="mr-3" />
-                <span className="font-medium">Logout</span>
-              </button>
-            </div>
+          <Avatar className="h-10 w-10 ring-2 ring-primary-200 dark:ring-primary-800">
+            <AvatarImage src={user?.profilePicture} alt={user?.fullName} />
+            <AvatarFallback className="bg-gradient-to-r from-primary-700 to-primary-600 text-white font-semibold">
+              {user?.fullName?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="hidden md:flex flex-col items-start">
+            <span className="font-semibold text-sm text-neutral-800 dark:text-neutral-200">
+              {user?.fullName}
+            </span>
+            <span className="text-xs text-neutral-600 dark:text-neutral-400">
+              {userType === 'counselor' ? 'Counselor' : 'Client'}
+            </span>
+          </div>
+          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+            <ChevronDown className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+        </button>
 
-  // Mobile User Menu
-  const MobileUserDropdown = ({ user, profileLink, dashboardLink, logout }) => (
-    <div className="px-4">
-      <motion.button
-        onClick={() => setMobileUserDropdownOpen(!mobileUserDropdownOpen)}
-        className="w-full px-4 py-3 rounded-xl font-medium flex items-center justify-between bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 hover:from-indigo-100 hover:to-blue-100 transition-all duration-300"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-            {user?.fullName?.charAt(0)}
-          </div>
-          <span>{user?.fullName}</span>
-        </div>
-        <motion.div
-          animate={{ rotate: mobileUserDropdownOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <FaChevronDown />
-        </motion.div>
-      </motion.button>
-
-      <AnimatePresence>
-        {mobileUserDropdownOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mt-2 bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200/50 overflow-hidden"
-          >
-            <Link
-              to={profileLink}
-              className="px-6 py-3 flex items-center hover:bg-indigo-50/50 transition-colors duration-200"
-            >
-              <FaUser className="mr-3 text-indigo-600" /> Profile
-            </Link>
-            <Link
-              to={dashboardLink}
-              className="px-6 py-3 flex items-center hover:bg-indigo-50/50 transition-colors duration-200"
-            >
-              <FaHome className="mr-3 text-indigo-600" /> Dashboard
-            </Link>
-            <button
-              onClick={logout}
-              className="w-full px-6 py-3 flex items-center hover:bg-red-50/50 text-red-600 transition-colors duration-200"
-            >
-              <FaSignOutAlt className="mr-3" /> Logout
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-
-  // ✅ Get navigation links based on authentication status
-  const navLinks = getNavLinks();
-
-  return (
-    <motion.nav
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-white/95 backdrop-blur-md shadow-xl py-4"
-          : "bg-white/90 backdrop-blur-sm py-4"
-      }`}
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <div className="max-w-7xl mx-auto px-4 lg:px-8">
-        <div className="flex justify-between items-center">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <motion.div
-              className="relative"
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <img
-                src={logo}
-                className="h-12 w-12 scale-[4.5]"
-                alt="Solvit Logo"
-              />
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </motion.div>
-          </Link>
-
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center space-x-2">
-            {navLinks.map((link) =>
-              link.isDropdown ? (
-                <div
-                  key={link.text}
-                  className="relative"
-                  ref={servicesDropdownRef}
-                >
-                  <motion.button
-                    onClick={() =>
-                      setIsServicesDropdownOpen(!isServicesDropdownOpen)
-                    }
-                    className={`px-4 py-2 rounded-xl flex items-center font-medium transition-all duration-300 ${
-                      isServicesDropdownOpen
-                        ? "bg-indigo-100/80 text-indigo-700"
-                        : "hover:bg-indigo-50/80 hover:text-indigo-600"
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {link.icon}
-                    <span className="ml-2">{link.text}</span>
-                    <motion.div
-                      animate={{ rotate: isServicesDropdownOpen ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="ml-2"
-                    >
-                      <FaChevronDown className="text-xs" />
-                    </motion.div>
-                  </motion.button>
-
-                  <AnimatePresence>
-                    {isServicesDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute mt-3 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/50 overflow-hidden"
-                      >
-                        <div className="py-3">
-                          {servicesLinks.map((service, index) => (
-                            <motion.div
-                              key={service.text}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{
-                                duration: 0.2,
-                                delay: index * 0.05,
-                              }}
-                            >
-                              <Link
-                                to={service.to}
-                                onClick={() => setIsServicesDropdownOpen(false)}
-                                className="flex items-center px-6 py-3 hover:bg-indigo-50/50 transition-colors duration-200"
-                              >
-                                <span className="mr-3 text-lg">
-                                  {service.icon}
-                                </span>
-                                <span className="font-medium">
-                                  {service.text}
-                                </span>
-                              </Link>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <motion.div
-                  key={link.to}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    to={link.to}
-                    className={`px-4 py-2 rounded-xl hover:bg-indigo-50/80 hover:text-indigo-600 flex items-center font-medium transition-all duration-300 ${
-                      location.pathname === link.to
-                        ? "bg-indigo-100/80 text-indigo-700"
-                        : ""
-                    }`}
-                  >
-                    {link.icon} <span className="ml-2">{link.text}</span>
-                  </Link>
-                </motion.div>
-              )
-            )}
-
-            {/* ✅ Show login prompt for Contact if not authenticated */}
-            {!isAuthenticated && (
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative group"
-              >
-                <div
-                  onClick={handleContactClick}
-                  className="px-4 py-2 rounded-xl hover:bg-red-50/80 hover:text-red-600 flex items-center font-medium transition-all duration-300 cursor-pointer opacity-75 hover:opacity-100"
-                >
-                  <FaComments />
-                  <span className="ml-2">Contact</span>
-                  <FaLock className="ml-2 w-3 h-3" />
-                </div>
-                
-                {/* ✅ Tooltip for non-authenticated users */}
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                  Login required to contact us
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
-                </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Right Side (Desktop) */}
-          <div className="flex items-center space-x-4">
-            {counselor && !counselorLoading && (
-              <DesktopUserDropdown
-                user={counselor}
-                initial="C"
-                profileLink="/counselor/profile"
-                dashboardLink="/counselor/dashboard"
-                logout={logoutCounselor}
-              />
-            )}
-            {client && !clientLoading && (
-              <DesktopUserDropdown
-                user={client}
-                initial="U"
-                profileLink="/client/profile"
-                dashboardLink="/client/dashboard"
-                logout={logoutClient}
-              />
-            )}
-            {!counselor && !client && (
-              <div className="hidden lg:flex items-center space-x-3">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    to="/counselor/login"
-                    className="flex items-center px-4 py-2 rounded-xl border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-all duration-300 font-medium"
-                  >
-                    <FaUserTie className="mr-2" /> Counselor
-                  </Link>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    to="/login"
-                    className="flex items-center px-6 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:from-indigo-700 hover:to-blue-700 transition-all duration-300 font-medium shadow-lg"
-                  >
-                    <FaUser className="mr-2" /> Get Started
-                  </Link>
-                </motion.div>
-              </div>
-            )}
-
-            <motion.button
-              onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden p-2 rounded-xl bg-white/80 backdrop-blur-sm border border-white/50 shadow-lg hover:bg-white/90 transition-all duration-300"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <motion.div
-                animate={{ rotate: isOpen ? 90 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {isOpen ? (
-                  <FaTimes className="text-gray-700" />
-                ) : (
-                  <FaBars className="text-gray-700" />
-                )}
-              </motion.div>
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="lg:hidden mt-4 bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-white/50 overflow-hidden"
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="
+              absolute right-0 top-full mt-3 w-64 z-50
+              bg-white/95 dark:bg-neutral-900/95 
+              backdrop-blur-xl 
+              border border-neutral-200 dark:border-neutral-800
+              rounded-2xl shadow-2xl overflow-hidden
+            "
             >
-              <div className="py-4 space-y-2">
-                {navLinks.map((link, index) =>
-                  link.isDropdown ? (
-                    <div key={link.text} className="px-4">
-                      <motion.button
-                        onClick={() =>
-                          setIsServicesDropdownOpen(!isServicesDropdownOpen)
-                        }
-                        className="w-full px-4 py-3 flex justify-between items-center rounded-xl hover:bg-indigo-50/50 transition-colors duration-200"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: index * 0.05 }}
-                      >
-                        <span className="font-medium">{link.text}</span>
-                        <motion.div
-                          animate={{ rotate: isServicesDropdownOpen ? 180 : 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <FaChevronDown />
-                        </motion.div>
-                      </motion.button>
-                      <AnimatePresence>
-                        {isServicesDropdownOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="mt-2 pl-4 space-y-1"
-                          >
-                            {servicesLinks.map((service) => (
-                              <Link
-                                key={service.text}
-                                to={service.to}
-                                className="flex items-center px-4 py-2 rounded-lg hover:bg-indigo-50/50 transition-colors duration-200"
-                              >
-                                <span className="mr-2">{service.icon}</span>
-                                <span className="text-sm">{service.text}</span>
-                              </Link>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ) : (
-                    <motion.div
-                      key={link.to}
+              <div className="flex flex-col gap-1 p-4 bg-gradient-to-r from-primary-50/50 to-blue-50/50 dark:from-primary-900/20 dark:to-blue-900/20">
+                <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+                  {user?.fullName}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate">
+                  {user?.email}
+                </p>
+                <Badge variant="success" className="w-fit mt-2 gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  Active
+                </Badge>
+              </div>
+
+              <Separator className="bg-neutral-200 dark:bg-neutral-800" />
+
+              <div className="py-2">
+                <button
+                  onClick={() => {
+                    navigate(profileLink);
+                    setIsOpen(false);
+                  }}
+                  className="
+                  w-full flex items-center gap-3 px-6 py-3 
+                  hover:bg-primary-50 dark:hover:bg-primary-900/30 
+                  transition-colors duration-200 text-left
+                "
+                >
+                  <User className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                  <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                    Profile
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    navigate(dashboardLink);
+                    setIsOpen(false);
+                  }}
+                  className="
+                  w-full flex items-center gap-3 px-6 py-3 
+                  hover:bg-primary-50 dark:hover:bg-primary-900/30 
+                  transition-colors duration-200 text-left
+                "
+                >
+                  <Home className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                  <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                    Dashboard
+                  </span>
+                </button>
+              </div>
+
+              <Separator className="bg-neutral-200 dark:bg-neutral-800" />
+
+              <button
+                onClick={() => {
+                  onLogout();
+                  setIsOpen(false);
+                }}
+                className="
+                w-full flex items-center gap-3 px-6 py-3 
+                hover:bg-red-50 dark:hover:bg-red-900/30 
+                text-red-600 dark:text-red-400
+                transition-colors duration-200 text-left
+              "
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="font-medium">Logout</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
+  // Services Dropdown Menu (Desktop)
+  const ServicesDropdown = () => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+      <div
+        className="relative"
+        onMouseEnter={() => setIsOpen(true)}
+        onMouseLeave={() => setIsOpen(false)}
+      >
+        <button
+          className="
+          flex items-center gap-2 px-4 py-2
+          text-neutral-700 dark:text-neutral-300
+          hover:bg-primary-50 dark:hover:bg-primary-900/30
+          hover:text-primary-700 dark:hover:text-primary-300
+          rounded-xl font-medium
+          transition-all duration-200
+        "
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+        >
+          <Users className="h-4 w-4" />
+          Services
+          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+            <ChevronDown className="h-3 w-3" />
+          </motion.div>
+        </button>
+
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="
+              absolute left-0 top-full mt-2 w-80 z-50
+              bg-white/95 dark:bg-neutral-900/95 
+              backdrop-blur-xl 
+              border border-neutral-200 dark:border-neutral-800
+              rounded-2xl shadow-2xl overflow-hidden
+            "
+            >
+              <div className="py-3">
+                {servicesLinks.map((service, index) => {
+                  const Icon = service.icon;
+                  return (
+                    <motion.button
+                      key={service.to}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2, delay: index * 0.05 }}
-                      className="px-4"
+                      onClick={() => {
+                        navigate(service.to);
+                        setIsOpen(false);
+                      }}
+                      className="
+                      w-full flex items-center gap-3 px-6 py-3 
+                      hover:bg-primary-50 dark:hover:bg-primary-900/30 
+                      transition-colors duration-200 text-left
+                    "
                     >
-                      <Link
-                        to={link.to}
-                        className="flex items-center px-4 py-3 rounded-xl hover:bg-indigo-50/50 transition-colors duration-200 font-medium"
-                      >
-                        {link.icon} <span className="ml-3">{link.text}</span>
-                      </Link>
-                    </motion.div>
-                  )
-                )}
-
-                {/* ✅ Mobile Contact for non-authenticated users */}
-                {!isAuthenticated && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: navLinks.length * 0.05 }}
-                    className="px-4"
-                  >
-                    <div
-                      onClick={handleContactClick}
-                      className="flex items-center px-4 py-3 rounded-xl hover:bg-red-50/50 transition-colors duration-200 font-medium cursor-pointer opacity-75"
-                    >
-                      <FaComments />
-                      <span className="ml-3">Contact</span>
-                      <div className="ml-auto px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs font-bold">
-                        🔒 Login Required
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
+                        <Icon className="h-4 w-4 text-primary-700 dark:text-primary-400" />
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {counselor && !counselorLoading && (
-                  <MobileUserDropdown
-                    user={counselor}
-                    profileLink="/counselor/profile"
-                    dashboardLink="/counselor/dashboard"
-                    logout={logoutCounselor}
-                  />
-                )}
-                {client && !clientLoading && (
-                  <MobileUserDropdown
-                    user={client}
-                    profileLink="/client/profile"
-                    dashboardLink="/client/dashboard"
-                    logout={logoutClient}
-                  />
-                )}
-                {!counselor && !client && (
-                  <div className="px-4 pt-2 space-y-2">
-                    <Link
-                      to="/counselor/login"
-                      className="block px-4 py-3 rounded-xl bg-indigo-50/50 text-indigo-700 font-medium"
-                    >
-                      Counselor Login
-                    </Link>
-                    <Link
-                      to="/login"
-                      className="block px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-medium text-center"
-                    >
-                      Client Login
-                    </Link>
-                  </div>
-                )}
+                      <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                        {service.text}
+                      </span>
+                    </motion.button>
+                  );
+                })}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-    </motion.nav>
+    );
+  };
+
+  return (
+    <TooltipProvider>
+      <motion.nav
+        className={`
+          fixed top-0 left-0 w-full z-50 
+          transition-all duration-500
+          ${
+            scrolled
+              ? 'bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md shadow-xl py-3'
+              : 'bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm py-4'
+          }
+        `}
+        {...fadeInDown}
+      >
+        <div className="container-custom">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <Link to="/" className="flex items-center group" aria-label="Solvit Home">
+              <motion.div
+                className="relative"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <img
+                  src={logo}
+                  className="h-12 w-12 scale-[4.5] transition-transform duration-300"
+                  alt="Solvit"
+                />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </motion.div>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-2" aria-label="Main navigation">
+              <ServicesDropdown />
+
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/about')}
+                className="
+      flex items-center gap-2 px-4 py-2
+      text-neutral-700 dark:text-neutral-300
+      hover:bg-primary-50 dark:hover:bg-primary-900/30
+      hover:text-primary-700 dark:hover:text-primary-300
+      rounded-xl font-medium cursor-pointer
+      transition-all duration-200
+    "
+              >
+                <Info className="h-4 w-4" />
+                About
+              </Button>
+
+              {client && (
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate('/browse-counselors')}
+                  className="
+        flex items-center gap-2 px-4 py-2
+        text-neutral-700 dark:text-neutral-300
+        hover:bg-primary-50 dark:hover:bg-primary-900/30
+        hover:text-primary-700 dark:hover:text-primary-300
+        rounded-xl font-medium cursor-pointer
+        transition-all duration-200
+      "
+                >
+                  <Users className="h-4 w-4" />
+                  Counselors
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/blogs')}
+                className="
+      flex items-center gap-2 px-4 py-2
+      text-neutral-700 dark:text-neutral-300
+      hover:bg-primary-50 dark:hover:bg-primary-900/30
+      hover:text-primary-700 dark:hover:text-primary-300
+      rounded-xl font-medium cursor-pointer
+      transition-all duration-200
+    "
+              >
+                <BookOpen className="h-4 w-4" />
+                Blogs
+              </Button>
+
+              {isAuthenticated ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate('/contact')}
+                  className="
+        flex items-center gap-2 px-4 py-2
+        text-neutral-700 dark:text-neutral-300
+        hover:bg-primary-50 dark:hover:bg-primary-900/30
+        hover:text-primary-700 dark:hover:text-primary-300
+        rounded-xl font-medium cursor-pointer
+        transition-all duration-200
+      "
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Contact
+                </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={handleContactClick}
+                      className="
+            flex items-center gap-2 px-4 py-2
+            text-neutral-500 dark:text-neutral-500
+            hover:bg-red-50 dark:hover:bg-red-900/20
+            hover:text-red-600 dark:hover:text-red-400
+            rounded-xl font-medium cursor-pointer
+            transition-all duration-200 opacity-60
+          "
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Contact
+                      <Lock className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-sm">Login required to contact us</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </nav>
+            {/* Right Side Actions (Desktop) */}
+            <div className="hidden lg:flex items-center gap-3">
+              {counselor && !counselorLoading && (
+                <UserDropdownMenu
+                  user={counselor}
+                  profileLink="/counselor/profile"
+                  dashboardLink="/counselor/dashboard"
+                  onLogout={handleLogoutCounselor}
+                  userType="counselor"
+                />
+              )}
+
+              {client && !clientLoading && (
+                <UserDropdownMenu
+                  user={client}
+                  profileLink="/client/profile"
+                  dashboardLink="/client/dashboard"
+                  onLogout={handleLogoutClient}
+                  userType="client"
+                />
+              )}
+
+              {!counselor && !client && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/counselor/login')}
+                    className="
+                      flex items-center gap-2
+                      border-primary-200 dark:border-primary-800
+                      text-primary-700 dark:text-primary-300
+                      hover:bg-primary-50 dark:hover:bg-primary-900/30
+                      rounded-xl font-medium cursor-pointer
+                      transition-all duration-300
+                    "
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    Counselor
+                  </Button>
+
+                  <Button
+                    onClick={() => navigate('/login')}
+                    className="
+                    flex items-center gap-2
+                    bg-gradient-to-r from-primary-700 to-primary-600
+                    hover:from-primary-800 hover:to-primary-700
+                    text-white rounded-xl font-medium shadow-lg
+                    hover:shadow-xl hover:scale-105 cursor-pointer
+                    transition-all duration-300
+                  "
+                  >
+                    <UserCircle className="h-4 w-4" />
+                    Get Started
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild className="lg:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="
+                    p-2 rounded-xl
+                    bg-white/80 dark:bg-neutral-800/80
+                    backdrop-blur-sm border border-primary-200 dark:border-primary-800
+                    shadow-md hover:shadow-lg
+                    transition-all duration-300
+                  "
+                  aria-label="Toggle menu"
+                >
+                  {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+              </SheetTrigger>
+
+              <SheetContent
+                side="right"
+                className="
+                      w-[300px] sm:w-[400px]
+                      bg-white/95 dark:bg-neutral-900/95
+                      backdrop-blur-xl
+                      border-neutral-200 dark:border-neutral-800
+                      flex flex-col
+                      p-0
+                    "
+              >
+                {/* Fixed Header - Won't Scroll */}
+                <SheetHeader className="px-6 pt-6 pb-4 border-b border-neutral-200 dark:border-neutral-800">
+                  <SheetTitle className="text-primary-800 dark:text-primary-200 text-left">
+                    Menu
+                  </SheetTitle>
+                </SheetHeader>
+
+                {/* Scrollable Content Area */}
+                <ScrollArea className="flex-1 px-2">
+                  <div className="py-4 flex flex-col gap-4">
+                    {/* Mobile User Info */}
+                    {(counselor || client) && (
+                      <>
+                        <div className="mx-4 flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary-50/50 to-blue-50/50 dark:from-primary-900/20 dark:to-blue-900/20">
+                          <Avatar className="h-12 w-12 ring-2 ring-primary-200 dark:ring-primary-800">
+                            <AvatarImage
+                              src={(counselor || client)?.profilePicture}
+                              alt={(counselor || client)?.fullName}
+                            />
+                            <AvatarFallback className="bg-gradient-to-r from-primary-700 to-primary-600 text-white font-semibold">
+                              {(counselor || client)?.fullName?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-neutral-800 dark:text-neutral-200 truncate">
+                              {(counselor || client)?.fullName}
+                            </p>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                              {counselor ? 'Counselor' : 'Client'}
+                            </p>
+                          </div>
+                        </div>
+                        <Separator className="mx-4" />
+                      </>
+                    )}
+                      {/* User Actions */}
+                    {(counselor || client) && (
+                      <>
+                        
+                        <div className="space-y-2 px-4">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              navigate(counselor ? '/counselor/profile' : '/client/profile');
+                              setIsOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                          >
+                            <User className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                            <span className="font-medium">Profile</span>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              navigate(counselor ? '/counselor/dashboard' : '/client/dashboard');
+                              setIsOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                          >
+                            <Home className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                            <span className="font-medium">Dashboard</span>
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            onClick={counselor ? handleLogoutCounselor : handleLogoutClient}
+                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
+                          >
+                            <LogOut className="h-5 w-5" />
+                            <span className="font-medium">Logout</span>
+                          </Button>
+                        </div>
+                        <Separator className="mx-4" />
+                      </>
+                    )}
+
+                    {/* Mobile Navigation Links */}
+                    <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
+                      {/* Services Dropdown */}
+                      <div className="px-4">
+                        <button
+                          onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
+                          className="
+              w-full flex items-center justify-between gap-3 px-4 py-4
+              rounded-xl
+              hover:bg-primary-50 dark:hover:bg-primary-900/30
+              transition-colors duration-200
+            "
+                          aria-expanded={mobileServicesOpen}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                            <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                              Services
+                            </span>
+                          </div>
+                          <motion.div
+                            animate={{ rotate: mobileServicesOpen ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
+                          </motion.div>
+                        </button>
+
+                        <AnimatePresence>
+                          {mobileServicesOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="mt-2 space-y-1 overflow-hidden"
+                            >
+                              {servicesLinks.map((service, index) => {
+                                const Icon = service.icon;
+                                return (
+                                  <motion.button
+                                    key={service.to}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                                    onClick={() => {
+                                      navigate(service.to);
+                                      setIsOpen(false);
+                                      setMobileServicesOpen(false);
+                                    }}
+                                    className="
+                        w-full flex items-center gap-3 px-6 py-3 
+                        rounded-xl
+                        hover:bg-primary-50 dark:hover:bg-primary-900/30 
+                        transition-colors duration-200 text-left
+                      "
+                                  >
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
+                                      <Icon className="h-4 w-4 text-primary-700 dark:text-primary-400" />
+                                    </div>
+                                    <span className="font-medium text-sm text-neutral-800 dark:text-neutral-200">
+                                      {service.text}
+                                    </span>
+                                  </motion.button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* About Link */}
+                      <div className="px-4">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/about');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                        >
+                          <Info className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                          <span className="font-medium">About</span>
+                        </Button>
+                      </div>
+
+                      {/* Counselors Link */}
+                      {client && (
+                        <div className="px-4">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              navigate('/browse-counselors');
+                              setIsOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                          >
+                            <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                            <span className="font-medium">Counselors</span>
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Blogs Link */}
+                      <div className="px-4">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/blogs');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                        >
+                          <BookOpen className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                          <span className="font-medium">Blogs</span>
+                        </Button>
+                      </div>
+
+                      {/* Contact Link */}
+                      <div className="px-4">
+                        {isAuthenticated ? (
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              navigate('/contact');
+                              setIsOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                          >
+                            <MessageCircle className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                            <span className="font-medium">Contact</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            onClick={handleContactClick}
+                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl opacity-60 cursor-pointer"
+                          >
+                            <MessageCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                            <span className="font-medium">Contact</span>
+                            <Lock className="h-4 w-4 ml-auto text-red-600 dark:text-red-400" />
+                          </Button>
+                        )}
+                      </div>
+                    </nav>
+
+                  
+
+                    {/* Login Buttons */}
+                    {!counselor && !client && (
+                      <>
+                        <Separator className="mx-4" />
+                        <div className="space-y-3 px-4 pb-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              navigate('/counselor/login');
+                              setIsOpen(false);
+                            }}
+                            className="w-full justify-center gap-2 py-6 rounded-xl border-primary-200 dark:border-primary-800 cursor-pointer"
+                          >
+                            <Briefcase className="h-4 w-4" />
+                            Counselor Login
+                          </Button>
+
+                          <Button
+                            onClick={() => {
+                              navigate('/login');
+                              setIsOpen(false);
+                            }}
+                            className="w-full justify-center gap-2 py-6 rounded-xl bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 cursor-pointer"
+                          >
+                            <UserCircle className="h-4 w-4" />
+                            Get Started
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </motion.nav>
+    </TooltipProvider>
   );
 };
 

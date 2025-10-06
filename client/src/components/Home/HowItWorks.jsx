@@ -1,63 +1,83 @@
-import { motion } from "framer-motion";
-import React from "react";
-import {
-  FaArrowRight,
-  FaCalendarCheck,
-  FaCheckCircle,
-  FaComments,
-  FaSearch,
-  FaShieldAlt,
-  FaUserPlus,
-} from "react-icons/fa";
+'use client';
 
-const steps = [
+import React from 'react';
+import { motion } from 'framer-motion';
+import {
+  UserPlus,
+  Search,
+  CalendarCheck,
+  Video,
+  FileText,
+  Clock,
+  CheckCircle,
+  Wallet,
+  Sparkles,
+  Shield,
+} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+
+const clientSteps = [
   {
-    icon: <FaUserPlus />,
-    title: "Create Account",
-    subtitle: "Quick & Easy Setup",
-    description:
-      "Join thousands of users with our streamlined registration process. Choose your role and get verified instantly.",
-    features: ["Free registration", "Email verification", "Profile setup"],
-    color: "from-emerald-500 to-teal-600",
-    bgGradient: "from-emerald-50 to-teal-50",
-    iconBg: "bg-gradient-to-r from-emerald-500 to-teal-500",
+    icon: UserPlus,
+    title: 'Create Profile',
+    subtitle: 'Quick & Easy Setup',
+    description: 'Register in just 2 minutes using email or social login. Personalize your experience with basic information.',
+    features: ['Free registration', 'Email verification', 'Secure profile'],
   },
   {
-    icon: <FaSearch />,
-    title: "Find Your Expert",
-    subtitle: "Browse & Filter",
-    description:
-      "Discover certified professionals tailored to your needs with advanced filtering and detailed profiles.",
-    features: ["Verified experts", "Detailed profiles", "Rating system"],
-    color: "from-indigo-500 to-blue-600",
-    bgGradient: "from-indigo-50 to-blue-50",
-    iconBg: "bg-gradient-to-r from-indigo-500 to-blue-500",
+    icon: Search,
+    title: 'Browse Counselors',
+    subtitle: 'Find Your Match',
+    description: 'Filter by specialty, ratings, and availability. View detailed profiles to find the perfect counselor for your needs.',
+    features: ['Verified experts', 'Detailed profiles', 'Rating system'],
   },
   {
-    icon: <FaCalendarCheck />,
-    title: "Schedule Session",
-    subtitle: "Flexible Booking",
-    description:
-      "Book appointments at your convenience with real-time availability and instant confirmations.",
-    features: ["Instant booking", "Flexible timing", "First-session discount"],
-    color: "from-purple-500 to-violet-600",
-    bgGradient: "from-purple-50 to-violet-50",
-    iconBg: "bg-gradient-to-r from-purple-500 to-violet-500",
+    icon: CalendarCheck,
+    title: 'Book Session',
+    subtitle: 'Flexible Scheduling',
+    description: 'Choose online or in-person sessions. Pick a convenient date and time with instant confirmation.',
+    features: ['Instant booking', 'Flexible timing', 'First-session discount'],
   },
   {
-    icon: <FaComments />,
-    title: "Start Your Journey",
-    subtitle: "Secure & Private",
-    description:
-      "Connect through encrypted video calls or chat sessions for personalized guidance and support.",
-    features: [
-      "End-to-end encryption",
-      "Multiple formats",
-      "Progress tracking",
-    ],
-    color: "from-rose-500 to-pink-600",
-    bgGradient: "from-rose-50 to-pink-50",
-    iconBg: "bg-gradient-to-r from-rose-500 to-pink-500",
+    icon: Video,
+    title: 'Receive Support',
+    subtitle: 'Connect & Grow',
+    description: 'Start your confidential session via secure video call or in-person. Track progress and book follow-ups easily.',
+    features: ['End-to-end encryption', 'Progress tracking', 'Recurring sessions'],
+  },
+];
+
+const counselorSteps = [
+  {
+    icon: FileText,
+    title: 'Create Profile',
+    subtitle: 'Showcase Expertise',
+    description: 'Register with your qualifications and list your counseling specialties to reach the right clients.',
+    features: ['Professional verification', 'Specialty tags', 'Portfolio upload'],
+  },
+  {
+    icon: Clock,
+    title: 'Set Availability',
+    subtitle: 'Control Your Schedule',
+    description: 'Define working hours, session types, and fees. Set recurring availability for convenience.',
+    features: ['Flexible hours', 'Online/in-person options', 'Custom pricing'],
+  },
+  {
+    icon: CheckCircle,
+    title: 'Accept Bookings',
+    subtitle: 'Streamlined Process',
+    description: 'Receive booking requests from clients and confirm with one click. Reschedule easily when needed.',
+    features: ['Instant notifications', 'One-click approval', 'Rescheduling tools'],
+  },
+  {
+    icon: Wallet,
+    title: 'Manage Workflow',
+    subtitle: 'Track & Earn',
+    description: 'View upcoming sessions, track completed appointments, and manage payments from your dashboard.',
+    features: ['Payment tracking', 'Session analytics', 'Automated invoices'],
   },
 ];
 
@@ -67,177 +87,170 @@ const HowItWorks = () => {
     visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
   };
 
-  const headerVariants = {
-    hidden: { opacity: 0, y: 50 },
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
+      transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
     },
   };
 
-  const stepVariants = {
-    hidden: { opacity: 0, y: 60, scale: 0.9 },
+  const cardVariants = {
+    hidden: { opacity: 0, y: 40, scale: 0.95 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.7, ease: "easeOut" },
-    },
-    hover: {
-      y: -8,
-      scale: 1.02,
-      transition: { duration: 0.3 },
+      transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
     },
   };
 
-  const floatingVariants = {
-    animate: {
-      y: [0, -20, 0],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        ease: "easeInOut",
-      },
-    },
-  };
+  const StepCard = ({ step, index }) => (
+    <motion.div variants={cardVariants} className="h-full">
+      <Card className="group relative h-full flex flex-col bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500 overflow-hidden">
+        {/* Decorative Corner */}
+        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        
+        {/* Step Number */}
+        <div className="absolute top-4 right-4 w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center shadow-lg">
+          <span className="text-lg font-bold text-white">{index + 1}</span>
+        </div>
+
+        <CardHeader className="relative pb-4">
+          {/* Icon Container */}
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+            <step.icon className="w-8 h-8 text-white" aria-hidden="true" />
+          </div>
+
+          <CardTitle className="text-xl font-bold text-neutral-900 dark:text-white leading-tight">
+            {step.title}
+          </CardTitle>
+          <CardDescription className="text-sm font-semibold text-primary-600 dark:text-primary-400 mt-1">
+            {step.subtitle}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex-1 space-y-4 pt-0">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+            {step.description}
+          </p>
+
+          {/* Features List */}
+          <ul className="space-y-2.5 pt-2" role="list">
+            {step.features.map((feature, idx) => (
+              <li key={idx} className="flex items-start gap-2.5 text-sm">
+                <CheckCircle className="w-4 h-4 text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <span className="text-neutral-700 dark:text-neutral-300 font-medium leading-tight">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
 
   return (
-    <section className="relative py-24 bg-gradient-to-br from-slate-50 via-white to-indigo-50 overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-200/20 to-cyan-200/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
-
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-transparent py-20 lg:py-28">
+     
       <motion.div
-        className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10"
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={containerVariants}
       >
-        {/* Section Header */}
-        <motion.div className="text-center mb-20" variants={containerVariants}>
-          {/* Badge */}
-          <motion.div
-            className="inline-flex items-center space-x-2 bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-medium mb-6"
-            variants={headerVariants}
-          >
-            <FaShieldAlt className="w-4 h-4" />
-            <span>Simple 4-Step Process</span>
+        {/* Header */}
+        <motion.div className="text-center mb-16 space-y-6" variants={containerVariants}>
+          <motion.div variants={fadeInUp} className="flex justify-center">
+            <Badge
+              variant="outline"
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-white/10 backdrop-blur-md text-primary-700 dark:text-primary-300 border border-primary-600/50 dark:border-primary-800/50 rounded-full shadow-lg hover:bg-white/20 dark:hover:bg-white/5 transition-all duration-300 hover:scale-105"
+            >
+              <Shield className="w-4 h-4" aria-hidden="true" />
+              <span>Simple & Secure Process</span>
+            </Badge>
           </motion.div>
 
           <motion.h2
-            className="text-5xl md:text-6xl font-black text-slate-800 mb-6 leading-tight"
-            variants={headerVariants}
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight"
+            variants={fadeInUp}
           >
-            How{" "}
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              Solvit
-            </span>{" "}
-            Works
+            <span className="text-neutral-900 dark:text-white">Your Journey</span>
+            <br />
+            <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-400 dark:via-primary-300 dark:to-secondary-400 bg-clip-text text-transparent">
+              With Solvit
+            </span>
           </motion.h2>
+
           <motion.p
-            className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-medium"
-            variants={headerVariants}
+            className="text-lg sm:text-xl text-neutral-600 dark:text-neutral-400 max-w-3xl mx-auto leading-relaxed"
+            variants={fadeInUp}
           >
-            Transform your mental health journey with our streamlined process.
-            From registration to your first session - we make professional
-            support accessible.
+            Whether you're seeking support or providing care, we've made the process seamless.
+            Choose your path below to get started.
           </motion.p>
         </motion.div>
 
-        {/* Steps Container */}
-        <motion.div className="relative" variants={containerVariants}>
-          {/* Desktop Connection Line */}
-          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-slate-200 to-transparent transform -translate-y-1/2 z-0"></div>
-
-          {/* Steps Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
-            {steps.map((step, index) => (
-              <motion.div
-                key={index}
-                className="relative group"
-                variants={stepVariants}
-                whileHover="hover"
+        {/* Tabs for Client/Counselor Flow */}
+        <motion.div variants={fadeInUp}>
+          <Tabs defaultValue="clients" className="w-full">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-12 h-12 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-md border border-primary-200/50 dark:border-primary-800/50 p-1 rounded-xl">
+              <TabsTrigger
+                value="clients"
+                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary-700 data-[state=active]:to-primary-600 data-[state=active]:text-white font-semibold transition-all duration-300"
               >
-                <div
-                  className={`relative p-8 rounded-3xl bg-gradient-to-br ${step.bgGradient} backdrop-blur-sm border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-500 h-full`}
-                >
-                  {/* Step Number */}
-                  <div className="absolute -top-4 left-8 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-indigo-100">
-                    <span className="text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                  </div>
+              For Individuals 
+              </TabsTrigger>
+              <TabsTrigger
+                value="counselors"
+                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary-700 data-[state=active]:to-primary-600 data-[state=active]:text-white font-semibold transition-all duration-300"
+              >
+                For Counselors
+              </TabsTrigger>
+            </TabsList>
 
-                  {/* Icon Container */}
-                  <motion.div
-                    className={`w-16 h-16 rounded-2xl ${step.iconBg} flex items-center justify-center mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300`}
-                    variants={floatingVariants}
-                    animate="animate"
-                    transition={{ delay: index * 0.2 }}
-                  >
-                    <span className="text-2xl text-white">{step.icon}</span>
-                  </motion.div>
-
-                  {/* Content */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-2xl font-bold text-slate-800 mb-1">
-                        {step.title}
-                      </h3>
-                      <p className="text-sm font-medium text-indigo-600 mb-3">
-                        {step.subtitle}
-                      </p>
-                    </div>
-
-                    <p className="text-slate-600 leading-relaxed">
-                      {step.description}
-                    </p>
-
-                    {/* Features List */}
-                    <ul className="space-y-2">
-                      {step.features.map((feature, featureIndex) => (
-                        <li
-                          key={featureIndex}
-                          className="flex items-center space-x-2"
-                        >
-                          <FaCheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          <span className="text-sm text-slate-600">
-                            {feature}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Arrow Connector (Desktop) */}
-                  {index < steps.length - 1 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-indigo-100">
-                        <FaArrowRight className="w-3 h-3 text-indigo-500" />
-                      </div>
-                    </div>
-                  )}
-                </div>
+            {/* Client Steps */}
+            <TabsContent value="clients" className="mt-0">
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {clientSteps.map((step, index) => (
+                  <StepCard key={index} step={step} index={index} />
+                ))}
               </motion.div>
-            ))}
-          </div>
+            </TabsContent>
+
+            {/* Counselor Steps */}
+            <TabsContent value="counselors" className="mt-0">
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {counselorSteps.map((step, index) => (
+                  <StepCard key={index} step={step} index={index} />
+                ))}
+              </motion.div>
+            </TabsContent>
+          </Tabs>
         </motion.div>
 
-        {/* Bottom Stats & CTA */}
-        <motion.div
-          className="mt-20 text-center space-y-12"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.6 }}
-        >
-          {/* Trust Message */}
-          <p className="text-slate-500 text-xl max-w-md mx-auto">
-            Join 10,000+ users who trust Solvit for their mental health journey.
-            Start with a free consultation today.
+        {/* Bottom CTA */}
+        <motion.div variants={fadeInUp} className="text-center mt-16 space-y-4">
+          <Badge
+            variant="outline"
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-white/10 backdrop-blur-md text-primary-700 dark:text-primary-300 border border-primary-600/50 dark:border-primary-800/50 rounded-full shadow-lg hover:bg-white/20 dark:hover:bg-white/5 transition-all duration-300 hover:scale-105"
+          >
+            <Sparkles className="w-4 h-4" aria-hidden="true" />
+            <span>Trusted by many Users</span>
+          </Badge>
+          <p className="text-lg sm:text-xl text-neutral-700 dark:text-neutral-300 font-medium max-w-2xl mx-auto">
+            Start your journey with a free consultation today. Professional support is just a few clicks away.
           </p>
         </motion.div>
       </motion.div>

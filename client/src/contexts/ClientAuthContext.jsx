@@ -1,8 +1,8 @@
 // ClientAuthContext.js
-import axios from "axios";
-import { createContext, useContext, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
+import axios from 'axios';
+import { createContext, useContext, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
 // Create axios instance
 const axiosInstance = axios.create({
@@ -17,7 +17,7 @@ const ClientAuthContext = createContext();
 export const useClientAuth = () => {
   const context = useContext(ClientAuthContext);
   if (!context) {
-    throw new Error("useClientAuth must be used within a ClientAuthProvider");
+    throw new Error('useClientAuth must be used within a ClientAuthProvider');
   }
   return context;
 };
@@ -30,17 +30,17 @@ export const ClientAuthProvider = ({ children }) => {
   // Initialize auth on mount
   useEffect(() => {
     const initializeAuth = () => {
-      const token = localStorage.getItem("clientAccessToken");
+      const token = localStorage.getItem('clientAccessToken');
       if (token) {
         try {
-          const storedClient = localStorage.getItem("client");
+          const storedClient = localStorage.getItem('client');
           if (storedClient) {
             setClient(JSON.parse(storedClient));
           }
         } catch (error) {
-          console.error("Error initializing auth:", error);
-          localStorage.removeItem("clientAccessToken");
-          localStorage.removeItem("client");
+          console.error('Error initializing auth:', error);
+          localStorage.removeItem('clientAccessToken');
+          localStorage.removeItem('client');
         }
       }
       setClientLoading(false);
@@ -50,7 +50,7 @@ export const ClientAuthProvider = ({ children }) => {
   }, []);
 
   // Helper for error messages
-  const getErrorMessage = (error, fallback = "Something went wrong") =>
+  const getErrorMessage = (error, fallback = 'Something went wrong') =>
     error.response?.data?.message || error.message || fallback;
 
   const clientLogin = async (email, password) => {
@@ -62,14 +62,14 @@ export const ClientAuthProvider = ({ children }) => {
 
       const { loggedInClient, accessToken } = response.data.data;
 
-      localStorage.setItem("clientAccessToken", accessToken);
-      localStorage.setItem("client", JSON.stringify(loggedInClient));
+      localStorage.setItem('clientAccessToken', accessToken);
+      localStorage.setItem('client', JSON.stringify(loggedInClient));
       setClient(loggedInClient);
 
-      toast.success("Login successful!");
+      toast.success('Login successful!');
       return { success: true };
     } catch (error) {
-      const message = getErrorMessage(error, "Login failed");
+      const message = getErrorMessage(error, 'Login failed');
       toast.error(message);
       return { success: false, error: message };
     }
@@ -80,38 +80,36 @@ export const ClientAuthProvider = ({ children }) => {
       const formData = new FormData();
 
       Object.keys(clientData).forEach((key) => {
-        if (key === "profilePicture" && clientData[key]) {
+        if (key === 'profilePicture' && clientData[key]) {
           formData.append(key, clientData[key]);
-        } else if (key !== "otp") {
+        } else if (key !== 'otp') {
           formData.append(key, clientData[key]);
         }
       });
 
       await axiosInstance.post(API_ENDPOINTS.CLIENT_REGISTER, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      toast.success("Registration successful! Please login.");
+      toast.success('Registration successful! Please login.');
       return { success: true };
     } catch (error) {
-      const message = getErrorMessage(error, "Registration failed");
+      const message = getErrorMessage(error, 'Registration failed');
       toast.error(message);
       return { success: false, error: message };
     }
   };
 
-  const sendOtp = async (email, purpose = "register") => {
+  const sendOtp = async (email, purpose = 'register') => {
     try {
       const endpoint =
-        purpose === "reset"
-          ? API_ENDPOINTS.CLIENT_FORGOT_PASSWORD
-          : API_ENDPOINTS.CLIENT_SEND_OTP;
+        purpose === 'reset' ? API_ENDPOINTS.CLIENT_FORGOT_PASSWORD : API_ENDPOINTS.CLIENT_SEND_OTP;
 
       await axiosInstance.post(endpoint, { email });
-      toast.success("OTP sent to your email!");
+      toast.success('OTP sent to your email!');
       return { success: true };
     } catch (error) {
-      const message = getErrorMessage(error, "Failed to send OTP");
+      const message = getErrorMessage(error, 'Failed to send OTP');
       toast.error(message);
       return { success: false, error: message };
     }
@@ -120,16 +118,16 @@ export const ClientAuthProvider = ({ children }) => {
   const verifyOtp = async (email, otp) => {
     try {
       await axiosInstance.post(API_ENDPOINTS.CLIENT_VERIFY_OTP, { email, otp });
-      toast.success("OTP verified successfully!");
+      toast.success('OTP verified successfully!');
       return { success: true };
     } catch (error) {
-      const message = getErrorMessage(error, "Invalid OTP");
+      const message = getErrorMessage(error, 'Invalid OTP');
       toast.error(message);
       return { success: false, error: message };
     }
   };
 
-  const forgotPassword = (email) => sendOtp(email, "reset");
+  const forgotPassword = (email) => sendOtp(email, 'reset');
 
   const resetPassword = async (email, otp, newPassword) => {
     try {
@@ -138,10 +136,10 @@ export const ClientAuthProvider = ({ children }) => {
         otp,
         newPassword,
       });
-      toast.success("Password reset successfully!");
+      toast.success('Password reset successfully!');
       return { success: true };
     } catch (error) {
-      const message = getErrorMessage(error, "Failed to reset password");
+      const message = getErrorMessage(error, 'Failed to reset password');
       toast.error(message);
       return { success: false, error: message };
     }
@@ -150,12 +148,12 @@ export const ClientAuthProvider = ({ children }) => {
   const clientLogout = async () => {
     try {
       await axiosInstance.post(API_ENDPOINTS.CLIENT_LOGOUT);
-      toast.success("Logged out successfully!");
+      toast.success('Logged out successfully!');
     } catch (error) {
-      toast.error("Logout failed. Clearing local data.");
+      toast.error('Logout failed. Clearing local data.');
     } finally {
-      localStorage.removeItem("clientAccessToken");
-      localStorage.removeItem("client");
+      localStorage.removeItem('clientAccessToken');
+      localStorage.removeItem('client');
       setClient(null);
     }
   };
@@ -172,9 +170,5 @@ export const ClientAuthProvider = ({ children }) => {
     clientLogout,
   };
 
-  return (
-    <ClientAuthContext.Provider value={value}>
-      {children}
-    </ClientAuthContext.Provider>
-  );
+  return <ClientAuthContext.Provider value={value}>{children}</ClientAuthContext.Provider>;
 };

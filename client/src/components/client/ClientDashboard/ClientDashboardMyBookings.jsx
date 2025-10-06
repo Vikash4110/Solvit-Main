@@ -9,31 +9,45 @@ import {
   FaEdit,
   FaReceipt,
   FaExclamationTriangle,
-  FaSpinner
+  FaSpinner,
+  FaCalendar,
 } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import { useClientAuth } from '../../../contexts/ClientAuthContext';
+
 import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
+import { TIMEZONE } from '../../../constants/constants';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(isSameOrBefore);
 
 export const ClientDashboardMyBookings = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [meetingUrl, setMeetingUrl] = useState('');
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
-    totalCount: 0
+    totalCount: 0,
   });
-  const [cancelModal, setCancelModal] = useState({ show: false, booking: null });
+  const [cancelModal, setCancelModal] = useState({
+    show: false,
+    booking: null,
+  });
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
 
-  const { client } = useClientAuth();
-
-  // ✅ REMOVED pending-payments tab
   const tabs = [
     { key: 'upcoming', label: 'Upcoming' },
-    { key: 'history', label: 'History' }
+    { key: 'raiseIssue', label: 'Raise Issue' },
+    { key: 'issuesRaised', label: 'Issues Raised' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'cancelled', label: 'Cancelled' },
   ];
 
   useEffect(() => {
@@ -47,17 +61,17 @@ export const ClientDashboardMyBookings = () => {
       const queryParams = new URLSearchParams({
         filter: activeTab,
         page: page.toString(),
-        perPage: '10'
+        perPage: '10',
       });
 
       const response = await fetch(
         `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKINGS}?${queryParams}`,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-          credentials: 'include'
+          credentials: 'include',
         }
       );
 
@@ -90,11 +104,11 @@ export const ClientDashboardMyBookings = () => {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
           credentials: 'include',
-          body: JSON.stringify({ reason: cancelReason })
+          body: JSON.stringify({ reason: cancelReason }),
         }
       );
 
@@ -115,68 +129,27 @@ export const ClientDashboardMyBookings = () => {
     }
   };
 
-  const handleRescheduleBooking = async (bookingId, newSlotId, reason) => {
-    try {
-      const token = localStorage.getItem('clientAccessToken');
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKING_RESCHEDULE}/${bookingId}/reschedule`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ newSlotId, reason })
-        }
-      );
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.message || 'Booking rescheduled successfully');
-        fetchBookings();
-      } else {
-        toast.error(data.message || 'Failed to reschedule booking');
-      }
-    } catch (error) {
-      console.error('Reschedule error:', error);
-      toast.error('Failed to reschedule booking');
-    }
-  };
-
-  const formatDateTime = (date, startTime) => {
-    if (!date || !startTime) return { date: 'TBD', time: 'TBD' };
-    const sessionDate = new Date(date);
-    return {
-      date: sessionDate.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      }),
-      time: startTime
-    };
-  };
-
   const getStatusBadge = (status) => {
     const statusStyles = {
-      scheduled: 'bg-blue-100 text-blue-800',
-      booked: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-blue-100 text-blue-800',
       completed: 'bg-gray-100 text-gray-800',
       cancelled: 'bg-red-100 text-red-800',
-      'no-show': 'bg-orange-100 text-orange-800'
+      dispute_window_open: 'bg-purple-100 text-purple-800',
+      disputed: 'bg-pink-100 text-pink-800',
     };
 
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span
+        className={`px-2 py-1 text-xs font-medium rounded-full ${
+          statusStyles[status] || 'bg-gray-100 text-gray-800'
+        }`}
+      >
         {status?.replace('-', ' ').toUpperCase()}
       </span>
     );
   };
 
   const renderBookingCard = (booking) => {
-    const { date, time } = formatDateTime(booking.date, booking.startTime);
-
     return (
       <motion.div
         key={booking.bookingId}
@@ -202,28 +175,25 @@ export const ClientDashboardMyBookings = () => {
 
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {booking.counselorName}
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900">{booking.counselorName}</h3>
                 {getStatusBadge(booking.status)}
               </div>
-              
+
               {booking.specialization && (
                 <p className="text-sm text-gray-600 mb-2">{booking.specialization}</p>
               )}
 
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <div className="flex items-center">
-                  <FaCalendarAlt className="mr-1" />
-                  {date}
+                  <FaCalendar className="mr-1" />
+                  {dayjs.utc(booking.startTime).tz(TIMEZONE).format('YYYY-MM-DD')}
                 </div>
                 <div className="flex items-center">
                   <FaClock className="mr-1" />
-                  {time} - {booking.endTime}
+                  {dayjs.utc(booking.startTime).tz(TIMEZONE).format('hh:mm A')} -{' '}
+                  {dayjs.utc(booking.endTime).tz(TIMEZONE).format('hh:mm A')}
                 </div>
-                <div className="font-medium">
-                  ₹{booking.price?.toLocaleString()}
-                </div>
+                <div className="font-medium">₹{booking.price}</div>
               </div>
             </div>
           </div>
@@ -231,16 +201,19 @@ export const ClientDashboardMyBookings = () => {
 
         {/* Actions */}
         <div className="mt-4 flex flex-wrap gap-2">
-          {booking.canJoin && booking.meetingLink && (
-            <a
-              href={booking.meetingLink}
-              target="_blank"
-              rel="noopener noreferrer"
+          {booking.canJoin && booking.videoSDKRoomId && (
+            <button
+              onClick={() => {
+                window.open(
+                  `${import.meta.env.VITE_FRONTEND_URL}/meeting/${booking.bookingId}/${booking.videoSDKRoomId}`,
+                  'noopener,noreferrer'
+                );
+              }}
               className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
             >
               <FaVideo className="mr-2" />
               Join Session
-            </a>
+            </button>
           )}
 
           {booking.canCancel && (
@@ -253,34 +226,25 @@ export const ClientDashboardMyBookings = () => {
             </button>
           )}
 
-          {booking.canReschedule && (
-            <button 
-              onClick={() => {
-                // Navigate to reschedule page or open modal
-                toast.info('Reschedule functionality coming soon');
-              }}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              <FaEdit className="mr-2" />
-              Reschedule
-            </button>
-          )}
-
-          <button 
+          <button
             onClick={() => {
-              // Navigate to receipt/invoice page
-              window.open(`/receipt/${booking.bookingId}`, '_blank');
+              const link = document.createElement('a');
+              link.href = booking.invoice;
+              link.setAttribute('download', `invoice-${booking.bookingId}.pdf`);
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
             }}
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
           >
             <FaReceipt className="mr-2" />
-            Receipt
+            Download Invoice
           </button>
         </div>
 
         {booking.cancellationDeadline && booking.canCancel && (
           <div className="mt-3 text-xs text-gray-500">
-            Cancel by: {new Date(booking.cancellationDeadline).toLocaleString()}
+            Cancel by: {booking.cancellationDeadline}
           </div>
         )}
       </motion.div>
@@ -331,14 +295,16 @@ export const ClientDashboardMyBookings = () => {
             <p className="text-lg">No {activeTab.replace('-', ' ')} bookings found</p>
             <p className="text-sm mt-2">
               {activeTab === 'upcoming' && "You don't have any upcoming sessions scheduled."}
-              {activeTab === 'history' && "No past sessions to show."}
+              {activeTab === 'raise issue' && 'No sessions are currently in the review window.'}
+              {activeTab === 'issues raised' &&
+                "You haven't raised any issues for your past sessions."}
+              {activeTab === 'completed' && "You don't have any completed sessions yet."}
+              {activeTab === 'cancelled' && "You don't have any cancelled sessions."}
             </p>
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {bookings.map(renderBookingCard)}
-        </div>
+        <div className="space-y-4">{bookings.map(renderBookingCard)}</div>
       )}
 
       {/* Pagination */}
@@ -363,10 +329,7 @@ export const ClientDashboardMyBookings = () => {
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700">
-                Showing{' '}
-                <span className="font-medium">
-                  {(pagination.currentPage - 1) * 10 + 1}
-                </span>{' '}
+                Showing <span className="font-medium">{(pagination.currentPage - 1) * 10 + 1}</span>{' '}
                 to{' '}
                 <span className="font-medium">
                   {Math.min(pagination.currentPage * 10, pagination.totalCount)}
@@ -423,8 +386,8 @@ export const ClientDashboardMyBookings = () => {
                   <FaExclamationTriangle className="h-5 w-5 text-yellow-400" />
                   <div className="ml-3">
                     <p className="text-sm text-yellow-700">
-                      Cancellation must be made at least 24 hours before the session.
-                      Refunds will be processed within 5-7 business days.
+                      Cancellation must be made at least 24 hours before the session. Refunds will
+                      be processed within 5-7 business days.
                     </p>
                   </div>
                 </div>
@@ -456,9 +419,7 @@ export const ClientDashboardMyBookings = () => {
                 disabled={cancelLoading || !cancelReason.trim()}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
               >
-                {cancelLoading ? (
-                  <FaSpinner className="animate-spin mr-2" />
-                ) : null}
+                {cancelLoading ? <FaSpinner className="animate-spin mr-2" /> : null}
                 Cancel Booking
               </button>
             </div>

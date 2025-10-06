@@ -1,6 +1,6 @@
-import {Router} from 'express';
-import { verifyJWTClient } from '../middlewares/auth.middleware.js';
-import { verifyJWTCounselor } from '../middlewares/counselor-middleware.js';
+import { Router } from 'express';
+import { verifyJWTClient } from '../middlewares/clientAuth-middleware.js';
+import { verifyJWTCounselor } from '../middlewares/counselorAuth-middleware.js';
 import {
   getBlogs,
   getBlogBySlug,
@@ -11,7 +11,7 @@ import {
   updateBlog,
   deleteBlog,
   getCounselorBlogs,
-  getBlogStats
+  getBlogStats,
 } from '../controllers/blog-controller.js';
 
 const blogsRouter = Router();
@@ -24,27 +24,27 @@ const verifyJWTAny = (req, res, next) => {
       req.userType = 'client';
       return next();
     }
-    
+
     // If client auth fails, try counselor auth
     verifyJWTCounselor(req, res, (err) => {
       if (!err) {
         req.userType = 'counselor';
         return next();
       }
-      
+
       // If both fail, return unauthorized
       return res.status(401).json({
         status: 401,
-        message: "Please login as client or counselor to perform this action"
+        message: 'Please login as client or counselor to perform this action',
       });
     });
   });
 };
 
 // 🌍 PUBLIC ROUTES - No authentication required
-blogsRouter.get('/', getBlogs);                    
-blogsRouter.get('/categories', getBlogCategories); 
-blogsRouter.get('/:slug', getBlogBySlug);          
+blogsRouter.get('/', getBlogs);
+blogsRouter.get('/categories', getBlogCategories);
+blogsRouter.get('/:slug', getBlogBySlug);
 
 // 🔐 AUTHENTICATED ROUTES - Both clients and counselors can interact
 blogsRouter.post('/:blogId/like', verifyJWTAny, toggleBlogLike);
@@ -59,4 +59,4 @@ blogsRouter.delete('/:blogId', verifyJWTCounselor, deleteBlog);
 blogsRouter.get('/counselor/my-blogs', verifyJWTCounselor, getCounselorBlogs);
 blogsRouter.get('/counselor/stats', verifyJWTCounselor, getBlogStats);
 
-export {blogsRouter};
+export { blogsRouter };

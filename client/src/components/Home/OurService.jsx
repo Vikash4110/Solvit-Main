@@ -1,393 +1,296 @@
-import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
+'use client';
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
-  FaBrain,
-  FaBriefcase,
-  FaChevronLeft,
-  FaChevronRight,
-  FaGraduationCap,
-  FaHeartbeat,
-  FaRocket,
-  FaUsers,
-  FaArrowRight,
-  FaStar,
-} from "react-icons/fa";
-import { Link } from "react-router-dom";
+  Brain,
+  Briefcase,
+  Heart,
+  Rocket,
+  GraduationCap,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle,
+  Info,
+} from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import Autoplay from 'embla-carousel-autoplay';
 
 const services = [
   {
-    title: "Mental Health Counseling",
-    icon: <FaBrain />,
-    color: "from-teal-500 to-teal-600",
-    iconColor: "text-teal-600",
-    bgGradient: "from-teal-50/80 to-teal-100/80",
+    title: 'Mental Health Counseling',
+    icon: Brain,
+    image: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop',
     description: [
-      "Anxiety & Stress Management",
-      "Depression Counseling",
-      "Trauma & PTSD Support",
-      "Grief & Loss Guidance",
-      "Addiction Recovery",
+      'Anxiety & Stress Management',
+      'Depression Counseling',
+      'Trauma & PTSD Support',
+      'Grief & Loss Guidance',
+      'Addiction Recovery',
     ],
-    path: "/services/mental-health-counseling",
+    path: '/services/mental-health',
+    browsePath: '/browse-counselors?specialty=mental-health',
   },
   {
-    title: "Career & Professional Coaching",
-    icon: <FaBriefcase />,
-    color: "from-indigo-500 to-indigo-600",
-    iconColor: "text-indigo-600",
-    bgGradient: "from-indigo-50/80 to-indigo-100/80",
+    title: 'Career Counselling',
+    icon: Briefcase,
+    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop',
     description: [
-      "Career Path Guidance",
-      "Workplace Stress Relief",
-      "Leadership Development",
-      "Entrepreneurship Support",
+      'Career Path Guidance',
+      'Workplace Stress Relief',
+      'Leadership Development',
+      'Entrepreneurship Support',
     ],
-    path: "/services/career-professional-coaching",
+    path: '/services/career',
+    browsePath: '/browse-counselors?specialty=career',
   },
   {
-    title: "Health & Wellness Coaching",
-    icon: <FaHeartbeat />,
-    color: "from-red-500 to-red-600",
-    iconColor: "text-red-600",
-    bgGradient: "from-red-50/80 to-red-100/80",
+    title: 'Relationship Counselling',
+    icon: Heart,
+    image: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop',
     description: [
-      "Nutrition & Diet Plans",
-      "Fitness Lifestyle Coaching",
-      "Chronic Illness Care",
+      'Couples Counseling',
+      'Divorce & Separation Support',
+      'Family Dynamics Therapy',
+      'Parenting Strategies',
     ],
-    path: "/services/health-wellness-coaching",
+    path: '/services/relationship',
+    browsePath: '/browse-counselors?specialty=relationships',
   },
   {
-    title: "Life & Personal Development",
-    icon: <FaRocket />,
-    color: "from-purple-500 to-purple-600",
-    iconColor: "text-purple-600",
-    bgGradient: "from-purple-50/80 to-purple-100/80",
+    title: 'Life Coaching',
+    icon: Rocket,
+    image: 'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=800&auto=format&fit=crop',
     description: [
-      "Confidence Building",
-      "Goal Setting & Productivity",
-      "Time Management Skills",
+      'Confidence Building',
+      'Goal Setting & Productivity',
+      'Time Management Skills',
+      'Personal Growth',
     ],
-    path: "/services/life-personal-development",
+    path: '/services/life-coaching',
+    browsePath: '/browse-counselors?specialty=life-coaching',
   },
   {
-    title: "Relationship & Family Therapy",
-    icon: <FaUsers />,
-    color: "from-orange-500 to-orange-600",
-    iconColor: "text-orange-600",
-    bgGradient: "from-orange-50/80 to-orange-100/80",
+    title: 'Academic Counselling',
+    icon: GraduationCap,
+    image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop',
     description: [
-      "Couples Counseling",
-      "Divorce & Separation Support",
-      "Family Dynamics Therapy",
-      "Parenting Strategies",
+      'Study Skills Enhancement',
+      'Exam Anxiety Management',
+      'College & Career Prep',
+      'Learning Strategies',
     ],
-    path: "/services/relationship-family-therapy",
+    path: '/services/academic',
+    browsePath: '/browse-counselors?specialty=academic',
   },
   {
-    title: "Academic & Student Support",
-    icon: <FaGraduationCap />,
-    color: "from-green-500 to-green-600",
-    iconColor: "text-green-600",
-    bgGradient: "from-green-50/80 to-green-100/80",
+    title: 'Health and Wellness',
+    icon: Sparkles,
+    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop',
     description: [
-      "Study Skills Enhancement",
-      "Exam Anxiety Management",
-      "College & Career Prep",
+      'Nutrition & Diet Plans',
+      'Fitness Lifestyle Coaching',
+      'Chronic Illness Care',
+      'Holistic Wellness',
     ],
-    path: "/services/academic-student-support",
+    path: '/services/health-wellness',
+    browsePath: '/browse-counselors?specialty=wellness',
   },
 ];
 
 const OurServices = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [slidesToShow, setSlidesToShow] = useState(3);
-  const autoSlideInterval = 5000;
-  const timeoutRef = useRef(null);
+  const navigate = useNavigate();
+  const [api, setApi] = React.useState(null);
+  const plugin = React.useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: true })
+  );
 
-  // Handle responsiveness
-  useEffect(() => {
-    const updateSlidesToShow = () => {
-      if (window.innerWidth < 640) {
-        setSlidesToShow(1);
-      } else if (window.innerWidth < 1024) {
-        setSlidesToShow(2);
-      } else {
-        setSlidesToShow(Math.min(3, services.length));
-      }
-    };
-
-    updateSlidesToShow();
-    window.addEventListener("resize", updateSlidesToShow);
-    return () => window.removeEventListener("resize", updateSlidesToShow);
-  }, []);
-
-  // Auto-slide functionality
-  const resetTimeout = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-  };
-
-  useEffect(() => {
-    resetTimeout();
-    if (!isPaused && services.length > slidesToShow) {
-      timeoutRef.current = setTimeout(() => {
-        setCurrentIndex((prevIndex) =>
-          prevIndex >= services.length - slidesToShow ? 0 : prevIndex + 1
-        );
-      }, autoSlideInterval);
-    }
-    return () => resetTimeout();
-  }, [currentIndex, isPaused, slidesToShow]);
-
-  const handlePrev = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex <= 0 ? services.length - slidesToShow : prevIndex - 1
-    );
-  };
-
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex >= services.length - slidesToShow ? 0 : prevIndex + 1
-    );
-  };
-
-  // Calculate visible services
-  const visibleServices = [];
-  if (services.length > 0) {
-    for (let i = 0; i < slidesToShow && i < services.length; i++) {
-      const index = (currentIndex + i) % services.length;
-      visibleServices.push(services[index]);
-    }
-  }
-
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
-  const headerVariants = {
+  const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
+      transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
     },
   };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 50, scale: 0.9 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: 0.7, ease: "easeOut" },
-    },
-    hover: {
-      scale: 1.05,
-      y: -10,
-      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
-      transition: { duration: 0.3 },
-    },
-  };
-
-  if (!services.length) {
-    return <div className="text-center py-20">No services available</div>;
-  }
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 py-20">
-      {/* Background Elements - Same as Hero */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-12 w-72 h-72 bg-gradient-to-br from-blue-400/15 to-indigo-400/15 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-24 right-10 w-96 h-96 bg-gradient-to-tr from-purple-400/10 to-blue-500/10 rounded-full blur-3xl animate-pulse delay-500" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-r from-blue-100/40 to-indigo-100/40 rounded-full blur-3xl opacity-50" />
+    <section
+      className="pt-16 relative min-h-0 lg:min-h-screen flex items-center justify-center overflow-hidden bg-transparent py-20 lg:py-28"
+      aria-labelledby="services-heading"
+    >
+    
+      {/* Background Decorative Elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-12 w-72 h-72 bg-primary-400/10 dark:bg-primary-600/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-24 right-10 w-96 h-96 bg-secondary-400/10 dark:bg-secondary-600/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '500ms' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-primary-200/20 dark:bg-primary-800/10 rounded-full blur-3xl opacity-50" />
       </div>
 
       <motion.div
-        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 w-full"
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={containerVariants}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
       >
-        {/* Header Section - Hero Style */}
-        <motion.div className="text-center mb-16" variants={containerVariants}>
-          <motion.div
-            className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-full px-5 py-2 shadow mb-6 hover:scale-105 transition duration-300"
-            variants={headerVariants}
-          >
-            <FaStar className="w-4 h-4 text-blue-600" />
-            <span className="text-blue-700 font-semibold text-sm">Expert Care Services</span>
+        {/* Header Section */}
+        <motion.div className="text-center mb-16 space-y-6" variants={containerVariants}>
+          <motion.div variants={fadeInUp} className="flex justify-center">
+            <Badge
+              variant="outline"
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-white/10 backdrop-blur-md text-primary-700 dark:text-primary-300 border border-primary-200/50 dark:border-primary-800/50 rounded-full shadow-lg hover:bg-white/20 dark:hover:bg-white/5 transition-all duration-300 hover:scale-105"
+            >
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+              <span>Our Services to Support You</span>
+            </Badge>
           </motion.div>
-          
+
           <motion.h2
-            className="text-5xl sm:text-6xl font-bold leading-tight tracking-tight mb-6"
-            variants={headerVariants}
+            id="services-heading"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight"
+            variants={fadeInUp}
           >
-            <span className="text-gray-900">Comprehensive</span>
+            <span className="text-neutral-900 dark:text-white">Find Help That</span>
             <br />
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Mental Health
+            <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-400 dark:via-primary-300 dark:to-secondary-400 bg-clip-text text-transparent">
+              Fits Your Needs
             </span>
-            <br />
-            <span className="text-gray-900">Services</span>
           </motion.h2>
-          
+
           <motion.p
-            className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
-            variants={headerVariants}
+            className="text-lg sm:text-xl text-neutral-600 dark:text-neutral-400 max-w-3xl mx-auto leading-relaxed"
+            variants={fadeInUp}
           >
-            Discover our range of expert counseling and coaching services, designed to support your personal and professional growth in a safe, nurturing environment.
+            Our certified counselors specialize in different areas to help you overcome personal,
+            emotional, and professional challenges with compassionate, expert guidance.
           </motion.p>
         </motion.div>
 
-        {/* Services Carousel */}
-        <div className="relative">
-          <div className="relative h-[420px] sm:h-[440px] lg:h-[460px]">
-            <AnimatePresence initial={false}>
-              <motion.div
-                key={currentIndex}
-                className="absolute inset-0 flex gap-8 px-4 h-full"
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -50, opacity: 0 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-              >
-                {visibleServices.map((service, index) => (
-                  <Link
-                    key={`${currentIndex}-${index}`}
-                    to={service.path}
-                    className="flex-1 min-w-0 flex flex-col group"
-                  >
-                    <motion.div
-                      className={`relative p-8 rounded-3xl bg-gradient-to-br ${service.bgGradient} backdrop-blur-sm border border-white/50 shadow-xl flex flex-col h-full min-h-[360px] cursor-pointer overflow-hidden hover:shadow-2xl transition-all duration-500`}
-                      variants={cardVariants}
-                      whileHover="hover"
-                    >
-                      {/* Subtle gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-3xl" />
-                      
-                      {/* Floating icon */}
-                      <motion.div
-                        className="relative z-10 flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-xl mb-6 mx-auto group-hover:scale-110 transition-transform duration-300"
-                        variants={headerVariants}
-                      >
-                        <span className={`text-4xl ${service.iconColor}`}>
-                          {service.icon}
-                        </span>
-                      </motion.div>
-                      
-                      <motion.h3
-                        className="relative z-10 text-2xl font-bold text-gray-900 text-center mb-6 leading-tight"
-                        variants={headerVariants}
-                      >
-                        {service.title}
-                      </motion.h3>
-                      
-                      <motion.ul
-                        className="relative z-10 flex-1 text-gray-700 space-y-3 text-base"
-                        variants={containerVariants}
-                      >
-                        {service.description.map((item, idx) => (
-                          <motion.li
-                            key={idx}
-                            className="flex items-start"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.4, delay: idx * 0.1 }}
-                          >
-                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${service.color} mt-2 mr-3 flex-shrink-0`} />
-                            <span className="font-medium">{item}</span>
-                          </motion.li>
-                        ))}
-                      </motion.ul>
+        {/* Carousel */}
+        <motion.div variants={fadeInUp} className="relative px-2 sm:px-6 md:px-12 lg:px-16 xl:px-20">
+          <div className="relative pb-16 sm:pb-0">
+            <Carousel
+              plugins={[plugin.current]}
+              setApi={setApi}
+              opts={{
+                align: 'start',
+                loop: true,
+              }}
+              className="w-full p-4"
+            >
+              <CarouselContent className="-ml-4">
+                {services.map((service, index) => {
+                  const IconComponent = service.icon;
+                  return (
+                    <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3 py-2">
+                      <Card className="group relative h-full flex flex-col bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500 overflow-hidden">
+                        {/* Image */}
+                        <div className="relative overflow-hidden">
+                          <AspectRatio ratio={16 / 9}>
+                            <img
+                              src={service.image}
+                              alt={service.title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                          </AspectRatio>
 
-                      {/* Hover arrow */}
-                      <motion.div
-                        className="relative z-10 mt-6 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                      >
-                        <div className="flex items-center text-gray-600 font-semibold">
-                          <span className="mr-2">Learn More</span>
-                          <FaArrowRight className="w-4 h-4" />
+                          {/* Icon Badge with Tilt */}
+                          <div className="absolute top-4 right-4 flex items-center justify-center w-12 h-12 rounded-xl bg-white dark:bg-neutral-900 shadow-lg transition-all duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:shadow-xl">
+                            <IconComponent className="w-6 h-6 text-primary-600 dark:text-primary-400" aria-hidden="true" />
+                          </div>
                         </div>
-                      </motion.div>
-                    </motion.div>
-                  </Link>
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          </div>
 
-          {/* Navigation Buttons - Hero Style */}
-          {services.length > slidesToShow && (
-            <>
-              <motion.button
-                className="absolute top-1/2 -left-6 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm p-4 rounded-full shadow-xl hover:bg-white transition-all z-10 hover:scale-110 duration-300 border border-gray-100"
-                onClick={handlePrev}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Previous slide"
-              >
-                <FaChevronLeft className="text-indigo-600 text-xl" />
-              </motion.button>
-              
-              <motion.button
-                className="absolute top-1/2 -right-6 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm p-4 rounded-full shadow-xl hover:bg-white transition-all z-10 hover:scale-110 duration-300 border border-gray-100"
-                onClick={handleNext}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Next slide"
-              >
-                <FaChevronRight className="text-indigo-600 text-xl" />
-              </motion.button>
-            </>
-          )}
+                        <CardHeader className="relative z-10 pb-3">
+                          <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white leading-tight line-clamp-2">
+                            {service.title}
+                          </h3>
+                        </CardHeader>
 
-          {/* Mobile navigation dots */}
-          {slidesToShow === 1 && services.length > 1 && (
-            <div className="flex justify-center mt-8 space-x-3">
-              {services.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    currentIndex === index 
-                      ? "bg-indigo-600 scale-125 shadow-lg" 
-                      : "bg-gray-300 hover:bg-gray-400"
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
+                        <CardContent className="relative z-10 pb-4 flex-1">
+                          <ul className="space-y-2.5" role="list">
+                            {service.description.map((item, idx) => (
+                              <li key={idx} className="flex items-start gap-2.5 text-sm text-neutral-700 dark:text-neutral-300">
+                                <CheckCircle className="w-4 h-4 text-primary-600 dark:text-primary-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                                <span className="font-medium leading-tight">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </CardContent>
+
+                        <CardFooter className="relative z-10 pt-3 pb-6 mt-auto flex flex-col sm:flex-row gap-2">
+                          <Button
+                            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                            onClick={() => navigate(service.path)}
+                            aria-label={`Find counselors for ${service.title}`}
+                          >
+                            <Info className="w-4 h-4" aria-hidden="true" />
+                            <span>Explore More</span>
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </CarouselItem>
+                  );
+                })}
+              </CarouselContent>
+
+              {/* Desktop Navigation - Inside Carousel */}
+              <CarouselPrevious
+                className="hidden sm:flex opacity-100 -left-4 md:-left-8 lg:-left-12 !w-12 !h-12 md:!w-14 md:!h-14 rounded-full bg-white dark:bg-neutral-900 backdrop-blur-sm border-2 border-primary-300 dark:border-primary-700 shadow-xl hover:shadow-primary-500/40 hover:scale-110 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-all duration-300 text-primary-700 dark:text-primary-400"
+              />
+              <CarouselNext
+                className="hidden sm:flex opacity-100 -right-4 md:-right-8 lg:-right-12 !w-12 !h-12 md:!w-14 md:!h-14 rounded-full bg-white dark:bg-neutral-900 backdrop-blur-sm border-2 border-primary-300 dark:border-primary-700 shadow-xl hover:shadow-primary-500/40 hover:scale-110 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-all duration-300 text-primary-700 dark:text-primary-400"
+              />
+            </Carousel>
+
+            {/* Mobile Navigation - Below Carousel */}
+            <div className="flex justify-center gap-4 mt-6 sm:hidden">
+              <button
+                onClick={() => api?.scrollPrev()}
+                className="w-12 h-12 rounded-full bg-white dark:bg-neutral-900 backdrop-blur-sm border-2 border-primary-300 dark:border-primary-700 shadow-xl hover:shadow-primary-500/40 hover:scale-110 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-all duration-300 text-primary-700 dark:text-primary-400 flex items-center justify-center"
+                aria-label="Previous services"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => api?.scrollNext()}
+                className="w-12 h-12 rounded-full bg-white dark:bg-neutral-900 backdrop-blur-sm border-2 border-primary-300 dark:border-primary-700 shadow-xl hover:shadow-primary-500/40 hover:scale-110 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-all duration-300 text-primary-700 dark:text-primary-400 flex items-center justify-center"
+                aria-label="Next services"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        </motion.div>
 
-        {/* Call to Action - Hero Style */}
-        <motion.div 
-          className="text-center mt-16" 
-          variants={containerVariants}
-          initial={{ opacity: 0, y: 30 }}
+        {/* Call to Action - Fixed Text Color */}
+        <motion.div
+          className="text-center lg:mt-16 space-y-4"
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
         >
-          {/* <Link
-            to="/client-register"
-            className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-lg"
-          >
-            Start Your Journey Today
-            <FaArrowRight className="w-5 h-5 ml-2" />
-          </Link> */}
-          
-          <p className="mt-4 text-gray-500 text-xl">
+          <p className="text-lg sm:text-xl text-neutral-700 dark:text-neutral-300 font-medium max-w-2xl mx-auto">
             Join thousands who have transformed their lives with Solvit
           </p>
         </motion.div>

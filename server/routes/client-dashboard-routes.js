@@ -1,10 +1,10 @@
-import { Router } from "express";
-import { verifyJWTClient } from "../middlewares/auth.middleware.js";
+import { Router } from 'express';
+import { verifyJWTClient } from '../middlewares/clientAuth-middleware.js';
 import {
   getBookings,
   getBookingDetails,
   cancelBooking,
-  rescheduleBooking
+  rescheduleBooking,
 } from '../controllers/client-dashboard-controller.js';
 
 const clientDashboardRouter = Router();
@@ -15,4 +15,4 @@ clientDashboardRouter.get('/bookings/:id', verifyJWTClient, getBookingDetails);
 clientDashboardRouter.post('/bookings/:id/cancel', verifyJWTClient, cancelBooking);
 clientDashboardRouter.post('/bookings/:id/reschedule', verifyJWTClient, rescheduleBooking);
 
-export {clientDashboardRouter};
+export { clientDashboardRouter };

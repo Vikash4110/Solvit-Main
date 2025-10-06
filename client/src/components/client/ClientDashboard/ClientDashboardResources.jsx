@@ -1,5 +1,7 @@
-export const ClientDashboardResources = ()=>{
-    return (<>
-        <h1>Resources</h1>
-    </>)
-}
+export const ClientDashboardResources = () => {
+  return (
+    <>
+      <h1>Resources</h1>
+    </>
+  );
+};
