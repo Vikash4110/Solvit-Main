@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ProtectedRoute from '../../components/client/ClientProtectedRoute';
 // import ClientDashboardTopbar from '../../components/client/clientDashboard/ClientDashboardTopbar'
-import ClientDashboardSidebar from '../../components/client/clientDashboard/ClientDashboardSidebar';
+// import ClientDashboardSidebar from '../../components/client/clientDashboard/ClientDashboardSidebar';
 
 
 // Import all dashboard components
@@ -40,7 +40,7 @@ const ClientDashboard = () => {
     <div className="min-h-screen bg-gray-50 pt-9">
       <div className="flex">
         {/* Sidebar */}
-        <ClientDashboardSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        {/* <ClientDashboardSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} /> */}
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
