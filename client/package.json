@@ -10,7 +10,7 @@
     "lint": "eslint . --ext .js,.jsx",
     "lint:fix": "eslint . --ext .js,.jsx --fix",
     "format": "prettier --write ."
-    // "prepare": "husky install"
+  
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.83.1",
