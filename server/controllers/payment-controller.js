@@ -171,6 +171,7 @@ const paymentVerification = wrapper(async (req, res) => {
   );
 });
 
+
 // Enhanced booking processing with VideoSDK integration
 const processBookingWithVideoSDK = async (
   clientId,

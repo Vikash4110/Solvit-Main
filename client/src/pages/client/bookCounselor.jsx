@@ -27,21 +27,21 @@ import {
   MessageCircle,
 } from 'lucide-react';
 
-import { Button } from '@/components/shadcnUi/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/shadcnUi/card';
-import { Badge } from '@/components/shadcnUi/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/shadcnUi/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/shadcnUi/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
-import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { API_BASE_URL, API_ENDPOINTS } from '../../config/api';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { TIMEZONE } from '../constants/constants';
+import { TIMEZONE } from '../../constants/constants';
 
 // Initialize dayjs plugins
 dayjs.extend(utc);

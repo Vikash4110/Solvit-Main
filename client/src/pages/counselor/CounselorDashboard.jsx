@@ -65,18 +65,18 @@ const CounselorDashboard = () => {
       icon: PenSquare,
       description: 'Create and manage blog posts',
     },
-    {
-      id: 'analytics',
-      name: 'Analytics',
-      icon: BarChart3,
-      description: 'View your performance',
-    },
-    {
-      id: 'settings',
-      name: 'Settings',
-      icon: Settings,
-      description: 'Account preferences',
-    },
+    // {
+    //   id: 'analytics',
+    //   name: 'Analytics',
+    //   icon: BarChart3,
+    //   description: 'View your performance',
+    // },
+    // {
+    //   id: 'settings',
+    //   name: 'Settings',
+    //   icon: Settings,
+    //   description: 'Account preferences',
+    // },
   ];
 
   const renderContent = () => {
