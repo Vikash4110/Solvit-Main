@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ProtectedRoute from '../../components/client/ClientProtectedRoute';
-import ClientDashboardTopbar from '../../components/client/clientDashboard/ClientDashboardTopbar'
+// import ClientDashboardTopbar from '../../components/client/clientDashboard/ClientDashboardTopbar'
 import ClientDashboardSidebar from '../../components/client/clientDashboard/ClientDashboardSidebar';
 
 
@@ -45,7 +45,7 @@ const ClientDashboard = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Navigation */}
-          <ClientDashboardTopbar setSidebarOpen={setSidebarOpen} client={client} />
+          {/* <ClientDashboardTopbar setSidebarOpen={setSidebarOpen} client={client} /> */}
 
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto">
