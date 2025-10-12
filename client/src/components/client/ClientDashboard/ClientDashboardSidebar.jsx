@@ -130,7 +130,6 @@ const ClientDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
             </Button>
           )}
         </div>
-       
       </div>
 
       <Separator className="bg-primary-200/50 dark:bg-primary-800/30 flex-shrink-0" />
@@ -141,7 +140,7 @@ const ClientDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
           {sidebarItems.map((item, index) => {
             const Icon = item.icon;
             const active = isActive(item.path);
-            
+
             return (
               <Link key={item.id} to={item.path} onClick={handleNavClick}>
                 <motion.div
@@ -153,18 +152,23 @@ const ClientDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
                     variant={active ? 'default' : 'ghost'}
                     className={`
                       w-full justify-start h-auto py-3 px-3 transition-all duration-300
-                      ${active
-                        ? 'bg-gradient-to-r from-primary-600 to-blue-600 text-white shadow-xl shadow-primary-500/40 hover:shadow-primary-500/60 hover:scale-[1.02]'
-                        : 'hover:bg-primary-50 dark:hover:bg-primary-900/20 text-neutral-700 dark:text-neutral-300 hover:scale-[1.01] hover:shadow-md'
+                      ${
+                        active
+                          ? 'bg-gradient-to-r from-primary-600 to-blue-600 text-white shadow-xl shadow-primary-500/40 hover:shadow-primary-500/60 hover:scale-[1.02]'
+                          : 'hover:bg-primary-50 dark:hover:bg-primary-900/20 text-neutral-700 dark:text-neutral-300 hover:scale-[1.01] hover:shadow-md'
                       }
                     `}
                     aria-current={active ? 'page' : undefined}
                   >
                     <div className="flex items-start gap-3 w-full">
-                      <Icon className={`w-5 h-5 shrink-0 mt-0.5 transition-all duration-300 ${active ? 'text-white' : 'text-primary-600 dark:text-primary-400'}`} />
+                      <Icon
+                        className={`w-5 h-5 shrink-0 mt-0.5 transition-all duration-300 ${active ? 'text-white' : 'text-primary-600 dark:text-primary-400'}`}
+                      />
                       <div className="flex-1 text-left min-w-0">
                         <div className="font-semibold text-sm leading-snug">{item.name}</div>
-                        <div className={`text-xs mt-1 leading-snug ${active ? 'text-white/90' : 'text-neutral-500 dark:text-neutral-400'}`}>
+                        <div
+                          className={`text-xs mt-1 leading-snug ${active ? 'text-white/90' : 'text-neutral-500 dark:text-neutral-400'}`}
+                        >
                           {item.description}
                         </div>
                       </div>
@@ -175,7 +179,7 @@ const ClientDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
             );
           })}
         </nav>
-        
+
         {/* Extra padding at bottom for scroll */}
         <div className="h-4" />
       </ScrollArea>
@@ -204,4 +208,4 @@ const ClientDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
   );
 };
 
-export {ClientDashboardSidebar};
+export { ClientDashboardSidebar };
