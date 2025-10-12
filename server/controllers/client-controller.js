@@ -3,10 +3,14 @@ import { OTP } from '../models/clientOTP-model.js';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
 import { sendEmail } from '../utils/nodeMailer.js';
 import { wrapper } from '../utils/wrapper.js';
+import { logger } from '../utils/logger.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+dayjs.extend(utc);
 
 const generateOTP = () => {
   let OTP = '';
@@ -417,9 +421,18 @@ const loginClient = wrapper(async (req, res) => {
     sameSite: 'None',
   };
   const accessToken = await client.generateAccessToken();
-  const loggedInClient = await Client.findOne({
-    email: email.trim(),
-  }).select('-password');
+
+  const loggedInClient = await Client.findOne({ email: email.trim() }).select('-password').lean(); // 🚀 faster read since we’re not modifying the document
+
+  if (!loggedInClient) {
+    throw new Error('Client not found');
+  }
+
+  // 🧠 Fire-and-forget lastLogin update safely
+  Client.updateOne(
+    { _id: loggedInClient._id },
+    { $set: { lastLogin: dayjs().utc().toDate() } }
+  ).catch((err) => logger.error(`Failed to update lastLogin: ${err.message}`));
 
   res.status(200).cookie('accessToken', accessToken, options).json({
     status: 200,

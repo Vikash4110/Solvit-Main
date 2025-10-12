@@ -20,6 +20,12 @@ export const API_ENDPOINTS = {
   CLIENT_BOOKING_CANCEL: '/client/dashboard/bookings',
   CLIENT_BOOKING_RESCHEDULE: '/client/dashboard/bookings',
 
+  //Client Dashboard Personal Information ( profile ) Endpoints
+  CLIENT_PROFILE_GET_AND_UPDATE: '/client/dashboard/profile',
+  CLIENT_PROFILE_STATS: '/client/dashboard/profile/stats',
+  CLIENT_PROFILE_COMPLETENESS_VALIDATE: '/client/dashboard/profile/completenessvalidate',
+  CLIENT_PROFILE_PROFILEPICTURE_UPDATE_DELETE: '/client/dashboard/profile/picture',
+
   // Counselor endpoints
   COUNSELOR_LOGIN: '/counselors/login-counselor',
   COUNSELOR_REGISTER: '/counselors/register-counselor',

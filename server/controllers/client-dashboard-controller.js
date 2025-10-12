@@ -8,9 +8,383 @@ import { GeneratedSlot } from '../models/generatedSlots-model.js';
 import { Payment } from '../models/payment-model.js';
 import { wrapper } from '../utils/wrapper.js';
 import { timeZone, earlyJoinMinutesForSession, cancellationWindowHours } from '../constants.js';
+
+import { Client } from '../models/client-model.js';
+import { uploadOncloudinary } from '../utils/cloudinary.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { logger } from '../utils/logger.js';
+import fs from 'fs';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
+
+// ***************************************** Personal Information  ( Profile) ***************************************
+
+/**
+ * @desc    Get client profile
+ * @access  Private (Client only)
+ */
+
+export const getClientProfile = wrapper(async (req, res) => {
+  const clientId = req.verifiedClientId._id;
+
+  logger.info(`Fetching profile for client: ${clientId}`);
+
+  // Find client and exclude sensitive fields
+  const client = await Client.findById(clientId).select('-password -refreshToken -__v').lean();
+
+  if (!client) {
+    throw new ApiError(404, 'Client profile not found');
+  }
+
+  logger.info(`Profile retrieved successfully for client: ${clientId}`);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, client, 'Client profile retrieved successfully'));
+});
+
+/**
+ * @desc    Update client profile
+ * @access  Private (Client only)
+ */
+export const updateClientProfile = wrapper(async (req, res) => {
+  const clientId = req.verifiedClientId._id;
+
+  logger.info(`Updating profile for client: ${clientId}`);
+
+  // Destructure allowed fields for update
+  const {
+    fullName,
+    username,
+    email,
+    phone,
+    gender,
+    bio,
+    address,
+    preferredLanguages,
+    prefferedTopics,
+    emergencyContact,
+    therapyPreferences,
+  } = req.body;
+
+  // Validate required fields
+  if (!fullName?.trim()) {
+    throw new ApiError(400, 'Full name is required');
+  }
+
+  if (!email?.trim()) {
+    throw new ApiError(400, 'Email is required');
+  }
+
+  if (!phone?.trim()) {
+    throw new ApiError(400, 'Phone number is required');
+  }
+
+  // Check if username is being changed and if it's already taken
+  if (username && username.trim()) {
+    const existingClient = await Client.findOne({
+      username: username.trim(),
+      _id: { $ne: clientId },
+    });
+
+    if (existingClient) {
+      throw new ApiError(409, 'Username is already taken');
+    }
+  }
+
+  // Check if email is being changed and if it's already taken
+  const existingEmailClient = await Client.findOne({
+    email: email.trim().toLowerCase(),
+    _id: { $ne: clientId },
+  });
+
+  if (existingEmailClient) {
+    throw new ApiError(409, 'Email is already registered');
+  }
+
+  // Check if phone is being changed and if it's already taken
+  const existingPhoneClient = await Client.findOne({
+    phone: phone.trim(),
+    _id: { $ne: clientId },
+  });
+
+  if (existingPhoneClient) {
+    throw new ApiError(409, 'Phone number is already registered');
+  }
+
+  // Prepare update object with nested field handling
+  const updateData = {};
+
+  // Basic fields
+  if (fullName?.trim()) updateData.fullName = fullName.trim();
+  if (username?.trim()) updateData.username = username.trim();
+  if (email?.trim()) updateData.email = email.trim().toLowerCase();
+  if (phone?.trim()) updateData.phone = phone.trim();
+  if (gender) updateData.gender = gender;
+  if (bio !== undefined) updateData.bio = bio; // Allow empty string
+
+  // Nested objects - only update if provided
+  if (address) {
+    updateData.address = {
+      city: address.city?.trim() || '',
+      area: address.area?.trim() || '',
+      pincode: address.pincode?.trim() || '',
+    };
+  }
+
+  if (Array.isArray(preferredLanguages)) {
+    updateData.preferredLanguages = preferredLanguages;
+  }
+
+  if (Array.isArray(prefferedTopics)) {
+    updateData.prefferedTopics = prefferedTopics;
+  }
+
+  if (emergencyContact) {
+    updateData.emergencyContact = {
+      name: emergencyContact.name?.trim() || '',
+      relationship: emergencyContact.relationship?.trim() || '',
+      phone: emergencyContact.phone?.trim() || '',
+    };
+  }
+
+  if (therapyPreferences) {
+    updateData.therapyPreferences = {
+      preferredCounselorGender: therapyPreferences.preferredCounselorGender || 'No Preference',
+      communicationMode: Array.isArray(therapyPreferences.communicationMode)
+        ? therapyPreferences.communicationMode
+        : [],
+      goals: therapyPreferences.goals?.trim() || '',
+    };
+  }
+
+  // Update client profile
+  const updatedClient = await Client.findByIdAndUpdate(
+    clientId,
+    { $set: updateData },
+    {
+      new: true,
+      runValidators: true,
+    }
+  ).select('-password -refreshToken -__v');
+
+  if (!updatedClient) {
+    throw new ApiError(404, 'Client not found');
+  }
+
+  logger.info(`Profile updated successfully for client: ${clientId}`);
+
+  return res.status(200).json(new ApiResponse(200, updatedClient, 'Profile updated successfully'));
+});
+
+/**
+ * @desc    Update client profile picture
+ * @access  Private (Client only)
+ */
+export const updateProfilePicture = wrapper(async (req, res) => {
+  const clientId = req.verifiedClientId._id;
+
+  logger.info(`Updating profile picture for client: ${clientId}`);
+
+  // Check if file is uploaded
+  if (!req.file) {
+    throw new ApiError(400, 'Profile picture file is required');
+  }
+
+  const localFilePath = req.file.path;
+
+  // Validate file size (max 5MB)
+  if (req.file.size > 5 * 1024 * 1024) {
+    // Clean up uploaded file
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
+    throw new ApiError(400, 'File size must be less than 5MB');
+  }
+
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(req.file.mimetype)) {
+    // Clean up uploaded file
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
+    throw new ApiError(400, 'Only JPEG, JPG, PNG, and WEBP formats are allowed');
+  }
+
+  // Get current client
+  const client = await Client.findById(clientId);
+  if (!client) {
+    // Clean up uploaded file
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
+    throw new ApiError(404, 'Client not found');
+  }
+
+  // Delete old profile picture from Cloudinary (if exists)
+  if (client.profilePicture) {
+    try {
+      // Extract public_id from Cloudinary URL
+      const urlParts = client.profilePicture.split('/');
+      const publicIdWithExt = urlParts[urlParts.length - 1];
+      const publicId = publicIdWithExt.split('.')[0];
+
+      // Note: Your cloudinary.js doesn't have delete function, you can add it
+      logger.info(`Old profile picture exists, but delete function not implemented yet`);
+    } catch (error) {
+      logger.error(`Error processing old profile picture: ${error.message}`);
+      // Continue even if deletion fails
+    }
+  }
+
+  // Upload new profile picture to Cloudinary
+  let uploadResult;
+  try {
+    uploadResult = await uploadOncloudinary(localFilePath);
+
+    if (!uploadResult || !uploadResult.secure_url) {
+      throw new ApiError(500, 'Failed to upload profile picture to cloud storage');
+    }
+  } catch (error) {
+    logger.error(`Cloudinary upload failed: ${error.message}`);
+    throw new ApiError(500, 'Failed to upload profile picture');
+  }
+
+  // Update client profile picture URL
+  const updatedClient = await Client.findByIdAndUpdate(
+    clientId,
+    { profilePicture: uploadResult.secure_url },
+    { new: true }
+  ).select('-password -refreshToken -__v');
+
+  logger.info(`Profile picture updated successfully for client: ${clientId}`);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { profilePicture: updatedClient.profilePicture },
+        'Profile picture updated successfully'
+      )
+    );
+});
+
+/**
+ * @desc    Delete client profile picture
+ * @access  Private (Client only)
+ */
+export const deleteProfilePicture = wrapper(async (req, res) => {
+  const clientId = req.verifiedClientId._id;
+
+  logger.info(`Deleting profile picture for client: ${clientId}`);
+
+  const client = await Client.findById(clientId);
+  if (!client) {
+    throw new ApiError(404, 'Client not found');
+  }
+
+  if (!client.profilePicture) {
+    throw new ApiError(400, 'No profile picture to delete');
+  }
+
+  // Delete from Cloudinary (if delete function exists)
+  try {
+    const urlParts = client.profilePicture.split('/');
+    const publicIdWithExt = urlParts[urlParts.length - 1];
+    const publicId = publicIdWithExt.split('.')[0];
+
+    logger.info(`Profile picture deletion from Cloudinary not implemented yet`);
+    // You can implement deleteFromCloudinary function in cloudinary.js
+  } catch (error) {
+    logger.error(`Error deleting profile picture from Cloudinary: ${error.message}`);
+  }
+
+  // Remove profile picture URL from database
+  client.profilePicture = undefined;
+  await client.save();
+
+  logger.info(`Profile picture deleted successfully for client: ${clientId}`);
+
+  return res.status(200).json(new ApiResponse(200, null, 'Profile picture deleted successfully'));
+});
+
+/**
+ * @desc    Get client dashboard stats
+ * @access  Private (Client only)
+ */
+export const getClientStats = wrapper(async (req, res) => {
+  const clientId = req.verifiedClientId._id;
+
+  logger.info(`Fetching stats for client: ${clientId}`);
+
+  const client = await Client.findById(clientId).select('createdAt lastLogin').lean();
+
+  if (!client) {
+    throw new ApiError(404, 'Client not found');
+  }
+
+  // Basic stats (expand with actual booking/session data later)
+  const stats = {
+    totalSessions: 0, // TODO: Calculate from bookings
+    upcomingSessions: 0, // TODO: Calculate from bookings
+    completedSessions: 0, // TODO: Calculate from bookings
+    totalSpent: 0, // TODO: Calculate from payments
+    memberSince: client.createdAt,
+    lastLogin: client.lastLogin || client.createdAt,
+  };
+
+  logger.info(`Stats retrieved successfully for client: ${clientId}`);
+
+  return res.status(200).json(new ApiResponse(200, stats, 'Client stats retrieved successfully'));
+});
+
+/**
+ * @desc    Validate client profile completeness
+ * @access  Private (Client only)
+ */
+export const validateProfileCompleteness = wrapper(async (req, res) => {
+  const clientId = req.verifiedClientId._id;
+
+  const client = await Client.findById(clientId).select('-password -refreshToken -__v').lean();
+
+  if (!client) {
+    throw new ApiError(404, 'Client not found');
+  }
+
+  // Check profile completeness
+  const completeness = {
+    hasBasicInfo: !!(client.fullName && client.email && client.phone),
+    hasProfilePicture: !!client.profilePicture,
+    hasAddress: !!(client.address?.city && client.address?.area && client.address?.pincode),
+    hasEmergencyContact: !!(client.emergencyContact?.name && client.emergencyContact?.phone),
+    hasTherapyPreferences: !!(
+      client.therapyPreferences?.communicationMode?.length > 0 || client.therapyPreferences?.goals
+    ),
+    hasBio: !!client.bio,
+  };
+
+  const totalFields = Object.keys(completeness).length;
+  const completedFields = Object.values(completeness).filter(Boolean).length;
+  const completionPercentage = Math.round((completedFields / totalFields) * 100);
+
+  const result = {
+    isComplete: completionPercentage === 100,
+    completionPercentage,
+    missingFields: Object.entries(completeness)
+      .filter(([_, value]) => !value)
+      .map(([key]) => key),
+    details: completeness,
+  };
+
+  return res.status(200).json(new ApiResponse(200, result, 'Profile validation completed'));
+});
+
+//Booking
 
 // Helper function to determine if booking can be canceled
 const canCancelBooking = (booking) => {

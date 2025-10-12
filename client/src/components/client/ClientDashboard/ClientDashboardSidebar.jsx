@@ -2,165 +2,205 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  FaTachometerAlt,
-  FaCalendarCheck,
-  FaCreditCard,
-  FaUserFriends,
-  FaPlusCircle,
-  FaUserCog,
-  FaBell,
-  FaLifeRing,
-  FaBook,
-  FaTools,
-  FaTimes,
-} from 'react-icons/fa';
+  User,
+  Calendar,
+  Users,
+  CreditCard,
+  Settings,
+  Bell,
+  Shield,
+  HelpCircle,
+  LogOut,
+  X,
+  Sparkles,
+} from 'lucide-react';
+
+import { useClientAuth } from '../../../contexts/ClientAuthContext';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const sidebarItems = [
   {
-    path: '/client/dashboard',
-    name: 'Home',
-    icon: <FaTachometerAlt />,
-    color: 'text-blue-600',
+    id: 'personal-info',
+    path: '/client/dashboard/personal-info',
+    name: 'Personal Information',
+    icon: User,
+    description: 'Manage your profile',
   },
   {
+    id: 'bookings',
     path: '/client/dashboard/bookings',
-    name: 'My Bookings',
-    icon: <FaCalendarCheck />,
-    color: 'text-green-600',
+    name: 'My Sessions',
+    icon: Calendar,
+    description: 'Upcoming & past sessions',
   },
   {
-    path: '/client/dashboard/payments',
-    name: 'Payments',
-    icon: <FaCreditCard />,
-    color: 'text-yellow-600',
-  },
-  {
-    path: '/client/dashboard/counselors',
+    id: 'connected-counselors',
+    path: '/client/dashboard/connected-counselors',
     name: 'Connected Counselors',
-    icon: <FaUserFriends />,
-    color: 'text-purple-600',
+    icon: Users,
+    description: 'Your counselors',
   },
   {
-    path: '/client/dashboard/book-session',
-    name: 'Book New Session',
-    icon: <FaPlusCircle />,
-    color: 'text-indigo-600',
+    id: 'payments',
+    path: '/client/dashboard/payments',
+    name: 'Payments & Billing',
+    icon: CreditCard,
+    description: 'Transaction history',
   },
   {
+    id: 'account-settings',
+    path: '/client/dashboard/account-settings',
+    name: 'Account Settings',
+    icon: Settings,
+    description: 'Security & preferences',
+  },
+  {
+    id: 'notifications',
     path: '/client/dashboard/notifications',
     name: 'Notifications',
-    icon: <FaBell />,
-    color: 'text-red-600',
+    icon: Bell,
+    description: 'Alerts & reminders',
   },
   {
-    path: '/client/dashboard/support',
+    id: 'privacy-security',
+    path: '/client/dashboard/privacy-security',
+    name: 'Privacy & Security',
+    icon: Shield,
+    description: 'Data privacy settings',
+  },
+  {
+    id: 'help-support',
+    path: '/client/dashboard/help-support',
     name: 'Help & Support',
-    icon: <FaLifeRing />,
-    color: 'text-orange-600',
-  },
-  {
-    path: '/client/dashboard/resources',
-    name: 'Resources',
-    icon: <FaBook />,
-    color: 'text-teal-600',
-  },
-  {
-    path: '/client/dashboard/admin',
-    name: 'Admin Support',
-    icon: <FaTools />,
-    color: 'text-pink-600',
+    icon: HelpCircle,
+    description: 'Get assistance',
   },
 ];
 
-const ClientDashboardSidebar = ({ sidebarOpen, setSidebarOpen }) => {
+const ClientDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
   const location = useLocation();
+  const { client, clientLogout } = useClientAuth();
+
+  const handleLogout = async () => {
+    try {
+      await clientLogout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const isActive = (path) => location.pathname === path;
+
+  const getInitials = () => {
+    const name = client?.name || client?.firstName || '';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+    }
+    return name.charAt(0)?.toUpperCase() || 'C';
+  };
+
+  const handleNavClick = () => {
+    if (onNavigate) onNavigate();
+  };
 
   return (
-    <>
-      {/* Desktop Sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 overflow-y-auto">
-          <div className="flex items-center flex-shrink-0 px-4">
-            <h2 className="text-lg font-semibold text-gray-800">Client Portal</h2>
+    <div className="flex flex-col h-full">
+      {/* Profile Section with Gradient */}
+      <div className="p-6 flex-shrink-0 bg-gradient-to-br from-primary-50/50 to-blue-50/30 dark:from-primary-950/30 dark:to-blue-950/20">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            <h2 className="text-base font-bold bg-gradient-to-r from-primary-700 to-blue-600 dark:from-primary-400 dark:to-blue-400 bg-clip-text text-transparent">
+              Dashboard
+            </h2>
           </div>
-          <div className="mt-8 flex-grow flex flex-col">
-            <nav className="flex-1 px-2 space-y-1">
-              {sidebarItems.map((item) => {
-                const isActive =
-                  location.pathname === item.path ||
-                  (item.path === '/client/dashboard' && location.pathname === '/client/dashboard/');
-
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                      isActive
-                        ? 'bg-indigo-100 text-indigo-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                  >
-                    <span
-                      className={`mr-3 flex-shrink-0 h-6 w-6 ${isActive ? 'text-indigo-500' : item.color}`}
-                    >
-                      {item.icon}
-                    </span>
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+          {showCloseButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onNavigate}
+              className="lg:hidden hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:scale-110 transition-all duration-300"
+            >
+              <X className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            </Button>
+          )}
         </div>
+       
       </div>
 
-      {/* Mobile Sidebar */}
-      <motion.div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 md:hidden ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        initial={false}
-        animate={{ x: sidebarOpen ? 0 : -256 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      >
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">Client Portal</h2>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-2 rounded-md text-gray-400 hover:text-gray-600"
-            >
-              <FaTimes className="h-5 w-5" />
-            </button>
-          </div>
-          <nav className="flex-1 px-2 py-4 space-y-1">
-            {sidebarItems.map((item) => {
-              const isActive = location.pathname === item.path;
+      <Separator className="bg-primary-200/50 dark:bg-primary-800/30 flex-shrink-0" />
 
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive
-                      ? 'bg-indigo-100 text-indigo-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+      {/* Navigation - Scrollable with proper padding */}
+      <ScrollArea className="flex-1">
+        <nav className="px-4 py-4 space-y-2" role="navigation" aria-label="Main navigation">
+          {sidebarItems.map((item, index) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
+            
+            return (
+              <Link key={item.id} to={item.path} onClick={handleNavClick}>
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.05, ease: [0.4, 0, 0.2, 1] }}
                 >
-                  <span
-                    className={`mr-3 flex-shrink-0 h-6 w-6 ${isActive ? 'text-indigo-500' : item.color}`}
+                  <Button
+                    variant={active ? 'default' : 'ghost'}
+                    className={`
+                      w-full justify-start h-auto py-3 px-3 transition-all duration-300
+                      ${active
+                        ? 'bg-gradient-to-r from-primary-600 to-blue-600 text-white shadow-xl shadow-primary-500/40 hover:shadow-primary-500/60 hover:scale-[1.02]'
+                        : 'hover:bg-primary-50 dark:hover:bg-primary-900/20 text-neutral-700 dark:text-neutral-300 hover:scale-[1.01] hover:shadow-md'
+                      }
+                    `}
+                    aria-current={active ? 'page' : undefined}
                   >
-                    {item.icon}
-                  </span>
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </motion.div>
-    </>
+                    <div className="flex items-start gap-3 w-full">
+                      <Icon className={`w-5 h-5 shrink-0 mt-0.5 transition-all duration-300 ${active ? 'text-white' : 'text-primary-600 dark:text-primary-400'}`} />
+                      <div className="flex-1 text-left min-w-0">
+                        <div className="font-semibold text-sm leading-snug">{item.name}</div>
+                        <div className={`text-xs mt-1 leading-snug ${active ? 'text-white/90' : 'text-neutral-500 dark:text-neutral-400'}`}>
+                          {item.description}
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                </motion.div>
+              </Link>
+            );
+          })}
+        </nav>
+        
+        {/* Extra padding at bottom for scroll */}
+        <div className="h-4" />
+      </ScrollArea>
+
+      <Separator className="bg-primary-200/50 dark:bg-primary-800/30 flex-shrink-0" />
+
+      {/* Logout Button with Gradient Hover */}
+      <div className="p-4 flex-shrink-0 bg-gradient-to-t from-red-50/30 to-transparent dark:from-red-950/10">
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start h-auto py-3 px-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:shadow-lg hover:shadow-red-500/20 hover:scale-[1.02] transition-all duration-300 group"
+        >
+          <div className="flex items-center gap-3 w-full">
+            <LogOut className="w-5 h-5 shrink-0 group-hover:rotate-12 transition-transform duration-300" />
+            <div className="flex-1 text-left min-w-0">
+              <div className="font-semibold text-sm leading-snug">Logout</div>
+              <div className="text-xs mt-0.5 text-neutral-500 dark:text-neutral-400">
+                Sign out of your account
+              </div>
+            </div>
+          </div>
+        </Button>
+      </div>
+    </div>
   );
 };
 
