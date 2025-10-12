@@ -25,7 +25,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
 
-export const ClientDashboardMyBookings = () => {
+const ClientDashboardMyBookings = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -429,3 +429,6 @@ export const ClientDashboardMyBookings = () => {
     </div>
   );
 };
+
+
+export default ClientDashboardMyBookings

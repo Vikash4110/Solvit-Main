@@ -8,13 +8,13 @@ import ClientDashboardSidebar from '@/components/client/clientDashboard/ClientDa
 
 // Import only required dashboard components
 import  ClientDashboardPayments  from '@/components/client/clientDashboard/ClientDashboardPayments.jsx';
-import { ClientDashboardHelpSupport } from '../../components/client/clientDashboard/ClientDashboardHelpSupport.jsx';
-import { ClientDashboardNotifications } from '../../components/client/clientDashboard/ClientDashboardNotifications.jsx';
-import { ClientDashboardMyBookings } from '../../components/client/clientDashboard/ClientDashboardMyBookings.jsx';
-import { ClientDashboardPersonalInfo } from '../../components/client/clientDashboard/ClientDashboardPersonalInfo.jsx';
-import { ClientDashboardConnectedCounselors } from '../../components/client/clientDashboard/ClientDashboardConnectedCounselors.jsx';
-import { ClientDashboardAccountSettings } from '../../components/client/clientDashboard/ClientDashboardAccountSettings.jsx';
-import { ClientDashboardPrivacySecurity } from '../../components/client/clientDashboard/ClientDashboardPrivacySecurity.jsx';
+import  ClientDashboardHelpSupport  from '@/components/client/clientDashboard/ClientDashboardHelpSupport.jsx';
+import  ClientDashboardNotifications  from '@/components/client/clientDashboard/ClientDashboardNotifications.jsx';
+import  ClientDashboardMyBookings  from '@/components/client/clientDashboard/ClientDashboardMyBookings.jsx';
+import  ClientDashboardPersonalInfo  from '@/components/client/clientDashboard/ClientDashboardPersonalInfo.jsx';
+import  ClientDashboardConnectedCounselors  from '@/components/client/clientDashboard/ClientDashboardConnectedCounselors.jsx';
+import  ClientDashboardAccountSettings  from '@/components/client/clientDashboard/ClientDashboardAccountSettings.jsx';
+import  ClientDashboardPrivacySecurity  from '@/components/client/clientDashboard/ClientDashboardPrivacySecurity.jsx';
 
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { Button } from '@/components/ui/button';

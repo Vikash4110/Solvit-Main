@@ -1598,4 +1598,4 @@ const InfoItem = ({ icon: Icon, label, value, badge }) => {
   );
 };
 
-export { ClientDashboardPersonalInfo };
+export default ClientDashboardPersonalInfo;
