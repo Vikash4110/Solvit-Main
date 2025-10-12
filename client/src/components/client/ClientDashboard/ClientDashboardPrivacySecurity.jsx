@@ -6,4 +6,4 @@ const ClientDashboardPrivacySecurity = () => {
   );
 };
 
-export default ClientDashboardPrivacySecurity
+export default ClientDashboardPrivacySecurity;

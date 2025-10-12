@@ -6,4 +6,4 @@ const ClientDashboardAccountSettings = () => {
   );
 };
 
-export default ClientDashboardAccountSettings
+export default ClientDashboardAccountSettings;

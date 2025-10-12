@@ -6,4 +6,4 @@ const ClientDashboardConnectedCounselors = () => {
   );
 };
 
-export default ClientDashboardConnectedCounselors
+export default ClientDashboardConnectedCounselors;

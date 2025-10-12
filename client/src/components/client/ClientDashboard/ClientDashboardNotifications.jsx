@@ -6,4 +6,4 @@ const ClientDashboardNotifications = () => {
   );
 };
 
-export default ClientDashboardNotifications
+export default ClientDashboardNotifications;

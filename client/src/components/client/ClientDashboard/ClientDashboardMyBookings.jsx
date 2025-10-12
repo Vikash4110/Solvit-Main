@@ -431,4 +431,4 @@ const ClientDashboardMyBookings = () => {
 };
 
 
-export default ClientDashboardMyBookings
+export default ClientDashboardMyBookings;

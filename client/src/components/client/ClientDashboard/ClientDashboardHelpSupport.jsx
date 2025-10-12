@@ -6,4 +6,4 @@ const ClientDashboardHelpSupport = () => {
   );
 };
 
-export default ClientDashboardHelpSupport
+export default ClientDashboardHelpSupport;
