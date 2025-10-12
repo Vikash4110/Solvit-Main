@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import ProtectedRoute from '../../components/client/ClientProtectedRoute';
+// import ClientDashboardTopbar from '../../components/client/clientDashboard/ClientDashbardTopbar';
 import ClientDashboardSidebar from '../../components/client/clientDashboard/ClientDashboardSidebar';
 
 // Import only required dashboard components

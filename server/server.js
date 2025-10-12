@@ -12,6 +12,9 @@ import { clientDashboardRouter } from './routes/client-dashboard-routes.js';
 import { blogsRouter } from './routes/blog-routes.js';
 import { contactRouter } from './routes/contact-routes.js';
 import { priceRouter } from './routes/price-routes.js';
+
+import { adminRouter } from './routes/admin-routes.js';
+
 import { videoCallRouter } from './routes/videoCall.routes.js';
 
 // Security
@@ -76,7 +79,21 @@ export const instance = new Razorpay({
   key_secret: process.env.RAZORPAY_API_SECRET,
 });
 
-// Existing Routes
+// In your main server file, add this before other middleware:
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// Also add specific admin route logging
+app.use(
+  '/api/v1/admin',
+  (req, res, next) => {
+    console.log('Admin route accessed:', req.method, req.path);
+    next();
+  },
+  adminRouter
+);
 app.use('/api/v1/clients', clientRouter);
 app.use('/api/v1/counselors', counselorRouter);
 app.use('/api/v1/slotManagement', availabilityRouter);
@@ -86,6 +103,7 @@ app.use('/api/v1/client/dashboard', clientDashboardRouter);
 app.use('/api/v1/blogs', blogsRouter);
 app.use('/api/v1/contact', contactRouter);
 app.use('/api/v1/price', priceRouter);
+
 app.use('/api/v1/meeting', videoCallRouter);
 
 // VideoSDK Webhook

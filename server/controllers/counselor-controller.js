@@ -9,12 +9,7 @@ const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 const generateOTP = () => {
-  let OTP = '';
-  for (let i = 0; i < 6; i++) {
-    const digit = Math.floor(Math.random() * 10);
-    OTP += digit;
-  }
-  return OTP;
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 const sendOtpRegisterEmail = wrapper(async (req, res) => {
@@ -22,118 +17,133 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
 
   if (!email) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Email is required',
     });
   }
 
-  const isValidEmail = emailRegex.test(email);
-  if (!isValidEmail) {
+  if (!emailRegex.test(email)) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid email format',
     });
   }
-  const existingCounselor = await Counselor.findOne({ email: email.trim() });
 
+  const existingCounselor = await Counselor.findOne({ email: email.trim() });
   if (existingCounselor) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Email already exists',
     });
   }
 
   const generatedOTP = generateOTP();
-  const otpSend = await sendEmail(
-    email,
-    'Counselor Email Verification',
-    `Your OTP for email verification is: ${generatedOTP}. It is valid for 10 minutes.`
-  );
 
-  if (!otpSend) {
+  try {
+    const otpSend = await sendEmail(
+      email.trim(),
+      'Counselor Email Verification',
+      `Your OTP for email verification is: ${generatedOTP}. It is valid for 10 minutes.`
+    );
+
+    if (!otpSend) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error occurred while sending OTP',
+      });
+    }
+
+    // Delete existing OTPs for this email and purpose
+    await OTP.deleteMany({
+      email: email.trim(),
+      purpose: 'register',
+    });
+
+    // Save new OTP
+    const saveOTP = await OTP.create({
+      email: email.trim(),
+      otp: generatedOTP,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      purpose: 'register',
+    });
+
+    if (!saveOTP) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error occurred while saving OTP',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP sent successfully!',
+    });
+  } catch (error) {
     return res.status(500).json({
-      status: 500,
+      success: false,
       message: 'Error occurred while sending OTP',
+      error: error.message,
     });
   }
-
-  await OTP.deleteMany({
-    email: email,
-    purpose: 'register',
-  });
-
-  const saveOTP = await OTP.create({
-    email: email,
-    otp: generatedOTP,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    purpose: 'register',
-  });
-
-  const otpSaved = await OTP.findById(saveOTP._id);
-  if (!otpSaved) {
-    return res.status(500).json({
-      status: 500,
-      message: 'Error occurred while saving OTP',
-    });
-  }
-
-  return res.status(200).json({
-    status: 200,
-    message: 'OTP sent successfully!',
-  });
 });
 
 const verifyOtpRegisterEmail = wrapper(async (req, res) => {
   const { email, otp } = req.body;
+
   if (!email || !otp) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Email and OTP are required',
     });
   }
 
-  const isValidEmail = emailRegex.test(email);
-  if (!isValidEmail) {
+  if (!emailRegex.test(email)) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid email format',
     });
   }
 
-  const savedOTP = await OTP.findOne({ email, purpose: 'register' }).sort({
-    createdAt: -1,
-  });
-  if (!savedOTP) {
-    return res.status(404).json({
-      status: 404,
-      message: 'No OTP found for this email',
-    });
-  }
-
-  if (savedOTP.expiresAt < new Date()) {
-    return res.status(400).json({
-      status: 400,
-      message: 'OTP has expired',
-    });
-  }
-
-  if (otp.trim() === savedOTP.otp) {
-    await OTP.deleteMany({
-      email: email,
+  try {
+    const savedOTP = await OTP.findOne({
+      email: email.trim(),
       purpose: 'register',
-    });
+    }).sort({ createdAt: -1 });
 
-    return res.status(200).json({
-      status: 200,
-      message: 'Email verified successfully',
+    if (!savedOTP) {
+      return res.status(404).json({
+        success: false,
+        message: 'No OTP found for this email',
+      });
+    }
+
+    if (savedOTP.expiresAt < new Date()) {
+      await OTP.deleteOne({ _id: savedOTP._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired',
+      });
+    }
+
+    if (otp.trim() === savedOTP.otp) {
+      await OTP.deleteOne({ _id: savedOTP._id });
+      return res.status(200).json({
+        success: true,
+        message: 'Email verified successfully',
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid OTP',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error occurred during OTP verification',
+      error: error.message,
     });
   }
-
-  return res.status(400).json({
-    status: 400,
-    message: 'Invalid OTP',
-    attemptsLeft: savedOTP.attempts ? savedOTP.attempts - 1 : 2,
-  });
 });
 
 const forgotPassword = wrapper(async (req, res) => {
@@ -141,65 +151,71 @@ const forgotPassword = wrapper(async (req, res) => {
 
   if (!email) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Email is required',
     });
   }
 
-  const isValidEmail = emailRegex.test(email);
-  if (!isValidEmail) {
+  if (!emailRegex.test(email)) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid email format',
     });
   }
 
-  const counselor = await Counselor.findOne({ email: email.trim() });
-  if (!counselor) {
-    return res.status(404).json({
-      status: 404,
-      message: 'Counselor not found',
+  try {
+    const counselor = await Counselor.findOne({ email: email.trim() });
+    if (!counselor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Counselor not found',
+      });
+    }
+
+    const generatedOTP = generateOTP();
+    const otpSend = await sendEmail(
+      email.trim(),
+      'Password Reset Request',
+      `Your OTP for password reset is: ${generatedOTP}. It is valid for 10 minutes.`
+    );
+
+    if (!otpSend) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error occurred while sending OTP',
+      });
+    }
+
+    await OTP.deleteMany({
+      email: email.trim(),
+      purpose: 'reset',
     });
-  }
 
-  const generatedOTP = generateOTP();
-  const otpSend = await sendEmail(
-    email,
-    'Password Reset Request',
-    `Your OTP for password reset is: ${generatedOTP}. It is valid for 10 minutes.`
-  );
+    const saveOTP = await OTP.create({
+      email: email.trim(),
+      otp: generatedOTP,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      purpose: 'reset',
+    });
 
-  if (!otpSend) {
+    if (!saveOTP) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error occurred while saving OTP',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset OTP sent successfully!',
+    });
+  } catch (error) {
     return res.status(500).json({
-      status: 500,
-      message: 'Error occurred while sending OTP',
+      success: false,
+      message: 'Error occurred while processing request',
+      error: error.message,
     });
   }
-
-  await OTP.deleteMany({
-    email: email,
-    purpose: 'reset',
-  });
-
-  const saveOTP = await OTP.create({
-    email: email,
-    otp: generatedOTP,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    purpose: 'reset',
-  });
-
-  const otpSaved = await OTP.findById(saveOTP._id);
-  if (!otpSaved) {
-    return res.status(500).json({
-      status: 500,
-      message: 'Error occurred while saving OTP',
-    });
-  }
-
-  return res.status(200).json({
-    status: 200,
-    message: 'Password reset OTP sent successfully!',
-  });
 });
 
 const resetPassword = wrapper(async (req, res) => {
@@ -207,141 +223,144 @@ const resetPassword = wrapper(async (req, res) => {
 
   if (!email || !otp || !newPassword) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Email, OTP, and new password are required',
     });
   }
 
-  const isValidEmail = emailRegex.test(email);
-  if (!isValidEmail) {
+  if (!emailRegex.test(email)) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid email format',
     });
   }
 
-  const isValidPassword = passwordRegex.test(newPassword);
-  if (!isValidPassword) {
+  if (!passwordRegex.test(newPassword)) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message:
         'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character',
     });
   }
 
-  const savedOTP = await OTP.findOne({ email, purpose: 'reset' }).sort({
-    createdAt: -1,
-  });
-  if (!savedOTP) {
-    return res.status(404).json({
-      status: 404,
-      message: 'No OTP found for this email',
+  try {
+    const savedOTP = await OTP.findOne({
+      email: email.trim(),
+      purpose: 'reset',
+    }).sort({ createdAt: -1 });
+
+    if (!savedOTP) {
+      return res.status(404).json({
+        success: false,
+        message: 'No OTP found for this email',
+      });
+    }
+
+    if (savedOTP.expiresAt < new Date()) {
+      await OTP.deleteOne({ _id: savedOTP._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired',
+      });
+    }
+
+    if (otp.trim() !== savedOTP.otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP',
+      });
+    }
+
+    const counselor = await Counselor.findOne({ email: email.trim() });
+    if (!counselor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Counselor not found',
+      });
+    }
+
+    counselor.password = newPassword;
+    await counselor.save();
+
+    await OTP.deleteMany({
+      email: email.trim(),
+      purpose: 'reset',
+    });
+
+    await sendEmail(
+      email.trim(),
+      'Password Reset Successful',
+      'Your password has been successfully reset. Please log in with your new password.'
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset successfully',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error occurred while resetting password',
+      error: error.message,
     });
   }
-
-  if (savedOTP.expiresAt < new Date()) {
-    return res.status(400).json({
-      status: 400,
-      message: 'OTP has expired',
-    });
-  }
-
-  if (otp.trim() !== savedOTP.otp) {
-    return res.status(400).json({
-      status: 400,
-      message: 'Invalid OTP',
-    });
-  }
-
-  const counselor = await Counselor.findOne({ email: email.trim() });
-  if (!counselor) {
-    return res.status(404).json({
-      status: 404,
-      message: 'Counselor not found',
-    });
-  }
-
-  counselor.password = newPassword;
-  await counselor.save();
-
-  await OTP.deleteMany({
-    email: email,
-    purpose: 'reset',
-  });
-
-  await sendEmail(
-    email,
-    'Password Reset Successful',
-    'Your password has been successfully reset. Please log in with your new password.'
-  );
-
-  return res.status(200).json({
-    status: 200,
-    message: 'Password reset successfully',
-  });
 });
 
 const registerCounselor = wrapper(async (req, res) => {
   const { fullName, username, password, email, phone, gender, specialization } = req.body;
 
-  console.log('Register Counselor Request Body:', req.body);
-  console.log('Uploaded File:', req.file);
-
   if (!fullName || !username || !password || !email || !phone || !gender || !specialization) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'All required fields must be provided',
     });
   }
 
+  // Validation checks
   if (fullName.trim().length < 3 || fullName.trim().length > 30) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Full name must be between 3 and 30 characters',
     });
   }
 
   if (username.trim().length < 3 || username.trim().length > 10) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Username must be between 3 and 10 characters',
     });
   }
 
-  const isValidPassword = passwordRegex.test(password);
-  if (!isValidPassword) {
+  if (!passwordRegex.test(password)) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message:
         'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character',
     });
   }
 
-  const validPhone = phoneRegex.test(phone.trim());
-  if (!validPhone) {
+  if (!phoneRegex.test(phone.trim())) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid phone number',
     });
   }
 
-  const validEmail = emailRegex.test(email.trim());
-  if (!validEmail) {
+  if (!emailRegex.test(email.trim())) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid email address',
     });
   }
 
-  const validGender = ['Male', 'Female', 'Other', 'Prefer not to say'].includes(gender);
-  if (!validGender) {
+  if (!['Male', 'Female', 'Other'].includes(gender)) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid gender',
     });
   }
 
-  const validSpecialization = [
+  const validSpecializations = [
     'Mental Health',
     'Career Counselling',
     'Relationship & Family Therapy',
@@ -349,190 +368,309 @@ const registerCounselor = wrapper(async (req, res) => {
     'Financial Counselling',
     'Academic Counselling',
     'Health and Wellness Counselling',
-  ].includes(specialization);
-  if (!validSpecialization) {
+  ];
+
+  if (!validSpecializations.includes(specialization)) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid specialization',
     });
   }
 
-  const existingCounselor = await Counselor.findOne({
-    $or: [{ username: username.trim() }, { phone: phone.trim() }, { email: email.trim() }],
-  });
+  try {
+    const existingCounselor = await Counselor.findOne({
+      $or: [{ username: username.trim() }, { phone: phone.trim() }, { email: email.trim() }],
+    });
 
-  if (existingCounselor) {
-    if (existingCounselor.username === username.trim()) {
-      return res.status(400).json({
-        status: 400,
-        message: 'Username already taken',
-      });
+    if (existingCounselor) {
+      if (existingCounselor.username === username.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username already taken',
+        });
+      }
+      if (existingCounselor.email === email.trim() || existingCounselor.phone === phone.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Counselor already exists',
+        });
+      }
     }
-    if (existingCounselor.email === email.trim() || existingCounselor.phone === phone.trim()) {
-      return res.status(400).json({
-        status: 400,
-        message: 'Counselor already exists',
-      });
-    }
-  }
 
-  let profilePictureUrl = '';
-  if (req.file) {
-    const upload = await uploadOncloudinary(req.file.path);
-    if (!upload) {
+    let profilePictureUrl = '';
+    if (req.file) {
+      const upload = await uploadOncloudinary(req.file.path);
+      if (!upload) {
+        return res.status(500).json({
+          success: false,
+          message: 'Error occurred while uploading profile picture',
+        });
+      }
+      profilePictureUrl = upload.url;
+    }
+
+    const newCounselor = await Counselor.create({
+      fullName: fullName.trim(),
+      username: username.trim(),
+      experienceLevel: 'Beginner',
+      experienceYears: 1,
+      phone: phone.trim(),
+      email: email.trim(),
+      password: password.trim(),
+      profilePicture: profilePictureUrl,
+      gender,
+      specialization,
+    });
+
+    const counselorCreated = await Counselor.findById(newCounselor._id).select('-password');
+    if (!counselorCreated) {
       return res.status(500).json({
-        status: 500,
-        message: 'Error occurred while uploading profile picture',
+        success: false,
+        message: 'Error while registering counselor',
       });
     }
-    profilePictureUrl = upload.url;
-  }
-  console.log('slkjsljdslfjeslfjklgjgkirjgkldjgkjfnwkjfnskjfnwn');
 
-  const newCounselor = await Counselor.create({
-    fullName: fullName.trim(),
-    username: username.trim(),
-    experienceLevel: 'Beginner',
-    experienceYears: 1,
-    phone: phone.trim(),
-    email: email.trim(),
-    password: password.trim(),
-    profilePicture: profilePictureUrl,
-    gender,
-    specialization,
-    application: {},
-  });
+    const accessToken = await newCounselor.generateAccessToken();
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    };
 
-  const counselorCreated = await Counselor.findById(newCounselor._id).select('-password');
-  console.log('*********************************');
-  console.log(counselorCreated);
-  console.log('*********************************');
-
-  if (!counselorCreated) {
+    return res
+      .status(201)
+      .cookie('accessToken', accessToken, options)
+      .json({
+        success: true,
+        message: 'Counselor registered successfully! Please complete your application.',
+        data: {
+          loggedInCounselor: counselorCreated,
+          accessToken,
+        },
+      });
+  } catch (error) {
     return res.status(500).json({
-      status: 500,
-      message: 'Error while registering counselor',
+      success: false,
+      message: 'Error occurred while registering counselor',
+      error: error.message,
     });
   }
-
-  return res.status(200).json({
-    status: 200,
-    message: 'Counselor registered successfully! Please complete your application.',
-    data: counselorCreated,
-  });
 });
 
 const loginCounselor = wrapper(async (req, res) => {
   const { email, password } = req.body;
+
   if (!email?.trim() || !password?.trim()) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Email and password are required',
     });
   }
 
-  const isValidEmail = emailRegex.test(email.trim());
-  if (!isValidEmail) {
+  if (!emailRegex.test(email.trim())) {
     return res.status(400).json({
-      status: 400,
+      success: false,
       message: 'Invalid email format',
     });
   }
 
-  const counselor = await Counselor.findOne({ email: email.trim() });
-  if (!counselor) {
-    return res.status(404).json({
-      status: 404,
-      message: 'Counselor not found',
+  try {
+    const counselor = await Counselor.findOne({ email: email.trim() });
+    if (!counselor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Counselor not found',
+      });
+    }
+
+    if (!(await counselor.isPasswordCorrect(password.trim()))) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    const accessToken = await counselor.generateAccessToken();
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    };
+
+    const loggedInCounselor = await Counselor.findOne({
+      email: email.trim(),
+    }).select('_id fullName username email specialization application profilePicture');
+
+    const counselorData = loggedInCounselor.toObject();
+    counselorData.applicationStatus = loggedInCounselor.application?.applicationStatus;
+
+    return res
+      .status(200)
+      .cookie('accessToken', accessToken, options)
+      .json({
+        success: true,
+        message: 'Logged in successfully',
+        data: {
+          accessToken,
+          loggedInCounselor: counselorData,
+        },
+      });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error occurred during login',
+      error: error.message,
     });
   }
-
-  if (!(await counselor.isPasswordCorrect(password.trim()))) {
-    return res.status(401).json({
-      status: 401,
-      message: 'Invalid credentials',
-    });
-  }
-
-  const options = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'None',
-  };
-  const accessToken = await counselor.generateAccessToken();
-
-  const loggedInCounselor = await Counselor.findOne({
-    email: email.trim(),
-  }).select('_id fullName username email specialization application profilePicture');
-
-  const counselorData = loggedInCounselor.toObject();
-  counselorData.applicationStatus = loggedInCounselor.application?.applicationStatus;
-
-  res
-    .status(200)
-    .cookie('accessToken', accessToken, options)
-    .json({
-      status: 200,
-      message: 'Logged in successfully',
-      data: {
-        accessToken,
-        loggedInCounselor: counselorData,
-      },
-    });
 });
 
 const submitCounselorApplication = wrapper(async (req, res) => {
   const { education, experience, professionalSummary, languages, license, bankDetails } = req.body;
   const files = req.files;
 
-  console.log('Submit Application Request Body:', req.body);
-  console.log('Submit Application Files:', files ? Object.keys(files) : 'No files');
+  console.log('Received application data for counselor:', req.verifiedCounselorId._id);
 
+  // Parse JSON fields with better error handling and fallbacks
   let parsedEducation, parsedLanguages, parsedBankDetails, parsedLicense;
+
   try {
-    parsedEducation = education ? JSON.parse(education) : null;
-    parsedLanguages = languages ? JSON.parse(languages) : null;
-    parsedBankDetails = bankDetails ? JSON.parse(bankDetails) : null;
-    parsedLicense = license ? JSON.parse(license) : {};
+    parsedEducation = education
+      ? JSON.parse(education)
+      : {
+          graduation: { university: '', degree: '', year: '' },
+          postGraduation: { university: '', degree: '', year: '' },
+        };
   } catch (error) {
-    console.error('JSON parse error:', error.message);
     return res.status(400).json({
-      status: 400,
-      message: 'Invalid JSON format in form data',
+      success: false,
+      message: 'Invalid education data format',
+      error: error.message,
     });
   }
 
+  try {
+    parsedLanguages = languages ? JSON.parse(languages) : [];
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid languages data format',
+      error: error.message,
+    });
+  }
+
+  try {
+    parsedBankDetails = bankDetails
+      ? JSON.parse(bankDetails)
+      : {
+          accountNo: '',
+          ifscCode: '',
+          branchName: '',
+        };
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid bank details format',
+      error: error.message,
+    });
+  }
+
+  try {
+    parsedLicense = license
+      ? JSON.parse(license)
+      : {
+          licenseNo: '',
+          issuingAuthority: '',
+        };
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid license data format',
+      error: error.message,
+    });
+  }
+
+  // Validate required fields with proper fallbacks
   const requiredFields = {
-    'education.graduation.university': parsedEducation?.graduation?.university?.trim(),
-    'education.graduation.degree': parsedEducation?.graduation?.degree?.trim(),
-    'education.graduation.year': parsedEducation?.graduation?.year,
-    experience: experience?.trim(),
-    professionalSummary: professionalSummary?.trim(),
-    'languages.length': parsedLanguages?.length > 0,
-    'bankDetails.accountNo': parsedBankDetails?.accountNo?.trim(),
-    'bankDetails.ifscCode': parsedBankDetails?.ifscCode?.trim(),
-    'bankDetails.branchName': parsedBankDetails?.branchName?.trim(),
-    'files.resume': files?.resume?.[0],
-    'files.degreeCertificate': files?.degreeCertificate?.[0],
-    'files.governmentId': files?.governmentId?.[0],
+    'education.graduation.university': parsedEducation?.graduation?.university?.trim() || '',
+    'education.graduation.degree': parsedEducation?.graduation?.degree?.trim() || '',
+    'education.graduation.year': parsedEducation?.graduation?.year || '',
+    experience: experience?.trim() || '',
+    professionalSummary: professionalSummary?.trim() || '',
+    languages: Array.isArray(parsedLanguages) && parsedLanguages.length > 0,
+    'bankDetails.accountNo': parsedBankDetails?.accountNo?.trim() || '',
+    'bankDetails.ifscCode': parsedBankDetails?.ifscCode?.trim() || '',
+    'bankDetails.branchName': parsedBankDetails?.branchName?.trim() || '',
+    resume: files?.resume?.[0],
+    degreeCertificate: files?.degreeCertificate?.[0],
+    governmentId: files?.governmentId?.[0],
   };
 
   const missingFields = Object.entries(requiredFields)
-    .filter(([key, value]) => !value)
-    .map(([key]) => key);
+    .filter(([key, value]) => {
+      if (key === 'languages') return !value; // languages should be array with items
+      return !value; // other fields should have truthy values
+    })
+    .map(([key]) => key.replace(/\.[^.]*$/, '')); // Remove the last property for better readability
 
   if (missingFields.length > 0) {
-    console.log('Missing Fields:', missingFields);
     return res.status(400).json({
-      status: 400,
-      message: `Missing required fields: ${missingFields.join(', ')}`,
+      success: false,
+      message: `Missing required fields: ${[...new Set(missingFields)].join(', ')}`,
+      missingFields: [...new Set(missingFields)],
     });
   }
 
+  // Validate years
+  const currentYear = new Date().getFullYear();
+  if (parsedEducation.graduation.year) {
+    const gradYear = parseInt(parsedEducation.graduation.year);
+    if (isNaN(gradYear) || gradYear < 1900 || gradYear > currentYear) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid graduation year',
+      });
+    }
+  }
+
+  if (parsedEducation.postGraduation?.year) {
+    const postGradYear = parseInt(parsedEducation.postGraduation.year);
+    if (
+      postGradYear &&
+      (isNaN(postGradYear) || postGradYear < 1900 || postGradYear > currentYear)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid post-graduation year',
+      });
+    }
+  }
+
+  // Validate professional summary length
+  if (professionalSummary && professionalSummary.length > 1000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Professional Summary must not exceed 1000 characters',
+    });
+  }
+
+  // File upload helper function
   const uploadFile = async (file, fieldName) => {
     if (!file) {
       throw new Error(`Missing file: ${fieldName}`);
     }
+
+    // Check file type
+    if (file.mimetype !== 'application/pdf') {
+      throw new Error(`${fieldName} must be a PDF file`);
+    }
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error(`${fieldName} must be less than 5MB`);
+    }
+
     const result = await uploadOncloudinary(file.path);
     if (!result) {
       throw new Error(`Failed to upload ${fieldName}`);
@@ -541,57 +679,108 @@ const submitCounselorApplication = wrapper(async (req, res) => {
   };
 
   try {
-    const resumeUrl = await uploadFile(files.resume[0], 'resume');
-    const degreeCertificateUrl = await uploadFile(files.degreeCertificate[0], 'degreeCertificate');
-    const governmentIdUrl = await uploadFile(files.governmentId[0], 'governmentId');
-    const licenseCertificateUrl = files.licenseCertificate?.[0]
-      ? await uploadFile(files.licenseCertificate[0], 'licenseCertificate')
-      : null;
-
+    // Find counselor and update application
     const counselor = await Counselor.findById(req.verifiedCounselorId._id);
     if (!counselor) {
       return res.status(404).json({
-        status: 404,
+        success: false,
         message: 'Counselor not found',
       });
     }
 
-    counselor.application = {
-      education: {
-        graduation: parsedEducation.graduation,
-        postGraduation: parsedEducation.postGraduation || {},
+    // FIXED: Better application status check
+    // Check if application already exists and has been submitted
+    const currentApplicationStatus = counselor.application?.applicationStatus;
+
+    console.log('Current application status:', currentApplicationStatus);
+    console.log('Counselor application object:', counselor.application);
+
+    // Only prevent submission if application is already pending or approved
+    if (currentApplicationStatus === 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Application already submitted and pending review',
+      });
+    }
+
+    if (currentApplicationStatus === 'approved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Application already approved',
+      });
+    }
+
+    // Upload files to Cloudinary
+    const resumeUrl = await uploadFile(files.resume[0], 'resume');
+    const degreeCertificateUrl = await uploadFile(files.degreeCertificate[0], 'degreeCertificate');
+    const governmentIdUrl = await uploadFile(files.governmentId[0], 'governmentId');
+
+    let licenseCertificateUrl = null;
+    if (files.licenseCertificate?.[0]) {
+      licenseCertificateUrl = await uploadFile(files.licenseCertificate[0], 'licenseCertificate');
+    }
+
+    // FIXED: Update or create counselor application
+    // Use $set to properly update nested fields
+    const updateData = {
+      'application.education': {
+        graduation: {
+          university: parsedEducation.graduation.university.trim(),
+          degree: parsedEducation.graduation.degree.trim(),
+          year: parseInt(parsedEducation.graduation.year),
+        },
+        postGraduation: {
+          university: parsedEducation.postGraduation?.university?.trim() || '',
+          degree: parsedEducation.postGraduation?.degree?.trim() || '',
+          year: parsedEducation.postGraduation?.year
+            ? parseInt(parsedEducation.postGraduation.year)
+            : null,
+        },
       },
-      experience,
-      professionalSummary,
-      languages: parsedLanguages,
-      license: parsedLicense,
-      bankDetails: parsedBankDetails,
-      documents: {
+      'application.experience': experience.trim(),
+      'application.professionalSummary': professionalSummary.trim(),
+      'application.languages': parsedLanguages,
+      'application.license': {
+        licenseNo: parsedLicense.licenseNo?.trim() || '',
+        issuingAuthority: parsedLicense.issuingAuthority?.trim() || '',
+      },
+      'application.bankDetails': {
+        accountNo: parsedBankDetails.accountNo.trim(),
+        ifscCode: parsedBankDetails.ifscCode.trim(),
+        branchName: parsedBankDetails.branchName.trim(),
+      },
+      'application.documents': {
         resume: resumeUrl,
         degreeCertificate: degreeCertificateUrl,
         licenseCertificate: licenseCertificateUrl || '',
         governmentId: governmentIdUrl,
       },
-      applicationStatus: 'pending',
-      applicationSubmittedAt: new Date(),
+      'application.applicationStatus': 'pending',
+      'application.applicationSubmittedAt': new Date(),
     };
 
-    await counselor.save();
+    // Update the counselor with the application data
+    await Counselor.findByIdAndUpdate(
+      req.verifiedCounselorId._id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
 
+    // Send confirmation email
     await sendEmail(
       counselor.email,
       'Counselor Application Submitted',
-      'Your application has been submitted successfully. We will review it and get back to you within 24-48 hours.'
+      `Dear ${counselor.fullName},\n\nYour application has been submitted successfully. We will review it and get back to you within 24-48 hours.\n\nThank you for your interest in joining our platform.\n\nBest regards,\nThe Counseling Team`
     );
 
     return res.status(200).json({
-      status: 200,
+      success: true,
       message: 'Application submitted successfully. You will be notified within 24-48 hours.',
     });
   } catch (error) {
-    console.error('Application submission error:', error.message);
+    console.error('Application submission error:', error);
     return res.status(500).json({
-      status: 500,
+      success: false,
       message: 'Error occurred while submitting application',
       error: error.message,
     });
@@ -601,11 +790,12 @@ const submitCounselorApplication = wrapper(async (req, res) => {
 const logoutCounselor = wrapper(async (req, res) => {
   const options = {
     httpOnly: true,
-    secure: true,
-    sameSite: 'None',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Strict',
   };
+
   return res.status(200).clearCookie('accessToken', options).json({
-    status: 200,
+    success: true,
     message: 'Logged out successfully',
   });
 });

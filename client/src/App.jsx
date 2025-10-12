@@ -1,4 +1,3 @@
-// File: src/App.js
 import { Toaster } from '@/components/ui/sonner';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import CounselorProtectedRoute from './components/counselor/CounselorProtectedRoute';
@@ -13,17 +12,14 @@ import CounselorResetPassword from './components/counselor/counselorLoginRegiste
 import ScrollToTop from './components/general/ScrollToTop';
 import { ClientAuthProvider } from './contexts/ClientAuthContext';
 import { CounselorAuthProvider } from './contexts/CounselorAuthContext';
-
-// Existing Pages
 import About from './pages/general/About';
 import CounselorApplication from './pages/counselor/CounselorApplication';
 import CounselorDashboard from './pages/counselor/CounselorDashboard';
 import CounselorLogin from './pages/counselor/CounselorLogin';
 import CounselorRegister from './pages/counselor/CounselorRegister';
-
+import ApplicationStatus from './pages/counselor/CounselorApplicationStatus';
 import Home from './pages/general/Home';
 import Login from './pages/client/ClientLogin';
-// import Profile from './pages/Profile';
 import Register from './pages/client/ClientRegister';
 import ServicePage from './pages/general/ServicePage';
 import ClientDashboard from './pages/client/ClientDashboard';
@@ -32,144 +28,119 @@ import BrowseCounselor from './pages/client/browseCounselor';
 import Blogs from './pages/general/Blogs';
 import ContactUs from './pages/general/ContactUs';
 import BlogPost from './pages/counselor/BlogPost';
-
 import VideoCallInterface from './videoCall/VideoCallInterface';
-// import SessionSuccess from './components/SessionSuccess';
+
+import AdminProtectedRoute from './pages/admin/AdminProtectedRoute';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ApplicationDetail from './pages/admin/ApplicationDetail';
+
+import { AdminAuthProvider } from './contexts/AdminAuthContext';
 
 function App() {
   return (
     <ClientAuthProvider>
       <CounselorAuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <ScrollToTop />
-          <Routes>
-            {/* 🌍 PUBLIC ROUTES */}
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<ContactUs />} />
+        <AdminAuthProvider>
+          <div className="min-h-screen bg-gray-50">
+            <Navbar />
+            <ScrollToTop />
+            <Routes>
+              {/* 🌍 PUBLIC ROUTES */}
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<ContactUs />} />
 
-            {/* ✅ BLOG ROUTES - Public Access (No authentication required for viewing) */}
-            <Route path="/blogs" element={<Blogs />} />
-            <Route path="/blogs/:slug" element={<BlogPost />} />
+              {/* ✅ BLOG ROUTES */}
+              <Route path="/blogs" element={<Blogs />} />
+              <Route path="/blogs/:slug" element={<BlogPost />} />
 
-            {/* 🔐 CLIENT AUTHENTICATION ROUTES */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ClientForgotPassword />} />
-            <Route path="/reset-password" element={<ClientResetPassword />} />
+              {/* 🔐 CLIENT AUTHENTICATION ROUTES */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ClientForgotPassword />} />
+              <Route path="/reset-password" element={<ClientResetPassword />} />
 
-            {/* ✅ VIDEO CALL ROUTES - Main implementation */}
-            <Route path="/meeting/:bookingId/:meetingId" element={<VideoCallInterface />} />
+              {/* ✅ VIDEO CALL ROUTES */}
+              <Route path="/meeting/:bookingId/:meetingId" element={<VideoCallInterface />} />
 
-            {/* Session Analytics Route */}
-            {/* <Route 
-              path="/session/:sessionId/analytics" 
-              element={
-                <ProtectedRoute allowedRoles={['client', 'counselor']}>
-                  <SessionAnalytics />
-                </ProtectedRoute>
-              } 
-            /> */}
+              {/* 👤 CLIENT PROTECTED ROUTES */}
+              <Route
+                path="/client/dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <ClientDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/browse-counselors"
+                element={
+                  <ProtectedRoute>
+                    <BrowseCounselor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/book-counselor/:counselorId"
+                element={
+                  <ProtectedRoute>
+                    <BookCounselorCalendar />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Session Recordings Route */}
-            {/* <Route 
-              path="/session/:sessionId/recordings" 
-              element={
-                <ProtectedRoute allowedRoles={['client', 'counselor']}>
-                  <SessionRecordings />
-                </ProtectedRoute>
-              } 
-            />
-           */}
-            {/* <Route
-              path="/session-success/:bookingId"
-              element={
-                <ProtectedRoute>
-                  <SessionSuccess />
-                </ProtectedRoute>
-              }
-            /> */}
+              {/* 👩‍⚕️ COUNSELOR AUTHENTICATION ROUTES */}
+              <Route path="/counselor/login" element={<CounselorLogin />} />
+              <Route path="/counselor/register" element={<CounselorRegister />} />
+              <Route path="/counselor/forgot-password" element={<CounselorForgotPassword />} />
+              <Route path="/counselor/reset-password" element={<CounselorResetPassword />} />
 
-            {/* 👤 CLIENT PROTECTED ROUTES */}
-            <Route
-              path="/client/dashboard/*"
-              element={
-                <ProtectedRoute>
-                  <ClientDashboard />
-                </ProtectedRoute>
-              }
-            />
+              {/* 👩‍⚕️ COUNSELOR PROTECTED ROUTES */}
+              <Route
+                path="/counselor/dashboard"
+                element={
+                  <CounselorProtectedRoute>
+                    <CounselorDashboard />
+                  </CounselorProtectedRoute>
+                }
+              />
+              <Route path="/counselor/application" element={<CounselorApplication />} />
+              <Route path="/counselor/application-status" element={<ApplicationStatus />} />
 
-            {/* <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            /> */}
-            <Route
-              path="/browse-counselors"
-              element={
-                <ProtectedRoute>
-                  <BrowseCounselor />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/book-counselor/:counselorId"
-              element={
-                <ProtectedRoute>
-                  <BookCounselorCalendar />
-                </ProtectedRoute>
-              }
-            />
+              {/* 🏥 SERVICE ROUTES */}
+              <Route path="/services/:serviceId" element={<ServicePage />} />
 
-            {/* 👩‍⚕️ COUNSELOR AUTHENTICATION ROUTES */}
-            <Route path="/counselor/login" element={<CounselorLogin />} />
-            <Route path="/counselor/register" element={<CounselorRegister />} />
-            <Route path="/counselor/forgot-password" element={<CounselorForgotPassword />} />
-            <Route path="/counselor/reset-password" element={<CounselorResetPassword />} />
+              {/* 📋 LEGAL ROUTES */}
+              <Route path="/term-condition" element={<TermCondition />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-            {/* 👩‍⚕️ COUNSELOR PROTECTED ROUTES */}
-            <Route
-              path="/counselor/dashboard"
-              element={
-                <CounselorProtectedRoute>
-                  <CounselorDashboard />
-                </CounselorProtectedRoute>
-              }
-            />
-            <Route
-              path="/counselor/application"
-              element={
-                <CounselorProtectedRoute>
-                  <CounselorApplication />
-                </CounselorProtectedRoute>
-              }
-            />
+              {/* 👨‍💼 ADMIN ROUTES */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminDashboard />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/application/:counselorId"
+                element={
+                  <AdminProtectedRoute>
+                    <ApplicationDetail />
+                  </AdminProtectedRoute>
+                }
+              />
 
-            {/* 🏥 SERVICE ROUTES */}
-            <Route path="/services/:serviceId" element={<ServicePage />} />
+              {/* ❌ 404 FALLBACK */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
 
-            {/* 📋 LEGAL ROUTES */}
-            <Route path="/term-condition" element={<TermCondition />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-
-            {/* ❌ 404 FALLBACK */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-
-          {/* 🔥 TOAST NOTIFICATIONS */}
-          <Toaster 
-          position="top-right"
-          closeButton
-          richColors
-          expand={false}
-          duration={4000}
-        />
-        </div>
+            <Toaster position="top-right" closeButton richColors expand={false} duration={4000} />
+          </div>
+        </AdminAuthProvider>
       </CounselorAuthProvider>
     </ClientAuthProvider>
   );

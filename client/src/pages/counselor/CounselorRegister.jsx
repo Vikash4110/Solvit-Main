@@ -1,7 +1,7 @@
-// File: src/pages/CounselorRegister.js
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
+import { toast } from 'sonner';
 
 const CounselorRegister = () => {
   const [step, setStep] = useState(1);
@@ -20,6 +20,10 @@ const CounselorRegister = () => {
   const { sendOtp, verifyOtp, counselorRegister } = useCounselorAuth();
   const navigate = useNavigate();
 
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     setFormData({
@@ -28,15 +32,68 @@ const CounselorRegister = () => {
     });
   };
 
+  const validateStep1 = () => {
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      return false;
+    }
+    return true;
+  };
+
+  const validateStep3 = () => {
+    if (formData.fullName.trim().length < 3 || formData.fullName.trim().length > 30) {
+      toast.error('Full name must be between 3 and 30 characters');
+      return false;
+    }
+    if (formData.username.trim().length < 3 || formData.username.trim().length > 10) {
+      toast.error('Username must be between 3 and 10 characters');
+      return false;
+    }
+    if (!passwordRegex.test(formData.password)) {
+      toast.error(
+        'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character'
+      );
+      return false;
+    }
+    if (!phoneRegex.test(formData.phone.trim())) {
+      toast.error('Please enter a valid phone number');
+      return false;
+    }
+    if (!['Male', 'Female', 'Other'].includes(formData.gender)) {
+      toast.error('Please select a valid gender');
+      return false;
+    }
+    const validSpecializations = [
+      'Mental Health',
+      'Career Counselling',
+      'Relationship Counselling',
+      'Life Coaching',
+      'Financial Counselling',
+      'Academic Counselling',
+      'Health and Wellness Counselling',
+    ];
+    if (!validSpecializations.includes(formData.specialization)) {
+      toast.error('Please select a valid specialization');
+      return false;
+    }
+    return true;
+  };
+
   const handleSendOtp = async (e) => {
-    console.log(import.meta.env.VITE_BACKEND_URI);
     e.preventDefault();
+    if (!validateStep1()) return;
+
     setLoading(true);
     try {
       const result = await sendOtp(formData.email);
       if (result.success) {
+        toast.success('Verification code sent to your email!');
         setStep(2);
+      } else {
+        toast.error(result.error || 'Failed to send verification code.');
       }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'An error occurred while sending the OTP.');
     } finally {
       setLoading(false);
     }
@@ -44,12 +101,22 @@ const CounselorRegister = () => {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    if (!/^\d{6}$/.test(formData.otp)) {
+      toast.error('OTP must be a 6-digit number');
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await verifyOtp(formData.email, formData.otp);
       if (result.success) {
+        toast.success('OTP verified successfully!');
         setStep(3);
+      } else {
+        toast.error(result.error || 'Invalid OTP. Please try again.');
       }
+    } catch (error) {
+      toast.error(error.message || 'An error occurred while verifying the OTP.');
     } finally {
       setLoading(false);
     }
@@ -57,12 +124,19 @@ const CounselorRegister = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateStep3()) return;
+
     setLoading(true);
     try {
       const result = await counselorRegister(formData);
       if (result.success) {
-        navigate('/counselor/login');
+        toast.success('Registration completed successfully! Please complete your application.');
+        navigate('/counselor/application');
+      } else {
+        toast.error(result.error || 'Registration failed. Please try again.');
       }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'An error occurred during registration.');
     } finally {
       setLoading(false);
     }
@@ -326,7 +400,6 @@ const CounselorRegister = () => {
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
                   </select>
                 </div>
 
