@@ -71,7 +71,7 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP',
 });
 
-app.use(limiter);
+// app.use(limiter);
 
 // Razorpay Instance
 export const instance = new Razorpay({
