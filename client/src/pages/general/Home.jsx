@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import Faq from '../../components/Home/Faq';
-import Footer from '../../components/Home/Footer';
-import HeroSection from '../../components/Home/HeroSection';
-import HowItWorks from '../../components/Home/HowItWorks';
-import OurServices from '../../components/Home/OurService';
-import WhySolvit from '../../components/Home/WhySolvit';
+import Faq from '../../components/Home/Faq.jsx';
+import Footer from '../../components/Home/Footer.jsx';
+import HeroSection from '../../components/Home/HeroSection.jsx';
+import HowItWorks from '../../components/Home/HowItWorks.jsx';
+import OurServices from '../../components/Home/OurService.jsx';
+import WhySolvit from '../../components/Home/WhySolvit.jsx';
 
 const Separator = () => (
   <>

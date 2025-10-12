@@ -37,7 +37,7 @@ import { toast } from 'sonner';
 import HeroImage from '../../assets/browseCounselors/heroImage.png';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
-import Footer from '../../components/Home/Footer';
+import Footer from '../../components/Home/Footer.jsx';
 
 // Shadcn UI imports
 import { Button } from '@/components/ui/button';

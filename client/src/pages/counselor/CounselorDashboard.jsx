@@ -11,9 +11,9 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import MySlots from '../../components/counselor/counselorDashboard/Myslots';
-import RecurringAvailabilityManager from '../../components/counselor/counselorDashboard/RecurringAvailabilityManager';
-import BlogManagement from '../../components/counselor/counselorDashboard/BlogManagement';
+import MySlots from '../../components/counselor/counselorDashboard/Myslots.jsx';
+import RecurringAvailabilityManager from '../../components/counselor/counselorDashboard/RecurringAvailabilityManager.jsx';
+import BlogManagement from '../../components/counselor/counselorDashboard/BlogManagement.jsx';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 
 // shadcn/ui imports

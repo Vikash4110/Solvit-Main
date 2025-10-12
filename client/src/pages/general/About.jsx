@@ -12,7 +12,7 @@ import {
 import { GiBrain } from 'react-icons/gi';
 import { Link } from 'react-router-dom';
 import aboutHero from '../../assets/core/IMG_2644.png'; // Replace with your image
-import OurMission from '../../components/Home/OurMission';
+import OurMission from '../../components/Home/OurMission.jsx';
 
 const AboutUs = () => {
   const stats = [
