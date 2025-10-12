@@ -4,17 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import ProtectedRoute from '../../components/client/ClientProtectedRoute.jsx';
 
-import {ClientDashboardSidebar} from '@/components/client/clientDashboard/ClientDashboardSidebar.jsx';
+import { ClientDashboardSidebar } from '../../components/client/clientDashboard/ClientDashboardSidebar.jsx';
 
 // Import only required dashboard components
-import { ClientDashboardPayments } from '@/components/client/clientDashboard/ClientDashboardPayments.jsx';
-import { ClientDashboardHelpSupport } from '@/components/client/clientDashboard/ClientDashboardHelpSupport.jsx';
-import { ClientDashboardNotifications } from '@/components/client/clientDashboard/ClientDashboardNotifications.jsx';
-import { ClientDashboardMyBookings } from '@/components/client/clientDashboard/ClientDashboardMyBookings.jsx';
-import { ClientDashboardPersonalInfo } from '@/components/client/clientDashboard/ClientDashboardPersonalInfo.jsx';
-import { ClientDashboardConnectedCounselors } from '@/components/client/clientDashboard/ClientDashboardConnectedCounselors.jsx';
-import { ClientDashboardAccountSettings } from '@/components/client/clientDashboard/ClientDashboardAccountSettings.jsx';
-import { ClientDashboardPrivacySecurity } from '@/components/client/clientDashboard/ClientDashboardPrivacySecurity.jsx';
+import { ClientDashboardPayments } from '../../components/client/clientDashboard/ClientDashboardPayments.jsx';
+import { ClientDashboardHelpSupport } from '../../components/client/clientDashboard/ClientDashboardHelpSupport.jsx';
+import { ClientDashboardNotifications } from '../../components/client/clientDashboard/ClientDashboardNotifications.jsx';
+import { ClientDashboardMyBookings } from '../../components/client/clientDashboard/ClientDashboardMyBookings.jsx';
+import { ClientDashboardPersonalInfo } from '../../components/client/clientDashboard/ClientDashboardPersonalInfo.jsx';
+import { ClientDashboardConnectedCounselors } from '../../components/client/clientDashboard/ClientDashboardConnectedCounselors.jsx';
+import { ClientDashboardAccountSettings } from '../../components/client/clientDashboard/ClientDashboardAccountSettings.jsx';
+import { ClientDashboardPrivacySecurity } from '../../components/client/clientDashboard/ClientDashboardPrivacySecurity.jsx';
 
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { Button } from '@/components/ui/button';
@@ -22,9 +22,9 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const fadeIn = {
   hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1, 
-    transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } 
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
   },
 };
 
@@ -56,9 +56,7 @@ const ClientDashboard = () => {
             <p className="text-base font-semibold text-neutral-800 dark:text-neutral-200 mb-2">
               Loading your dashboard...
             </p>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Please wait a moment
-            </p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Please wait a moment</p>
           </div>
         </motion.div>
       </div>
@@ -80,12 +78,12 @@ const ClientDashboard = () => {
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent 
-          side="left" 
+        <SheetContent
+          side="left"
           className="w-72 p-0 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-primary-200/50 dark:border-primary-800/30"
         >
-          <ClientDashboardSidebar 
-            onNavigate={() => setMobileMenuOpen(false)} 
+          <ClientDashboardSidebar
+            onNavigate={() => setMobileMenuOpen(false)}
             showCloseButton={true}
           />
         </SheetContent>
@@ -122,7 +120,7 @@ const ClientDashboard = () => {
             >
               <Routes>
                 <Route index element={<Navigate to="personal-info" replace />} />
-                
+
                 <Route
                   path="personal-info"
                   element={
@@ -131,7 +129,7 @@ const ClientDashboard = () => {
                     </ProtectedRoute>
                   }
                 />
-                
+
                 <Route
                   path="bookings"
                   element={
@@ -140,7 +138,7 @@ const ClientDashboard = () => {
                     </ProtectedRoute>
                   }
                 />
-                
+
                 <Route
                   path="connected-counselors"
                   element={
@@ -149,7 +147,7 @@ const ClientDashboard = () => {
                     </ProtectedRoute>
                   }
                 />
-                
+
                 <Route
                   path="payments"
                   element={
@@ -158,7 +156,7 @@ const ClientDashboard = () => {
                     </ProtectedRoute>
                   }
                 />
-                
+
                 <Route
                   path="account-settings"
                   element={
@@ -167,7 +165,7 @@ const ClientDashboard = () => {
                     </ProtectedRoute>
                   }
                 />
-                
+
                 <Route
                   path="notifications"
                   element={
@@ -176,7 +174,7 @@ const ClientDashboard = () => {
                     </ProtectedRoute>
                   }
                 />
-                
+
                 <Route
                   path="privacy-security"
                   element={
@@ -185,7 +183,7 @@ const ClientDashboard = () => {
                     </ProtectedRoute>
                   }
                 />
-                
+
                 <Route
                   path="help-support"
                   element={
