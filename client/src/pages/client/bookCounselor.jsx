@@ -31,7 +31,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 import { API_BASE_URL, API_ENDPOINTS } from '../../config/api';
@@ -200,36 +207,50 @@ const BookCounselorCalendar = () => {
         return;
       }
 
-      const options = {
-        key: keyData.data.key,
-        amount: orderData.data.order.amount,
-        currency: 'INR',
-        name: 'Solvit',
-        description: `Therapy Session with ${counselor.fullName}`,
-        order_id: orderData.data.order.id,
-        handler: async (response) =>
-          await verifyPayment({ ...response, clientId: clientData._id, slotId: selectedSlot._id }),
-        prefill: {
-          name: clientData.fullName,
-          email: clientData.email,
-          contact: clientData.phone || '9999999999',
-        },
-        notes: { counselor: counselor.fullName, session_date: selectedDate },
-        theme: { color: '#1C3C63' },
-        modal: {
-          ondismiss: () => {
-            setBookingLoading(false);
-            toast('Payment cancelled');
-          },
-        },
-      };
+      // CRITICAL FIX: Close the dialog BEFORE opening Razorpay
+      setShowBookingModal(false);
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-      razorpay.on('payment.failed', () => {
-        toast.error('Payment unsuccessful. Please try again.');
-        setBookingLoading(false);
-      });
+      // Small delay to ensure dialog closes completely
+      setTimeout(() => {
+        const options = {
+          key: keyData.data.key,
+          amount: orderData.data.order.amount,
+          currency: 'INR',
+          name: 'Solvit',
+          description: `Therapy Session with ${counselor.fullName}`,
+          order_id: orderData.data.order.id,
+          handler: async (response) =>
+            await verifyPayment({
+              ...response,
+              clientId: clientData._id,
+              slotId: selectedSlot._id,
+            }),
+          prefill: {
+            name: clientData.fullName,
+            email: clientData.email,
+            contact: clientData.phone || '9999999999',
+          },
+          notes: { counselor: counselor.fullName, session_date: selectedDate },
+          theme: { color: '#1C3C63' },
+          modal: {
+            ondismiss: () => {
+              setBookingLoading(false);
+              // Re-open booking modal if user cancels payment
+              setShowBookingModal(true);
+              toast('Payment cancelled');
+            },
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+        razorpay.on('payment.failed', (response) => {
+          toast.error('Payment unsuccessful. Please try again.');
+          setBookingLoading(false);
+          // Re-open booking modal on failure
+          setShowBookingModal(true);
+        });
+      }, 300); // 300ms delay for smooth transition
     } catch {
       toast.error('Unable to initiate payment. Please try again.');
       setBookingLoading(false);
@@ -256,13 +277,18 @@ const BookCounselorCalendar = () => {
             slot._id === selectedSlot._id ? { ...slot, status: 'booked', isBooked: true } : slot
           )
         );
+        // Keep modal closed on success
         closeBookingModal();
         setTimeout(() => navigate(`/session-success/${booking._id}`), 2000);
       } else {
         toast.error(data.message || 'Payment verification unsuccessful');
+        // Re-open booking modal on verification failure
+        setShowBookingModal(true);
       }
     } catch {
       toast.error('Unable to verify payment');
+      // Re-open booking modal on error
+      setShowBookingModal(true);
     } finally {
       setBookingLoading(false);
     }
@@ -655,7 +681,10 @@ const BookCounselorCalendar = () => {
                           </motion.div>
                         ))
                       ) : (
-                        <motion.div {...fadeInUp} className="flex items-center justify-center h-full">
+                        <motion.div
+                          {...fadeInUp}
+                          className="flex items-center justify-center h-full"
+                        >
                           <Card variant="subtle" className="p-12 text-center">
                             <div className="w-20 h-20 bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl flex items-center justify-center mx-auto mb-6">
                               <Calendar className="w-10 h-10 text-neutral-400" />
@@ -702,10 +731,10 @@ const BookCounselorCalendar = () => {
         <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           {/* Gradient Header Bar - Matching Main Component */}
           <div className="h-3 bg-gradient-to-r from-primary-600 via-primary-800 to-primary-600"></div>
-          
+
           {/* Compact Header */}
           <DialogHeader className="flex-shrink-0 px-6 py-4 bg-gradient-to-r from-transparent via-primary-50/20 to-transparent border-b border-neutral-200/30">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
@@ -736,12 +765,18 @@ const BookCounselorCalendar = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
                   >
-                    <Card 
-                      variant="elevated" 
+                    <Card
+                      variant="elevated"
                       className="shadow-lg border-primary-300/60 hover:border-primary-500/60 hover:shadow-xl transition-all duration-300 overflow-hidden"
                     >
-                      <CardHeader variant="primary" className="bg-gradient-to-r from-primary-50/30 to-primary-100/20 border-b border-primary-200/30 px-5 py-3">
-                        <CardTitle variant="gradient" className="flex items-center gap-2 text-lg font-bold">
+                      <CardHeader
+                        variant="primary"
+                        className="bg-gradient-to-r from-primary-50/30 to-primary-100/20 border-b border-primary-200/30 px-5 py-3"
+                      >
+                        <CardTitle
+                          variant="gradient"
+                          className="flex items-center gap-2 text-lg font-bold"
+                        >
                           <div className="w-8 h-8 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center shadow-sm">
                             <Stethoscope className="w-4 h-4 text-primary-600" />
                           </div>
@@ -752,7 +787,7 @@ const BookCounselorCalendar = () => {
                           </Badge>
                         </CardTitle>
                       </CardHeader>
-                      
+
                       <CardContent className="p-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Left Side - Compact Session Details */}
@@ -770,7 +805,9 @@ const BookCounselorCalendar = () => {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs text-neutral-500 font-medium">Therapist</p>
-                                  <p className="text-sm font-bold text-primary-700 truncate">{counselor.fullName}</p>
+                                  <p className="text-sm font-bold text-primary-700 truncate">
+                                    {counselor.fullName}
+                                  </p>
                                 </div>
                               </div>
 
@@ -793,7 +830,8 @@ const BookCounselorCalendar = () => {
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs text-neutral-500 font-medium">Time</p>
                                   <p className="text-sm font-bold text-primary-700">
-                                    {dayjs(selectedSlot.startTime).tz(TIMEZONE).format('h:mm A')} • 45 min
+                                    {dayjs(selectedSlot.startTime).tz(TIMEZONE).format('h:mm A')} •
+                                    45 min
                                   </p>
                                 </div>
                               </div>
@@ -814,7 +852,9 @@ const BookCounselorCalendar = () => {
                                   <CheckCircle className="w-3 h-3 text-success-600" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-neutral-700">HD Video Session</p>
+                                  <p className="text-sm font-medium text-neutral-700">
+                                    HD Video Session
+                                  </p>
                                   <p className="text-xs text-neutral-600">Crystal clear quality</p>
                                 </div>
                               </div>
@@ -824,7 +864,9 @@ const BookCounselorCalendar = () => {
                                   <CheckCircle className="w-3 h-3 text-success-600" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-neutral-700">Session Recording</p>
+                                  <p className="text-sm font-medium text-neutral-700">
+                                    Session Recording
+                                  </p>
                                   <p className="text-xs text-neutral-600">For reference</p>
                                 </div>
                               </div>
@@ -834,7 +876,9 @@ const BookCounselorCalendar = () => {
                                   <CheckCircle className="w-3 h-3 text-success-600" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-neutral-700">24/7 Support</p>
+                                  <p className="text-sm font-medium text-neutral-700">
+                                    24/7 Support
+                                  </p>
                                   <p className="text-xs text-neutral-600">Always available</p>
                                 </div>
                               </div>
@@ -855,7 +899,7 @@ const BookCounselorCalendar = () => {
                       {/* Background Effects */}
                       <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent"></div>
                       <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/10 to-transparent rounded-full -mr-12 -mt-12"></div>
-                      
+
                       <CardContent className="p-5 relative z-10">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-3">
@@ -863,13 +907,20 @@ const BookCounselorCalendar = () => {
                               <CreditCard className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                              <p className="text-white/80 font-medium text-xs uppercase tracking-wide">Total Amount</p>
-                              <p className="text-2xl font-bold text-white">₹{getSlotPrice(selectedSlot)}</p>
+                              <p className="text-white/80 font-medium text-xs uppercase tracking-wide">
+                                Total Amount
+                              </p>
+                              <p className="text-2xl font-bold text-white">
+                                ₹{getSlotPrice(selectedSlot)}
+                              </p>
                             </div>
                           </div>
-                          
+
                           <div className="text-right">
-                            <Badge variant="glass" className="bg-white/20 text-white border-white/30 mb-1 text-xs">
+                            <Badge
+                              variant="glass"
+                              className="bg-white/20 text-white border-white/30 mb-1 text-xs"
+                            >
                               <Shield className="w-3 h-3 mr-1" />
                               Secure
                             </Badge>
@@ -879,7 +930,9 @@ const BookCounselorCalendar = () => {
 
                         {/* Compact Payment Methods */}
                         <div className="p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
-                          <p className="text-white/90 font-medium text-xs mb-2 uppercase tracking-wide">Payment Options</p>
+                          <p className="text-white/90 font-medium text-xs mb-2 uppercase tracking-wide">
+                            Payment Options
+                          </p>
                           <div className="flex items-center justify-center gap-4">
                             <div className="flex items-center gap-1 p-1.5 bg-white/10 rounded">
                               <CreditCard className="w-3 h-3 text-white/80" />
@@ -922,7 +975,7 @@ const BookCounselorCalendar = () => {
                   <X className="w-4 h-4 mr-1" />
                   Cancel
                 </Button>
-                
+
                 <Button
                   onClick={initiatePayment}
                   disabled={bookingLoading || !razorpayLoaded}
