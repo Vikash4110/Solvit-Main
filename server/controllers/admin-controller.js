@@ -15,7 +15,7 @@ const loginAdmin = wrapper(async (req, res) => {
   }
 
   try {
-    const admin = await Admin.findOne({ email: email.trim(), isActive: true });
+    const admin = await Admin.findOne({ email: email.trim(), status: 'active' });
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -31,6 +31,7 @@ const loginAdmin = wrapper(async (req, res) => {
     }
 
     const accessToken = await admin.generateAccessToken();
+
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -39,7 +40,7 @@ const loginAdmin = wrapper(async (req, res) => {
     };
 
     admin.lastLogin = new Date();
-    await admin.save();
+    await admin.save({ validateBeforeSave: false });
 
     const loggedInAdmin = await Admin.findOne({ email: email.trim() }).select('-password');
 
