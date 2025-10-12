@@ -1,7 +1,7 @@
-export const ClientDashboardPayments = () => {
-  return (
-    <>
-      <h1>Payments</h1>
-    </>
+const ClientDashboardPayments = () => {
+  return (  
+      <h1>Payments</h1>  
   );
 };
+
+export { ClientDashboardPayments };
