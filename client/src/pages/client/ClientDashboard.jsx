@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import ProtectedRoute from '../../components/client/ClientProtectedRoute.jsx';
 
-import { ClientDashboardSidebar } from '../../components/client/clientDashboard/ClientDashboardSidebar.jsx';
+import ClientDashboardSidebar from '@/components/client/clientDashboard/ClientDashboardSidebar.jsx';
 
 // Import only required dashboard components
 import { ClientDashboardPayments } from '../../components/client/clientDashboard/ClientDashboardPayments.jsx';
