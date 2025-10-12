@@ -4,17 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import ProtectedRoute from '../../components/client/ClientProtectedRoute.jsx';
 
-import ClientDashboardSidebar from '@/components/client/clientDashboard/ClientDashboardSidebar.jsx';
+import ClientDashboardSidebar from '@/components/client/ClientDashboard/ClientDashboardSidebar.jsx';
 
 // Import only required dashboard components
-import  ClientDashboardPayments  from '@/components/client/clientDashboard/ClientDashboardPayments.jsx';
-import  ClientDashboardHelpSupport  from '@/components/client/clientDashboard/ClientDashboardHelpSupport.jsx';
-import  ClientDashboardNotifications  from '@/components/client/clientDashboard/ClientDashboardNotifications.jsx';
-import  ClientDashboardMyBookings  from '@/components/client/clientDashboard/ClientDashboardMyBookings.jsx';
-import  ClientDashboardPersonalInfo  from '@/components/client/clientDashboard/ClientDashboardPersonalInfo.jsx';
-import  ClientDashboardConnectedCounselors  from '@/components/client/clientDashboard/ClientDashboardConnectedCounselors.jsx';
-import  ClientDashboardAccountSettings  from '@/components/client/clientDashboard/ClientDashboardAccountSettings.jsx';
-import  ClientDashboardPrivacySecurity  from '@/components/client/clientDashboard/ClientDashboardPrivacySecurity.jsx';
+import ClientDashboardPayments from '@/components/client/ClientDashboard/ClientDashboardPayments.jsx';
+import ClientDashboardHelpSupport from '@/components/client/ClientDashboard/ClientDashboardHelpSupport.jsx';
+import ClientDashboardNotifications from '@/components/client/ClientDashboard/ClientDashboardNotifications.jsx';
+import ClientDashboardMyBookings from '@/components/client/ClientDashboard/ClientDashboardMyBookings.jsx';
+import ClientDashboardPersonalInfo from '@/components/client/ClientDashboard/ClientDashboardPersonalInfo.jsx';
+import ClientDashboardConnectedCounselors from '@/components/client/ClientDashboard/ClientDashboardConnectedCounselors.jsx';
+import ClientDashboardAccountSettings from '@/components/client/ClientDashboard/ClientDashboardAccountSettings.jsx';
+import ClientDashboardPrivacySecurity from '@/components/client/ClientDashboard/ClientDashboardPrivacySecurity.jsx';
 
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { Button } from '@/components/ui/button';
