@@ -344,8 +344,8 @@ const registerCounselor = wrapper(async (req, res) => {
   const validSpecialization = [
     'Mental Health',
     'Career Counselling',
-    'Relationship Counselling',
-    'Life Coaching',
+    'Relationship & Family Therapy',
+    'Life & Personal Development',
     'Financial Counselling',
     'Academic Counselling',
     'Health and Wellness Counselling',

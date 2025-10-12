@@ -117,8 +117,8 @@ const Navbar = () => {
   const servicesLinks = [
     { to: '/services/mental-health', text: 'Mental Health Counseling', icon: Brain },
     { to: '/services/career', text: 'Career Counselling', icon: Briefcase },
-    { to: '/services/relationship', text: 'Relationship Counselling', icon: Heart },
-    { to: '/services/life-coaching', text: 'Life Coaching', icon: Rocket },
+    { to: '/services/relationship', text: 'Relationship & Family Therapy', icon: Heart },
+    { to: '/services/life-coaching', text: 'Life & Personal Development', icon: Rocket },
     { to: '/services/academic', text: 'Academic Counselling', icon: GraduationCap },
     { to: '/services/health-wellness', text: 'Health and Wellness', icon: Sparkles },
   ];
@@ -359,13 +359,12 @@ const Navbar = () => {
               >
                 <img
                   src={logo}
-                  className="h-12 w-12 scale-[4.5] transition-transform duration-300"
+                  className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 scale-[2] sm:scale-[3] lg:scale-[4.5] transition-transform duration-300"
                   alt="Solvit"
                 />
                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </motion.div>
             </Link>
-
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-2" aria-label="Main navigation">
               <ServicesDropdown />
@@ -542,20 +541,20 @@ const Navbar = () => {
               <SheetContent
                 side="right"
                 className="
-                      w-[300px] sm:w-[400px]
-                      bg-white/95 dark:bg-neutral-900/95
-                      backdrop-blur-xl
-                      border-neutral-200 dark:border-neutral-800
-                      flex flex-col
-                      p-0
-                    "
+                            w-[300px] sm:w-[400px]
+                            bg-white/95 dark:bg-neutral-900/95
+                            backdrop-blur-xl
+                            border-neutral-200 dark:border-neutral-800
+                            flex flex-col
+                            p-0
+                          "
               >
                 {/* Fixed Header - Won't Scroll */}
-                <SheetHeader className="px-6 pt-6 pb-4 border-b border-neutral-200 dark:border-neutral-800">
-                  <SheetTitle className="text-primary-800 dark:text-primary-200 text-left">
+                <div className="px-6 pt-6 pb-4 border-b border-neutral-200 dark:border-neutral-800 mx-[40%]">
+                  <SheetTitle className="text-primary-800 dark:text-primary-200 text-lg font-semibold">
                     Menu
                   </SheetTitle>
-                </SheetHeader>
+                </div>
 
                 {/* Scrollable Content Area */}
                 <ScrollArea className="flex-1 px-2">
@@ -585,10 +584,9 @@ const Navbar = () => {
                         <Separator className="mx-4" />
                       </>
                     )}
-                      {/* User Actions */}
+                    {/* User Actions */}
                     {(counselor || client) && (
                       <>
-                        
                         <div className="space-y-2 px-4">
                           <Button
                             variant="ghost"
@@ -772,8 +770,6 @@ const Navbar = () => {
                         )}
                       </div>
                     </nav>
-
-                  
 
                     {/* Login Buttons */}
                     {!counselor && !client && (

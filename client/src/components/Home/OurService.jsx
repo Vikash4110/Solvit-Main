@@ -57,7 +57,7 @@ const services = [
     browsePath: '/browse-counselors?specialty=career',
   },
   {
-    title: 'Relationship Counselling',
+    title: 'Relationship & Family Therapy',
     icon: Heart,
     image: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop',
     description: [
@@ -70,7 +70,7 @@ const services = [
     browsePath: '/browse-counselors?specialty=relationships',
   },
   {
-    title: 'Life Coaching',
+    title: 'Life & Personal Development',
     icon: Rocket,
     image: 'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=800&auto=format&fit=crop',
     description: [

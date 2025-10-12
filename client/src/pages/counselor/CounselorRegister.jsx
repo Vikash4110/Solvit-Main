@@ -348,8 +348,8 @@ const CounselorRegister = () => {
                     <option value="">Select Your Expertise</option>
                     <option value="Mental Health">Mental Health</option>
                     <option value="Career Counselling">Career Counselling</option>
-                    <option value="Relationship Counselling">Relationship Counselling</option>
-                    <option value="Life Coaching">Life Coaching</option>
+                    <option value="Relationship & Family Therapy">Relationship & Family Therapy</option>
+                    <option value="Life & Personal Development">Life & Personal Development</option>
                     <option value="Financial Counselling">Financial Counselling</option>
                     <option value="Academic Counselling">Academic Counselling</option>
                     <option value="Health and Wellness Counselling">

@@ -57,8 +57,8 @@ const counselorSchema = new mongoose.Schema(
       enum: [
         'Mental Health',
         'Career Counselling',
-        'Relationship Counselling',
-        'Life Coaching',
+        'Relationship & Family Therapy',
+        'Life & Personal Development',
         'Financial Counselling',
         'Academic Counselling',
         'Health and Wellness Counselling',

@@ -26,18 +26,18 @@ const canCancelBooking = (booking) => {
 const canJoinSession = (booking) => {
   if (!booking.videoSDKRoomId) return false;
 
-  // const now = dayjs().utc();
-  // const startTime = dayjs.utc(booking.startTime);
-  // const endTime = dayjs.utc(booking.endTime);
+  const now = dayjs().utc();
+  const startTime = dayjs.utc(booking.startTime);
+  const endTime = dayjs.utc(booking.endTime);
 
   //can join 10 minutes earlier from start time
-  // const minutesDiffStart = startTime.diff(now, 'minute');
+  const minutesDiffStart = startTime.diff(now, 'minute');
 
-  // //can join until  session ends
-  // const minutesDiffEnd = endTime.diff(now, 'minute');
+  //can join until  session ends
+  const minutesDiffEnd = endTime.diff(now, 'minute');
 
   // Can join 10 minutes before to 90 minutes afte
-  return true;
+  return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
 };
 
 // Get bookings with filters and pagination

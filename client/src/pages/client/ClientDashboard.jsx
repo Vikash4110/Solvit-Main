@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ProtectedRoute from '../../components/client/ClientProtectedRoute';
-import ClientDashboardTopbar from '../../components/client/clientDashboard/ClientDashbardTopbar';
+import ClientDashboardTopbar from '../../components/client/clientDashboard/ClientDashboardTopbar';
 import ClientDashboardSidebar from '../../components/client/clientDashboard/ClientDashboardSidebar';
 
 // Import all dashboard components
@@ -23,7 +23,7 @@ const ClientDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { client, clientLoading } = useClientAuth();
 
-  if (clientLoading) {
+  if (clientLoading) {ss
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>

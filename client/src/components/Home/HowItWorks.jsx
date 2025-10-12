@@ -176,10 +176,10 @@ const HowItWorks = () => {
             className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight"
             variants={fadeInUp}
           >
-            <span className="text-neutral-900 dark:text-white">Your Journey</span>
-            <br />
+            <span className="text-neutral-900 dark:text-white">How It </span>
+            
             <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-400 dark:via-primary-300 dark:to-secondary-400 bg-clip-text text-transparent">
-              With Solvit
+              Works
             </span>
           </motion.h2>
 

@@ -318,8 +318,8 @@ const BrowseCounselor = () => {
     () => [
       'Mental Health',
       'Career Counselling',
-      'Relationship Counselling',
-      'Life Coaching',
+      'Relationship & Family Therapy',
+      'Life & Personal Development',
       'Academic Counselling',
       'Health and Wellness Counselling',
     ],

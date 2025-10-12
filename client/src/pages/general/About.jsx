@@ -210,7 +210,7 @@ const AboutUs = () => {
                 whileTap={{ scale: 0.95 }}
                 className="bg-white text-indigo-600 font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all"
               >
-                <Link to="/client-register">Connect with an Expert</Link>
+                <Link to="/browse-counselors">Connect with an Expert</Link>
               </motion.button>
             </div>
           </motion.div>
