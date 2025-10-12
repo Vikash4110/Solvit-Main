@@ -118,7 +118,7 @@ const Navbar = () => {
     { to: '/services/mental-health', text: 'Mental Health Counseling', icon: Brain },
     { to: '/services/career', text: 'Career Counselling', icon: Briefcase },
     { to: '/services/relationship', text: 'Relationship & Family Therapy', icon: Heart },
-    { to: '/services/life-coaching', text: 'Life & Personal Development', icon: Rocket },
+    { to: '/services/life-coaching', text: '', icon: Rocket },
     { to: '/services/academic', text: 'Academic Counselling', icon: GraduationCap },
     { to: '/services/health-wellness', text: 'Health and Wellness', icon: Sparkles },
   ];
@@ -359,7 +359,7 @@ const Navbar = () => {
               >
                 <img
                   src={logo}
-                  className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 scale-[2] sm:scale-[3] lg:scale-[4.5] transition-transform duration-300"
+                  className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 scale-[4]  lg:scale-[4.5] transition-transform duration-300 ml-4 lg:ml-0"
                   alt="Solvit"
                 />
                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
