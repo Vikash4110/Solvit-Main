@@ -204,4 +204,4 @@ const ClientDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
   );
 };
 
-export default ClientDashboardSidebar;
+export {ClientDashboardSidebar};
