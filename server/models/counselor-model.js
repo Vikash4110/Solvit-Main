@@ -38,7 +38,6 @@ const counselorSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      unique: true,
       match: [/^\+?[1-9]\d{1,14}$/, 'Please enter a valid phone number'],
       required: true,
       trim: true,
@@ -48,7 +47,6 @@ const counselorSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      // enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
       enum: ['Male', 'Female', 'Other'],
       required: true,
     },
@@ -114,8 +112,8 @@ const counselorSchema = new mongoose.Schema(
       },
       applicationStatus: {
         type: String,
-        enum: ['pending', 'approved', 'rejected'],
-        default: 'pending',
+        enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+        default: 'not_submitted', // CHANGED FROM 'pending'
       },
       applicationSubmittedAt: {
         type: Date,

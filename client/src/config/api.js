@@ -76,4 +76,11 @@ export const API_ENDPOINTS = {
   BOOKINGS: '/bookings', // This matches the session router in server.js
   SESSION_TOKEN: '/session-token',
   ATTENDANCE: '/attendance',
+
+  ADMIN_LOGIN: '/admin/login',
+  ADMIN_LOGOUT: '/admin/logout',
+  ADMIN_PROFILE: '/admin/profile',
+  ADMIN_COUNSELOR_APPLICATIONS: '/admin/counselor-applications',
+  ADMIN_COUNSELOR_APPLICATION: '/admin/counselor-application',
+  ADMIN_UPDATE_APPLICATION_STATUS: '/admin/update-application-status',
 };

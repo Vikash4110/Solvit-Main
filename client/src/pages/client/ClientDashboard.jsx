@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ProtectedRoute from '../../components/client/ClientProtectedRoute';
-import ClientDashboardTopbar from '../../components/client/clientDashboard/ClientDashbardTopbar';
+// import ClientDashboardTopbar from '../../components/client/clientDashboard/ClientDashbardTopbar';
 import ClientDashboardSidebar from '../../components/client/clientDashboard/ClientDashboardSidebar';
 
 // Import all dashboard components
