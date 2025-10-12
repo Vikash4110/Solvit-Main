@@ -7,7 +7,7 @@ import ProtectedRoute from '../../components/client/ClientProtectedRoute.jsx';
 import ClientDashboardSidebar from '@/components/client/clientDashboard/ClientDashboardSidebar.jsx';
 
 // Import only required dashboard components
-import { ClientDashboardPayments } from '../../components/client/clientDashboard/ClientDashboardPayments.jsx';
+import  ClientDashboardPayments  from '@/components/client/clientDashboard/ClientDashboardPayments.jsx';
 import { ClientDashboardHelpSupport } from '../../components/client/clientDashboard/ClientDashboardHelpSupport.jsx';
 import { ClientDashboardNotifications } from '../../components/client/clientDashboard/ClientDashboardNotifications.jsx';
 import { ClientDashboardMyBookings } from '../../components/client/clientDashboard/ClientDashboardMyBookings.jsx';

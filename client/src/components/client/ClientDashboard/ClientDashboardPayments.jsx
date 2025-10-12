@@ -4,4 +4,4 @@ const ClientDashboardPayments = () => {
   );
 };
 
-export { ClientDashboardPayments };
+export default ClientDashboardPayments ;
