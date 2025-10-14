@@ -13,7 +13,6 @@ import { wrapper } from '../utils/wrapper.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { sendEmail } from '../utils/nodeMailer.js';
-import puppeteer from 'puppeteer';
 import { invoiceTemplate } from '../utils/InvoiceTemplate.js';
 import path from 'path';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
@@ -21,6 +20,9 @@ import videoSDKService from '../services/videoSDK.service.js';
 import { logger } from '../utils/logger.js';
 
 import { timeZone, slotDuration, earlyJoinMinutesForSession } from '../constants.js';
+
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -170,7 +172,6 @@ const paymentVerification = wrapper(async (req, res) => {
     )
   );
 });
-
 
 // Enhanced booking processing with VideoSDK integration
 const processBookingWithVideoSDK = async (
@@ -372,8 +373,10 @@ const generateInvoice = async (invoiceData) => {
 
   try {
     browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'], // ✅ Better for production
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(), // ✅ dynamic Chrome path for Render
+      headless: chromium.headless,
     });
     const page = await browser.newPage();
 

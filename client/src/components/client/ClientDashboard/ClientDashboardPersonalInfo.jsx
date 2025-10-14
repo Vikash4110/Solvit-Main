@@ -90,6 +90,58 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(relativeTime);
 
+//const topics
+const topics = [
+  "Stress Management",
+  "Anxiety",
+  "Depression",
+  "Emotional Well-being",
+  "Self-esteem & Confidence",
+  "Anger Management",
+  "Mindfulness & Meditation",
+  "Burnout Recovery",
+  "Coping with Change",
+  "Overthinking & Mental Clarity",
+  "Grief & Loss Support",
+  "Building Resilience",
+  "Inner Peace & Self-Reflection",
+  "Career Planning",
+  "Career Change Guidance",
+  "Job Search Support",
+  "Resume & Interview Preparation",
+  "Workplace Stress",
+  "Professional Growth & Development",
+  "Leadership & Communication Skills",
+  "Work-Life Balance",
+  "Decision-Making Support",
+  "Relationship Issues",
+  "Family Conflicts",
+  "Parenting Support",
+  "Couples Therapy",
+  "Marriage Counselling",
+  "Communication Improvement",
+  "Life Purpose & Goal Setting",
+  "Motivation & Productivity",
+  "Building Healthy Habits",
+  "Time Management",
+  "Self-Discovery",
+  "Financial Planning",
+  "Budgeting",
+  "Debt Management",
+  "Savings & Investments",
+  "Money-related Stress",
+  "Academic Guidance",
+  "Study Techniques",
+  "Exam Preparation",
+  "Course or Major Selection",
+  "Student Motivation",
+  "Health & Wellness",
+  "Nutrition & Diet",
+  "Fitness Motivation",
+  "Sleep & Lifestyle Balance",
+  "Body Image & Self-Care"
+];
+
 // Animation variants
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -165,7 +217,7 @@ const ClientDashboardPersonalInfo = () => {
         gender: data.gender || '',
         profilePicture: data.profilePicture || '',
         preferredLanguages: data.preferredLanguages || [],
-        bio: data.bio || '',
+        bio: data.bio[0].toUpperCase() + data.bio.slice(1, data.bio.length) || '',
         address: {
           city: data.address?.city || '',
           area: data.address?.area || '',
@@ -174,18 +226,6 @@ const ClientDashboardPersonalInfo = () => {
         prefferedTopics: data.prefferedTopics || [],
         lastLogin: data.lastLogin,
         createdAt: data.createdAt,
-        membershipPlan: data.membershipPlan || 'Free',
-        emergencyContact: {
-          name: data.emergencyContact?.name || '',
-          relationship: data.emergencyContact?.relationship || '',
-          phone: data.emergencyContact?.phone || '',
-        },
-        therapyPreferences: {
-          preferredCounselorGender:
-            data.therapyPreferences?.preferredCounselorGender || 'No Preference',
-          communicationMode: data.therapyPreferences?.communicationMode || [],
-          goals: data.therapyPreferences?.goals || '',
-        },
       };
 
       setClientData(transformedData);
@@ -204,14 +244,17 @@ const ClientDashboardPersonalInfo = () => {
 
   const fetchProfileCompleteness = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CLIENT_PROFILE_COMPLETENESS_VALIDATE}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.CLIENT_PROFILE_COMPLETENESS_VALIDATE}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          credentials: 'include',
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -434,6 +477,10 @@ const ClientDashboardPersonalInfo = () => {
       const data = result.data || result;
 
       const newProfilePicture = data.profilePicture;
+      
+      const storedClientData = JSON.parse(localStorage.getItem("client"))
+      storedClientData.profilePicture = newProfilePicture
+      localStorage.setItem("client",JSON.stringify(storedClientData))
 
       setClientData((prev) => ({
         ...prev,
@@ -600,10 +647,6 @@ const ClientDashboardPersonalInfo = () => {
                 </h1>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap">
                   Manage your profile and preferences
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-xs">
-                    <Globe className="h-3 w-3" />
-                    {timezoneInfo.timezone.split('/')[1]} ({timezoneInfo.offset})
-                  </span>
                 </p>
               </div>
             </div>
@@ -636,7 +679,7 @@ const ClientDashboardPersonalInfo = () => {
                 <div className="flex flex-col items-center">
                   {/* Profile Picture with Dropdown Menu */}
                   <div className="relative group mb-4">
-                    <Avatar className="h-40 w-40 lg:h-48 lg:w-48 ring-4 ring-white dark:ring-slate-800 shadow-xl transition-all duration-300 group-hover:ring-[#1c3c63]">
+                    <Avatar className="h-40 w-40 lg:h-48 lg:w-48 ring-4 ring-[#1c3c63] dark:ring-slate-800 shadow-xl transition-all duration-300 ">
                       <AvatarImage
                         src={clientData.profilePicture}
                         alt={clientData.fullName}
@@ -655,7 +698,7 @@ const ClientDashboardPersonalInfo = () => {
                         <Button
                           size="icon"
                           variant="secondary"
-                          className="absolute bottom-0 right-0 h-12 w-12 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                          className="absolute bottom-0 right-0 h-12 w-12 rounded-full shadow-lg  group-hover: transition-opacity duration-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
                         >
                           <Camera className="h-5 w-5" />
                         </Button>
@@ -683,19 +726,6 @@ const ClientDashboardPersonalInfo = () => {
                   <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
                     @{clientData.username}
                   </p>
-
-                  {/* Membership Badge */}
-                  <Badge
-                    variant="secondary"
-                    className={`mb-4 border-0 shadow-md ${
-                      clientData.membershipPlan === 'Premium'
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <Crown className="h-3 w-3 mr-1" />
-                    {clientData.membershipPlan} Member
-                  </Badge>
 
                   <Separator className="my-4" />
 
@@ -903,22 +933,22 @@ const ClientDashboardPersonalInfo = () => {
                               </div>
                             </div>
 
-                            {/* Preferences */}
+                            {/*Therapy Preferences */}
                             <div className="space-y-4">
                               <h3 className="text-lg font-semibold text-[#1c3c63] dark:text-white flex items-center gap-2">
-                                <Languages className="h-5 w-5" />
-                                Language Preferences
+                                Therapy Preferences
                               </h3>
                               <Separator />
 
                               <div className="space-y-3">
                                 <Label>Preferred Languages</Label>
+                               
                                 <div className="flex gap-4">
                                   {['Hindi', 'English'].map((lang) => (
                                     <div key={lang} className="flex items-center space-x-2">
                                       <Checkbox
                                         id={lang}
-                                        checked={formData.preferredLanguages.includes(lang)}
+                                        checked={formData.preferredLanguages?.includes(lang)}
                                         onCheckedChange={(checked) => {
                                           const updated = checked
                                             ? [...formData.preferredLanguages, lang]
@@ -936,8 +966,9 @@ const ClientDashboardPersonalInfo = () => {
 
                               <div className="space-y-3">
                                 <Label>Preferred Topics</Label>
-                                <div className="flex gap-4">
-                                  {['Stress', 'mentalHealth'].map((topic) => (
+    
+                                <div className="flex gap-4 flex-wrap">
+                                  {topics.map((topic) => (
                                     <div key={topic} className="flex items-center space-x-2">
                                       <Checkbox
                                         id={topic}
@@ -945,161 +976,18 @@ const ClientDashboardPersonalInfo = () => {
                                         onCheckedChange={(checked) => {
                                           const updated = checked
                                             ? [...formData.prefferedTopics, topic]
-                                            : formData.prefferedTopics.filter((t) => t !== topic);
+                                            : formData.prefferedTopics.filter(
+                                                (t) => t !== topic
+                                              );
                                           handleInputChange('prefferedTopics', updated);
                                         }}
                                       />
+
                                       <Label htmlFor={topic} className="cursor-pointer">
-                                        {topic === 'mentalHealth' ? 'Mental Health' : topic}
+                                        {topic}
                                       </Label>
                                     </div>
                                   ))}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Emergency Contact */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-[#1c3c63] dark:text-white flex items-center gap-2">
-                                <Shield className="h-5 w-5" />
-                                Emergency Contact
-                              </h3>
-                              <Separator />
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="emergencyName">Contact Name</Label>
-                                  <Input
-                                    id="emergencyName"
-                                    value={formData.emergencyContact.name}
-                                    onChange={(e) =>
-                                      handleNestedInputChange(
-                                        'emergencyContact',
-                                        'name',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="Full name"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="emergencyRelation">Relationship</Label>
-                                  <Input
-                                    id="emergencyRelation"
-                                    value={formData.emergencyContact.relationship}
-                                    onChange={(e) =>
-                                      handleNestedInputChange(
-                                        'emergencyContact',
-                                        'relationship',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="e.g., Brother, Mother"
-                                  />
-                                </div>
-
-                                <div className="space-y-2 sm:col-span-2">
-                                  <Label htmlFor="emergencyPhone">Phone Number</Label>
-                                  <Input
-                                    id="emergencyPhone"
-                                    value={formData.emergencyContact.phone}
-                                    onChange={(e) =>
-                                      handleNestedInputChange(
-                                        'emergencyContact',
-                                        'phone',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="+91 98765 12345"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Therapy Preferences */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-[#1c3c63] dark:text-white flex items-center gap-2">
-                                <Heart className="h-5 w-5" />
-                                Therapy Preferences
-                              </h3>
-                              <Separator />
-
-                              <div className="space-y-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="counselorGender">
-                                    Preferred Counselor Gender
-                                  </Label>
-                                  <Select
-                                    value={formData.therapyPreferences.preferredCounselorGender}
-                                    onValueChange={(value) =>
-                                      handleNestedInputChange(
-                                        'therapyPreferences',
-                                        'preferredCounselorGender',
-                                        value
-                                      )
-                                    }
-                                  >
-                                    <SelectTrigger id="counselorGender">
-                                      <SelectValue placeholder="Select preference" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="No Preference">No Preference</SelectItem>
-                                      <SelectItem value="Male">Male</SelectItem>
-                                      <SelectItem value="Female">Female</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div className="space-y-3">
-                                  <Label>Preferred Communication Mode</Label>
-                                  <div className="flex gap-4 flex-wrap">
-                                    {['Video', 'Chat', 'In-Person'].map((mode) => (
-                                      <div key={mode} className="flex items-center space-x-2">
-                                        <Checkbox
-                                          id={mode}
-                                          checked={formData.therapyPreferences.communicationMode.includes(
-                                            mode
-                                          )}
-                                          onCheckedChange={(checked) => {
-                                            const updated = checked
-                                              ? [
-                                                  ...formData.therapyPreferences.communicationMode,
-                                                  mode,
-                                                ]
-                                              : formData.therapyPreferences.communicationMode.filter(
-                                                  (m) => m !== mode
-                                                );
-                                            handleNestedInputChange(
-                                              'therapyPreferences',
-                                              'communicationMode',
-                                              updated
-                                            );
-                                          }}
-                                        />
-                                        <Label htmlFor={mode} className="cursor-pointer">
-                                          {mode}
-                                        </Label>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="goals">Counseling Goals</Label>
-                                  <Textarea
-                                    id="goals"
-                                    value={formData.therapyPreferences.goals}
-                                    onChange={(e) =>
-                                      handleNestedInputChange(
-                                        'therapyPreferences',
-                                        'goals',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="What would you like to achieve through counseling?"
-                                    rows={3}
-                                  />
                                 </div>
                               </div>
                             </div>
@@ -1165,15 +1053,6 @@ const ClientDashboardPersonalInfo = () => {
                       value={clientData.gender || 'Not specified'}
                       badge
                     />
-                    <InfoItem
-                      icon={Languages}
-                      label="Languages"
-                      value={
-                        clientData.preferredLanguages.length > 0
-                          ? clientData.preferredLanguages.join(', ')
-                          : 'Not specified'
-                      }
-                    />
                   </div>
                 </CardContent>
               </Card>
@@ -1221,38 +1100,6 @@ const ClientDashboardPersonalInfo = () => {
               </Card>
             </motion.div>
 
-            {/* Emergency Contact */}
-            <motion.div variants={fadeInUp}>
-              <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[#1c3c63] dark:text-white">
-                    <Shield className="h-5 w-5" />
-                    Emergency Contact
-                  </CardTitle>
-                  <CardDescription>Contact person in case of emergency</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <InfoItem
-                      icon={User}
-                      label="Name"
-                      value={clientData.emergencyContact.name || 'Not specified'}
-                    />
-                    <InfoItem
-                      icon={Heart}
-                      label="Relationship"
-                      value={clientData.emergencyContact.relationship || 'Not specified'}
-                    />
-                    <InfoItem
-                      icon={Phone}
-                      label="Phone"
-                      value={clientData.emergencyContact.phone || 'Not specified'}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
             {/* Therapy Preferences */}
             <motion.div variants={fadeInUp}>
               <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -1261,39 +1108,30 @@ const ClientDashboardPersonalInfo = () => {
                     <Heart className="h-5 w-5" />
                     Therapy Preferences
                   </CardTitle>
-                  <CardDescription>Your counseling preferences and goals</CardDescription>
+                  <CardDescription>Your counseling preferences</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <InfoItem
-                        icon={User}
-                        label="Preferred Counselor Gender"
-                        value={clientData.therapyPreferences.preferredCounselorGender}
-                        badge
-                      />
-                      <div>
-                        <Label className="text-xs text-slate-600 dark:text-slate-400 mb-2 block">
-                          Communication Mode
-                        </Label>
-                        <div className="flex gap-2 flex-wrap">
-                          {clientData.therapyPreferences.communicationMode.length > 0 ? (
-                            clientData.therapyPreferences.communicationMode.map((mode) => (
-                              <Badge
-                                key={mode}
-                                variant="secondary"
-                                className="bg-blue-50 dark:bg-blue-950/30 text-[#1c3c63] dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                              >
-                                <MessageCircle className="h-3 w-3 mr-1" />
-                                {mode}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-sm text-slate-500 dark:text-slate-400">
-                              Not specified
-                            </span>
-                          )}
-                        </div>
+                    <div>
+                      <Label className="text-xs text-slate-600 dark:text-slate-400 mb-2 block">
+                        Preferred Languages
+                      </Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {clientData.preferredLanguages.length > 0 ? (
+                          clientData.preferredLanguages.map((language) => (
+                            <Badge
+                              key={language}
+                              variant="secondary"
+                              className="bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                            >
+                              {language}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-sm text-slate-500 dark:text-slate-400">
+                            Not specified
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -1309,7 +1147,7 @@ const ClientDashboardPersonalInfo = () => {
                               variant="secondary"
                               className="bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
                             >
-                              {topic === 'mentalHealth' ? 'Mental Health' : topic}
+                              {topic}
                             </Badge>
                           ))
                         ) : (
@@ -1318,25 +1156,6 @@ const ClientDashboardPersonalInfo = () => {
                           </span>
                         )}
                       </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <Label className="text-xs text-slate-600 dark:text-slate-400 mb-2 block flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        Counseling Goals
-                      </Label>
-                      {clientData.therapyPreferences.goals ? (
-                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                          {clientData.therapyPreferences.goals}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-slate-500 dark:text-slate-400 italic p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                          No goals specified yet. Add your counseling goals to help counselors
-                          understand your needs better.
-                        </p>
-                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -1355,22 +1174,6 @@ const ClientDashboardPersonalInfo = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="flex flex-col">
-                      <Label className="text-xs text-slate-600 dark:text-slate-400 mb-2">
-                        Membership Plan
-                      </Label>
-                      <Badge
-                        variant="secondary"
-                        className={`w-fit border-0 ${
-                          clientData.membershipPlan === 'Premium'
-                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-                            : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        <Crown className="h-3 w-3 mr-1" />
-                        {clientData.membershipPlan}
-                      </Badge>
-                    </div>
                     <InfoItem
                       icon={Calendar}
                       label="Member Since"
@@ -1442,12 +1245,7 @@ const ClientDashboardPersonalInfo = () => {
                 />
               </div>
 
-              <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-                <ImageIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <AlertDescription className="text-sm text-blue-900 dark:text-blue-300 ml-2">
-                  WhatsApp-style cropper will appear after selecting an image.
-                </AlertDescription>
-              </Alert>
+              
             </div>
           </DialogContent>
         </Dialog>

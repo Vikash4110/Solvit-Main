@@ -12,7 +12,7 @@ import {
   getClientStats,
   validateProfileCompleteness,
 } from '../controllers/client-dashboard-controller.js';
-import { upload } from '../middlewares/multer.middleware.js';
+import { uploadProfilePicture } from '../middlewares/multer.middleware.js';
 
 const clientDashboardRouter = Router();
 
@@ -29,7 +29,7 @@ clientDashboardRouter.get(
 );
 clientDashboardRouter
   .route('/profile/picture')
-  .put(verifyJWTClient, upload.single('profilePicture'), updateProfilePicture)
+  .put(verifyJWTClient, uploadProfilePicture.single('profilePicture'), updateProfilePicture)
   .delete(verifyJWTClient, deleteProfilePicture);
 
 // Booking routes

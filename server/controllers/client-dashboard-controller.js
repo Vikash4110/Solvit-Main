@@ -70,6 +70,10 @@ export const updateClientProfile = wrapper(async (req, res) => {
     therapyPreferences,
   } = req.body;
 
+  console.log('****************************************************************************');
+  console.log(prefferedTopics);
+  console.log('***************************************************************************');
+
   // Validate required fields
   if (!fullName?.trim()) {
     throw new ApiError(400, 'Full name is required');
@@ -143,24 +147,6 @@ export const updateClientProfile = wrapper(async (req, res) => {
     updateData.prefferedTopics = prefferedTopics;
   }
 
-  if (emergencyContact) {
-    updateData.emergencyContact = {
-      name: emergencyContact.name?.trim() || '',
-      relationship: emergencyContact.relationship?.trim() || '',
-      phone: emergencyContact.phone?.trim() || '',
-    };
-  }
-
-  if (therapyPreferences) {
-    updateData.therapyPreferences = {
-      preferredCounselorGender: therapyPreferences.preferredCounselorGender || 'No Preference',
-      communicationMode: Array.isArray(therapyPreferences.communicationMode)
-        ? therapyPreferences.communicationMode
-        : [],
-      goals: therapyPreferences.goals?.trim() || '',
-    };
-  }
-
   // Update client profile
   const updatedClient = await Client.findByIdAndUpdate(
     clientId,
@@ -186,6 +172,7 @@ export const updateClientProfile = wrapper(async (req, res) => {
  */
 export const updateProfilePicture = wrapper(async (req, res) => {
   const clientId = req.verifiedClientId._id;
+  console.log('heloooooooooooooooooooooooo');
 
   logger.info(`Updating profile picture for client: ${clientId}`);
 

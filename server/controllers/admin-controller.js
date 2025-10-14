@@ -160,7 +160,7 @@ const updateApplicationStatus = wrapper(async (req, res) => {
     counselor.application.rejectionReason = rejectionReason;
   }
 
-  await counselor.save();
+  await counselor.save({ validateBeforeSave: false });
 
   // Send email notification
   const emailSubject =
