@@ -105,34 +105,34 @@ const paymentVerification = wrapper(async (req, res) => {
   const counselorData = await Counselor.findById(slotData?.counselorId).select('-password');
   if (!counselorData) throw new ApiError(404, 'Counselor not found');
 
-  // Step 3: Generate invoice
-  const invoiceUrl = await generateInvoice({
-    invoiceNumber: `INV-${Date.now()}`,
-    invoiceDate: dayjs().tz(timeZone).format('YYYY-MM-DD'),
-    clientName: clientData?.fullName || '',
-    clientEmail: clientData?.email || '',
-    clientPhone: clientData?.phone || '',
-    clientAddress: clientData?.address || '',
-    items: [
-      {
-        description: `Video Counseling Session with Dr. ${counselorData?.fullName || ''}`,
-        dateTime: `${dayjs(slotData?.startTime).tz(timeZone).format('dddd, MMMM D, YYYY')}, ${dayjs(slotData?.startTime).tz(timeZone).format('hh:mm A')} - ${dayjs(slotData?.endTime).tz(timeZone).format('hh:mm A')}`,
-        duration: `${slotDuration} minutes`,
-        rate: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
-        quantity: 1,
-        amount: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
-      },
-    ],
-    subtotal: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
-    taxRate: 18,
-    taxAmount: Number(slotData?.totalPriceAfterPlatformFee) * 0.18,
-    discount: 0,
-    total: slotData?.totalPriceAfterPlatformFee,
-    paymentMethod: paymentData.method || '',
-    paymentId: razorpay_payment_id,
-    paymentStatus: 'Paid',
-    refundPolicy: 'Sessions once booked are non-refundable.',
-  });
+  // // Step 3: Generate invoice
+  // const invoiceUrl = await generateInvoice({
+  //   invoiceNumber: `INV-${Date.now()}`,
+  //   invoiceDate: dayjs().tz(timeZone).format('YYYY-MM-DD'),
+  //   clientName: clientData?.fullName || '',
+  //   clientEmail: clientData?.email || '',
+  //   clientPhone: clientData?.phone || '',
+  //   clientAddress: clientData?.address || '',
+  //   items: [
+  //     {
+  //       description: `Video Counseling Session with Dr. ${counselorData?.fullName || ''}`,
+  //       dateTime: `${dayjs(slotData?.startTime).tz(timeZone).format('dddd, MMMM D, YYYY')}, ${dayjs(slotData?.startTime).tz(timeZone).format('hh:mm A')} - ${dayjs(slotData?.endTime).tz(timeZone).format('hh:mm A')}`,
+  //       duration: `${slotDuration} minutes`,
+  //       rate: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
+  //       quantity: 1,
+  //       amount: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
+  //     },
+  //   ],
+  //   subtotal: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
+  //   taxRate: 18,
+  //   taxAmount: Number(slotData?.totalPriceAfterPlatformFee) * 0.18,
+  //   discount: 0,
+  //   total: slotData?.totalPriceAfterPlatformFee,
+  //   paymentMethod: paymentData.method || '',
+  //   paymentId: razorpay_payment_id,
+  //   paymentStatus: 'Paid',
+  //   refundPolicy: 'Sessions once booked are non-refundable.',
+  // });
 
   // Step 4: Save payment info
   const payment = await Payment.create({
@@ -141,7 +141,7 @@ const paymentVerification = wrapper(async (req, res) => {
     razorpay_signature,
     clientId,
     slotId,
-    invoice: invoiceUrl,
+    // invoice: invoiceUrl || '',
   });
 
   // Step 5: Process booking with VideoSDK integration
@@ -153,7 +153,7 @@ const paymentVerification = wrapper(async (req, res) => {
     clientData,
     counselorData,
     slotData,
-    invoiceUrl
+    // invoiceUrl
   );
 
   if (!bookingResult.success) {
