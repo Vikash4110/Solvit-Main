@@ -62,7 +62,22 @@ const fadeInUp = {
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4 },
 };
-
+const modalOverlayStyles = `
+  /* Prevent body scroll when dialog is open */
+  body:has([data-slot="dialog-overlay"]) {
+    overflow: hidden;
+  }
+  
+  /* Make sure overlay doesn't block Razorpay */
+  [data-slot="dialog-overlay"] {
+    pointer-events: auto;
+  }
+  
+  /* Razorpay has z-index 2147483647, ensure it's always on top */
+  .razorpay-container {
+    z-index: 2147483647 !important;
+  }
+`;
 const BookCounselorCalendar = () => {
   const { counselorId } = useParams();
   const navigate = useNavigate();
@@ -78,6 +93,7 @@ const BookCounselorCalendar = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [imgError, setImgError] = useState(false);
+  const [isRazorpayOpen, setIsRazorpayOpen] = useState(false);
 
   // Load Razorpay script
   useEffect(() => {
@@ -207,10 +223,10 @@ const BookCounselorCalendar = () => {
         return;
       }
 
-      // CRITICAL FIX: Close the dialog BEFORE opening Razorpay
-      setShowBookingModal(false);
+      // Set Razorpay as open to lower modal z-index
+      setIsRazorpayOpen(true);
 
-      // Small delay to ensure dialog closes completely
+      // Small delay to ensure UI updates
       setTimeout(() => {
         const options = {
           key: keyData.data.key,
@@ -219,12 +235,14 @@ const BookCounselorCalendar = () => {
           name: 'Solvit',
           description: `Therapy Session with ${counselor.fullName}`,
           order_id: orderData.data.order.id,
-          handler: async (response) =>
+          handler: async (response) => {
+            setIsRazorpayOpen(false);
             await verifyPayment({
               ...response,
               clientId: clientData._id,
               slotId: selectedSlot._id,
-            }),
+            });
+          },
           prefill: {
             name: clientData.fullName,
             email: clientData.email,
@@ -234,9 +252,8 @@ const BookCounselorCalendar = () => {
           theme: { color: '#1C3C63' },
           modal: {
             ondismiss: () => {
+              setIsRazorpayOpen(false);
               setBookingLoading(false);
-              // Re-open booking modal if user cancels payment
-              setShowBookingModal(true);
               toast('Payment cancelled');
             },
           },
@@ -244,13 +261,13 @@ const BookCounselorCalendar = () => {
 
         const razorpay = new window.Razorpay(options);
         razorpay.open();
+
         razorpay.on('payment.failed', (response) => {
+          setIsRazorpayOpen(false);
           toast.error('Payment unsuccessful. Please try again.');
           setBookingLoading(false);
-          // Re-open booking modal on failure
-          setShowBookingModal(true);
         });
-      }, 300); // 300ms delay for smooth transition
+      }, 100); // Reduced delay for better UX
     } catch {
       toast.error('Unable to initiate payment. Please try again.');
       setBookingLoading(false);
@@ -278,7 +295,7 @@ const BookCounselorCalendar = () => {
           )
         );
         // Keep modal closed on success
-        closeBookingModal();
+
         setTimeout(() => navigate(`/session-success/${booking._id}`), 2000);
       } else {
         toast.error(data.message || 'Payment verification unsuccessful');
@@ -479,6 +496,7 @@ const BookCounselorCalendar = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50/30">
+    <style>{modalOverlayStyles}</style>
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-neutral-200/50 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
@@ -727,8 +745,22 @@ const BookCounselorCalendar = () => {
       </div>
 
       {/* Enhanced Booking Modal - CUSTOM SCROLLBAR & MATCHING DESIGN */}
-      <Dialog open={showBookingModal} onOpenChange={closeBookingModal}>
-        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <Dialog open={showBookingModal} onOpenChange={closeBookingModal} modal={false}>
+        <DialogContent
+          className="w-[95vw] max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+          onPointerDownOutside={(e) => {
+            // Prevent closing when clicking outside if Razorpay is open
+            if (isRazorpayOpen) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            // Prevent ESC key from closing if Razorpay is open
+            if (isRazorpayOpen) {
+              e.preventDefault();
+            }
+          }}
+        >
           {/* Gradient Header Bar - Matching Main Component */}
           <div className="h-3 bg-gradient-to-r from-primary-600 via-primary-800 to-primary-600"></div>
 
