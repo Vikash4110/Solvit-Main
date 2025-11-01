@@ -7,7 +7,7 @@ const paymentSchema = new mongoose.Schema(
     razorpay_signature: { type: String, required: true },
     clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', reuqired: true },
     slotId: { type: mongoose.Schema.Types.ObjectId, ref: 'GeneratedSlot', required: true },
-    invoice: { type: String, required: true },
+    invoice: { type: String },
   },
   { timestamps: true }
 );
