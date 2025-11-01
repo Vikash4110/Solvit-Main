@@ -18,7 +18,7 @@ import path from 'path';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
 import videoSDKService from '../services/videoSDK.service.js';
 import { logger } from '../utils/logger.js';
-
+import { scheduleRoomDeletion, cancelRoomDeletion } from '../queue/jobManager.js';
 import { timeZone, slotDuration, earlyJoinMinutesForSession } from '../constants.js';
 
 import puppeteer from 'puppeteer-core';
@@ -141,7 +141,7 @@ const paymentVerification = wrapper(async (req, res) => {
     razorpay_signature,
     clientId,
     slotId,
-    // invoice: invoiceUrl || '',
+    invoice:  'sss',
   });
 
   // Step 5: Process booking with VideoSDK integration
@@ -152,7 +152,7 @@ const paymentVerification = wrapper(async (req, res) => {
     slotData.totalPriceAfterPlatformFee,
     clientData,
     counselorData,
-    slotData,
+    slotData
     // invoiceUrl
   );
 
@@ -194,13 +194,15 @@ const processBookingWithVideoSDK = async (
     const slotStartTime = dayjs(slotData.startTime).tz(timeZone);
     const slotEndTime = dayjs(slotData.endTime).tz(timeZone);
 
-    // Create VideoSDK room
+    // Create VideoSDK room and add room deletion job
 
     const videoSDKRoom = await videoSDKService.createRoom();
 
     if (!videoSDKRoom.success) {
       throw new Error('Failed to create video meeting room');
     }
+
+    const deletionJob = await scheduleRoomDeletion(videoSDKRoom.roomId, slotData.endTime);
 
     // Step 3: Create Session record first
     const session = new Session({
@@ -211,6 +213,7 @@ const processBookingWithVideoSDK = async (
       scheduledEndTime: slotData.endTime,
       status: 'scheduled',
       videoSDKRoomInfo: videoSDKRoom,
+      videoSDKRoomDeletionJobId: deletionJob.id,
     });
 
     // Step 4: Create booking record
@@ -300,7 +303,6 @@ const processBookingWithVideoSDK = async (
   }
 };
 
-// [Keep existing helper functions: updateSessionAttendance, getBookingDetails, generateInvoice, email templates]
 // Update session attendance (handles detailed tracking)
 const updateSessionAttendance = wrapper(async (req, res) => {
   const { bookingId } = req.params;

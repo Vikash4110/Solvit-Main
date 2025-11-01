@@ -13,7 +13,7 @@ export const JOB_TYPES = {
   ADD_SLOTS: 'addSlots',
   DELETE_SLOTS: 'deleteSlots',
   DELETE_ROOM: 'deleteRoom',
-  PROCESS_PAYMENT: 'processPayment'
+  PROCESS_PAYMENT: 'processPayment',
 };
 
 // Queue names
@@ -28,22 +28,34 @@ export const JOB_OPTIONS = {
     attempts: 3,
     backoff: {
       type: 'exponential',
-      delay: 5000, // 5 seconds base delay
+      delay: 10000, // Increased from 5s to 10s (fewer retries)
     },
+
+    // ============ AGGRESSIVE CLEANUP ============
     removeOnComplete: {
-      age: 86400, // Keep for 24 hours
-      count: 1000, // Keep last 1000 jobs
+      age: 3600, // 1 hour (down from 24h)
+      count: 50, // Last 50 jobs (down from 1000)
     },
     removeOnFail: {
-      age: 604800, // Keep failed jobs for 7 days
+      age: 7200, // 2 hours (down from 7 days)
+      count: 20, // Last 20 failed jobs
     },
   },
+
   HIGH_PRIORITY: {
     priority: 1,
-    attempts: 5,
+    attempts: 3, // Reduced from 5
     backoff: {
       type: 'exponential',
-      delay: 3000,
+      delay: 5000, // Increased from 3s
+    },
+    removeOnComplete: {
+      age: 3600,
+      count: 30,
+    },
+    removeOnFail: {
+      age: 7200,
+      count: 10,
     },
   },
 };

@@ -51,7 +51,7 @@ const counselorSchema = new mongoose.Schema(
       required: true,
     },
     specialization: {
-      type: String,
+      type: [String],
       enum: [
         'Mental Health',
         'Career Counselling',
@@ -115,7 +115,7 @@ const counselorSchema = new mongoose.Schema(
       applicationStatus: {
         type: String,
         enum: ['not_submitted', 'pending', 'approved', 'rejected'],
-        default: 'not_submitted', // CHANGED FROM 'pending'
+        default: 'not_submitted', 
       },
       applicationSubmittedAt: {
         type: Date,

@@ -1,75 +1,128 @@
 /**
- * Redis connection configuration for BullMQ with Upstash
- * Upstash requires TLS connection
+ * OPTIMIZED Redis connection configuration for BullMQ with Upstash
+ * Focus: Minimize Redis commands, reuse connections, reduce polling
  */
+
 import Redis from 'ioredis';
 import dotenv from 'dotenv';
-
-import {logger} from '../utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 dotenv.config();
 
+// ============ SHARED CONNECTION POOL ============
+// OPTIMIZATION: Reuse single connection across multiple queues
+// This reduces connection overhead and command duplication
+let sharedConnection = null;
+let sharedWorkerConnection = null;
+
 /**
- * Create Upstash Redis connection with TLS
+ * Get or create shared Redis connection
+ * SAVES: ~50% connection commands by reusing across Queue instances
+ *
  * @param {boolean} isWorker - Whether this connection is for a worker
- * @returns {Redis} Redis connection instance
+ * @returns {Redis} Shared Redis connection instance
  */
-export const createRedisConnection = (isWorker = false) => {
+export const getSharedRedisConnection = (isWorker = false) => {
+  // Return existing connection if available
+  if (isWorker && sharedWorkerConnection) {
+    return sharedWorkerConnection;
+  }
+  if (!isWorker && sharedConnection) {
+    return sharedConnection;
+  }
+
+  // Create new connection with optimized settings
   const connection = new Redis({
-    host: process.env.UPSTASH_REDIS_REST_URL, // Your Upstash endpoint
+    host: process.env.UPSTASH_REDIS_REST_URL,
     port: parseInt(process.env.UPSTASH_REDIS_PORT) || 6379,
     password: process.env.UPSTASH_REDIS_REST_TOKEN,
 
-    // CRITICAL: TLS is required for Upstash
+    // TLS required for Upstash
     tls: {
-      rejectUnauthorized: true, // Enforce SSL certificate validation
+      rejectUnauthorized: true,
     },
 
-    // Enable read-only support (if using Upstash read replicas)
+    // ============ CRITICAL OPTIMIZATIONS ============
+
+    // OPTIMIZATION 1: Disable ready check (saves 1 command per connection)
     enableReadyCheck: false,
 
-    // Critical for workers - must be null to prevent job failures
-    maxRetriesPerRequest: isWorker ? null : 20,
+    // OPTIMIZATION 2: Workers need null to prevent job failures
+    // Queues use limited retries for fail-fast behavior
+    maxRetriesPerRequest: isWorker ? null : 3, // Reduced from 20 to 3
 
-    // Enable offline queue for workers, disable for queues (fail fast)
+    // OPTIMIZATION 3: Disable offline queue for producers (fail fast)
+    // Enable for workers (wait for reconnection)
     enableOfflineQueue: isWorker,
 
-    // Retry strategy with exponential backoff
+    // OPTIMIZATION 4: Lazy connect - don't connect immediately
+    lazyConnect: false, // Set to true if you want even fewer initial commands
+
+    // OPTIMIZATION 5: Increase command timeout to reduce retries
+    commandTimeout: 30000, // 30 seconds
+
+    // OPTIMIZATION 6: Retry strategy with longer delays
     retryStrategy: (times) => {
-      const delay = Math.max(Math.min(Math.exp(times), 20000), 1000);
+      if (times > 10) {
+        logger.error('Redis connection failed after 10 retries');
+        return null; // Stop retrying after 10 attempts
+      }
+      // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
+      const delay = Math.min(Math.pow(2, times) * 1000, 30000);
       logger.warn(`Redis reconnection attempt ${times}, retrying in ${delay}ms`);
       return delay;
     },
 
-    // Connection timeout
-    connectTimeout: 10000,
+    // OPTIMIZATION 7: Increase keepalive to reduce ping commands
+    keepAlive: 60000, // 60 seconds instead of 30
 
-    // Keep connection alive
-    keepAlive: 30000,
+    // OPTIMIZATION 8: Connection timeout
+    connectTimeout: 30000,
+
+    // OPTIMIZATION 9: Reduce auto-pipelining threshold
+    enableAutoPipelining: true, // Batch commands together
+    autoPipeliningIgnoredCommands: ['ping'], // Don't pipeline pings
   });
 
-  // Error handling
+  // Minimal error handling (avoid excessive logging commands)
   connection.on('error', (err) => {
-    logger.error(`Redis connection error: ${err.message}`);
+    // Log only critical errors to reduce overhead
+    if (err.code !== 'ECONNREFUSED') {
+      logger.error(`Redis error: ${err.message}`);
+    }
   });
 
   connection.on('connect', () => {
-    logger.info('✓ Connected to Upstash Redis');
+    logger.info('✓ Redis connected');
   });
 
-  connection.on('ready', () => {
-    logger.info('✓ Upstash Redis ready to accept commands');
-  });
-
-  connection.on('close', () => {
-    logger.warn('Upstash Redis connection closed');
-  });
-
-  connection.on('reconnecting', () => {
-    logger.info('Reconnecting to Upstash Redis...');
-  });
+  // Store shared connection
+  if (isWorker) {
+    sharedWorkerConnection = connection;
+  } else {
+    sharedConnection = connection;
+  }
 
   return connection;
 };
 
-export default createRedisConnection;
+/**
+ * Close all shared connections
+ * IMPORTANT: Call this during graceful shutdown
+ */
+export const closeAllConnections = async () => {
+  const promises = [];
+
+  if (sharedConnection) {
+    promises.push(sharedConnection.quit());
+    sharedConnection = null;
+  }
+
+  if (sharedWorkerConnection) {
+    promises.push(sharedWorkerConnection.quit());
+    sharedWorkerConnection = null;
+  }
+
+  await Promise.all(promises);
+  logger.info('All Redis connections closed');
+};

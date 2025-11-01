@@ -16,6 +16,7 @@ import { priceRouter } from './routes/price-routes.js';
 import { adminRouter } from './routes/admin-routes.js';
 
 import { videoCallRouter } from './routes/videoCall.routes.js';
+import { counselorDashboardRouter } from './routes/counselor-dashboard-routes.js';
 
 // Security
 import helmet from 'helmet';
@@ -26,28 +27,28 @@ import { logger } from './utils/logger.js';
 import Razorpay from 'razorpay';
 // ============ BullMQ Imports ============
 import { createBullBoard } from '@bull-board/api';
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'; // Remove .js extension
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { schedulerQueue, immediateQueue, closeQueues } from './queue/queue.js';
 import { initializeScheduledJobs } from './queue/jobManager.js';
+import { closeAllConnections } from './config/redis.js';
 // ========================================
-
 
 dotenv.config();
 
 const app = express();
 
 // ============ NEW: Bull Board Setup (BEFORE other middleware) ============
-const serverAdapter = new ExpressAdapter();
-serverAdapter.setBasePath('/admin/queues');
+// const serverAdapter = new ExpressAdapter();
+// serverAdapter.setBasePath('/admin/queues');
 
-createBullBoard({
-  queues: [new BullMQAdapter(schedulerQueue), new BullMQAdapter(immediateQueue)],
-  serverAdapter: serverAdapter,
-});
+// createBullBoard({
+//   queues: [new BullMQAdapter(schedulerQueue), new BullMQAdapter(immediateQueue)],
+//   serverAdapter: serverAdapter,
+// });
 
-// Mount Bull Board BEFORE other routes to avoid conflicts
-app.use('/admin/queues', serverAdapter.getRouter());
+// // Mount Bull Board BEFORE other routes to avoid conflicts
+// app.use('/admin/queues', serverAdapter.getRouter());
 // ==========================================================================
 
 // CORS Configuration
@@ -103,6 +104,7 @@ app.use('/api/v1/client/dashboard', clientDashboardRouter);
 app.use('/api/v1/blogs', blogsRouter);
 app.use('/api/v1/contact', contactRouter);
 app.use('/api/v1/price', priceRouter);
+app.use('/api/v1/counselor/dashboard', counselorDashboardRouter);
 
 app.use('/api/v1/meeting', videoCallRouter);
 
@@ -168,7 +170,7 @@ connectDb()
 
       // REPLACED: startCronJobs() with BullMQ initialization
       try {
-        // await initializeScheduledJobs();
+        await initializeScheduledJobs();
         logger.info('✓ BullMQ scheduled jobs initialized successfully');
         logger.info('⚠️  Remember to start the worker process: npm run worker');
       } catch (error) {
@@ -188,8 +190,14 @@ const gracefulShutdown = async (signal) => {
   logger.info(`\n${signal} received. Shutting down gracefully...`);
 
   try {
+    // 1. Close queues first
     await closeQueues();
-    logger.info('BullMQ queues closed successfully');
+    logger.info('BullMQ queues closed');
+
+    // 2. Close shared Redis connections
+    await closeAllConnections();
+    logger.info('Redis connections closed');
+
     process.exit(0);
   } catch (error) {
     logger.error(`Error during shutdown: ${error.message}`);

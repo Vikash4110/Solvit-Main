@@ -1,20 +1,23 @@
 import jwt from 'jsonwebtoken';
 import { ApiError } from '../utils/ApiError.js';
 import { logger } from '../utils/logger.js';
+import dotenv from 'dotenv';
+dotenv.config({ path: '../.env' });
 
 class VideoSDKService {
   constructor() {
     this.apiKey = process.env.VIDEOSDK_API_KEY;
     this.secret = process.env.VIDEOSDK_SECRET_KEY;
     this.baseURL = process.env.VIDEOSDK_API_ENDPOINT || 'https://api.videosdk.live/v2';
+    console.log(process.env.VIDEOSDK_API_KEY);
 
     if (!this.apiKey || !this.secret) {
       throw new Error('VideoSDK credentials not found in environment variables');
     }
   }
 
-  // Generate VideoSDK Auth Token for just creating a room
-  generateAuthTokenForCreatingRoom() {
+  // Generate VideoSDK Auth Token for just creating and deleting a room
+  generateAuthTokenForCreatingAndDeletingRoom() {
     try {
       const options = {
         algorithm: 'HS256',
@@ -36,7 +39,7 @@ class VideoSDKService {
   // Create a new meeting room
   async createRoom() {
     try {
-      const authToken = this.generateAuthTokenForCreatingRoom();
+      const authToken = this.generateAuthTokenForCreatingAndDeletingRoom();
 
       const response = await fetch(`${this.baseURL}/rooms`, {
         method: 'POST',
@@ -81,6 +84,201 @@ class VideoSDKService {
       throw new ApiError(500, 'Failed to generate meeting access token');
     }
   }
+
+  // end all active sessions and deactivate ( delete room )
+  async deleteRoom(roomId) {
+    try {
+      if (!roomId) {
+        throw new ApiError(400, 'Room ID is required');
+      }
+
+      logger.info(`[VideoSDK] Attempting to delete room: ${roomId}`);
+
+      // Generate auth token
+      const authToken = this.generateAuthTokenForCreatingAndDeletingRoom();
+
+      // Check if room exists first
+      const roomExists = await this.checkRoomExists(roomId, authToken);
+
+      if (!roomExists) {
+        logger.warn(`[VideoSDK] Room ${roomId} not found or already deleted`);
+        return {
+          success: true,
+          message: 'Room already deleted or does not exist',
+          roomId,
+          alreadyDeleted: true,
+        };
+      }
+      //checking and ending all the active sessions for the room
+      await this.endAllActiveSessions(roomId, authToken);
+
+      // Delete the room
+      const response = await fetch(`${this.baseURL}/rooms/deactivate`, {
+        method: 'POST',
+        headers: {
+          Authorization: authToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Failed to delete room: ${response.status} - ${JSON.stringify(errorData)}`);
+      }
+
+      logger.info(`[VideoSDK] Room deleted successfully: ${roomId}`);
+
+      return {
+        success: true,
+        message: 'Room deleted successfully',
+        roomId,
+        deletedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      // Handle specific error cases
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        logger.warn(`[VideoSDK] Room ${roomId} not found (404)`);
+        return {
+          success: true,
+          message: 'Room not found (already deleted)',
+          roomId,
+          alreadyDeleted: true,
+        };
+      }
+
+      logger.error(`[VideoSDK] Failed to delete room ${roomId}:`, error.message);
+      throw new ApiError(500, `Failed to delete room: ${error.message}`);
+    }
+  }
+  /**
+   * Check if room exists
+   * @param {string} roomId - Room ID
+   * @param {string} authToken - Auth token
+   * @returns {Promise<boolean>}
+   */
+  async checkRoomExists(roomId, authToken) {
+    try {
+      const response = await fetch(`${this.baseURL}/rooms/${roomId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: authToken,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // /**
+  //  * Get room details including active sessions
+  //  * @param {string} roomId - Room ID
+  //  * @param {string} authToken - Auth token
+  //  * @returns {Promise<Object>}
+  //  */
+  // async getRoomDetails(roomId, authToken) {
+  //   try {
+  //     const response = await fetch(`${this.baseURL}/rooms/${roomId}`, {
+  //       method: 'GET',
+  //       headers: {
+  //         Authorization: authToken,
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error(`Room not found: ${response.status}`);
+  //     }
+
+  //     const data = await response.json();
+
+  //     return {
+  //       roomId: data.roomId,
+  //       disabled: data.disabled,
+  //       activeSessions: data.activeSessions,
+  //       createdAt: data.createdAt,
+  //     };
+  //   } catch (error) {
+  //     logger.error(`[VideoSDK] Error getting room details: ${error.message}`);
+  //     return {
+  //       roomId,
+  //       activeSessions: 0,
+  //     };
+  //   }
+  // }
+
+  /**
+   * End all active sessions in a room
+   * @param {string} roomId - Room ID
+   * @param {string} authToken - Auth token
+   */
+  async endAllActiveSessions(roomId, authToken) {
+    try {
+      // Get list of all active sessions
+      const sessionsResponse = await fetch(`${this.baseURL}/sessions/end`, {
+        method: 'POST',
+        headers: {
+          Authorization: authToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId,
+        }),
+      });
+
+      if (!sessionsResponse.ok) {
+        logger.warn(`[VideoSDK] Could not end all sessions for room ${roomId}`);
+        return;
+      }
+
+      const sessionsData = await sessionsResponse.json();
+      logger.info(`[VideoSDK] Ended all sessions in room ${roomId}`);
+      return {
+        sessionsData,
+        message: 'deletion successfull of the active rooms',
+      };
+    } catch (error) {
+      logger.error(`[VideoSDK] Failed to end sessions in room ${roomId}:`, error.message);
+      throw new ApiError(500, `Error ending active sessions for roomId :${roomId}`);
+    }
+  }
+
+  // /**
+  //  * End a specific session
+  //  * @param {string} sessionId - Session ID
+  //  * @param {string} authToken - Auth token
+  //  */
+  // async endSession(sessionId, roomId, authToken) {
+  //   try {
+  //     const response = await fetch(`${this.baseURL}/sessions/end`, {
+  //       method: 'POST',
+  //       headers: {
+  //         Authorization: authToken,
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         roomId: roomId,
+  //         sessionId: sessionId,
+  //       }),
+  //     });
+
+  //     if (response.ok) {
+  //       logger.info(`[VideoSDK] Session ${sessionId} ended successfully`);
+  //     } else if (response.status === 404) {
+  //       logger.warn(`[VideoSDK] Session ${sessionId} not found (already ended)`);
+  //     } else {
+  //       throw new Error(`Failed to end session: ${response.status}`);
+  //     }
+  //   } catch (error) {
+  //     logger.error(`[VideoSDK] Error ending session ${sessionId}:`, error.message);
+  //     throw error;
+  //   }
+  // }
 
   // Get meeting details
   async getMeetingDetails(meetingId) {

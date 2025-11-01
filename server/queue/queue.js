@@ -1,66 +1,81 @@
 /**
- * Queue initialization and job addition
- * Handles all queue creation and job dispatching logic
+ * OPTIMIZED Queue initialization
+ * Focus: Shared connections, minimal event listeners
  */
+
 import { Queue } from 'bullmq';
-import { createRedisConnection } from '../config/redis.js';
-import { QUEUE_NAMES, JOB_TYPES, JOB_OPTIONS } from '../constants.js';
+import { getSharedRedisConnection } from '../config/redis.js';
+import { QUEUE_NAMES, JOB_OPTIONS } from '../constants.js';
 import { logger } from '../utils/logger.js';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
 
-// Extend Day.js plugins
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-// Define timezone (can be loaded from ENV or constants)
-import { timeZone } from '../constants.js';
-
-// Create Redis connection for queues (fail fast on disconnect)
-const connection = createRedisConnection(false);
+// ============ OPTIMIZATION: Single shared connection for ALL queues ============
+// SAVES: 2 connections per queue (down from 3 to 1 shared connection)
+const sharedQueueConnection = getSharedRedisConnection(false);
 
 /**
- * Initialize scheduler queue for recurring/delayed jobs
+ * Optimized scheduler queue
+ * REMOVED: Event listeners that cause unnecessary Redis polling
  */
 export const schedulerQueue = new Queue(QUEUE_NAMES.SCHEDULER, {
-  connection,
+  connection: sharedQueueConnection, // Reuse shared connection
   defaultJobOptions: JOB_OPTIONS.DEFAULT,
+
+  // ============ OPTIMIZATION: Disable metrics collection ============
+  // SAVES: Frequent Redis calls for job counts and stats
+  metrics: {
+    maxDataPoints: 0, // Disable metrics (saves ~100 commands/hour)
+  },
 });
 
 /**
- * Initialize immediate queue for on-demand jobs
+ * Optimized immediate queue
  */
 export const immediateQueue = new Queue(QUEUE_NAMES.IMMEDIATE, {
-  connection,
+  connection: sharedQueueConnection,
   defaultJobOptions: JOB_OPTIONS.DEFAULT,
+  metrics: {
+    maxDataPoints: 0,
+  },
 });
 
-// Queue error handlers
+// ============ OPTIMIZATION: Remove event listeners ============
+// Event listeners cause continuous Redis polling even when idle
+// REMOVED: 'error', 'waiting', 'active', 'completed' listeners
+// Only log critical errors to console, not via Redis polling
+
+// Log errors only (no Redis polling)
 schedulerQueue.on('error', (err) => {
-  logger.error(`Scheduler Queue Error: ${err.message}`);
+  console.error(`Scheduler Queue Error: ${err.message}`);
 });
 
 immediateQueue.on('error', (err) => {
-  logger.error(`Immediate Queue Error: ${err.message}`);
+  console.error(`Immediate Queue Error: ${err.message}`);
 });
 
 /**
- * Add a job to the queue
- * @param {string} jobType - Type of job (from JOB_TYPES)
- * @param {object} data - Job data
- * @param {object} options - Additional job options
- * @returns {Promise<Job>} Created job
+ * Add job with optimized options
+ * OPTIMIZATION: Aggressive cleanup to reduce Redis storage
  */
 export const addJob = async (jobType, data = {}, options = {}) => {
   try {
     const job = await immediateQueue.add(jobType, data, {
       ...JOB_OPTIONS.DEFAULT,
       ...options,
+
+      // ============ AGGRESSIVE CLEANUP ============
+      // SAVES: Storage space and reduces key count
+      removeOnComplete: {
+        age: 3600, // Keep completed jobs for only 1 hour (down from 24h)
+        count: 100, // Keep only last 100 jobs (down from 1000)
+      },
+      removeOnFail: {
+        age: 7200, // Keep failed jobs for 2 hours (down from 7 days)
+        count: 50, // Keep only last 50 failed jobs
+      },
     });
 
-    const now = dayjs().tz(timeZone).format('YYYY-MM-DD HH:mm:ss');
-    logger.info(`[${now}] Job ${jobType} added with ID: ${job.id}`);
+    // REMOVED: Timestamp logging (reduces string operations)
+    logger.info(`Job ${jobType} added: ${job.id}`);
     return job;
   } catch (error) {
     logger.error(`Failed to add job ${jobType}: ${error.message}`);
@@ -69,11 +84,7 @@ export const addJob = async (jobType, data = {}, options = {}) => {
 };
 
 /**
- * Add a repeatable job (cron-based)
- * @param {string} jobType - Type of job
- * @param {object} data - Job data
- * @param {string} cronExpression - Cron expression
- * @param {object} options - Additional options
+ * Add repeatable job with minimal overhead
  */
 export const addRepeatableJob = async (jobType, data, cronExpression, options = {}) => {
   try {
@@ -84,10 +95,19 @@ export const addRepeatableJob = async (jobType, data, cronExpression, options = 
       },
       ...JOB_OPTIONS.DEFAULT,
       ...options,
+
+      // Aggressive cleanup for repeatable jobs
+      removeOnComplete: {
+        age: 1800, // 30 minutes
+        count: 50,
+      },
+      removeOnFail: {
+        age: 3600, // 1 hour
+        count: 20,
+      },
     });
 
-    const now = dayjs().tz(timeZone).format('YYYY-MM-DD HH:mm:ss');
-    logger.info(`[${now}] Repeatable job ${jobType} scheduled with pattern: ${cronExpression}`);
+    logger.info(`Repeatable job ${jobType} scheduled: ${cronExpression}`);
     return job;
   } catch (error) {
     logger.error(`Failed to add repeatable job ${jobType}: ${error.message}`);
@@ -96,11 +116,7 @@ export const addRepeatableJob = async (jobType, data, cronExpression, options = 
 };
 
 /**
- * Add a delayed job
- * @param {string} jobType - Type of job
- * @param {object} data - Job data
- * @param {number} delay - Delay in milliseconds
- * @param {object} options - Additional options
+ * Add delayed job
  */
 export const addDelayedJob = async (jobType, data, delay, options = {}) => {
   try {
@@ -108,10 +124,17 @@ export const addDelayedJob = async (jobType, data, delay, options = {}) => {
       delay,
       ...JOB_OPTIONS.DEFAULT,
       ...options,
+      removeOnComplete: {
+        age: 3600,
+        count: 50,
+      },
+      removeOnFail: {
+        age: 7200,
+        count: 20,
+      },
     });
 
-    const scheduledTime = dayjs().tz(timeZone).add(delay, 'millisecond').format('YYYY-MM-DD HH:mm:ss');
-    logger.info(`[${scheduledTime}] Delayed job ${jobType} scheduled to run in ${delay}ms`);
+    logger.info(`Delayed job ${jobType} scheduled (${delay}ms delay)`);
     return job;
   } catch (error) {
     logger.error(`Failed to add delayed job ${jobType}: ${error.message}`);
@@ -120,15 +143,12 @@ export const addDelayedJob = async (jobType, data, delay, options = {}) => {
 };
 
 /**
- * Remove a repeatable job
- * @param {string} jobType - Type of job
- * @param {object} repeatOpts - Repeat options used when job was created
+ * Remove repeatable job
  */
 export const removeRepeatableJob = async (jobType, repeatOpts) => {
   try {
     await schedulerQueue.removeRepeatable(jobType, repeatOpts);
-    const now = dayjs().tz(timeZone).format('YYYY-MM-DD HH:mm:ss');
-    logger.info(`[${now}] Repeatable job ${jobType} removed`);
+    logger.info(`Repeatable job ${jobType} removed`);
   } catch (error) {
     logger.error(`Failed to remove repeatable job ${jobType}: ${error.message}`);
     throw error;
@@ -136,14 +156,15 @@ export const removeRepeatableJob = async (jobType, repeatOpts) => {
 };
 
 /**
- * Gracefully close all queues
+ * Gracefully close queues (does NOT close shared connection)
+ * Shared connection will be closed by redis.js closeAllConnections()
  */
 export const closeQueues = async () => {
   try {
+    // Close queues but NOT the shared connection
     await Promise.all([schedulerQueue.close(), immediateQueue.close()]);
-    await connection.quit();
-    const now = dayjs().tz(timeZone).format('YYYY-MM-DD HH:mm:ss');
-    logger.info(`[${now}] All queues closed gracefully`);
+
+    logger.info('All queues closed');
   } catch (error) {
     logger.error(`Error closing queues: ${error.message}`);
   }

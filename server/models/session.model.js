@@ -13,6 +13,10 @@ const sessionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    videoSDKRoomDeletionJobId: {
+      type: String,
+      required: true,
+    },
 
     status: {
       type: String,

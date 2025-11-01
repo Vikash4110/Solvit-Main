@@ -81,6 +81,7 @@ const buttonVariants = cva(baseButton, {
       default: "h-9 px-4 text-sm gap-2 has-[>svg]:px-3 md:h-10 md:px-5",
       lg: "h-10 px-5 text-base gap-2 has-[>svg]:px-4 md:h-11 md:px-6",
       icon: "h-9 w-9 p-0 md:h-10 md:w-10",
+      xl: "h-14 px-5 text-base gap-2 has-[>svg]:px-4 md:h-16 md:px-6"
     },
   },
   defaultVariants: {

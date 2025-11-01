@@ -72,6 +72,21 @@ export const API_ENDPOINTS = {
   BLOGS_COUNSELOR_MY_BLOGS: '/blogs/counselor/my-blogs',
   BLOGS_COUNSELOR_STATS: '/blogs/counselor/stats',
 
+  //Client Dashboard Personal Information ( profile ) Endpoints
+  COUNSELOR_PROFILE_GET: '/counselor/dashboard/profile',
+  COUNSELOR_PROFILE_UPDATE: '/counselor/dashboard/profile',
+  COUNSELOR_PROFILE_PICTURE_UPDATE: '/counselor/dashboard/profile-picture',
+  COUNSELOR_PROFILE_PICTURE_DELETE: '/counselor/dashboard/profile-picture',
+  COUNSELOR_STATS: '/counselor/dashboard/stats',
+  COUNSELOR_PROFILE_COMPLETENESS: '/counselor/dashboard/profile/completeness',
+  COUNSELOR_APPLICATION_SUBMIT: '/counselor/dashboard/application/submit',
+  COUNSELOR_APPLICATION_STATUS: '/counselor/dashboard/application/status',
+
+  //Client Dashboard Upcomming Sessions Endpoints
+  COUNSELOR_SESSIONS_UPCOMING: '/counselor/dashboard/sessions/upcoming',
+  COUNSELOR_SESSION_DETAILS: '/counselor/dashboard/sessions',
+  COUNSELOR_SESSION_JOIN: '/counselor/dashboard/sessions',
+
   // ✅ Contact endpoint
   CONTACT_SEND_EMAIL: '/contact/send-email',
 

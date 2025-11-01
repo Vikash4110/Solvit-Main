@@ -122,7 +122,7 @@ const Navbar = () => {
     { to: '/services/mental-health', text: 'Mental Health Counseling', icon: Brain },
     { to: '/services/career', text: 'Career Counselling', icon: Briefcase },
     { to: '/services/relationship', text: 'Relationship & Family Therapy', icon: Heart },
-    { to: '/services/life-coaching', text: '', icon: Rocket },
+    { to: '/services/life-coaching', text: 'Life & Personal Development', icon: Rocket },
     { to: '/services/academic', text: 'Academic Counselling', icon: GraduationCap },
     { to: '/services/health-wellness', text: 'Health and Wellness', icon: Sparkles },
   ];

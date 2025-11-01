@@ -42,7 +42,10 @@ const AdminDashboard = () => {
     (app) =>
       app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.specialization.toLowerCase().includes(searchTerm.toLowerCase())
+      app.specialization.some((specialization)=>{
+        return specialization.toLowerCase().includes(searchTerm.toLowerCase())
+
+      })
   );
 
   const stats = {
@@ -237,7 +240,9 @@ const AdminDashboard = () => {
                             </span>
                           </div>
                           <p className="text-sm text-gray-500">{application.email}</p>
-                          <p className="text-sm text-gray-500">{application.specialization}</p>
+                          <p className="text-sm text-gray-500">{application.specialization.map((specialization)=>{
+                            {specialization}
+                          })}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">

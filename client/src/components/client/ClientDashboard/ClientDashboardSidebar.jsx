@@ -154,8 +154,8 @@ const ClientDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
                       w-full justify-start h-auto py-3 px-3 transition-all duration-300
                       ${
                         active
-                          ? 'bg-gradient-to-r from-primary-600 to-blue-600 text-white shadow-xl shadow-primary-500/40 hover:shadow-primary-500/60 hover:scale-[1.02]'
-                          : 'hover:bg-primary-50 dark:hover:bg-primary-900/20 text-neutral-700 dark:text-neutral-300 hover:scale-[1.01] hover:shadow-md'
+                          ? 'bg-primary-600 text-white shadow-md hover:bg-primary-700'
+                          : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
                       }
                     `}
                     aria-current={active ? 'page' : undefined}

@@ -307,7 +307,9 @@ const resetPassword = wrapper(async (req, res) => {
 });
 
 const registerCounselor = wrapper(async (req, res) => {
-  const { fullName, username, password, email, phone, gender, specialization } = req.body;
+  let { fullName, username, password, email, phone, gender, specialization } = req.body;
+  specialization = specialization.split(',');
+  console.log(specialization);
 
   if (!fullName || !username || !password || !email || !phone || !gender || !specialization) {
     return res.status(400).json({
@@ -359,6 +361,12 @@ const registerCounselor = wrapper(async (req, res) => {
       message: 'Invalid gender',
     });
   }
+  if (!specialization || specialization.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Select Atleast one Specialization',
+    });
+  }
 
   const validSpecializations = [
     'Mental Health',
@@ -370,10 +378,14 @@ const registerCounselor = wrapper(async (req, res) => {
     'Health and Wellness Counselling',
   ];
 
-  if (!validSpecializations.includes(specialization)) {
+  if (
+    !specialization.every((spec) => {
+      return validSpecializations.includes(spec);
+    })
+  ) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid specialization',
+      message: 'Select valid Specialization',
     });
   }
 

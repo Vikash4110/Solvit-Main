@@ -1,30 +1,3 @@
-// import { Navigate, Outlet } from 'react-router-dom';
-// import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
-
-// const CounselorProtectedRoute = () => {
-//   const { counselor, counselorLoading } = useCounselorAuth();
-
-//   if (counselorLoading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-//         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-//       </div>
-//     );
-//   }
-
-//   if (!counselor) {
-//     return <Navigate to="/counselor/login" replace />;
-//   }
-
-//   if (counselor.applicationStatus !== 'approved') {
-//     return <Navigate to="/counselor/application" replace />;
-//   }
-
-//   return <Outlet />;
-// };
-
-// export default CounselorProtectedRoute;
-
 import { Navigate } from 'react-router-dom';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 
@@ -44,17 +17,17 @@ const CounselorProtectedRoute = ({ children }) => {
   }
 
   // If application is not submitted, redirect to application
-  if (!counselor.applicationStatus || counselor.applicationStatus === 'not_submitted') {
+  if (!counselor.application.applicationStatus || counselor.application.applicationStatus === 'not_submitted') {
     return <Navigate to="/counselor/application" replace />;
   }
 
   // If application is pending, redirect to status page
-  if (counselor.applicationStatus === 'pending') {
+  if (counselor.application.applicationStatus === 'pending') {
     return <Navigate to="/counselor/application-status" replace />;
   }
 
   // If application is rejected, show rejection message
-  if (counselor.applicationStatus === 'rejected') {
+  if (counselor.application.applicationStatus === 'rejected') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full text-center">

@@ -188,7 +188,9 @@ const ApplicationDetail = () => {
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-2 border-gray-200"
                 />
                 <h2 className="text-xl font-bold text-gray-900">{application.fullName}</h2>
-                <p className="text-sm text-gray-600 mb-2">{application.specialization}</p>
+                <p className="text-sm text-gray-600 mb-2">{application.specialization.map((specialization)=>{
+                  {specialization}
+                })}</p>
                 <p className="text-xs text-gray-500">
                   {application.experienceLevel} • {application.experienceYears} years
                 </p>
@@ -291,7 +293,9 @@ const ApplicationDetail = () => {
                         <dl className="space-y-3">
                           <div>
                             <dt className="text-sm font-medium text-gray-500">Specialization</dt>
-                            <dd className="text-sm text-gray-900">{application.specialization}</dd>
+                            <dd className="text-sm text-gray-900">{application.specialization.map((specialization)=>{
+                              {specialization}
+                            })}</dd>
                           </div>
                           <div>
                             <dt className="text-sm font-medium text-gray-500">Experience Level</dt>

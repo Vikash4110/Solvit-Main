@@ -134,6 +134,7 @@ const BookCounselorCalendar = () => {
       );
       if (response.ok) {
         const data = await response.json();
+        console.log(data)
         setCounselor(data.counselor);
         setSlots(data.slots || []);
       } else {

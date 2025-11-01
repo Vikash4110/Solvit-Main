@@ -18,6 +18,7 @@ cloudinary.config({
  * @returns {Promise<object>} Upload response
  */
 const uploadOncloudinary = async (localFilePath, folder = 'client-profiles') => {
+  console.log("yup yup yup yu p yu p")
   try {
     if (!localFilePath) {
       logger.warn('No file path provided for Cloudinary upload');
@@ -31,14 +32,23 @@ const uploadOncloudinary = async (localFilePath, folder = 'client-profiles') => 
     }
 
     // Upload file to Cloudinary with transformations
-    const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: 'auto',
+
+    const fileExt = localFilePath.toLowerCase();
+
+    const options = {
       folder: folder,
-      transformation: [
+      resource_type: 'auto',
+    };
+
+    // Only apply image transformations for images
+    if (['.jpg', '.jpeg', '.png', '.webp'].includes(fileExt)) {
+      options.transformation = [
         { width: 500, height: 500, crop: 'fill', gravity: 'face' },
         { quality: 'auto:good', fetch_format: 'auto' },
-      ],
-    });
+      ];
+    }
+
+    const response = await cloudinary.uploader.upload(localFilePath, options);
 
     // Delete local file after successful upload
     fs.unlinkSync(localFilePath);

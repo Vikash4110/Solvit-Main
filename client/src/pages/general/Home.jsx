@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
 import Faq from '../../components/Home/Faq.jsx';
 import Footer from '../../components/Home/Footer.jsx';
 import HeroSection from '../../components/Home/HeroSection.jsx';

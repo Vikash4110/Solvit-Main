@@ -42,7 +42,7 @@ function App() {
     <ClientAuthProvider>
       <CounselorAuthProvider>
         <AdminAuthProvider>
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen bg-gray-100">
             <Navbar />
             <ScrollToTop />
             <Routes>
@@ -98,7 +98,7 @@ function App() {
 
               {/* 👩‍⚕️ COUNSELOR PROTECTED ROUTES */}
               <Route
-                path="/counselor/dashboard"
+                path="/counselor/dashboard/*"
                 element={
                   <CounselorProtectedRoute>
                     <CounselorDashboard />

@@ -17,4 +17,5 @@ bookingRouter.route('/available-counselors').get(verifyJWTClient, getAvailableCo
 bookingRouter.route('/counselor/:counselorId/slots').get(verifyJWTClient, getCounselorSlots);
 bookingRouter.route('/cancel-booking').get(verifyJWTClient, cancelBooking);
 bookingRouter.route('/my-bookings').get(verifyJWTClient, getClientBookings);
+
 export { bookingRouter };
