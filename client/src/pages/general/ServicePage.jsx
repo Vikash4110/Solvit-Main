@@ -79,7 +79,8 @@ const serviceData = {
       'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=800&auto=format&fit=crop',
     ],
-    bannerImage: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=1200&auto=format&fit=crop',
+    bannerImage:
+      'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=1200&auto=format&fit=crop',
     bannerTitle: 'Healing Starts with Taking the First Step',
     bannerDescription:
       'You deserve support during difficult times. Our compassionate therapists are here to guide you toward mental wellness and emotional balance.',
@@ -103,28 +104,32 @@ const serviceData = {
         description:
           'Transform negative thought patterns into healthier perspectives. CBT is highly effective for anxiety, depression, OCD, and panic disorders, helping you identify triggers and develop practical coping mechanisms.',
         icon: Brain,
-        image: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400&auto=format&fit=crop',
       },
       {
         title: 'Mindfulness-Based Therapy',
         description:
           'Learn to stay present and observe thoughts without judgment. Reduces rumination, manages overwhelming emotions, and builds emotional resilience through meditation and grounding techniques.',
         icon: Activity,
-        image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&auto=format&fit=crop',
       },
       {
         title: 'Trauma-Focused Therapy',
         description:
           'Specialized care for PTSD, childhood trauma, and acute stress. Uses EMDR, somatic experiencing, and trauma-informed approaches to process painful memories safely and reclaim your sense of safety.',
         icon: Shield,
-        image: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=400&auto=format&fit=crop',
       },
       {
         title: 'Psychodynamic Therapy',
         description:
           'Explore unconscious patterns and past experiences that influence current behaviors. Gain deep self-awareness and resolve long-standing emotional conflicts to foster authentic growth.',
         icon: Target,
-        image: 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&auto=format&fit=crop',
       },
     ],
     commonConcerns: [
@@ -167,10 +172,10 @@ const serviceData = {
       {
         question: 'How long does therapy take to work?',
         answer:
-          "Many people notice improvements within 6-12 sessions, though this varies by individual and concern. Some issues resolve quickly while others benefit from longer-term support. Your therapist will work with you to set realistic goals and track progress.",
+          'Many people notice improvements within 6-12 sessions, though this varies by individual and concern. Some issues resolve quickly while others benefit from longer-term support. Your therapist will work with you to set realistic goals and track progress.',
       },
       {
-        question: 'What if I don\'t connect with my therapist?',
+        question: "What if I don't connect with my therapist?",
         answer:
           "The therapeutic relationship is crucial to success. If you don't feel comfortable with your therapist, we encourage you to try someone else. Finding the right fit is important, and it's completely normal to meet with a few therapists before choosing one.",
       },
@@ -205,8 +210,9 @@ const serviceData = {
       'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1552581234-26160f608093?w=800&auto=format&fit=crop',
     ],
-    bannerImage: 'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=1200&auto=format&fit=crop',
-    bannerTitle: 'Design the Life You\'ve Always Imagined',
+    bannerImage:
+      'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=1200&auto=format&fit=crop',
+    bannerTitle: "Design the Life You've Always Imagined",
     bannerDescription:
       'Stop dreaming and start doing. Our life coaches help you create a compelling vision and build the habits, mindset, and strategies to make it reality.',
     keywords: [
@@ -229,28 +235,32 @@ const serviceData = {
         description:
           'Transform vague dreams into specific, measurable, achievable, relevant, and time-bound goals. Break down ambitious objectives into actionable steps with clear milestones and accountability measures.',
         icon: Target,
-        image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&auto=format&fit=crop',
       },
       {
         title: 'Values-Based Living',
         description:
           'Discover your core values and align your daily choices with what truly matters. Live authentically, make confident decisions, and create a life that reflects your deepest priorities.',
         icon: Lightbulb,
-        image: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400&auto=format&fit=crop',
       },
       {
         title: 'Habit Architecture',
         description:
           'Master the science of behavior change. Build positive habits that stick, break destructive patterns, and design your environment to support sustainable transformation.',
         icon: TrendingUp,
-        image: 'https://images.unsplash.com/photo-1552581234-26160f608093?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1552581234-26160f608093?w=400&auto=format&fit=crop',
       },
       {
         title: 'Life Design Coaching',
         description:
           'Create a compelling vision for your future across all life areas. Map your ideal career, relationships, health, and lifestyle, then build a strategic roadmap to get there.',
         icon: Rocket,
-        image: 'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=400&auto=format&fit=crop',
       },
     ],
     commonConcerns: [
@@ -281,7 +291,7 @@ const serviceData = {
     ],
     faqs: [
       {
-        question: 'What\'s the difference between life coaching and therapy?',
+        question: "What's the difference between life coaching and therapy?",
         answer:
           'Life coaching focuses on the future—setting goals, creating action plans, and achieving specific outcomes. Therapy often addresses past experiences and mental health concerns. Coaching is action-oriented and forward-focused.',
       },
@@ -293,7 +303,7 @@ const serviceData = {
       {
         question: 'Do I need to have specific goals in mind?',
         answer:
-          "Not at all! Many clients start coaching feeling stuck or unclear about what they want. Your coach will help you gain clarity, identify what matters most, and define meaningful goals that excite you.",
+          'Not at all! Many clients start coaching feeling stuck or unclear about what they want. Your coach will help you gain clarity, identify what matters most, and define meaningful goals that excite you.',
       },
       {
         question: 'What if I fail to reach my goals?',
@@ -331,7 +341,8 @@ const serviceData = {
       'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800&auto=format&fit=crop',
     ],
-    bannerImage: 'https://images.unsplash.com/photo-1516589091380-5d8e87df6999?w=1200&auto=format&fit=crop',
+    bannerImage:
+      'https://images.unsplash.com/photo-1516589091380-5d8e87df6999?w=1200&auto=format&fit=crop',
     bannerTitle: 'Reconnect, Rebuild, and Strengthen Your Relationships',
     bannerDescription:
       'Every relationship has challenges. With the right support, you can overcome obstacles, deepen intimacy, and create the loving connection you both deserve.',
@@ -355,28 +366,32 @@ const serviceData = {
         description:
           'Heal attachment wounds and deepen emotional connection. Identify negative patterns, express underlying needs, and create secure bonds that withstand challenges and grow stronger over time.',
         icon: Heart,
-        image: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&auto=format&fit=crop',
       },
       {
         title: 'Gottman Method',
         description:
           'Research-backed approach focusing on friendship, conflict management, and shared meaning. Build love maps, manage gridlock conflicts, and create rituals of connection that sustain lasting love.',
         icon: Users,
-        image: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&auto=format&fit=crop',
       },
       {
         title: 'Solution-Focused Therapy',
         description:
           'Move beyond problems to co-create solutions. Focus on your relationship strengths, envision your desired future together, and take concrete steps toward the partnership you both want.',
         icon: Target,
-        image: 'https://images.unsplash.com/photo-1516589091380-5d8e87df6999?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1516589091380-5d8e87df6999?w=400&auto=format&fit=crop',
       },
       {
         title: 'Family Systems Therapy',
         description:
           'Understand how each family member influences the whole. Address multigenerational patterns, clarify roles and boundaries, and transform unhealthy dynamics into supportive connections.',
         icon: Users,
-        image: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&auto=format&fit=crop',
       },
     ],
     commonConcerns: [
@@ -412,7 +427,7 @@ const serviceData = {
           "If you're asking this question, therapy can help you gain clarity. Many couples discover new ways to connect and resolve issues they thought were insurmountable. Therapy provides tools to make an informed decision about your relationship's future.",
       },
       {
-        question: 'What if my partner won\'t come to therapy?',
+        question: "What if my partner won't come to therapy?",
         answer:
           'Individual therapy can still help you improve communication patterns, set boundaries, and make positive changes. Often, when one partner changes their approach, the relationship dynamic shifts positively.',
       },
@@ -457,7 +472,8 @@ const serviceData = {
       'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&auto=format&fit=crop',
     ],
-    bannerImage: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&auto=format&fit=crop',
+    bannerImage:
+      'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&auto=format&fit=crop',
     bannerTitle: 'Accelerate Your Career to New Heights',
     bannerDescription:
       'Stop feeling stuck in your career. Get expert guidance to clarify your path, build your brand, and achieve the professional success you deserve.',
@@ -481,28 +497,32 @@ const serviceData = {
         description:
           'Identify your strengths, interests, values, and personality through validated assessments. Explore careers aligned with your authentic self and create a strategic roadmap for your professional journey.',
         icon: Target,
-        image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&auto=format&fit=crop',
       },
       {
         title: 'Executive Coaching',
         description:
           'Develop leadership presence, strategic thinking, and emotional intelligence. Navigate complex organizational dynamics, influence stakeholders, and prepare for C-suite and senior leadership roles.',
         icon: Award,
-        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&auto=format&fit=crop',
       },
       {
         title: 'Career Transition Strategy',
         description:
           'Successfully navigate career pivots, industry changes, or entrepreneurship. Identify transferable skills, build relevant experience, network strategically, and position yourself for new opportunities.',
         icon: Rocket,
-        image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&auto=format&fit=crop',
       },
       {
         title: 'Personal Branding',
         description:
           'Define your unique value proposition and communicate it powerfully. Optimize your LinkedIn, resume, portfolio, and online presence to attract opportunities aligned with your goals.',
         icon: Sparkles,
-        image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&auto=format&fit=crop',
       },
     ],
     commonConcerns: [
@@ -583,7 +603,8 @@ const serviceData = {
       'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&auto=format&fit=crop',
     ],
-    bannerImage: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=1200&auto=format&fit=crop',
+    bannerImage:
+      'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=1200&auto=format&fit=crop',
     bannerTitle: 'Embrace a Healthier, More Vibrant You',
     bannerDescription:
       'Transform your health and vitality with personalized wellness coaching. Create sustainable habits that nourish your body, calm your mind, and energize your spirit.',
@@ -607,28 +628,32 @@ const serviceData = {
         description:
           'Address the interconnection of physical health, mental wellbeing, and lifestyle factors. Create a personalized wellness plan that considers nutrition, movement, sleep, stress, and social connection.',
         icon: Sparkles,
-        image: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=400&auto=format&fit=crop',
       },
       {
         title: 'Behavior Change Coaching',
         description:
           'Master the psychology of habit formation. Build sustainable healthy behaviors through small incremental changes, positive reinforcement, and addressing the root causes of resistance.',
         icon: TrendingUp,
-        image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&auto=format&fit=crop',
       },
       {
         title: 'Stress Resilience Training',
         description:
           'Learn evidence-based stress management techniques including breathwork, progressive relaxation, and cognitive reframing. Build your stress tolerance and recovery capacity.',
         icon: Activity,
-        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&auto=format&fit=crop',
       },
       {
         title: 'Mindful Living Practices',
         description:
           'Cultivate present-moment awareness through meditation, mindful eating, and conscious movement. Reduce anxiety, improve focus, and develop a compassionate relationship with yourself.',
         icon: Brain,
-        image: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400&auto=format&fit=crop',
       },
     ],
     commonConcerns: [
@@ -661,12 +686,12 @@ const serviceData = {
       {
         question: 'Is wellness coaching a replacement for medical care?',
         answer:
-          "No. Wellness coaches complement your medical care by helping you implement lifestyle changes. We work alongside your healthcare providers and always recommend consulting doctors for medical concerns.",
+          'No. Wellness coaches complement your medical care by helping you implement lifestyle changes. We work alongside your healthcare providers and always recommend consulting doctors for medical concerns.',
       },
       {
         question: 'Do I need to follow a strict diet or exercise plan?',
         answer:
-          "Not at all. We create personalized, flexible plans that fit your preferences and lifestyle. The focus is on sustainable changes you can maintain long-term, not restrictive rules that feel like punishment.",
+          'Not at all. We create personalized, flexible plans that fit your preferences and lifestyle. The focus is on sustainable changes you can maintain long-term, not restrictive rules that feel like punishment.',
       },
       {
         question: 'How quickly will I see results?',
@@ -674,7 +699,7 @@ const serviceData = {
           'Many clients notice increased energy and improved mood within 2-3 weeks. Significant physical changes typically emerge over 2-3 months. Lasting transformation comes from consistent small changes over time.',
       },
       {
-        question: 'What if I\'ve tried and failed before?',
+        question: "What if I've tried and failed before?",
         answer:
           "Past 'failures' are learning experiences. Wellness coaching addresses the root causes of why changes didn't stick before—often related to mindset, motivation, or unrealistic expectations. Together, we'll create a sustainable approach that works for you.",
       },
@@ -709,7 +734,8 @@ const serviceData = {
       'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop',
     ],
-    bannerImage: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1200&auto=format&fit=crop',
+    bannerImage:
+      'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1200&auto=format&fit=crop',
     bannerTitle: 'Unlock Your Academic Potential',
     bannerDescription:
       'Achieve academic excellence while maintaining wellbeing. Our counselors help students manage pressure, improve study skills, and build confidence for lifelong success.',
@@ -733,28 +759,32 @@ const serviceData = {
         description:
           'Master effective study techniques, note-taking methods, reading comprehension, and exam strategies. Develop time management skills and organizational systems that set you up for success.',
         icon: BookOpen,
-        image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&auto=format&fit=crop',
       },
       {
         title: 'Test Anxiety Management',
         description:
           'Overcome fear and stress around exams. Learn relaxation techniques, cognitive restructuring for negative thoughts, and test-taking strategies that help you perform at your best.',
         icon: Brain,
-        image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&auto=format&fit=crop',
       },
       {
         title: 'Career Exploration',
         description:
           'Discover your interests, strengths, and values through assessments and exploration. Research career paths, understand educational requirements, and make informed decisions about your future.',
         icon: Target,
-        image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&auto=format&fit=crop',
       },
       {
         title: 'Social-Emotional Support',
         description:
           'Navigate peer relationships, bullying, identity development, and social anxiety. Build confidence, communication skills, and healthy friendships during critical developmental years.',
         icon: Heart,
-        image: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=400&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=400&auto=format&fit=crop',
       },
     ],
     commonConcerns: [
@@ -787,7 +817,7 @@ const serviceData = {
       {
         question: 'Will my parents be involved in the sessions?',
         answer:
-          "It depends on your age and preference. For younger students, parent involvement is often helpful. Older teens and college students typically meet one-on-one, with periodic parent check-ins if desired.",
+          'It depends on your age and preference. For younger students, parent involvement is often helpful. Older teens and college students typically meet one-on-one, with periodic parent check-ins if desired.',
       },
       {
         question: 'Can counseling really improve my grades?',
@@ -795,7 +825,7 @@ const serviceData = {
           'Yes! By addressing test anxiety, improving study skills, enhancing motivation, and managing stress, most students see noticeable grade improvements within one semester.',
       },
       {
-        question: 'What if I don\'t know what career I want?',
+        question: "What if I don't know what career I want?",
         answer:
           "That's completely normal! Career counseling includes assessments, exploration activities, and discussions to help you discover your interests, strengths, and potential paths. Many students find clarity through this process.",
       },
@@ -817,7 +847,7 @@ const serviceData = {
       ],
     },
     image:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=400&auto=format&fit=crop',
   },
 };
 
@@ -925,8 +955,6 @@ const ServicePage = () => {
                   </motion.div>
                 ))}
               </div>
-
-              
             </motion.div>
 
             {/* Right Image */}
@@ -940,7 +968,7 @@ const ServicePage = () => {
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                
+
                 {/* Glow effect on hover */}
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-600 to-primary-400 rounded-2xl opacity-0 group-hover:opacity-20 blur transition duration-500" />
 
@@ -1023,8 +1051,6 @@ const ServicePage = () => {
       <div className="relative mb-4">
         <Separator />
       </div>
-
-      
 
       {/* BANNER SECTION */}
       <section className="relative py-16 sm:py-20 lg:py-24 bg-transparent">
@@ -1121,7 +1147,7 @@ const ServicePage = () => {
                 <Card className="h-full border-primary-200 dark:border-primary-800 shadow-lg hover:shadow-2xl transition-all duration-300 bg-white dark:bg-neutral-900 overflow-hidden group relative">
                   {/* Glow effect from right corner */}
                   <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-400/20 dark:bg-primary-600/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-500" />
-                  
+
                   {/* Image */}
                   {approach.image && (
                     <div className="relative h-40 sm:h-48 overflow-hidden">
@@ -1133,7 +1159,7 @@ const ServicePage = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                     </div>
                   )}
-                  
+
                   <CardHeader className="pb-4 relative z-10">
                     <div className="flex items-start gap-3 sm:gap-4">
                       <motion.div
@@ -1205,7 +1231,7 @@ const ServicePage = () => {
                 <Card className="h-full border-primary-200 dark:border-primary-800 shadow-lg hover:shadow-2xl transition-all duration-300 bg-white dark:bg-neutral-900 group relative">
                   {/* Glow effect from right corner */}
                   <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-400/20 dark:bg-primary-600/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-500" />
-                  
+
                   <CardContent className="pt-5 sm:pt-6 relative z-10">
                     <div className="flex items-start gap-3 sm:gap-4">
                       <motion.div
@@ -1306,7 +1332,7 @@ const ServicePage = () => {
             <Card className="border-primary-300 dark:border-primary-700 shadow-2xl bg-gradient-to-br from-white to-primary-50/50 dark:from-neutral-900 dark:to-primary-950/30 backdrop-blur-sm overflow-hidden relative group">
               {/* Glow effect */}
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary-400/20 dark:bg-primary-600/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700" />
-              
+
               <CardContent className="p-6 sm:p-8 lg:p-12 relative z-10">
                 <div className="flex items-center gap-3 mb-5 sm:mb-6">
                   <motion.div
@@ -1362,12 +1388,24 @@ const ServicePage = () => {
             <Card className="border-primary-300 dark:border-primary-700 shadow-2xl bg-gradient-to-br from-primary-50 to-white dark:from-primary-950 dark:to-neutral-900 overflow-hidden relative group">
               {/* Calming particles */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-primary-400/30 rounded-full animate-pulse" style={{ animationDelay: '0s' }} />
-                <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-primary-300/20 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
-                <div className="absolute bottom-1/4 left-1/3 w-2.5 h-2.5 bg-primary-500/25 rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
-                <div className="absolute bottom-1/3 right-1/4 w-2 h-2 bg-primary-400/20 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }} />
+                <div
+                  className="absolute top-1/4 left-1/4 w-3 h-3 bg-primary-400/30 rounded-full animate-pulse"
+                  style={{ animationDelay: '0s' }}
+                />
+                <div
+                  className="absolute top-1/3 right-1/3 w-2 h-2 bg-primary-300/20 rounded-full animate-pulse"
+                  style={{ animationDelay: '1s' }}
+                />
+                <div
+                  className="absolute bottom-1/4 left-1/3 w-2.5 h-2.5 bg-primary-500/25 rounded-full animate-pulse"
+                  style={{ animationDelay: '2s' }}
+                />
+                <div
+                  className="absolute bottom-1/3 right-1/4 w-2 h-2 bg-primary-400/20 rounded-full animate-pulse"
+                  style={{ animationDelay: '1.5s' }}
+                />
               </div>
-              
+
               <CardContent className="p-6 sm:p-8 lg:p-12 xl:p-16 relative z-10">
                 <div className="text-center space-y-4 sm:space-y-6">
                   <motion.div
@@ -1382,8 +1420,8 @@ const ServicePage = () => {
                     Ready to Get Started?
                   </h3>
                   <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed px-4">
-                    Book a session with one of our expert counselors and take the first step
-                    towards positive change. Your journey to wellbeing starts here.
+                    Book a session with one of our expert counselors and take the first step towards
+                    positive change. Your journey to wellbeing starts here.
                   </p>
                   <div className="pt-2 sm:pt-4">
                     <Button
@@ -1401,7 +1439,7 @@ const ServicePage = () => {
           </motion.div>
         </div>
       </section>
-      
+
       <Footer />
     </div>
   );
