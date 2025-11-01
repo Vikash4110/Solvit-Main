@@ -35,7 +35,7 @@ const loginAdmin = wrapper(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
+      sameSite: 'None',
       maxAge: 24 * 60 * 60 * 1000,
     };
 
@@ -65,7 +65,7 @@ const logoutAdmin = wrapper(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Strict',
+    sameSite: 'None',
   };
 
   return res.status(200).clearCookie('accessToken', options).json({

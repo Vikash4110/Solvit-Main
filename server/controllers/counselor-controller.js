@@ -446,7 +446,7 @@ const registerCounselor = wrapper(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
+      sameSite: 'None',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     };
 
@@ -507,7 +507,7 @@ const loginCounselor = wrapper(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
+      sameSite: 'None',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     };
 
@@ -803,7 +803,7 @@ const logoutCounselor = wrapper(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Strict',
+    sameSite: 'None',
   };
 
   return res.status(200).clearCookie('accessToken', options).json({
