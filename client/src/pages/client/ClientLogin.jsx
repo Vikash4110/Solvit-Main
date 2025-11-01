@@ -1,4 +1,3 @@
-'use client';
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -99,7 +98,7 @@ const ClientLogin = () => {
       const result = await clientLogin(formData.email, formData.password);
       if (result.success) {
         toast.success('Login successful!');
-        navigate('/dashboard');
+        navigate('/client/dashboard/personal-info');
       } else {
         toast.error(result.error || 'Invalid email or password');
       }

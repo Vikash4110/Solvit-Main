@@ -49,12 +49,22 @@ const app = express();
 // ==========================================================================
 
 // CORS Configuration
-app.use(
-  cors({
-    origin: [process.env.CORS_ORIGIN2, process.env.CORS_ORIGIN1],
-    credentials: true,
-  })
-);
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(
+    cors({
+      origin: process.env.CORS_ORIGIN2,
+      credentials: true,
+    })
+  );
+} else {
+  app.use(
+    cors({
+      origin: process.env.CORS_ORIGIN1,
+      credentials: true,
+    })
+  );
+}
 
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
