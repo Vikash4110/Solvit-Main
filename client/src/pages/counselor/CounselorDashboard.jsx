@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import ProtectedRoute from '../../components/counselor/CounselorProtectedRoute';
 
-import CounselorDashboardSidebar from '@/components/Counselor/CounselorDashboard/CounselorDashboardSidebar.jsx';
+import CounselorDashboardSidebar from '@/components/counselor/counselorDashboard/CounselorDashboardSidebar.jsx';
 
 // Import only required dashboard components
 import CounselorDashboardPersonalInformation from '@/components/counselor/CounselorDashboard/CounselorDashboardPersonalInformation.jsx';
