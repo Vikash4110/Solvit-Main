@@ -7,11 +7,11 @@ import ProtectedRoute from '../../components/counselor/CounselorProtectedRoute';
 import CounselorDashboardSidebar from '@/components/counselor/CounselorDashboard/CounselorDashboardSidebar';
 
 // Import only required dashboard components
-import CounselorDashboardPersonalInformation from '../../components/counselor/CounselorDashboard/CounselorDashboardPersonalInformation';
-import CounselorDashboardBlogManager from '../../components/counselor/CounselorDashboard/CounselorDashboardBlogManager'
-import CounselorDashboardSlotsManager from '../../components/counselor/CounselorDashboard/CounselorDashboardSlotsManager'
-import CounselorDashboardRecurringAvailabilityManager from '../../components/counselor/CounselorDashboard/CounselorDashboardRecurringAvailabilityManager'
-import CounselorDashboardUpcommingSessions from '../../components/counselor/CounselorDashboard/CounselorDashboardUpcommingSessions'
+import CounselorDashboardPersonalInformation from '@/components/counselor/CounselorDashboard/CounselorDashboardPersonalInformation';
+import CounselorDashboardBlogManager from '@/components/counselor/CounselorDashboard/CounselorDashboardBlogManager'
+import CounselorDashboardSlotsManager from '@/components/counselor/CounselorDashboard/CounselorDashboardSlotsManager'
+import CounselorDashboardRecurringAvailabilityManager from '@/components/counselor/CounselorDashboard/CounselorDashboardRecurringAvailabilityManager'
+import CounselorDashboardUpcommingSessions from '@/components/counselor/CounselorDashboard/CounselorDashboardUpcommingSessions'
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 
 import { Button } from '@/components/ui/button';
