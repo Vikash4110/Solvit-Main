@@ -26,10 +26,7 @@ import morgan from 'morgan';
 import { logger } from './utils/logger.js';
 import Razorpay from 'razorpay';
 // ============ BullMQ Imports ============
-import { createBullBoard } from '@bull-board/api';
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import { ExpressAdapter } from '@bull-board/express';
-import { schedulerQueue, immediateQueue, closeQueues } from './queue/queue.js';
+import { closeQueues } from './queue/queue.js';
 import { initializeScheduledJobs } from './queue/jobManager.js';
 import { closeAllConnections } from './config/redis.js';
 // ========================================
@@ -170,7 +167,7 @@ connectDb()
 
       // REPLACED: startCronJobs() with BullMQ initialization
       try {
-        await initializeScheduledJobs();
+        // await initializeScheduledJobs();
         logger.info('✓ BullMQ scheduled jobs initialized successfully');
         logger.info('⚠️  Remember to start the worker process: npm run worker');
       } catch (error) {
