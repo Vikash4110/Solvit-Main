@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Cropper from 'react-easy-crop';
@@ -174,7 +173,7 @@ const CounselorDashboardPersonalInfo = () => {
       }
 
       const result = await response.json();
-      console.log(result)
+      console.log(result);
       const data = result.data || result;
 
       const transformedData = {
@@ -184,7 +183,13 @@ const CounselorDashboardPersonalInfo = () => {
         phone: data.phone || '',
         gender: data.gender || '',
         profilePicture: data.profilePicture || '',
-        specialization: data.specialization || '',
+        // specialization: data.specialization || '',
+        specialization: Array.isArray(data.specialization)
+          ? data.specialization
+          : data.specialization
+            ? [data.specialization]
+            : [],
+
         experienceYears: data.experienceYears || 0,
         experienceLevel: data.experienceLevel || '',
         application: {
@@ -708,7 +713,6 @@ const CounselorDashboardPersonalInfo = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  
                   <Badge className={experienceBadge.color}>
                     {experienceBadge.icon && <experienceBadge.icon className="h-3 w-3 mr-1" />}
                     {counselorData.experienceLevel} (
@@ -775,11 +779,16 @@ const CounselorDashboardPersonalInfo = () => {
               <InfoRow
                 icon={Briefcase}
                 label="Specialization"
-                value={counselorData.specialization.map((specialization)=>{
-                 return <Badge variant="outline" className="m-1">
+                value={(Array.isArray(counselorData.specialization)
+                  ? counselorData.specialization
+                  : counselorData.specialization
+                    ? [counselorData.specialization]
+                    : []
+                ).map((specialization) => (
+                  <Badge key={specialization} variant="outline" className="m-1">
                     {specialization}
                   </Badge>
-                })}
+                ))}
               />
               <InfoRow
                 icon={Award}
