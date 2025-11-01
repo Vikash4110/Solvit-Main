@@ -41,44 +41,52 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
   }
 
   const generatedOTP = generateOTP();
-  const otpSend = await sendEmail(
-    email,
-    'Email Verification',
-    `OTP for Email Verification: ${generatedOTP}`
-  );
+  
+  try {
+    // Delete old OTPs first
+    await OTP.deleteMany({
+      email: email.trim(),
+      purpose: 'register',
+    });
 
-  if (!otpSend) {
+    // Send email with timeout handling
+    const otpSend = await sendEmail(
+      email.trim(),
+      'Email Verification',
+      `OTP for Email Verification: ${generatedOTP}`
+    );
+
+    if (!otpSend) {
+      logger.error(`Failed to send OTP email to: ${email}`);
+      return res.status(500).json({
+        status: 500,
+        message: 'Error occurred while sending OTP. Please try again.',
+      });
+    }
+
+    // Only save OTP if email was sent successfully
+    const saveOTP = await OTP.create({
+      email: email.trim(),
+      otp: generatedOTP,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      purpose: 'register',
+    });
+
+    logger.info(`OTP sent successfully to: ${email}`);
+    
+    return res.status(200).json({
+      status: 200,
+      message: 'OTP Sent Successfully!',
+    });
+  } catch (error) {
+    logger.error(`Error sending OTP email to ${email}:`, error);
+    
+    // Don't save OTP if email failed
     return res.status(500).json({
       status: 500,
-      message: 'Error occurred while sending OTP',
+      message: error.message || 'Error occurred while sending OTP. Please try again later.',
     });
   }
-
-  // Delete old OTPs
-  await OTP.deleteMany({
-    email: email,
-    purpose: 'register',
-  });
-
-  const saveOTP = await OTP.create({
-    email: email,
-    otp: generatedOTP,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    purpose: 'register',
-  });
-
-  const otpSaved = await OTP.findById(saveOTP._id);
-  if (!otpSaved) {
-    return res.status(500).json({
-      status: 500,
-      message: 'Error occurred while saving OTP',
-    });
-  }
-
-  return res.status(200).json({
-    status: 200,
-    message: 'OTP Sent Successfully!',
-  });
 });
 
 const verifyOtpRegisterEmail = wrapper(async (req, res) => {
@@ -171,43 +179,52 @@ const forgotPassword = wrapper(async (req, res) => {
   }
 
   const generatedOTP = generateOTP();
-  const otpSend = await sendEmail(
-    email,
-    'Password Reset',
-    `OTP for Password Reset: ${generatedOTP}`
-  );
+  
+  try {
+    // Delete old OTPs first
+    await OTP.deleteMany({
+      email: email.trim(),
+      purpose: 'reset',
+    });
 
-  if (!otpSend) {
+    // Send email with timeout handling
+    const otpSend = await sendEmail(
+      email.trim(),
+      'Password Reset',
+      `OTP for Password Reset: ${generatedOTP}`
+    );
+
+    if (!otpSend) {
+      logger.error(`Failed to send password reset OTP email to: ${email}`);
+      return res.status(500).json({
+        status: 500,
+        message: 'Error occurred while sending OTP. Please try again.',
+      });
+    }
+
+    // Only save OTP if email was sent successfully
+    const saveOTP = await OTP.create({
+      email: email.trim(),
+      otp: generatedOTP,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      purpose: 'reset',
+    });
+
+    logger.info(`Password reset OTP sent successfully to: ${email}`);
+    
+    return res.status(200).json({
+      status: 200,
+      message: 'Password reset OTP sent successfully!',
+    });
+  } catch (error) {
+    logger.error(`Error sending password reset OTP email to ${email}:`, error);
+    
+    // Don't save OTP if email failed
     return res.status(500).json({
       status: 500,
-      message: 'Error occurred while sending OTP',
+      message: error.message || 'Error occurred while sending OTP. Please try again later.',
     });
   }
-
-  await OTP.deleteMany({
-    email: email,
-    purpose: 'reset',
-  });
-
-  const saveOTP = await OTP.create({
-    email: email,
-    otp: generatedOTP,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    purpose: 'reset',
-  });
-
-  const otpSaved = await OTP.findById(saveOTP._id);
-  if (!otpSaved) {
-    return res.status(500).json({
-      status: 500,
-      message: 'Error occurred while saving OTP',
-    });
-  }
-
-  return res.status(200).json({
-    status: 200,
-    message: 'Password reset OTP sent successfully!',
-  });
 });
 
 const resetPassword = wrapper(async (req, res) => {

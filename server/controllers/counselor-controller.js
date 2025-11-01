@@ -3,6 +3,7 @@ import { Counselor } from '../models/counselor-model.js';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
 import { sendEmail } from '../utils/nodeMailer.js';
 import { wrapper } from '../utils/wrapper.js';
+import { logger } from '../utils/logger.js';
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/;
@@ -40,6 +41,13 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
   const generatedOTP = generateOTP();
 
   try {
+    // Delete existing OTPs for this email and purpose first
+    await OTP.deleteMany({
+      email: email.trim(),
+      purpose: 'register',
+    });
+
+    // Send email with timeout handling
     const otpSend = await sendEmail(
       email.trim(),
       'Counselor Email Verification',
@@ -47,19 +55,14 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     );
 
     if (!otpSend) {
+      logger.error(`Failed to send counselor OTP email to: ${email}`);
       return res.status(500).json({
         success: false,
-        message: 'Error occurred while sending OTP',
+        message: 'Error occurred while sending OTP. Please try again.',
       });
     }
 
-    // Delete existing OTPs for this email and purpose
-    await OTP.deleteMany({
-      email: email.trim(),
-      purpose: 'register',
-    });
-
-    // Save new OTP
+    // Only save OTP if email was sent successfully
     const saveOTP = await OTP.create({
       email: email.trim(),
       otp: generatedOTP,
@@ -67,22 +70,17 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
       purpose: 'register',
     });
 
-    if (!saveOTP) {
-      return res.status(500).json({
-        success: false,
-        message: 'Error occurred while saving OTP',
-      });
-    }
+    logger.info(`Counselor OTP sent successfully to: ${email}`);
 
     return res.status(200).json({
       success: true,
       message: 'OTP sent successfully!',
     });
   } catch (error) {
+    logger.error(`Error sending counselor OTP email to ${email}:`, error);
     return res.status(500).json({
       success: false,
-      message: 'Error occurred while sending OTP',
-      error: error.message,
+      message: error.message || 'Error occurred while sending OTP. Please try again later.',
     });
   }
 });
