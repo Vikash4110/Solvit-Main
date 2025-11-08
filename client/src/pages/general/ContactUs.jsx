@@ -189,7 +189,7 @@ const ContactUs = () => {
     {
       icon: FaPhone,
       title: 'Phone Support',
-      details: '+1 (555) 123-4567',
+      details: '+91 7620296973',
       subtext: 'Mon-Fri 9AM-6PM EST',
       color: 'text-green-600',
       bgColor: 'bg-green-100',
@@ -197,7 +197,7 @@ const ContactUs = () => {
     {
       icon: FaEnvelope,
       title: 'Email Support',
-      details: 'support@solvit.com',
+      details: 'solvitcounselling@gmail.com',
       subtext: 'We respond within 24 hours',
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
@@ -205,19 +205,12 @@ const ContactUs = () => {
     {
       icon: FaMapMarkerAlt,
       title: 'Office Location',
-      details: '123 Wellness Street',
-      subtext: 'New York, NY 10001',
+      details: 'Solvit Pvt. Ltd.',
+      subtext: 'Atal Nagar, Naya Raipur493661, India',
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
     },
-    {
-      icon: FaClock,
-      title: 'Business Hours',
-      details: 'Monday - Friday',
-      subtext: '9:00 AM - 6:00 PM EST',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
-    },
+    
   ];
 
   const faqItems = [
@@ -242,10 +235,10 @@ const ContactUs = () => {
   ];
 
   const socialLinks = [
-    { icon: FaFacebook, url: '#', color: 'text-blue-600 hover:text-blue-700' },
-    { icon: FaTwitter, url: '#', color: 'text-sky-500 hover:text-sky-600' },
-    { icon: FaLinkedin, url: '#', color: 'text-blue-700 hover:text-blue-800' },
-    { icon: FaInstagram, url: '#', color: 'text-pink-600 hover:text-pink-700' },
+    { icon: FaFacebook, url: 'https://www.facebook.com/share/12HYipkeXG9/?mibextid=wwXIfr', color: 'text-blue-600 hover:text-blue-700' },
+    { icon: FaTwitter, url: 'https://x.com/solvitforyou?s=21', color: 'text-sky-500 hover:text-sky-600' },
+    { icon: FaLinkedin, url: 'https://www.linkedin.com/company/solvitcounselling/', color: 'text-blue-700 hover:text-blue-800' },
+    { icon: FaInstagram, url: 'https://www.instagram.com/solvitcounselling?igsh=MWhuaWNsdHl3Nm4wZA==', color: 'text-pink-600 hover:text-pink-700' },
   ];
 
   return (
@@ -284,7 +277,7 @@ const ContactUs = () => {
 
         {/* Contact Information Cards */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
@@ -404,28 +397,7 @@ const ContactUs = () => {
 
                   {/* User Type and Subject */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        I am a...
-                      </label>
-                      <div className="relative">
-                        <select
-                          name="userType"
-                          value={formData.userType}
-                          onChange={handleChange}
-                          className={`w-full p-4 rounded-xl transition-all ${
-                            lockedFields.userType
-                              ? 'bg-indigo-50 border-2 border-indigo-200 text-indigo-900 cursor-not-allowed'
-                              : 'border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
-                          }`}
-                          disabled={lockedFields.userType}
-                        >
-                          <option value="client">Client</option>
-                          <option value="counselor">Counselor</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-                    </div>
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Subject
@@ -543,6 +515,7 @@ const ContactUs = () => {
                   <a
                     key={index}
                     href={social.url}
+                    target='_blank'
                     className={`w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center ${social.color} hover:scale-110 transition-all duration-300`}
                   >
                     <social.icon className="h-6 w-6" />
@@ -551,29 +524,7 @@ const ContactUs = () => {
               </div>
             </div>
 
-            {/* Emergency Notice */}
-            <div className="bg-red-50 border border-red-200 rounded-3xl p-6">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <span className="text-red-600 font-bold text-sm">!</span>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-red-800 mb-2">Crisis Support</h3>
-                  <p className="text-red-700 text-sm mb-3">
-                    If you're experiencing a mental health crisis, please contact emergency services
-                    or call the National Suicide Prevention Lifeline.
-                  </p>
-                  <div className="flex flex-col space-y-2 text-sm">
-                    <div className="text-red-800 font-medium">
-                      🇺🇸 US: 988 (Suicide & Crisis Lifeline)
-                    </div>
-                    <div className="text-red-800 font-medium">📞 Emergency: 911</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
           </motion.div>
         </div>
       </div>
