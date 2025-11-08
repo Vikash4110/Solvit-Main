@@ -91,7 +91,8 @@ export const ClientAuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      toast.success('Registration successful! Please login.');
+      await clientLogin(clientData.email , clientData.password)
+      toast.success('Registration successful!');
       return { success: true };
     } catch (error) {
       const message = getErrorMessage(error, 'Registration failed');

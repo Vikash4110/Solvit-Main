@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Cropper from 'react-easy-crop';
@@ -207,25 +205,26 @@ const ClientDashboardPersonalInfo = () => {
       }
 
       const result = await response.json();
-      const data = result.data || result;
+      console.log(result)
+      const data = result?.data || result;
 
       const transformedData = {
-        fullName: data.fullName || '',
-        username: data.username || '',
-        email: data.email || '',
-        phone: data.phone || '',
-        gender: data.gender || '',
-        profilePicture: data.profilePicture || '',
-        preferredLanguages: data.preferredLanguages || [],
-        bio: data.bio[0].toUpperCase() + data.bio.slice(1, data.bio.length) || '',
+        fullName: data?.fullName ,
+        username: data?.username,        
+        email: data?.email,
+        phone: data?.phone,
+        gender: data?.gender,
+        profilePicture: data?.profilePicture || '',
+        preferredLanguages: data?.preferredLanguages || [],
+        bio: data?.bio?.[0]?.toUpperCase() + data?.bio?.slice(1, data?.bio?.length) || '',
         address: {
-          city: data.address?.city || '',
-          area: data.address?.area || '',
-          pincode: data.address?.pincode || '',
+          city: data?.address?.city || '',
+          area: data?.address?.area || '',
+          pincode: data?.address?.pincode || '',
         },
-        prefferedTopics: data.prefferedTopics || [],
-        lastLogin: data.lastLogin,
-        createdAt: data.createdAt,
+        prefferedTopics: data?.prefferedTopics || [],
+        lastLogin: data?.lastLogin,
+        createdAt: data?.createdAt,
       };
 
       setClientData(transformedData);
@@ -652,7 +651,7 @@ const ClientDashboardPersonalInfo = () => {
             </div>
 
             {/* Profile Completeness Badge */}
-            {profileCompleteness && (
+            {profileCompleteness && !profileCompleteness.isComplete &&(
               <div className="flex items-center gap-3 bg-white dark:bg-slate-900 rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-800">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -685,11 +684,8 @@ const ClientDashboardPersonalInfo = () => {
                         alt={clientData.fullName}
                         className="object-cover"
                       />
-                      <AvatarFallback className="bg-gradient-to-br from-[#1c3c63] to-[#2563eb] text-white text-4xl lg:text-5xl font-semibold">
-                        {clientData.fullName
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
+                      <AvatarFallback className="bg-gradient-to-br from-[#1c3c63] to-[#2563eb] text-white font-semibold text-6xl">
+                        {clientData.fullName[0]}
                       </AvatarFallback>
                     </Avatar>
 
@@ -1050,7 +1046,7 @@ const ClientDashboardPersonalInfo = () => {
                     <InfoItem
                       icon={User}
                       label="Gender"
-                      value={clientData.gender || 'Not specified'}
+                      value={clientData.gender}
                       badge
                     />
                   </div>

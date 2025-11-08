@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Accordion,
@@ -53,6 +54,7 @@ const itemVariants = {
 };
 
 const Faq = () => {
+  const navigate = useNavigate()
   return (
     <motion.section
       className="relative py-20 bg-transparent"
@@ -110,6 +112,7 @@ const Faq = () => {
           <button
             className="bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg hover:from-primary-700 hover:to-primary-800 transition-transform transform hover:scale-105"
             aria-label="Contact us for more help"
+            onClick={()=>navigate('/contact')}
           >
             Need More Help? Contact Us
           </button>

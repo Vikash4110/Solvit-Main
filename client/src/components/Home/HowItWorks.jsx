@@ -250,7 +250,7 @@ const HowItWorks = () => {
             <span>Trusted by many Users</span>
           </Badge>
           <p className="text-lg sm:text-xl text-neutral-700 dark:text-neutral-300 font-medium max-w-2xl mx-auto">
-            Start your journey with a free consultation today. Professional support is just a few clicks away.
+           Start your journey with a personalized consultation today. Expert guidance is just a few clicks away.
           </p>
         </motion.div>
       </motion.div>

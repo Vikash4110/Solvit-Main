@@ -23,7 +23,7 @@ const supportLinks = [
 const quickLinks = [
   { name: 'About Us', url: '/about' },
   { name: 'Counselors', url: '/counselors' },
-  { name: 'Blog', url: '/blog' },
+  { name: 'Blogs', url: '/blogs' },
 ];
 
 const Footer = () => {
@@ -165,17 +165,15 @@ const Footer = () => {
             </li>
             <li>
               <a
-                href="tel:+918055386973"
+                href="tel:+917620296973"
                 className="hover:text-primary-300 hover:underline transition-colors duration-200"
               >
-                +91 8055386973
+                +91 7620296973
               </a>
             </li>
             <li>Solvit Pvt. Ltd. Atal Nagar, Naya Raipur– 493661, India</li>
           </ul>
-          <p className="mt-6 font-semibold text-white">
-            ⚠️ In crisis? Call your local helpline immediately.
-          </p>
+          
         </motion.address>
       </div>
 

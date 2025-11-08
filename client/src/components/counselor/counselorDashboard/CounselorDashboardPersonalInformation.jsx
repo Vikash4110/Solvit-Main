@@ -641,7 +641,7 @@ const CounselorDashboardPersonalInfo = () => {
           </p>
         </div>
 
-        {profileCompleteness && (
+        {profileCompleteness && (!profileCompleteness.isComplete)(
           <Card className="p-4">
             <div className="flex items-center gap-3">
               <div className="flex-1">

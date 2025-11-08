@@ -158,7 +158,7 @@ const WhySolvit = () => {
             Connecting individuals with certified professionals across all counseling specialties—from mental health and relationships to career guidance and academic support.
           </motion.p>
         </motion.div>
-
+{/* 
         <motion.div
           variants={fadeInUp}
           className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16 max-w-4xl mx-auto"
@@ -177,7 +177,7 @@ const WhySolvit = () => {
               </p>
             </motion.div>
           ))}
-        </motion.div>
+        </motion.div> */}
 
         <motion.div variants={containerVariants} className="mb-16">
           <motion.div variants={fadeInUp} className="mb-8">

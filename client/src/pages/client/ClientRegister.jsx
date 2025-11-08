@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
+import {Slider} from '@/components/ui/slider'
 
 import {
   InputOTP,
@@ -82,7 +82,6 @@ const ClientRegister = () => {
     email: '',
     phone: '',
     password: '',
-    gender: '',
     profilePicture: null,
     otp: '',
   });
@@ -146,10 +145,7 @@ const ClientRegister = () => {
       return false;
     }
 
-    if (!['Male', 'Female', 'Other'].includes(formData.gender)) {
-      toast.error('Please select a valid gender');
-      return false;
-    }
+   
 
     return true;
   };
@@ -207,7 +203,7 @@ const ClientRegister = () => {
       const result = await clientRegister(formData);
       if (result.success) {
         toast.success('Registration completed successfully!');
-        navigate('/login');
+        navigate('/client/dashboard/personal-info');
       } else {
         toast.error(result.error || 'Registration failed. Please try again.');
       }
@@ -788,7 +784,7 @@ const ClientRegister = () => {
                             </Label>
                             <div className="relative">
                               <Lock
-                                className="absolute left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-neutral-400"
+                                className="absolute  z-10 left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-neutral-400"
                                 aria-hidden="true"
                               />
                               <Input
@@ -801,41 +797,11 @@ const ClientRegister = () => {
                                 onChange={handleInputChange}
                                 className="pl-10 sm:pl-12 pr-10 h-11 sm:h-12 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 focus:border-primary-500 dark:focus:border-primary-500 focus:ring-primary-500"
                               />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-2.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="h-5 w-5" />
-                                ) : (
-                                  <Eye className="h-5 w-5" />
-                                )}
-                              </button>
+                              
                             </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="gender"
-                              className="text-neutral-900 dark:text-white font-medium text-sm sm:text-base"
-                            >
-                              Gender *
-                            </Label>
-                            <Select
-                              value={formData.gender}
-                              onValueChange={(value) => setFormData({ ...formData, gender: value })}
-                            >
-                              <SelectTrigger className="h-11 sm:h-12 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700">
-                                <SelectValue placeholder="Select gender" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Male">Male</SelectItem>
-                                <SelectItem value="Female">Female</SelectItem>
-                                <SelectItem value="Other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          
                         </div>
 
                         <div className="flex gap-3 pt-2">

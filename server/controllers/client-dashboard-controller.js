@@ -337,28 +337,30 @@ export const getClientStats = wrapper(async (req, res) => {
 export const validateProfileCompleteness = wrapper(async (req, res) => {
   const clientId = req.verifiedClientId._id;
 
-  const client = await Client.findById(clientId).select('-password -refreshToken -__v').lean();
+  const client = await Client.findById(clientId).select('-password -__v -isBlocked').lean();
 
   if (!client) {
     throw new ApiError(404, 'Client not found');
   }
+  console.log(client);
 
   // Check profile completeness
   const completeness = {
-    hasBasicInfo: !!(client.fullName && client.email && client.phone),
+    hasBasicInfo: !!(client.fullName && client.email && client.phone && client.username),
+    hasGender: !!client.gender,
     hasProfilePicture: !!client.profilePicture,
-    hasAddress: !!(client.address?.city && client.address?.area && client.address?.pincode),
-    hasEmergencyContact: !!(client.emergencyContact?.name && client.emergencyContact?.phone),
-    hasTherapyPreferences: !!(
-      client.therapyPreferences?.communicationMode?.length > 0 || client.therapyPreferences?.goals
-    ),
+    hasAddress: !!client.address,
+    hasPrefferedTopics: !!client.prefferedTopics,
+    hasPreferredLanguages: !!client.preferredLanguages,
     hasBio: !!client.bio,
   };
 
   const totalFields = Object.keys(completeness).length;
   const completedFields = Object.values(completeness).filter(Boolean).length;
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
-
+  console.log(totalFields);
+  console.log(completedFields);
+  console.log(`completion : ${completionPercentage}`);
   const result = {
     isComplete: completionPercentage === 100,
     completionPercentage,

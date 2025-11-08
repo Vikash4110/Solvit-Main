@@ -131,7 +131,9 @@ const reverseGeocodeNominatim = async (latitude, longitude, retryCount = 0) => {
         throw new Error(`Geocoding request failed with status ${response.status}`);
       }
 
-      return response.json();
+      const realLocation = await response.json();
+
+      return realLocation;
     });
 
     if (!data || data.error) {
@@ -139,7 +141,6 @@ const reverseGeocodeNominatim = async (latitude, longitude, retryCount = 0) => {
     }
 
     const address = data.address || {};
-   
 
     // Optimize for Indian addresses
     const result = {

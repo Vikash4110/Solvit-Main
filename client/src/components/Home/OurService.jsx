@@ -210,7 +210,7 @@ const OurServices = () => {
                   const IconComponent = service.icon;
                   return (
                     <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3 py-2">
-                      <Card className="group relative h-full flex flex-col bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500 overflow-hidden">
+                      <Card onClick={()=>navigate(service.path)} className="group relative h-full flex flex-col bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500 overflow-hidden">
                         {/* Image */}
                         <div className="relative overflow-hidden">
                           <AspectRatio ratio={16 / 9}>

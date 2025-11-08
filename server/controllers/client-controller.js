@@ -40,8 +40,17 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     });
   }
 
+  const userAlreadyExist = await Client.find({ email: email.trim() });
+  console.log(userAlreadyExist);
+  if (userAlreadyExist.length > 0) {
+    return res.status(400).json({
+      status: 400,
+      message: 'Email already exist',
+    });
+  }
+
   const generatedOTP = generateOTP();
-  
+
   try {
     // Delete old OTPs first
     await OTP.deleteMany({
@@ -73,14 +82,14 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     });
 
     logger.info(`OTP sent successfully to: ${email}`);
-    
+
     return res.status(200).json({
       status: 200,
       message: 'OTP Sent Successfully!',
     });
   } catch (error) {
     logger.error(`Error sending OTP email to ${email}:`, error);
-    
+
     // Don't save OTP if email failed
     return res.status(500).json({
       status: 500,
@@ -179,7 +188,7 @@ const forgotPassword = wrapper(async (req, res) => {
   }
 
   const generatedOTP = generateOTP();
-  
+
   try {
     // Delete old OTPs first
     await OTP.deleteMany({
@@ -211,14 +220,14 @@ const forgotPassword = wrapper(async (req, res) => {
     });
 
     logger.info(`Password reset OTP sent successfully to: ${email}`);
-    
+
     return res.status(200).json({
       status: 200,
       message: 'Password reset OTP sent successfully!',
     });
   } catch (error) {
     logger.error(`Error sending password reset OTP email to ${email}:`, error);
-    
+
     // Don't save OTP if email failed
     return res.status(500).json({
       status: 500,

@@ -233,10 +233,10 @@ const Navbar = () => {
               >
                 <img
                   src={logo}
-                  className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 scale-[4]  lg:scale-[4.5] transition-transform duration-300 ml-4 lg:ml-0"
+                  className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 scale-[3]  lg:scale-[3.5]  ml-4 lg:ml-0"
                   alt="Solvit"
                 />
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
               </motion.div>
             </Link>
             {/* Desktop Navigation */}

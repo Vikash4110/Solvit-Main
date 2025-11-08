@@ -13,16 +13,16 @@ const transporter = nodemailer.createTransport({
   connectionTimeout: 10000, // 10 seconds to establish connection
   greetingTimeout: 5000, // 5 seconds to receive greeting
   socketTimeout: 10000, // 10 seconds socket timeout
-  
+
   // Secure connection settings
   secure: true,
-  
+
   // Pool settings for better performance
   pool: true,
   maxConnections: 5,
   maxMessages: 100,
   rateLimit: 14, // Send at most 14 emails per second
-  
+
   // Debug logging (only in development)
   debug: process.env.NODE_ENV !== 'production',
   logger: process.env.NODE_ENV !== 'production',
@@ -57,7 +57,7 @@ const sendEmail = async (to, subject, text, attachments) => {
     return info;
   } catch (error) {
     console.log('ERROR Sending Email:', error);
-    
+
     // Provide more specific error messages
     if (error.code === 'ETIMEDOUT' || error.code === 'ECONNECTIONTIMEOUT') {
       throw new Error('Email service connection timeout. Please try again later.');
@@ -66,7 +66,7 @@ const sendEmail = async (to, subject, text, attachments) => {
     } else if (error.code === 'EENVELOPE') {
       throw new Error('Invalid email address format.');
     }
-    
+
     throw error;
   }
 };
