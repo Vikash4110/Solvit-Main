@@ -76,16 +76,12 @@ const Footer = () => {
             />
           </div>
           <p className="text-base leading-relaxed text-white">
-            Your trusted partner in personal growth—connecting you with expert counselors across India.
+            Your trusted partner in personal growth—connecting you with expert counselors across
+            India.
           </p>
           <ul className="flex items-center space-x-5">
             {socialLinks.map(({ Icon, url }, idx) => (
-              <motion.li
-                key={idx}
-                variants={socialVariants}
-                whileHover="hover"
-                whileTap="tap"
-              >
+              <motion.li key={idx} variants={socialVariants} whileHover="hover" whileTap="tap">
                 <a
                   href={url}
                   className="flex items-center justify-center w-12 h-12 bg-white/80 rounded-full hover:bg-white shadow-md transition-colors duration-300"
@@ -102,7 +98,10 @@ const Footer = () => {
 
         {/* Support Links */}
         <motion.nav aria-label="Support links" variants={sectionVariants}>
-          <Badge variant="outline" className="px-2 py-1 text-primary-800 uppercase text-sm font-semibold tracking-widest">
+          <Badge
+            variant="outline"
+            className="px-2 py-1 text-primary-800 uppercase text-sm font-semibold tracking-widest"
+          >
             Support
           </Badge>
           <ul className="mt-6 space-y-5">
@@ -122,7 +121,10 @@ const Footer = () => {
 
         {/* Quick Links */}
         <motion.nav aria-label="Quick navigation links" variants={sectionVariants}>
-          <Badge variant="outline" className="px-2 py-1 text-primary-800 uppercase text-sm font-semibold tracking-widest">
+          <Badge
+            variant="outline"
+            className="px-2 py-1 text-primary-800 uppercase text-sm font-semibold tracking-widest"
+          >
             Quick Links
           </Badge>
           <ul className="mt-6 space-y-5">
@@ -146,7 +148,10 @@ const Footer = () => {
           variants={sectionVariants}
           aria-label="Contact and emergency information"
         >
-          <Badge variant="outline" className="px-2 py-1 text-primary-800 uppercase text-sm font-semibold tracking-widest mb-4 inline-block">
+          <Badge
+            variant="outline"
+            className="px-2 py-1 text-primary-800 uppercase text-sm font-semibold tracking-widest mb-4 inline-block"
+          >
             Get in Touch
           </Badge>
           <ul className="space-y-5 text-white">
@@ -175,10 +180,10 @@ const Footer = () => {
       </div>
 
       <Separator className="border-white opacity-30" />
-      
 
       <motion.p className="text-sm text-center text-white select-none mt-6">
-        © {new Date().getFullYear()} Solvit. All rights reserved.
+        © {new Date().getFullYear()} Solvit. All rights reserved | Developed by{' '}
+        <a href="https://www.saasweft.com/">SaaSWeft</a>
       </motion.p>
     </motion.footer>
   );
