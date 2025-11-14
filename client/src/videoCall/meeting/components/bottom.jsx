@@ -464,38 +464,25 @@ const WebCamBTN = () => {
 export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
   const { sideBarMode, setSideBarMode } = useMeetingAppContext();
   
- const RaiseHandBTN = ({ isMobile, isTab }) => {
-  const { publish } = usePubSub('RAISE_HAND');
-  const [isHandRaised, setIsHandRaised] = useState(false);
-  
-  const toggleRaiseHand = () => {
-    if (!isHandRaised) {
+  const RaiseHandBTN = ({ isMobile, isTab }) => {
+    const { publish } = usePubSub('RAISE_HAND');
+    const RaiseHand = () => {
       publish('Raise Hand');
-    }
-    setIsHandRaised(!isHandRaised);
+   
+    };
+
+    return isMobile || isTab ? (
+      <MobileIconButton
+        id="RaiseHandBTN"
+        tooltipTitle={'Raise hand'}
+        Icon={Hand}
+        onClick={RaiseHand}
+        buttonText={'Raise Hand'}
+      />
+    ) : (
+      <OutlinedButton onClick={RaiseHand} tooltip={'Raise Hand'} Icon={Hand} />
+    );
   };
-
-  return isMobile || isTab ? (
-    <MobileIconButton
-      id="RaiseHandBTN"
-      tooltipTitle={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
-      Icon={Hand}
-      onClick={toggleRaiseHand}
-      buttonText={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
-      isFocused={isHandRaised}
-    />
-  ) : (
-    <OutlinedButton 
-      onClick={toggleRaiseHand} 
-      tooltip={isHandRaised ? 'Lower Hand ✋' : 'Raise Hand'} 
-      Icon={Hand}
-      isFocused={isHandRaised}
-      bgColor={isHandRaised ? 'bg-gradient-to-br from-yellow-500 to-yellow-600 animate-pulse' : 'bg-neutral-800'}
-    />
-  );
-};
-
-
 
   const RecordingBTN = () => {
     const { startRecording, stopRecording, recordingState } = useMeeting();

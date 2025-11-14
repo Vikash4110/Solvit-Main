@@ -422,7 +422,7 @@ const Navbar = () => {
                     "
                   >
                     <Briefcase className="h-4 w-4" />
-                    Counselor
+                    Counselor Login
                   </Button>
 
                   <Button
@@ -437,7 +437,7 @@ const Navbar = () => {
                   "
                   >
                     <UserCircle className="h-4 w-4" />
-                    Get Started
+                    User Login
                   </Button>
                 </>
               )}
@@ -720,7 +720,7 @@ const Navbar = () => {
                             className="w-full justify-center gap-2 py-6 rounded-xl bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 cursor-pointer"
                           >
                             <UserCircle className="h-4 w-4" />
-                            Get Started
+                            User Login
                           </Button>
                         </div>
                       </>

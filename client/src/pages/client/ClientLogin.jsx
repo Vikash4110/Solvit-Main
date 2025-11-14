@@ -218,7 +218,7 @@ const ClientLogin = () => {
                   </div>
                   <div>
                     <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                      Client Login
+                      User Login
                     </h1>
                   </div>
                 </div>
@@ -310,7 +310,7 @@ const ClientLogin = () => {
                             Welcome Back
                           </h3>
                           <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400">
-                            Sign in to access your client dashboard
+                            Sign in to access your dashboard
                           </p>
                         </div>
 
@@ -348,7 +348,7 @@ const ClientLogin = () => {
                           </Label>
                           <div className="relative">
                             <Lock
-                              className="absolute left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-neutral-400"
+                              className="z-10 absolute left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-neutral-400"
                               aria-hidden="true"
                             />
                             <Input

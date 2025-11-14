@@ -1,18 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FaCalendarAlt,
-  FaClock,
-  FaUser,
-  FaVideo,
-  FaTimes,
-  FaEdit,
-  FaReceipt,
-  FaExclamationTriangle,
-  FaSpinner,
-  FaCalendar,
-} from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
+  Calendar,
+  Clock,
+  User,
+  Video,
+  X,
+  Edit,
+  Receipt,
+  AlertTriangle,
+  Loader2,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  BadgeCheck,
+  MessageSquare,
+  Star,
+  CheckCircle2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
 import { TIMEZONE } from '../../../constants/constants';
@@ -25,11 +43,15 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
 
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
 const ClientDashboardMyBookings = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [meetingUrl, setMeetingUrl] = useState('');
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -43,11 +65,11 @@ const ClientDashboardMyBookings = () => {
   const [cancelLoading, setCancelLoading] = useState(false);
 
   const tabs = [
-    { key: 'upcoming', label: 'Upcoming' },
-    { key: 'raiseIssue', label: 'Raise Issue' },
-    { key: 'issuesRaised', label: 'Issues Raised' },
-    { key: 'completed', label: 'Completed' },
-    { key: 'cancelled', label: 'Cancelled' },
+    { key: 'upcoming', label: 'Upcoming', icon: Clock },
+    { key: 'raiseIssue', label: 'Raise Issue', icon: AlertTriangle },
+    { key: 'issuesRaised', label: 'Issues Raised', icon: MessageSquare },
+    { key: 'completed', label: 'Completed', icon: CheckCircle2 },
+    { key: 'cancelled', label: 'Cancelled', icon: X },
   ];
 
   useEffect(() => {
@@ -130,22 +152,20 @@ const ClientDashboardMyBookings = () => {
   };
 
   const getStatusBadge = (status) => {
-    const statusStyles = {
-      confirmed: 'bg-blue-100 text-blue-800',
-      completed: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800',
-      dispute_window_open: 'bg-purple-100 text-purple-800',
-      disputed: 'bg-pink-100 text-pink-800',
+    const statusConfig = {
+      confirmed: { variant: 'default', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+      completed: { variant: 'secondary', className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' },
+      cancelled: { variant: 'destructive', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+      dispute_window_open: { variant: 'default', className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' },
+      disputed: { variant: 'default', className: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400' },
     };
 
+    const config = statusConfig[status] || statusConfig.confirmed;
+
     return (
-      <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${
-          statusStyles[status] || 'bg-gray-100 text-gray-800'
-        }`}
-      >
-        {status?.replace('-', ' ').toUpperCase()}
-      </span>
+      <Badge variant={config.variant} className={config.className}>
+        {status?.replace('_', ' ').toUpperCase()}
+      </Badge>
     );
   };
 
@@ -153,282 +173,329 @@ const ClientDashboardMyBookings = () => {
     return (
       <motion.div
         key={booking.bookingId}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg shadow border p-6 hover:shadow-md transition-shadow"
+        variants={fadeInUp}
+        initial="hidden"
+        animate="visible"
       >
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
-              {booking.counselorPhoto ? (
-                <img
-                  src={booking.counselorPhoto}
-                  alt={booking.counselorName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <FaUser className="text-gray-400" />
+        <Card className="group hover:shadow-lg hover:shadow-primary-500/5 dark:hover:shadow-primary-500/10 transition-all duration-300 hover:scale-[1.01] border-neutral-200 dark:border-neutral-800">
+          <CardContent className="p-4 sm:p-6">
+            {/* Top Section */}
+            <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
+              <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-primary-500 dark:border-primary-600 shadow-lg">
+                <AvatarImage src={booking.counselorPhoto} alt={booking.counselorName} />
+                <AvatarFallback className="bg-gradient-to-br from-primary-500 to-primary-700 text-white font-semibold">
+                  <User className="h-5 w-5 sm:h-6 sm:w-6" />
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1 w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    {booking.counselorName}
+                    <BadgeCheck className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                  </h3>
+                  {getStatusBadge(booking.status)}
                 </div>
-              )}
-            </div>
 
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">{booking.counselorName}</h3>
-                {getStatusBadge(booking.status)}
-              </div>
+                {booking.specialization && (
+                  <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                    {booking.specialization}
+                  </p>
+                )}
 
-              {booking.specialization && (
-                <p className="text-sm text-gray-600 mb-2">{booking.specialization}</p>
-              )}
+                {/* Session Info - Responsive Stack */}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-600 dark:text-primary-400" />
+                    </div>
+                    <span className="font-medium">
+                      {dayjs.utc(booking.startTime).tz(TIMEZONE).format('MMM DD, YYYY')}
+                    </span>
+                  </div>
 
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <FaCalendar className="mr-1" />
-                  {dayjs.utc(booking.startTime).tz(TIMEZONE).format('YYYY-MM-DD')}
-                </div>
-                <div className="flex items-center">
-                  <FaClock className="mr-1" />
-                  {dayjs.utc(booking.startTime).tz(TIMEZONE).format('hh:mm A')} -{' '}
-                  {dayjs.utc(booking.endTime).tz(TIMEZONE).format('hh:mm A')}
-                </div>
-                <div className="font-medium">₹{booking.price}</div>
-              </div>
-            </div>
-          </div>
-        </div>
+                  <Separator orientation="vertical" className="h-5 hidden sm:block" />
 
-        {/* Actions */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {booking.canJoin && booking.videoSDKRoomId && (
-            <button
-              onClick={() => {
-                window.open(
-                  `${import.meta.env.VITE_FRONTEND_URL}/meeting/${booking.bookingId}/${booking.videoSDKRoomId}`,
-                  'noopener,noreferrer'
-                );
-              }}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-            >
-              <FaVideo className="mr-2" />
-              Join Session
-            </button>
-          )}
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30">
+                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-600 dark:text-primary-400" />
+                    </div>
+                    <span className="font-medium">
+                      {dayjs.utc(booking.startTime).tz(TIMEZONE).format('hh:mm A')} -{' '}
+                      {dayjs.utc(booking.endTime).tz(TIMEZONE).format('hh:mm A')}
+                    </span>
+                  </div>
 
-          {booking.canCancel && (
-            <button
-              onClick={() => setCancelModal({ show: true, booking })}
-              className="inline-flex items-center px-4 py-2 border border-red-300 text-red-700 rounded-md hover:bg-red-50 transition-colors"
-            >
-              <FaTimes className="mr-2" />
-              Cancel
-            </button>
-          )}
+                  <Separator orientation="vertical" className="h-5 hidden sm:block" />
 
-          <button
-            onClick={() => {
-              const link = document.createElement('a');
-              link.href = booking.invoice;
-              link.setAttribute('download', `invoice-${booking.bookingId}.pdf`);
-              document.body.appendChild(link);
-              link.click();
-              link.remove();
-            }}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            <FaReceipt className="mr-2" />
-            Download Invoice
-          </button>
-        </div>
-
-        {booking.cancellationDeadline && booking.canCancel && (
-          <div className="mt-3 text-xs text-gray-500">
-            Cancel by: {booking.cancellationDeadline}
-          </div>
-        )}
-      </motion.div>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
-        <p className="text-gray-600">Manage your counseling sessions</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.key
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.label}
-              {pagination.totalCount > 0 && activeTab === tab.key && (
-                <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs">
-                  {pagination.totalCount}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Content */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <FaSpinner className="animate-spin h-8 w-8 text-indigo-600" />
-        </div>
-      ) : bookings.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-500">
-            <FaCalendarAlt className="mx-auto h-12 w-12 mb-4" />
-            <p className="text-lg">No {activeTab.replace('-', ' ')} bookings found</p>
-            <p className="text-sm mt-2">
-              {activeTab === 'upcoming' && "You don't have any upcoming sessions scheduled."}
-              {activeTab === 'raise issue' && 'No sessions are currently in the review window.'}
-              {activeTab === 'issues raised' &&
-                "You haven't raised any issues for your past sessions."}
-              {activeTab === 'completed' && "You don't have any completed sessions yet."}
-              {activeTab === 'cancelled' && "You don't have any cancelled sessions."}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4">{bookings.map(renderBookingCard)}</div>
-      )}
-
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-          <div className="flex flex-1 justify-between sm:hidden">
-            <button
-              disabled={pagination.currentPage === 1}
-              onClick={() => fetchBookings(pagination.currentPage - 1)}
-              className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              disabled={pagination.currentPage === pagination.totalPages}
-              onClick={() => fetchBookings(pagination.currentPage + 1)}
-              className="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">{(pagination.currentPage - 1) * 10 + 1}</span>{' '}
-                to{' '}
-                <span className="font-medium">
-                  {Math.min(pagination.currentPage * 10, pagination.totalCount)}
-                </span>{' '}
-                of <span className="font-medium">{pagination.totalCount}</span> results
-              </p>
-            </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => fetchBookings(page)}
-                    className={`relative inline-flex items-center px-4 py-2 text-sm font-medium ${
-                      page === pagination.currentPage
-                        ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                    } border`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cancel Modal */}
-      {cancelModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-lg max-w-md w-full p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Cancel Booking</h3>
-              <button
-                onClick={() => setCancelModal({ show: false, booking: null })}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">
-                Are you sure you want to cancel your session with{' '}
-                <strong>{cancelModal.booking?.counselorName}</strong>?
-              </p>
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                <div className="flex">
-                  <FaExclamationTriangle className="h-5 w-5 text-yellow-400" />
-                  <div className="ml-3">
-                    <p className="text-sm text-yellow-700">
-                      Cancellation must be made at least 24 hours before the session. Refunds will
-                      be processed within 5-7 business days.
-                    </p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base sm:text-lg font-bold text-primary-600 dark:text-primary-400">
+                      ₹{booking.price}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reason for cancellation *
-              </label>
-              <textarea
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                rows="3"
-                placeholder="Please provide a reason for cancellation..."
-              />
+            <Separator className="my-4" />
+
+            {/* Actions - Responsive Grid */}
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+              {booking.canJoin && booking.videoSDKRoomId && (
+                <Button
+                  onClick={() => {
+                    window.open(
+                      `${import.meta.env.VITE_FRONTEND_URL}/meeting/${booking.bookingId}/${booking.videoSDKRoomId}`,
+                      'noopener,noreferrer'
+                    );
+                  }}
+                  className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all"
+                  size="sm"
+                >
+                  <Video className="mr-2 h-4 w-4" />
+                  Join Session
+                </Button>
+              )}
+
+              {booking.canCancel && (
+                <Button
+                  variant="outline"
+                  onClick={() => setCancelModal({ show: true, booking })}
+                  className="w-full sm:w-auto border-red-300 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  size="sm"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = booking.invoice;
+                  link.setAttribute('download', `invoice-${booking.bookingId}.pdf`);
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                }}
+                className="w-full sm:w-auto border-neutral-300 dark:border-neutral-700"
+                size="sm"
+              >
+                
+                Invoice
+              </Button>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCancelModal({ show: false, booking: null })}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                Keep Booking
-              </button>
-              <button
-                onClick={handleCancelBooking}
-                disabled={cancelLoading || !cancelReason.trim()}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
-              >
-                {cancelLoading ? <FaSpinner className="animate-spin mr-2" /> : null}
-                Cancel Booking
-              </button>
+            {/* Cancellation Deadline */}
+            {booking.cancellationDeadline && booking.canCancel && (
+              <Alert className="mt-4 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <AlertDescription className="text-xs text-amber-800 dark:text-amber-400">
+                  Cancel by: {booking.cancellationDeadline}
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
+
+  return (
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-gradient-to-br from-neutral-50 via-primary-50/30 to-primary-100/20 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30 min-h-screen">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mb-1 sm:mb-2">
+          My Bookings
+        </h1>
+        <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400">
+          Manage your counseling sessions
+        </p>
+      </div>
+
+      {/* Tabs - FULLY RESPONSIVE */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Scrollable Tabs for Mobile */}
+        
+          <TabsList className="inline-flex flex-wrap w-full sm:w-auto h-auto p-1">
+            {tabs.map((tab) => {
+              const IconComponent = tab.icon;
+              return (
+                <TabsTrigger
+                  key={tab.key}
+                  value={tab.key}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm data-[state=active]:bg-primary-600 data-[state=active]:text-white whitespace-nowrap"
+                >
+                  <IconComponent className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                  {pagination.totalCount > 0 && activeTab === tab.key && (
+                    <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] sm:text-xs h-5">
+                      {pagination.totalCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+     
+       
+
+        <TabsContent value={activeTab} className="mt-4 sm:mt-6">
+          {/* Content */}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16 sm:py-20">
+              <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-primary-600 dark:text-primary-400 mb-4" />
+              <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400">Loading bookings...</p>
             </div>
-          </motion.div>
-        </div>
+          ) : bookings.length === 0 ? (
+            <Card className="border-neutral-200 dark:border-neutral-800">
+              <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16">
+                <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-neutral-100 dark:bg-neutral-800 mb-4">
+                  <Calendar className="h-8 w-8 sm:h-10 sm:w-10 text-neutral-400" />
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-white mb-2 text-center">
+                  No {activeTab.replace('-', ' ')} bookings found
+                </h3>
+                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 text-center max-w-md px-4">
+                  {activeTab === 'upcoming' && "You don't have any upcoming sessions scheduled."}
+                  {activeTab === 'raiseIssue' && 'No sessions are currently in the review window.'}
+                  {activeTab === 'issuesRaised' && "You haven't raised any issues for your past sessions."}
+                  {activeTab === 'completed' && "You don't have any completed sessions yet."}
+                  {activeTab === 'cancelled' && "You don't have any cancelled sessions."}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              <AnimatePresence mode="wait">
+                {bookings.map(renderBookingCard)}
+              </AnimatePresence>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Pagination - Responsive */}
+      {pagination.totalPages > 1 && (
+        <Card className="border-neutral-200 dark:border-neutral-800">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+              {/* Mobile Pagination */}
+              <div className="flex gap-2 sm:hidden w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.currentPage === 1}
+                  onClick={() => fetchBookings(pagination.currentPage - 1)}
+                  className="flex-1"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  onClick={() => fetchBookings(pagination.currentPage + 1)}
+                  className="flex-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+
+              {/* Desktop Pagination */}
+              <div className="hidden sm:flex items-center justify-between w-full">
+                <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                  Showing{' '}
+                  <span className="font-semibold">{(pagination.currentPage - 1) * 10 + 1}</span> to{' '}
+                  <span className="font-semibold">
+                    {Math.min(pagination.currentPage * 10, pagination.totalCount)}
+                  </span>{' '}
+                  of <span className="font-semibold">{pagination.totalCount}</span> results
+                </p>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={page === pagination.currentPage ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => fetchBookings(page)}
+                      className={page === pagination.currentPage ? 'bg-primary-600 hover:bg-primary-700' : ''}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      {/* Cancel Modal - Responsive */}
+      <Dialog open={cancelModal.show} onOpenChange={(open) => !open && setCancelModal({ show: false, booking: null })}>
+        <DialogContent className="sm:max-w-md max-w-[95vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400" />
+              Cancel Booking
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Are you sure you want to cancel your session with{' '}
+              <strong>{cancelModal.booking?.counselorName}</strong>?
+            </DialogDescription>
+          </DialogHeader>
+
+          <Alert className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-xs sm:text-sm text-amber-800 dark:text-amber-400">
+              Cancellation must be made at least 24 hours before the session. Refunds will be
+              processed within 5-7 business days.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-2">
+            <Label htmlFor="cancel-reason" className="text-xs sm:text-sm">
+              Reason for cancellation *
+            </Label>
+            <Textarea
+              id="cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Please provide a reason for cancellation..."
+              rows={4}
+              className="resize-none text-xs sm:text-sm"
+            />
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCancelModal({ show: false, booking: null })}
+              className="w-full sm:w-auto"
+              size="sm"
+            >
+              Keep Booking
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelBooking}
+              disabled={cancelLoading || !cancelReason.trim()}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+              size="sm"
+            >
+              {cancelLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Cancel Booking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
-
 
 export default ClientDashboardMyBookings;

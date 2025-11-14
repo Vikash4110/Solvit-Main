@@ -1,17 +1,15 @@
 import { Popover, Transition } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X, MicOff, Volume2, Activity } from 'lucide-react';
 import { useParticipant, VideoPlayer } from '@videosdk.live/react-sdk';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsTab from '../hooks/useIsTab';
 import useWindowSize from '../hooks/useWindowSize';
-import MicOffSmallIcon from '../icons/MicOffSmallIcon';
-import NetworkIcon from '../icons/NetworkIcon';
-import SpeakerIcon from '../icons/SpeakerIcon';
 import { getQualityScore, nameTructed } from '../utils/common';
 import * as ReactDOM from 'react-dom';
 import { useMeetingAppContext } from '../MeetingAppContextDef';
+
 export const CornerDisplayName = ({
   participantId,
   isPresenting,
@@ -199,20 +197,20 @@ export const CornerDisplayName = ({
   return (
     <>
       <div
-        className="absolute bottom-2 left-2 rounded-md flex items-center justify-center p-2"
+        className="absolute bottom-2 left-2 rounded-xl flex items-center justify-center px-3 py-2 backdrop-blur-md border border-neutral-700/50"
         style={{
-          backgroundColor: '#00000066',
+          backgroundColor: '#00000088',
           transition: 'all 200ms',
           transitionTimingFunction: 'linear',
           transform: `scale(${show ? 1 : 0})`,
         }}
       >
         {!micOn && !isPresenting ? (
-          <MicOffSmallIcon fillcolor="white" />
+          <MicOff className="h-4 w-4 text-red-400" />
         ) : micOn && isActiveSpeaker ? (
-          <SpeakerIcon />
+          <Volume2 className="h-4 w-4 text-green-400" />
         ) : null}
-        <p className="text-sm text-white ml-0.5">
+        <p className="text-sm text-white ml-2 font-medium">
           {isPresenting
             ? isLocal
               ? `You are presenting`
@@ -229,13 +227,13 @@ export const CornerDisplayName = ({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="absolute top-2 right-2 rounded-md  p-2 cursor-pointer "
+            className="absolute top-2 right-2 rounded-xl p-2 cursor-pointer"
           >
-            <Popover className="relative ">
+            <Popover className="relative">
               {({ close }) => (
                 <>
                   <Popover.Button
-                    className={`absolute right-0 top-0 rounded-md flex items-center justify-center p-1.5 cursor-pointer`}
+                    className={`absolute right-0 top-0 rounded-lg flex items-center justify-center p-2 cursor-pointer transition-all hover:scale-110`}
                     style={{
                       backgroundColor: score > 7 ? '#3BA55D' : score > 4 ? '#faa713' : '#FF5D5D',
                     }}
@@ -249,11 +247,8 @@ export const CornerDisplayName = ({
                     }}
                   >
                     <div>
-                      <NetworkIcon
-                        color1={'#ffffff'}
-                        color2={'#ffffff'}
-                        color3={'#ffffff'}
-                        color4={'#ffffff'}
+                      <Activity
+                        className="text-white"
                         style={{
                           height: analyzerSize * 0.6,
                           width: analyzerSize * 0.6,
@@ -286,30 +281,27 @@ export const CornerDisplayName = ({
                         >
                           <div
                             ref={setStatsBoxHeightRef}
-                            className="bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 "
+                            className="bg-neutral-800 rounded-xl shadow-2xl ring-1 ring-neutral-700"
                           >
                             <div
-                              className={`p-[9px] flex items-center justify-between rounded-t-lg`}
+                              className={`p-3 flex items-center justify-between rounded-t-xl`}
                               style={{
                                 backgroundColor:
                                   score > 7 ? '#3BA55D' : score > 4 ? '#faa713' : '#FF5D5D',
                               }}
                             >
-                              <p className="text-sm text-white font-semibold">{`Quality Score : ${
+                              <p className="text-sm text-white font-bold">{`Quality Score : ${
                                 score > 7 ? 'Good' : score > 4 ? 'Average' : 'Poor'
                               }`}</p>
 
                               <button
-                                className="cursor-pointer text-white hover:bg-[#ffffff33] rounded-full px-1 text-center"
+                                className="cursor-pointer text-white hover:bg-white/20 rounded-full p-1 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   close();
                                 }}
                               >
-                                <XMarkIcon
-                                  className="text-white"
-                                  style={{ height: 16, width: 16 }}
-                                />
+                                <X className="text-white h-4 w-4" />
                               </button>
                             </div>
                             <div className="flex">
@@ -317,6 +309,7 @@ export const CornerDisplayName = ({
                                 {qualityStateArray.map((item, index) => {
                                   return (
                                     <div
+                                      key={index}
                                       className="flex"
                                       style={{
                                         borderBottom:
@@ -327,7 +320,7 @@ export const CornerDisplayName = ({
                                     >
                                       <div className="flex flex-1 items-center w-[120px]">
                                         {index !== 0 && (
-                                          <p className="text-xs text-white my-[6px] ml-2">
+                                          <p className="text-xs text-white my-2 ml-2 font-medium">
                                             {item.label}
                                           </p>
                                         )}
@@ -338,7 +331,7 @@ export const CornerDisplayName = ({
                                           borderLeft: `1px solid #ffffff33`,
                                         }}
                                       >
-                                        <p className="text-xs text-white my-[6px] w-[80px] text-center">
+                                        <p className={`text-xs my-2 w-[80px] text-center ${index === 0 ? 'text-white font-bold' : 'text-neutral-300'}`}>
                                           {item.audio}
                                         </p>
                                       </div>
@@ -348,7 +341,7 @@ export const CornerDisplayName = ({
                                           borderLeft: `1px solid #ffffff33`,
                                         }}
                                       >
-                                        <p className="text-xs text-white my-[6px] w-[80px] text-center">
+                                        <p className={`text-xs my-2 w-[80px] text-center ${index === 0 ? 'text-white font-bold' : 'text-neutral-300'}`}>
                                           {item.video}
                                         </p>
                                       </div>
@@ -417,27 +410,31 @@ export function ParticipantView({ participantId }) {
       onMouseLeave={() => {
         setMouseOver(false);
       }}
-      className={`h-full w-full  bg-gray-750 relative overflow-hidden rounded-lg video-cover`}
+      className={`h-full w-full bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-800 relative overflow-hidden rounded-xl border border-neutral-700/50 hover:border-neutral-600/50 transition-all duration-300 shadow-lg hover:shadow-xl`}
     >
       <audio ref={micRef} autoPlay muted={isLocal} />
       {webcamOn ? (
-        <VideoPlayer
-          participantId={participantId} // Required
-          type="video" // "video" or "share"
-          containerStyle={{
-            height: '100%',
-            width: '100%',
-          }}
-          className="h-full"
-          classNameVideo="h-full"
-          videoStyle={{}}
-        />
+        <div className="absolute inset-0">
+          <VideoPlayer
+            participantId={participantId}
+            type="video"
+            containerStyle={{
+              height: '100%',
+              width: '100%',
+            }}
+            className="h-full w-full"
+            classNameVideo="h-full w-full object-cover"
+            videoStyle={{
+              objectFit: 'cover',
+            }}
+          />
+        </div>
       ) : (
         <div className="h-full w-full flex items-center justify-center">
           <div
-            className={`z-10 flex items-center justify-center rounded-full bg-gray-800 2xl:h-[92px] h-[52px] 2xl:w-[92px] w-[52px]`}
+            className={`z-10 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-primary-700 shadow-2xl border-4 border-neutral-700 2xl:h-[92px] h-[52px] 2xl:w-[92px] w-[52px]`}
           >
-            <p className="text-2xl text-white">{String(displayName).charAt(0).toUpperCase()}</p>
+            <p className="text-2xl text-white font-bold">{String(displayName).charAt(0).toUpperCase()}</p>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { useMeeting, usePubSub } from '@videosdk.live/react-sdk';
 import React, { useEffect, useRef, useState } from 'react';
 import { formatAMPM, json_verify, nameTructed } from '../../utils/helper';
-import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { Send } from 'lucide-react';
 
 const ChatMessage = ({ senderId, senderName, message, timestamp }) => {
   console.log(message);
@@ -15,17 +15,19 @@ const ChatMessage = ({ senderId, senderName, message, timestamp }) => {
   return (
     <div className={`flex ${localSender ? 'justify-end' : 'justify-start'} mt-4 max-w-full`}>
       <div
-        className={`flex flex-col py-2 px-4 rounded-2xl max-w-xs sm:max-w-md ${
+        className={`flex flex-col py-2.5 px-4 rounded-2xl max-w-xs sm:max-w-md shadow-lg transition-all hover:shadow-xl ${
           localSender
-            ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 text-white'
-            : 'bg-gray-700 text-white'
+            ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white'
+            : 'bg-neutral-800 text-white border border-neutral-700'
         }`}
       >
-        <p className="text-xs opacity-70 mb-1 select-none">
+        <p className="text-xs font-semibold opacity-80 mb-1 select-none">
           {localSender ? 'You' : nameTructed(senderName, 15)}
         </p>
-        <p className="whitespace-pre-wrap break-words font-medium">{message.text}</p>
-        <p className="text-xs italic mt-1 opacity-60 self-end select-none">
+        <p className="whitespace-pre-wrap break-words font-medium text-sm leading-relaxed">
+          {message.text}
+        </p>
+        <p className="text-xs italic mt-1.5 opacity-70 self-end select-none">
           {formatAMPM(new Date(timestamp))}
         </p>
       </div>
@@ -59,13 +61,13 @@ const ChatInput = ({ inputHeight }) => {
 
   return (
     <div
-      className="w-full flex items-center px-4 bg-gray-800 rounded-b-2xl border-t border-gray-600"
+      className="w-full flex items-center gap-3 px-4 bg-neutral-900 rounded-b-xl border-t border-neutral-700"
       style={{ height: inputHeight }}
     >
       <input
         type="text"
-        className="flex-1 py-3 px-4 text-white bg-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-gray-400 text-base"
-        placeholder="Write your message"
+        className="flex-1 py-3 px-4 text-white bg-neutral-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 border border-neutral-700 placeholder-neutral-400 text-sm transition-all"
+        placeholder="Write your message..."
         autoComplete="off"
         ref={input}
         value={message}
@@ -81,14 +83,14 @@ const ChatInput = ({ inputHeight }) => {
         type="button"
         disabled={message.trim().length < 2}
         onClick={sendMessage}
-        className={`ml-3 rounded-full p-2 transition-transform duration-200 ${
+        className={`rounded-xl p-2.5 transition-all duration-200 shadow-lg ${
           message.trim().length >= 2
-            ? 'bg-indigo-600 hover:bg-indigo-700'
-            : 'bg-gray-600 cursor-not-allowed'
+            ? 'bg-gradient-to-br from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 hover:scale-110 hover:shadow-xl hover:shadow-primary-500/30'
+            : 'bg-neutral-700 cursor-not-allowed opacity-50'
         }`}
         aria-label="Send message"
       >
-        <PaperAirplaneIcon className="w-6 h-6 rotate-90 text-white" />
+        <Send className="w-5 h-5 text-white" />
       </button>
     </div>
   );
@@ -109,10 +111,16 @@ const ChatMessages = ({ listHeight }) => {
     <div
       ref={listRef}
       style={{ height: listHeight }}
-      className="overflow-y-auto px-4 pt-4 bg-gray-900 rounded-t-2xl"
+      className="overflow-y-auto px-4 pt-4 bg-neutral-900 rounded-t-xl scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-800"
     >
       {messages.length === 0 && (
-        <p className="text-center text-gray-500 mt-10 select-none">No messages yet</p>
+        <div className="flex flex-col items-center justify-center h-full">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-primary-700 shadow-lg mb-4">
+            <Send className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-center text-neutral-400 font-medium select-none">No messages yet</p>
+          <p className="text-center text-neutral-500 text-sm mt-1 select-none">Start the conversation!</p>
+        </div>
       )}
       {messages.map((msg, i) => {
         const { senderId, senderName, message, timestamp } = msg;
@@ -128,7 +136,12 @@ const ChatMessages = ({ listHeight }) => {
       })}
     </div>
   ) : (
-    <p className="p-4 text-center text-gray-500">Loading messages...</p>
+    <div className="flex items-center justify-center h-full">
+      <div className="flex flex-col items-center gap-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <p className="text-center text-neutral-400 font-medium">Loading messages...</p>
+      </div>
+    </div>
   );
 };
 
@@ -137,7 +150,7 @@ export function ChatPanel({ panelHeight }) {
   const listHeight = panelHeight - inputHeight;
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 rounded-3xl shadow-lg border border-gray-700">
+    <div className="flex flex-col h-full bg-neutral-900 rounded-xl shadow-2xl border border-neutral-800">
       <ChatMessages listHeight={listHeight} />
       <ChatInput inputHeight={inputHeight} />
     </div>

@@ -355,7 +355,7 @@ const CounselorLogin = () => {
                           </Label>
                           <div className="relative">
                             <Lock
-                              className="absolute left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-neutral-400"
+                              className="absolute z-10 left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-neutral-400"
                               aria-hidden="true"
                             />
                             <Input
@@ -555,7 +555,7 @@ const CounselorLogin = () => {
                           </Label>
                           <div className="relative">
                             <Lock
-                              className="absolute left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-neutral-400"
+                              className="absolute z-10 left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-neutral-400"
                               aria-hidden="true"
                             />
                             <Input

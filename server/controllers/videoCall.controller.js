@@ -62,22 +62,23 @@ const getTokenForJoiningSession = wrapper(async (req, res) => {
   const sessionEndTime = dayjs(slotData.endTime).tz(timeZone);
   const now = dayjs().tz(timeZone);
 
-  if (now.isBefore(sessionStartTime.clone().subtract(earlyJoinMinutesForSession, 'minute'))) {
-    throw new ApiError(
-      400,
-      'Session has not started yet. Please join closer to the scheduled time.'
-    );
-  }
+  // if (now.isBefore(sessionStartTime.clone().subtract(earlyJoinMinutesForSession, 'minute'))) {
+  //   throw new ApiError(
+  //     400,
+  //     'Session has not started yet. Please join closer to the scheduled time.'
+  //   );
+  // }
 
-  if (now.isAfter(sessionEndTime)) {
-    throw new ApiError(400, 'Session has already ended');
-  }
+  // if (now.isAfter(sessionEndTime)) {
+  //   throw new ApiError(400, 'Session has already ended');
+  // }
 
   // Generate VideoSDK meeting token
   const token = await videoSDKService.generateTokenForJoiningSession(
     sessionData.booking.sessionId.videoSDKroomId,
     participantId
   );
+  console.log(token)
 
   return res.status(200).json(
     new ApiResponse(

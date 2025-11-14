@@ -1,10 +1,6 @@
 import { useMeeting, useParticipant } from '@videosdk.live/react-sdk';
 import React, { useMemo } from 'react';
-import MicOffIcon from '../../icons/ParticipantTabPanel/MicOffIcon';
-import MicOnIcon from '../../icons/ParticipantTabPanel/MicOnIcon';
-import RaiseHand from '../../icons/ParticipantTabPanel/RaiseHand';
-import VideoCamOffIcon from '../../icons/ParticipantTabPanel/VideoCamOffIcon';
-import VideoCamOnIcon from '../../icons/ParticipantTabPanel/VideoCamOnIcon';
+import { Mic, MicOff, Video, VideoOff, Hand } from 'lucide-react';
 import { useMeetingAppContext } from '../../MeetingAppContextDef';
 import { nameTructed } from '../../utils/helper';
 
@@ -12,36 +8,34 @@ function ParticipantListItem({ participantId, raisedHand }) {
   const { micOn, webcamOn, displayName, isLocal } = useParticipant(participantId);
 
   return (
-    <div className="flex items-center justify-between bg-gray-800 rounded-xl p-3 m-2 shadow-md hover:bg-gray-700 transition-colors">
-      <div className="flex items-center flex-1 min-w-0">
-        <div
-          style={{
-            color: '#212032',
-            backgroundColor: '#757575',
-          }}
-          className="flex items-center justify-center rounded-full h-12 w-12 text-lg font-semibold select-none"
-        >
+    <div className="flex items-center justify-between bg-neutral-800 border border-neutral-700 rounded-xl p-3.5 m-2 shadow-lg hover:bg-neutral-750 hover:border-neutral-600 transition-all duration-200 hover:shadow-xl">
+      <div className="flex items-center flex-1 min-w-0 gap-3">
+        <div className="flex items-center justify-center rounded-full h-11 w-11 bg-gradient-to-br from-primary-600 to-primary-700 text-white text-base font-bold select-none shadow-lg">
           {displayName?.charAt(0).toUpperCase()}
         </div>
-        <p className="ml-4 text-white text-lg truncate select-text">
+        <p className="text-white text-base font-medium truncate select-text">
           {isLocal ? 'You' : nameTructed(displayName, 20)}
         </p>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center gap-2">
         {raisedHand && (
-          <div className="flex items-center justify-center p-1">
-            <RaiseHand fillcolor={'#8b5cf6'} />
+          <div className="flex items-center justify-center p-2 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
+            <Hand className="h-4 w-4 text-yellow-400" />
           </div>
         )}
-        <div className="p-1">
-          {micOn ? <MicOnIcon fillcolor="#34d399" /> : <MicOffIcon fillcolor="#ef4444" />}
-        </div>
-        <div className="p-1">
-          {webcamOn ? (
-            <VideoCamOnIcon fillcolor="#34d399" />
+        <div className={`p-2 rounded-lg transition-colors ${micOn ? 'bg-green-500/20 border border-green-500/30' : 'bg-red-500/20 border border-red-500/30'}`}>
+          {micOn ? (
+            <Mic className="h-4 w-4 text-green-400" />
           ) : (
-            <VideoCamOffIcon fillcolor="#ef4444" />
+            <MicOff className="h-4 w-4 text-red-400" />
+          )}
+        </div>
+        <div className={`p-2 rounded-lg transition-colors ${webcamOn ? 'bg-green-500/20 border border-green-500/30' : 'bg-red-500/20 border border-red-500/30'}`}>
+          {webcamOn ? (
+            <Video className="h-4 w-4 text-green-400" />
+          ) : (
+            <VideoOff className="h-4 w-4 text-red-400" />
           )}
         </div>
       </div>
@@ -76,7 +70,7 @@ export function ParticipantPanel({ panelHeight }) {
 
   return (
     <div
-      className="flex flex-col bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100 rounded-3xl overflow-y-auto border border-gray-300 shadow-lg"
+      className="flex flex-col bg-neutral-900 rounded-xl overflow-y-auto border border-neutral-800 shadow-2xl scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-800"
       style={{ height: panelHeight }}
     >
       <div className="flex flex-col flex-1 p-3" style={{ height: panelHeight - 100 }}>

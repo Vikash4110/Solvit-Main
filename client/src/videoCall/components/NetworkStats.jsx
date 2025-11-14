@@ -1,11 +1,10 @@
-import UploadIcon from '../icons/NetworkStats/UploadIcon';
-import DownloadIcon from '../icons/NetworkStats/DownloadIcon';
-import RefreshIcon from '../icons/NetworkStats/RefreshIcon';
-import RefreshCheck from '../icons/NetworkStats/RefreshCheck';
 import { getNetworkStats } from '@videosdk.live/react-sdk';
-import WifiOff from '../icons/NetworkStats/WifiOff';
 import { useEffect, useState } from 'react';
 import useIsMobile from '../hooks/useIsMobile';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Download, Upload, RefreshCw, Loader2, WifiOff, AlertCircle, Activity } from 'lucide-react';
 
 const NetworkStats = ({}) => {
   const [error, setError] = useState('no-error-loading');
@@ -20,7 +19,7 @@ const NetworkStats = ({}) => {
   const getNetworkStatistics = async () => {
     setError('no-error-loading');
     try {
-      const options = { timeoutDuration: 45000 }; // Set a custom timeout of 45 seconds
+      const options = { timeoutDuration: 45000 };
       const networkStats = await getNetworkStats(options);
       if (networkStats) {
         setError('no-error');
@@ -43,59 +42,143 @@ const NetworkStats = ({}) => {
   };
 
   return (
-    <>
-      <div className="flex flex-row auto-cols-max border border-[#3F4346] divide-x divide-[#3F4346] rounded-md bg-white opacity-100 h-9 ">
+    <TooltipProvider>
+      <div className="inline-flex items-center rounded-xl border border-neutral-200 bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 dark:border-neutral-700 dark:bg-neutral-900/95">
         {error === 'no-error-loading' && (
-          <div className="group inline-flex items-center gap-3 text-xs text-customGray-250 ml-3 ">
-            Checking network speeds
-            <RefreshCheck />
+          <div className="flex items-center gap-2 px-3 py-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
+              <Loader2 className="h-4 w-4 animate-spin text-primary-600 dark:text-primary-400" />
+            </div>
+            <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              Checking network...
+            </span>
           </div>
         )}
 
         {error === 'no-error' && (
           <>
-            <div
-              className={`group  inline-flex items-center gap-2 text-xs text-customGray-250 basis-1/2 ${!isMobile && 'w-32'}`}
-            >
-              <DownloadIcon />
-              {downloadSpeed} MBPS
-            </div>
-            <div
-              className={`group  inline-flex items-center gap-2 text-xs text-customGray-250 basis-1/2 ${!isMobile && 'w-32'}`}
-            >
-              <UploadIcon />
-              {uploadSpeed} MBPS
-            </div>
-            <div className="basis-1/6 flex items-center justify-center" onClick={handleOnClick}>
-              <RefreshIcon />
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={`flex items-center gap-2 px-3 py-2 border-r border-neutral-200 dark:border-neutral-700 transition-colors hover:bg-primary-50/50 dark:hover:bg-primary-900/10 ${
+                    !isMobile && 'min-w-[7rem]'
+                  }`}
+                >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 shadow-md">
+                    <Download className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-bold text-neutral-900 dark:text-white">
+                      {downloadSpeed}
+                    </span>
+                    <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                      Mbps
+                    </span>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="bg-primary-900 text-white dark:bg-primary-700">
+                <p className="text-xs font-medium">Download Speed</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={`flex items-center gap-2 px-3 py-2 border-r border-neutral-200 dark:border-neutral-700 transition-colors hover:bg-primary-50/50 dark:hover:bg-primary-900/10 ${
+                    !isMobile && 'min-w-[7rem]'
+                  }`}
+                >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 shadow-md">
+                    <Upload className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-bold text-neutral-900 dark:text-white">
+                      {uploadSpeed}
+                    </span>
+                    <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+                      Mbps
+                    </span>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="bg-primary-900 text-white dark:bg-primary-700">
+                <p className="text-xs font-medium">Upload Speed</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleOnClick}
+                  className="flex items-center justify-center px-3 py-2 transition-all duration-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-r-xl group"
+                  aria-label="Refresh network stats"
+                >
+                  <RefreshCw className="h-4 w-4 text-neutral-600 group-hover:text-primary-600 dark:text-neutral-400 dark:group-hover:text-primary-400 transition-all group-hover:rotate-180 duration-500" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-primary-900 text-white dark:bg-primary-700">
+                <p className="text-xs font-medium">Refresh Stats</p>
+              </TooltipContent>
+            </Tooltip>
           </>
         )}
 
         {error === 'no-wifi' && (
           <>
-            <div className="group inline-flex items-center gap-3 text-xs text-red-250 p-2 ">
-              <WifiOff />
-              You're offline! Check your connection
+            <div className="flex items-center gap-2 px-3 py-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+                <WifiOff className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </div>
+              <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                {isMobile ? 'Offline' : "You're offline!"}
+              </span>
             </div>
-            <div className=" flex items-center justify-center p-2" onClick={handleOnClick}>
-              <RefreshIcon />
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleOnClick}
+                  className="flex items-center justify-center px-3 py-2 border-l border-neutral-200 dark:border-neutral-700 transition-all duration-300 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-r-xl group"
+                  aria-label="Retry network check"
+                >
+                  <RefreshCw className="h-4 w-4 text-neutral-600 group-hover:text-red-600 dark:text-neutral-400 dark:group-hover:text-red-400 transition-all group-hover:rotate-180 duration-500" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-red-600 text-white">
+                <p className="text-xs font-medium">Retry Connection</p>
+              </TooltipContent>
+            </Tooltip>
           </>
         )}
 
         {error === 'timeout' && (
           <>
-            <div className="group inline-flex items-center gap-3 text-xs text-red-250 p-2 ">
-              Something went wrong! Couldn't load data
+            <div className="flex items-center gap-2 px-3 py-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </div>
+              <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                {isMobile ? 'Error' : 'Request timeout'}
+              </span>
             </div>
-            <div className=" flex items-center justify-center p-2" onClick={handleOnClick}>
-              <RefreshIcon />
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleOnClick}
+                  className="flex items-center justify-center px-3 py-2 border-l border-neutral-200 dark:border-neutral-700 transition-all duration-300 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-r-xl group"
+                  aria-label="Retry network check"
+                >
+                  <RefreshCw className="h-4 w-4 text-neutral-600 group-hover:text-red-600 dark:text-neutral-400 dark:group-hover:text-red-400 transition-all group-hover:rotate-180 duration-500" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-red-600 text-white">
+                <p className="text-xs font-medium">Try Again</p>
+              </TooltipContent>
+            </Tooltip>
           </>
         )}
       </div>
-    </>
+    </TooltipProvider>
   );
 };
 

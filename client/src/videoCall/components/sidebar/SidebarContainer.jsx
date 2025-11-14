@@ -2,7 +2,7 @@ import { useMeeting } from '@videosdk.live/react-sdk';
 import React, { Fragment } from 'react';
 import useIsMobile from '../../hooks/useIsMobile';
 import useIsTab from '../../hooks/useIsTab';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
 import { ParticipantPanel } from './ParticipantPanel';
 import { Dialog, Transition } from '@headlessui/react';
@@ -23,7 +23,7 @@ const SideBarTabView = ({
 
   return (
     <div
-      className="bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100 rounded-3xl shadow-lg border border-gray-300 overflow-hidden"
+      className="bg-neutral-900 rounded-xl shadow-2xl border border-neutral-800 overflow-hidden"
       style={{
         height,
         width: sideBarContainerWidth,
@@ -31,7 +31,7 @@ const SideBarTabView = ({
       }}
     >
       <div
-        className="bg-white rounded-2xl flex flex-col h-full"
+        className="bg-neutral-900 rounded-xl flex flex-col h-full border border-neutral-800"
         style={{
           height: height,
           overflow: 'hidden',
@@ -39,31 +39,31 @@ const SideBarTabView = ({
       >
         {sideBarMode && (
           <div
-            className="flex items-center justify-between px-6"
+            className="flex items-center justify-between px-5 bg-neutral-800/50 backdrop-blur-sm"
             style={{
               height: panelHeaderHeight - 1,
               paddingTop: panelHeaderPadding / 2,
               paddingBottom: panelHeaderPadding / 2,
-              borderBottom: '1px solid #d1d5db', // Tailwind gray-300
+              borderBottom: '1px solid #404040',
             }}
           >
-            <p className="text-lg font-semibold text-gray-900 select-none">
+            <p className="text-base font-bold text-white select-none">
               {sideBarMode === 'PARTICIPANTS'
                 ? `Participants (${new Map(participants).size})`
                 : sideBarMode.charAt(0).toUpperCase() + sideBarMode.slice(1).toLowerCase() || ''}
             </p>
             <button
-              className="text-gray-800 hover:text-gray-600 transition-colors"
+              className="text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-lg p-1.5 transition-all duration-200"
               onClick={handleClose}
               aria-label="Close sidebar"
               type="button"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto" style={{ height: panelHeight }}>
+        <div className="flex-1 overflow-y-auto bg-neutral-900" style={{ height: panelHeight }}>
           {sideBarMode === 'PARTICIPANTS' ? (
             <ParticipantPanel panelHeight={panelHeight} />
           ) : sideBarMode === 'CHAT' ? (
@@ -107,7 +107,7 @@ export function SidebarConatiner({ height, sideBarContainerWidth }) {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
           </Transition.Child>
 
           <Transition.Child
@@ -120,7 +120,7 @@ export function SidebarConatiner({ height, sideBarContainerWidth }) {
             leaveTo="translate-y-full opacity-0 scale-95"
           >
             <div className="fixed inset-0 flex items-center justify-center p-4">
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-3xl bg-gradient-to-br from-purple-200 via-blue-100 to-indigo-200 shadow-2xl transition-all">
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl transition-all">
                 <SideBarTabView
                   height={'100%'}
                   sideBarContainerWidth={'100%'}

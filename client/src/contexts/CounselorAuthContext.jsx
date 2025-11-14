@@ -34,12 +34,12 @@ export const CounselorAuthProvider = ({ children }) => {
             headers: { Authorization: `Bearer ${token}` },
           });
           const counselorData = response.data.data;
-          console.log(counselorData)
+          console.log(counselorData);
           setCounselor(counselorData);
           localStorage.setItem('counselor', JSON.stringify(counselorData));
         } catch (error) {
           console.error('Error initializing auth:', error);
-          await counselorLogout()
+          await counselorLogout();
         }
       }
       setCounselorLoading(false);
@@ -53,10 +53,16 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const counselorLogin = async (email, password) => {
     try {
-      const response = await axiosInstance.post(API_ENDPOINTS.COUNSELOR_LOGIN, {
+      const response = await axiosInstance.post(
+      API_ENDPOINTS.COUNSELOR_LOGIN,
+      {
         email,
         password,
-      });
+      },
+      {
+        withCredentials: true,   // <-- correct placement
+      }
+    );
 
       const { loggedInCounselor, accessToken } = response.data.data;
       localStorage.setItem('counselorAccessToken', accessToken);
@@ -72,7 +78,6 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const counselorRegister = async (userData) => {
     try {
-     
       const formData = new FormData();
       Object.keys(userData).forEach((key) => {
         if (key === 'profilePicture' && userData[key]) {
@@ -156,9 +161,8 @@ export const CounselorAuthProvider = ({ children }) => {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${token}`,
           },
-          withCredentials: true
-        },
-      
+          withCredentials: true,
+        }
       );
 
       // Update counselor with new application status

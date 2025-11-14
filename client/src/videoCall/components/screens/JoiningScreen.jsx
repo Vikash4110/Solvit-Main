@@ -2,14 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MeetingDetailsScreen } from '../MeetingDetailsScreen';
 import { createMeeting, getTokenForJoiningSession, validateMeeting } from '../../api';
 import ConfirmBox from '../ConfirmBox';
-import WebcamOffIcon from '../../icons/WebcamOffIcon';
-import WebcamOnIcon from '../../icons/Bottombar/WebcamOnIcon';
-import MicOffIcon from '../../icons/MicOffIcon';
-import MicOnIcon from '../../icons/Bottombar/MicOnIcon';
-import { toast } from 'react-toastify';
 import { Constants, useMediaDevice } from '@videosdk.live/react-sdk';
-import MicPermissionDenied from '../../icons/MicPermissionDenied';
-import CameraPermissionDenied from '../../icons/CameraPermissionDenied';
 import NetworkStats from '../NetworkStats';
 import DropDownCam from '../DropDownCam';
 import DropDownSpeaker from '../DropDownSpeaker';
@@ -17,6 +10,19 @@ import DropDown from '../DropDown';
 import useMediaStream from '../../hooks/useMediaStream';
 import useIsMobile from '../../hooks/useIsMobile';
 import { useMeetingAppContext } from '../../MeetingAppContextDef';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  Video, 
+  VideoOff, 
+  Mic, 
+  MicOff, 
+  Sparkles, 
+  ShieldAlert 
+} from 'lucide-react';
 
 export function JoiningScreen({
   meetingId,
@@ -92,9 +98,8 @@ export function JoiningScreen({
 
   useEffect(() => {
     if (webcamOn) {
-      // Close the existing video track if there's a new one
       if (videoTrackRef.current && videoTrackRef.current !== videoTrack) {
-        videoTrackRef.current.stop(); // Stop the existing video track
+        videoTrackRef.current.stop();
       }
 
       videoTrackRef.current = videoTrack;
@@ -183,6 +188,7 @@ export function JoiningScreen({
       setVideoTrack(videoTrack);
     }
   };
+
   const changeMic = async (deviceId) => {
     if (micOn) {
       const currentAudioTrack = audioTrackRef.current;
@@ -237,7 +243,6 @@ export function JoiningScreen({
     try {
       const permission = await requestPermission(mediaType);
 
-      // For Video
       if (isFirefox) {
         const isVideoAllowed = permission.get('video');
         setIsCameraPermissionAllowed(isVideoAllowed);
@@ -247,7 +252,6 @@ export function JoiningScreen({
         }
       }
 
-      // For Audio
       if (isFirefox) {
         const isAudioAllowed = permission.get('audio');
         setIsMicrophonePermissionAllowed(isAudioAllowed);
@@ -278,6 +282,7 @@ export function JoiningScreen({
       console.log('Error in requestPermission ', ex);
     }
   }
+
   function onDeviceChanged() {
     setDidDeviceChange(true);
     getCameraDevices();
@@ -307,7 +312,6 @@ export function JoiningScreen({
         await requestAudioVideoPermission(Constants.permission.VIDEO);
       }
     } catch (error) {
-      // For firefox, it will request audio and video simultaneously.
       await requestAudioVideoPermission();
       console.log(error);
     }
@@ -358,136 +362,218 @@ export function JoiningScreen({
     getAudioDevices();
   }, []);
 
-  const ButtonWithTooltip = ({ onClick, onState, OnIcon, OffIcon }) => {
+  // Button with HowItWorks Icon Style
+  const ButtonWithTooltip = ({ onClick, onState, isMic }) => {
     const btnRef = useRef();
+    
     return (
-      <>
-        <div>
-          <button
-            ref={btnRef}
-            onClick={onClick}
-            className={`rounded-full min-w-auto w-12 h-12 flex items-center justify-center 
-            ${onState ? 'bg-white' : 'bg-red-650 text-white'}`}
-          >
-            {onState ? (
-              <OnIcon fillcolor={onState ? '#050A0E' : '#fff'} />
-            ) : (
-              <OffIcon fillcolor={onState ? '#050A0E' : '#fff'} />
-            )}
-          </button>
-        </div>
-      </>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              ref={btnRef}
+              onClick={onClick}
+              size="icon"
+              className={`group h-14 w-14 rounded-xl transition-all duration-300 hover:scale-110 ${
+                onState
+                  ? 'bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 shadow-lg hover:shadow-xl hover:shadow-primary-500/30'
+                  : 'bg-gradient-to-br from-red-500 to-red-600 shadow-lg hover:shadow-xl hover:shadow-red-500/30'
+              }`}
+            >
+              {isMic ? (
+                onState ? <Mic className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white" />
+              ) : (
+                onState ? <Video className="h-6 w-6 text-white" /> : <VideoOff className="h-6 w-6 text-white" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className="bg-primary-900 text-white dark:bg-primary-700">
+            <p className="text-xs font-medium">
+              {isMic 
+                ? (onState ? 'Mute microphone' : 'Unmute microphone')
+                : (onState ? 'Turn off camera' : 'Turn on camera')
+              }
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   };
 
+  // Permission Denied Badge with HowItWorks Icon Style
+  const PermissionDeniedBadge = ({ type }) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-neutral-300 to-neutral-400 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center shadow-lg opacity-60 cursor-not-allowed">
+            {type === 'mic' ? (
+              <MicOff className="h-6 w-6 text-white" />
+            ) : (
+              <VideoOff className="h-6 w-6 text-white" />
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent className="bg-red-600 text-white">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs font-medium">
+              {type === 'mic' ? 'Microphone' : 'Camera'} permission denied
+            </p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   return (
     <>
-      <div className="overflow-y-auto flex flex-col flex-1  h-screen bg-gray-800">
-        <div className="flex flex-1 flex-col md:flex-row  items-center justify-center m-10 md:m-[30px] lg:m-16">
-          <div className="container grid  md:grid-flow-col grid-flow-row ">
-            <div className="grid grid-cols-12">
-              <div className="md:col-span-7 2xl:col-span-7 col-span-12">
-                <div className="flex items-center justify-center p-1.5 sm:p-4 lg:p-6">
-                  <div className="relative w-full md:pl-4  sm:pl-10  pl-5  md:pr-4 sm:pr-10 pr-5">
-                    <div className="w-full relative" style={{ height: isMobile ? '45vh' : '55vh' }}>
-                      <div className={`absolute  z-10 ${isMobile ? 'right-0' : ' right-2 top-2'}`}>
-                        <NetworkStats />
+      <div className="flex min-h-screen flex-1 flex-col overflow-y-auto bg-gradient-to-br from-neutral-50 via-primary-50/30 to-primary-100/20 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-12 pt-20">
+          <div className="mx-auto w-full max-w-7xl">
+            {/* Header Section */}
+            <div className="mb-6 text-center space-y-3">
+              <Badge className="inline-flex items-center gap-1.5 bg-primary-100 text-primary-700 hover:bg-primary-200 border-0 px-3 py-1 dark:bg-primary-900/30 dark:text-primary-400">
+                <Sparkles className="h-3 w-3" />
+                Setup Your Devices
+              </Badge>
+              <h1 className="text-2xl font-bold text-primary-900 dark:text-white md:text-3xl lg:text-4xl">
+                Get Ready to Join
+              </h1>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 md:text-base">
+                Check your audio and video before joining the session
+              </p>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6">
+              {/* Video Preview Section */}
+              <div className="col-span-12 md:col-span-7 2xl:col-span-7">
+                <Card className="group overflow-hidden border-neutral-200 bg-white shadow-xl hover:shadow-2xl transition-all duration-300 dark:border-neutral-800 dark:bg-neutral-900">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="relative w-full space-y-4">
+                      {/* Video Container */}
+                      <div
+                        className="relative w-full overflow-hidden rounded-xl border-2 border-neutral-200 bg-neutral-900 shadow-2xl ring-4 ring-primary-100/50 group-hover:ring-primary-200/60 transition-all duration-300 dark:border-neutral-700 dark:ring-primary-900/30"
+                        style={{ height: isMobile ? '45vh' : '55vh' }}
+                      >
+                        {/* Network Stats Badge */}
+                        <div className={`absolute z-10 ${isMobile ? 'right-2 top-2' : 'right-3 top-3'}`}>
+                          <NetworkStats />
+                        </div>
+
+                        {/* Video Player */}
+                        <video
+                          autoPlay
+                          playsInline
+                          muted
+                          ref={videoPlayerRef}
+                          controls={false}
+                          style={{
+                            backgroundColor: '#1c1c1c',
+                            transform: 'scaleX(-1)',
+                            WebkitTransform: 'scaleX(-1)',
+                          }}
+                          className="flip h-full w-full object-cover"
+                        />
+
+                        {/* Video Overlay - No Camera State */}
+                        {!webcamOn && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-900">
+                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-700/50 backdrop-blur-sm ring-4 ring-neutral-600/20">
+                              <VideoOff className="h-10 w-10 text-neutral-400" />
+                            </div>
+                            <p className="mt-4 text-sm font-medium text-neutral-300">Camera is off</p>
+                            <p className="mt-1 text-xs text-neutral-500">Turn on your camera to preview</p>
+                          </div>
+                        )}
+
+                        {/* Control Bar with HowItWorks Icon Style */}
+                        <div className="absolute bottom-4 left-0 right-0 xl:bottom-6">
+                          <div className="mx-auto flex w-fit items-center justify-center gap-4 rounded-2xl border border-neutral-200/20 bg-white/95 px-5 py-4 shadow-2xl backdrop-blur-xl dark:border-neutral-700/30 dark:bg-neutral-900/95">
+                            {isMicrophonePermissionAllowed ? (
+                              <ButtonWithTooltip
+                                onClick={_toggleMic}
+                                onState={micOn}
+                                isMic={true}
+                              />
+                            ) : (
+                              <PermissionDeniedBadge type="mic" />
+                            )}
+
+                            {isCameraPermissionAllowed ? (
+                              <ButtonWithTooltip
+                                onClick={_toggleWebcam}
+                                onState={webcamOn}
+                                isMic={false}
+                              />
+                            ) : (
+                              <PermissionDeniedBadge type="camera" />
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <video
-                        autoPlay
-                        playsInline
-                        muted
-                        ref={videoPlayerRef}
-                        controls={false}
-                        style={{
-                          backgroundColor: '#1c1c1c',
-                          transform: 'scaleX(-1)',
-                          WebkitTransform: 'scaleX(-1)',
-                        }}
-                        className={
-                          'rounded-[10px] h-full w-full object-cover flex items-center justify-center flip'
-                        }
-                      />
 
-                      <div className="absolute xl:bottom-6 bottom-4 left-0 right-0">
-                        <div className="container grid grid-flow-col space-x-4 items-center justify-center md:-m-2">
-                          {isMicrophonePermissionAllowed ? (
-                            <ButtonWithTooltip
-                              onClick={_toggleMic}
-                              onState={micOn}
-                              mic={true}
-                              OnIcon={MicOnIcon}
-                              OffIcon={MicOffIcon}
-                            />
-                          ) : (
-                            <MicPermissionDenied />
+                      <Separator className="bg-neutral-200 dark:bg-neutral-700" />
+
+                      {/* Device Settings */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                            Device Settings
+                          </h3>
+                          <Badge variant="secondary" className="text-xs">
+                            {mics.length + webcams.length + speakers.length} devices
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-3">
+                          <div className="flex-1 min-w-[200px]">
+                            <Card className="border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
+                              <CardContent className="p-3">
+                                <DropDown
+                                  mics={mics}
+                                  changeMic={changeMic}
+                                  customAudioStream={customAudioStream}
+                                  audioTrack={audioTrack}
+                                  micOn={micOn}
+                                  didDeviceChange={didDeviceChange}
+                                  setDidDeviceChange={setDidDeviceChange}
+                                />
+                              </CardContent>
+                            </Card>
+                          </div>
+
+                          {!isMobile && (
+                            <div className="flex-1 min-w-[200px]">
+                              <Card className="border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
+                                <CardContent className="p-3">
+                                  <DropDownSpeaker speakers={speakers} />
+                                </CardContent>
+                              </Card>
+                            </div>
                           )}
 
-                          {isCameraPermissionAllowed ? (
-                            <ButtonWithTooltip
-                              onClick={_toggleWebcam}
-                              onState={webcamOn}
-                              mic={false}
-                              OnIcon={WebcamOnIcon}
-                              OffIcon={WebcamOffIcon}
-                            />
-                          ) : (
-                            <CameraPermissionDenied />
-                          )}
+                          <div className="flex-1 min-w-[200px]">
+                            <Card className="border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
+                              <CardContent className="p-3">
+                                <DropDownCam changeWebcam={changeWebcam} webcams={webcams} />
+                              </CardContent>
+                            </Card>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    <>
-                      <div className={`flex mt-3  ${isMobile ? 'flex-col' : 'flex-row '} `}>
-                        <div className={`${isMobile ? 'w-full mt-1' : 'w-1/3'}`}>
-                          <DropDown
-                            mics={mics}
-                            changeMic={changeMic}
-                            customAudioStream={customAudioStream}
-                            audioTrack={audioTrack}
-                            micOn={micOn}
-                            didDeviceChange={didDeviceChange}
-                            setDidDeviceChange={setDidDeviceChange}
-                          />
-                        </div>
-                        <div className={`lg:ml-3 ${isMobile ? 'w-full' : 'w-1/3 '}`}>
-                          {!isMobile && <DropDownSpeaker speakers={speakers} />}
-                        </div>
-                        <div className={`lg:ml-3 ${isMobile ? 'w-full mt-1' : 'w-1/3 '}`}>
-                          <DropDownCam changeWebcam={changeWebcam} webcams={webcams} />
-                        </div>
-                      </div>
-                    </>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
-              <div className="md:col-span-5 2xl:col-span-5 col-span-12 md:relative">
-                <div className="flex flex-1 flex-col items-center justify-center xl:m-16 lg:m-6 md:mt-9 lg:mt-14 xl:mt-20 mt-3 md:absolute md:left-0 md:right-0 md:top-0 md:bottom-0">
+
+              {/* Meeting Details Section */}
+              <div className="col-span-12 md:col-span-5 2xl:col-span-5 md:relative">
+                <div className="flex flex-1 flex-col items-center justify-center md:absolute md:inset-0 md:mt-0 mt-6 lg:mt-14 xl:mt-20 xl:m-16 lg:m-6">
                   <MeetingDetailsScreen
                     sessionData={sessionData}
                     handleOnClickJoin={async () => {
                       console.log(participantId);
                       const token = await getTokenForJoiningSession(sessionData, participantId);
-                      // const { fetchedMeetingId ,err } = await validateMeeting({
-                      //   meetingId,
-                      //   token,
-                      // });
-                      // if (meetingId === fetchedMeetingId) {
-                      //   setToken(token);
-                      //   updateStartMeeting();
-                      // } else {
-                      //   toast(`${err}`, {
-                      //     position: "bottom-left",
-                      //     autoClose: 4000,
-                      //     hideProgressBar: true,
-                      //     closeButton: false,
-                      //     pauseOnHover: true,
-                      //     draggable: true,
-                      //     progress: undefined,
-                      //     theme: "light",
-                      //   });
-                      // }
                       setToken(token);
                       updateStartMeeting();
                     }}
@@ -499,6 +585,7 @@ export function JoiningScreen({
           </div>
         </div>
       </div>
+
       <ConfirmBox
         open={dlgMuted}
         successText="OKAY"
@@ -506,8 +593,7 @@ export function JoiningScreen({
           setDlgMuted(false);
         }}
         title="System mic is muted"
-        subTitle="You're default microphone is muted, please unmute it or increase audio
-            input volume from system settings."
+        subTitle="You're default microphone is muted, please unmute it or increase audio input volume from system settings."
       />
 
       <ConfirmBox

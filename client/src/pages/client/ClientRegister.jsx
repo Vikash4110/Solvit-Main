@@ -397,7 +397,7 @@ const ClientRegister = () => {
                   </div>
                   <div>
                     <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                      Client Registration
+                      User Registration
                     </h1>
                   </div>
                 </div>

@@ -505,7 +505,7 @@ const loginCounselor = wrapper(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'None',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     };
 
