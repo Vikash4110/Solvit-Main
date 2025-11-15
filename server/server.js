@@ -39,16 +39,16 @@ dotenv.config();
 const app = express();
 
 // ============ NEW: Bull Board Setup (BEFORE other middleware) ============
-const serverAdapter = new ExpressAdapter();
-serverAdapter.setBasePath('/admin/queues');
+// const serverAdapter = new ExpressAdapter();
+// serverAdapter.setBasePath('/admin/queues');
 
-createBullBoard({
-  queues: [new BullMQAdapter(schedulerQueue), new BullMQAdapter(immediateQueue)],
-  serverAdapter: serverAdapter,
-});
+// createBullBoard({
+//   queues: [new BullMQAdapter(schedulerQueue), new BullMQAdapter(immediateQueue)],
+//   serverAdapter: serverAdapter,
+// });
 
-// // Mount Bull Board BEFORE other routes to avoid conflicts
-app.use('/admin/queues', serverAdapter.getRouter());
+// // // Mount Bull Board BEFORE other routes to avoid conflicts
+// app.use('/admin/queues', serverAdapter.getRouter());
 // ==========================================================================
 
 // CORS Configuration
@@ -180,7 +180,7 @@ connectDb()
 
       // REPLACED: startCronJobs() with BullMQ initialization
       try {
-        await initializeScheduledJobs();
+        // await initializeScheduledJobs();
         logger.info('✓ BullMQ scheduled jobs initialized successfully');
         logger.info('⚠️  Remember to start the worker process: npm run worker');
       } catch (error) {
