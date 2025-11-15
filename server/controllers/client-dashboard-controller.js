@@ -66,8 +66,6 @@ export const updateClientProfile = wrapper(async (req, res) => {
     address,
     preferredLanguages,
     prefferedTopics,
-    emergencyContact,
-    therapyPreferences,
   } = req.body;
 
   console.log('****************************************************************************');
@@ -373,7 +371,7 @@ export const validateProfileCompleteness = wrapper(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, result, 'Profile validation completed'));
 });
 
-//Booking
+//***************************************** Booking *******************************************
 
 // Helper function to determine if booking can be canceled
 const canCancelBooking = (booking) => {
@@ -401,6 +399,12 @@ const canJoinSession = (booking) => {
 
   // Can join 10 minutes before to 90 minutes afte
   return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
+};
+
+//helper function to determine if user can raise issue
+
+const canRaiseIssueOnBooking = (booking) => {
+  return booking.status === 'dispute_window_open';
 };
 
 // Get bookings with filters and pagination
@@ -554,11 +558,13 @@ export const getBookings = wrapper(async (req, res) => {
   const enrichedBookings = bookings.map((booking) => {
     const canCancel = canCancelBooking(booking);
     const canJoin = canJoinSession(booking);
+    const canRaiseIssue = canRaiseIssueOnBooking(booking);
 
     return {
       ...booking,
       canCancel,
       canJoin,
+      canRaiseIssue,
 
       cancellationDeadline: booking.startTime
         ? dayjs
@@ -607,6 +613,7 @@ export const getBookingDetails = wrapper(async (req, res) => {
 
   const canCancel = canCancelBooking(booking);
   const canJoin = canJoinSession(booking);
+  const canRaiseIssue = canRaiseIssueOnBooking(booking);
 
   res.json({
     success: true,
@@ -614,6 +621,7 @@ export const getBookingDetails = wrapper(async (req, res) => {
       ...booking.toObject(),
       canCancel,
       canJoin,
+      canRaiseIssue,
       canReschedule: canCancel,
       meetingLink: canJoin ? booking.googleMeetLink : null,
       cancellationDeadline: booking.slot?.date

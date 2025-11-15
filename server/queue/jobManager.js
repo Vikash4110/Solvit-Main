@@ -3,7 +3,7 @@
  * Removed unnecessary getJob() calls and Redis queries
  */
 
-import { addRepeatableJob, addDelayedJob, schedulerQueue } from './queue.js';
+import { addRepeatableJob, addDelayedJob, schedulerQueue, immediateQueue } from './queue.js';
 import { JOB_TYPES } from '../constants.js';
 import { logger } from '../utils/logger.js';
 import dayjs from 'dayjs';
@@ -63,9 +63,9 @@ export const initializeScheduledJobs = async () => {
 };
 
 /**
- * Schedule room deletion
+ * Schedule room deletion + updating booking status
  */
-export const scheduleRoomDeletion = async (roomId, scheduledTime) => {
+export const scheduleRoomDeletion = async (roomId, scheduledTime, bookingId) => {
   try {
     const targetTime = dayjs(scheduledTime).tz(timeZone);
     const now = dayjs().tz(timeZone);
@@ -79,7 +79,8 @@ export const scheduleRoomDeletion = async (roomId, scheduledTime) => {
       JOB_TYPES.DELETE_ROOM,
       {
         roomId,
-        scheduledFor: targetTime.toISOString(),
+        scheduledFor: scheduledTime,
+        bookingId,
       },
       delay,
       {
@@ -107,7 +108,7 @@ export const cancelRoomDeletion = async (roomId) => {
     // ============ OPTIMIZATION: Wrap getJob in try-catch ============
     // SAVES: Prevents unnecessary error logging on missing jobs
     try {
-      const job = await schedulerQueue.getJob(jobId);
+      const job = await immediateQueue.getJob(jobId);
 
       if (job) {
         await job.remove();
@@ -127,8 +128,85 @@ export const cancelRoomDeletion = async (roomId) => {
   }
 };
 
+/**
+ * Schedule auto complete the booking
+ */
+export const scheduleAutoCompleteBooking = async (bookingId, autoCompleteAt) => {
+  try {
+    const targetTime = dayjs(autoCompleteAt).tz(timeZone);
+    const now = dayjs().tz(timeZone);
+    const delay = targetTime.diff(now, 'millisecond');
+
+    if (delay <= 0) {
+      throw new Error('Scheduled time must be in the future');
+    }
+    const job = await addDelayedJob(
+      JOB_TYPES.Auto_Complete_Booking,
+      {
+        bookingId,
+        autoCompleteAt,
+      },
+      delay,
+      {
+        jobId: `auto-complete-booking-${bookingId}`,
+        priority: 2,
+      }
+    );
+
+    logger.info(`Auto Complete Booking scheduled: ${bookingId} at ${targetTime.format()}`);
+    return job;
+  } catch (error) {
+    logger.error(`Failed to schedule auto complete: ${error.message}`);
+    throw error;
+  }
+};
+
+/**
+ * Cancel auto Complete Booking
+ * OPTIMIZATION: Fail gracefully if job not found (no throw)
+ */
+export const cancelAutoCompleteBooking = async (bookingId) => {
+  try {
+    const jobId = `auto-complete-booking-${bookingId}`;
+    console.log('*****************************************');
+    console.log('*****************************************');
+    console.log('*****************************************');
+    console.log('*****************************************');
+    console.log('*****************************************');
+    console.log(jobId);
+    console.log('*****************************************');
+    console.log('*****************************************');
+    console.log('*****************************************');
+    console.log('*****************************************');
+    console.log('*****************************************');
+
+    // ============ OPTIMIZATION: Wrap getJob in try-catch ============
+    // SAVES: Prevents unnecessary error logging on missing jobs
+    try {
+      const job = await immediateQueue.getJob(jobId);
+
+      if (job) {
+        await job.remove();
+        logger.info(`Cancelled Auto Complete Booking for: ${bookingId}`);
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      // Job not found - this is OK, don't log as error
+      logger.info(`Auto Complete Booking job not found: ${bookingId}`);
+      return false;
+    }
+  } catch (error) {
+    logger.error(`Failed to  auto complete the room : ${error.message}`);
+    return false; // Don't throw, return false
+  }
+};
+
 export default {
   initializeScheduledJobs,
   scheduleRoomDeletion,
   cancelRoomDeletion,
+  scheduleAutoCompleteBooking,
+  cancelAutoCompleteBooking,
 };

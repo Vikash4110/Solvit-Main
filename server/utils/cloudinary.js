@@ -18,7 +18,6 @@ cloudinary.config({
  * @returns {Promise<object>} Upload response
  */
 const uploadOncloudinary = async (localFilePath, folder = 'client-profiles') => {
-  console.log("yup yup yup yu p yu p")
   try {
     if (!localFilePath) {
       logger.warn('No file path provided for Cloudinary upload');
@@ -119,4 +118,68 @@ const extractPublicId = (cloudinaryUrl) => {
   }
 };
 
-export { uploadOncloudinary, deleteFromCloudinary, extractPublicId };
+/**
+ * Upload evidence file to Cloudinary
+ * @param {Buffer} fileBuffer - File buffer
+ * @param {String} fileName - Original file name
+ * @param {String} bookingId - Booking ID
+ * @returns {Promise<Object>} Upload result with URL and metadata
+ */
+
+const uploadEvidenceToCloudinary = (fileBuffer, fileName, bookingId) => {
+  return new Promise((resolve, reject) => {
+    const timestamp = Date.now();
+    const folder = `solvit/evidence/bookings/${bookingId}`;
+    const publicId = `${timestamp}-${fileName.replace(/\s+/g, '-')}`;
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        public_id: publicId,
+        resource_type: 'auto', // Supports images, videos, PDFs
+        allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'mp4', 'mp3', 'docx'],
+        max_file_size: 10485760, // 10MB
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve({
+            fileUrl: result.secure_url,
+            fileName: result.original_filename,
+            fileType: result.format,
+            fileSize: result.bytes,
+            publicId: result.public_id,
+          });
+        }
+      }
+    );
+
+    uploadStream.end(fileBuffer);
+  });
+};
+
+/**
+ * Delete evidence file from Cloudinary
+ * @param {String} publicId - Cloudinary public ID
+ * @returns {Promise}
+ */
+const deleteEvidenceFromCloudinary = async (publicId) => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: 'auto',
+    });
+    return result;
+  } catch (error) {
+    console.error('Cloudinary deletion error:', error);
+    throw error;
+  }
+};
+
+export {
+  uploadOncloudinary,
+  deleteFromCloudinary,
+  extractPublicId,
+  uploadEvidenceToCloudinary,
+  deleteEvidenceFromCloudinary,
+};

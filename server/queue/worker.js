@@ -14,7 +14,26 @@ import { getSharedRedisConnection } from '../config/redis.js';
 import { QUEUE_NAMES, JOB_TYPES } from '../constants.js';
 import { logger } from '../utils/logger.js';
 import VideoSDKService from '../services/videoSDK.service.js';
+import { Booking } from '../models/booking-model.js';
+import { ApiError } from '../utils/ApiError.js';
+import connectDb from '../database/connection.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+import { timeZone } from '../constants.js';
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+//MongoDB coonection
+connectDb()
+  .then(async () => {
+    console.log(`Server is running on port`);
+  })
+  .catch((error) => {
+    console.error('Failed to connect to database:', error);
+    process.exit(1);
+  });
 // ============ OPTIMIZATION: Shared worker connection ============
 // SAVES: Reuses single connection instead of creating new ones
 const sharedWorkerConnection = getSharedRedisConnection(true);
@@ -28,6 +47,7 @@ const sharedWorkerConnection = getSharedRedisConnection(true);
  * Add slots to database
  * Runs daily at midnight to create mentor availability slots
  */
+
 const processAddSlots = async (job) => {
   logger.info(`Processing addSlots job ${job.id}`);
   try {
@@ -84,7 +104,7 @@ const processDeleteSlots = async (job) => {
  * Called at scheduled meeting end time
  */
 const processDeleteRoom = async (job) => {
-  const { roomId } = job.data;
+  const { roomId, bookingId, scheduledFor } = job.data;
   logger.info(`[DeleteRoom] Starting for room: ${roomId} (attempt ${job.attemptsMade + 1})`);
 
   try {
@@ -96,12 +116,14 @@ const processDeleteRoom = async (job) => {
     // ⭐ Use VideoSDK service to delete room
     const result = await VideoSDKService.deleteRoom(roomId);
 
-    // TODO: Update your booking/session status in database
-    // Example:
-    // await Session.findOneAndUpdate(
-    //   { videoSDKMeetingId: roomId },
-    //   { status: 'completed', roomDeleted: true, roomDeletionTime: new Date() }
-    // );
+    //updating the booking status to the dispute_window_open and also completion time
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      throw new ApiError(400, 'booking for update status not found');
+    }
+    booking.status = 'dispute_window_open';
+    booking.completion.disputeWindowOpenAt = scheduledFor;
+    await booking.save({ validateBeforeSave: false });
 
     logger.info(`[DeleteRoom] Completed: ${roomId}`);
 
@@ -147,6 +169,77 @@ const processDeleteRoom = async (job) => {
 };
 
 /**
+ * Auto Complete the booking,  Called at scheduled autoCompleteTime
+ */
+const processAutoCompletebooking = async (job) => {
+  const { bookingId, autoCompleteAt } = job.data;
+  logger.info(
+    `[AutoCompleteBooking] Starting for booking: ${bookingId} (attempt ${job.attemptsMade + 1})`
+  );
+
+  try {
+    // Validate required data
+    if (!bookingId || !autoCompleteAt) {
+      throw new Error('Booking ID and Auto Complete Time is required');
+    }
+
+    // Update booking status to completed and marking the time for the booking completion
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      throw new ApiError(404, 'Booking not found');
+    }
+
+    booking.status = 'completed';
+    booking.completion.completedAt = autoCompleteAt;
+
+    await booking.save({ validateBeforeSave: false });
+    logger.info(`[AutoCompleteBooking] Completed: ${bookingId}`);
+
+    return {
+      success: true,
+      bookingId,
+      completedAt: dayjs(autoCompleteAt),
+    };
+  } catch (error) {
+    logger.error(`[AutoCompleteBooking] Failed for booking ${bookingId}: ${error.message}`);
+
+    // 🔥 Non-retryable errors specific to AutoCompleteBooking
+    const nonRetryableMessages = [
+      'booking not found',
+      'booking id is required',
+      'invalid booking id',
+      'already completed',
+      'already cancelled',
+      '404',
+    ];
+
+    const nonRetryableStatusCodes = [400, 401, 403, 404];
+
+    const isNonRetryable =
+      nonRetryableMessages.some((msg) =>
+        error.message?.toLowerCase().includes(msg.toLowerCase())
+      ) ||
+      (error.response && nonRetryableStatusCodes.includes(error.response.status));
+
+    if (isNonRetryable) {
+      logger.warn(
+        `[AutoCompleteBooking] Non-retryable error for booking ${bookingId}, marking job as completed`
+      );
+
+      return {
+        success: false,
+        error: error.message,
+        nonRetryable: true,
+        bookingId,
+      };
+    }
+
+    // Retry for unexpected/temporary errors: DB down, network errors, etc.
+    throw error;
+  }
+};
+
+/**
  * Main job processor router
  * Routes jobs to appropriate handlers based on job type
  */
@@ -167,6 +260,9 @@ const processJob = async (job) => {
         break;
       case JOB_TYPES.DELETE_ROOM:
         result = await processDeleteRoom(job);
+        break;
+      case JOB_TYPES.Auto_Complete_Booking:
+        result = await processAutoCompletebooking(job);
         break;
       default:
         throw new Error(`Unknown job type: ${job.name}`);

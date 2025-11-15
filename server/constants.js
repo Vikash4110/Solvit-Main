@@ -14,6 +14,7 @@ export const JOB_TYPES = {
   DELETE_SLOTS: 'deleteSlots',
   DELETE_ROOM: 'deleteRoom',
   PROCESS_PAYMENT: 'processPayment',
+  Auto_Complete_Booking: 'autoCompleteBooking',
 };
 
 // Queue names
