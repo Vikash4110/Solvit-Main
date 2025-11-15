@@ -443,8 +443,9 @@ const loginClient = wrapper(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
-    sameSite: 'None',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
   };
   const accessToken = await client.generateAccessToken();
 

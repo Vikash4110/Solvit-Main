@@ -18,7 +18,11 @@ import path from 'path';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
 import videoSDKService from '../services/videoSDK.service.js';
 import { logger } from '../utils/logger.js';
-import { scheduleRoomDeletion, cancelRoomDeletion } from '../queue/jobManager.js';
+import {
+  scheduleRoomDeletion,
+  cancelRoomDeletion,
+  scheduleAutoCompleteBooking,
+} from '../queue/jobManager.js';
 import { timeZone, slotDuration, earlyJoinMinutesForSession } from '../constants.js';
 
 import puppeteer from 'puppeteer-core';
@@ -141,7 +145,7 @@ const paymentVerification = wrapper(async (req, res) => {
     razorpay_signature,
     clientId,
     slotId,
-    invoice:  'sss',
+    invoice: 'sss',
   });
 
   // Step 5: Process booking with VideoSDK integration
@@ -194,19 +198,40 @@ const processBookingWithVideoSDK = async (
     const slotStartTime = dayjs(slotData.startTime).tz(timeZone);
     const slotEndTime = dayjs(slotData.endTime).tz(timeZone);
 
-    // Create VideoSDK room and add room deletion job
+    // Create VideoSDK room
 
     const videoSDKRoom = await videoSDKService.createRoom();
 
     if (!videoSDKRoom.success) {
       throw new Error('Failed to create video meeting room');
     }
+    // Step 4: Create booking record
+    const booking = new Booking({
+      clientId,
+      slotId,
+      status: 'confirmed',
+      completion: {
+        autoCompleteAt: slotEndTime.clone().add(24, 'hours').utc().toDate(),
+      },
+      payout: {
+        amount: totalPriceAfterPlatformFee, // 80% to counselor
+        // releaseOn: slotEndTime.clone().add(, 'hours').utc().toDate(),
+        status: 'pending',
+      },
+      paymentId,
+    });
+    await booking.save();
 
-    const deletionJob = await scheduleRoomDeletion(videoSDKRoom.roomId, slotData.endTime);
+    //add room deletion job and inside the delete room updating booking status to dispute_window open
+    const deletionJob = await scheduleRoomDeletion(
+      videoSDKRoom.roomId,
+      slotData.endTime,
+      booking._id
+    );
 
     // Step 3: Create Session record first
     const session = new Session({
-      bookingId: null, // Will be updated after booking is created
+      bookingId: booking._id,
       videoSDKRoomId: videoSDKRoom.roomId,
       meetingUrl: null,
       scheduledStartTime: slotData.startTime,
@@ -216,32 +241,17 @@ const processBookingWithVideoSDK = async (
       videoSDKRoomDeletionJobId: deletionJob.id,
     });
 
-    // Step 4: Create booking record
-    const booking = new Booking({
-      clientId,
-      slotId,
-      status: 'confirmed',
-      completion: {
-        autoConfirmAt: slotEndTime.clone().add(48, 'hours').utc().toDate(),
-      },
-      payout: {
-        amount: totalPriceAfterPlatformFee * 0.8, // 80% to counselor
-        releaseOn: slotEndTime.clone().add(48, 'hours').utc().toDate(),
-        status: 'pending',
-      },
-      paymentId,
-    });
-
-    await booking.save();
-
-    // Step 5: Update session with booking reference
-    session.bookingId = booking._id;
-
-    await session.save();
+    await session.save({ validateBeforeSave: false });
 
     // Update booking with session reference
     booking.sessionId = session._id;
     await booking.save({ validateBeforeSave: false });
+
+    //add auto complete booking job
+    const autocompleteBookingJob = await scheduleAutoCompleteBooking(
+      booking._id,
+      booking.completion.autoCompleteAt
+    );
 
     // Step 6: Update slot status
     slotData.status = 'booked';

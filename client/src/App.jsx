@@ -23,6 +23,7 @@ import Login from './pages/client/ClientLogin';
 import Register from './pages/client/ClientRegister';
 import ServicePage from './pages/general/ServicePage';
 import ClientDashboard from './pages/client/ClientDashboard';
+import ClientDashboardDisputeForm from './components/client/ClientDashboard/ClientDashboardDisputeForm'
 import BookCounselorCalendar from './pages/client/bookCounselor';
 import BrowseCounselor from './pages/client/browseCounselor';
 import Blogs from './pages/general/Blogs';
@@ -70,6 +71,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ClientDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/client/dashboard/bookings/raiseIssue/:bookingId"
+                element={
+                  <ProtectedRoute>
+                    <ClientDashboardDisputeForm />
                   </ProtectedRoute>
                 }
               />
