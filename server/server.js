@@ -52,30 +52,36 @@ const app = express();
 // ==========================================================================
 
 // CORS Configuration
+
 const allowedOrigins = [
-  process.env.CORS_ORIGIN1, // dev
-  process.env.CORS_ORIGIN2, // prod origin 1
-  process.env.CORS_ORIGIN3, // prod origin 2
+  process.env.CORS_ORIGIN1,
+  process.env.CORS_ORIGIN2,
+  process.env.CORS_ORIGIN3,
 ];
 
-// CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
+    // Allow requests with no origin (Postman, curl, mobile apps)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
-      callback(null, true); // allow the request
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS')); // reject
+      // Reject but still send proper CORS headers
+      callback(null, false);
     }
   },
-  credentials: true, // allow cookies, authorization headers
-  optionsSuccessStatus: 200, // some legacy browsers choke on 204
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 204, // correct response for preflight
 };
 
 // Apply CORS
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
