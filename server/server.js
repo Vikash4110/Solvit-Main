@@ -13,7 +13,7 @@ import { blogsRouter } from './routes/blog-routes.js';
 import { contactRouter } from './routes/contact-routes.js';
 import { priceRouter } from './routes/price-routes.js';
 import { disputeRouter } from './routes/dispute.route.js';
-import { disputeRouter } from './routes/dispute.route.js';
+
 import { adminRouter } from './routes/admin-routes.js';
 
 import { videoCallRouter } from './routes/videoCall.routes.js';
