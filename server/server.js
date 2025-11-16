@@ -13,6 +13,7 @@ import { blogsRouter } from './routes/blog-routes.js';
 import { contactRouter } from './routes/contact-routes.js';
 import { priceRouter } from './routes/price-routes.js';
 import { disputeRouter } from './routes/dispute.route.js';
+import { disputeRouter } from './routes/dispute.route.js';
 import { adminRouter } from './routes/admin-routes.js';
 
 import { videoCallRouter } from './routes/videoCall.routes.js';
@@ -39,13 +40,13 @@ dotenv.config();
 const app = express();
 
 // ============ NEW: Bull Board Setup (BEFORE other middleware) ============
-// const serverAdapter = new ExpressAdapter();
-// serverAdapter.setBasePath('/admin/queues');
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath('/admin/queues');
 
-// createBullBoard({
-//   queues: [new BullMQAdapter(schedulerQueue), new BullMQAdapter(immediateQueue)],
-//   serverAdapter: serverAdapter,
-// });
+createBullBoard({
+  queues: [new BullMQAdapter(schedulerQueue), new BullMQAdapter(immediateQueue)],
+  serverAdapter: serverAdapter,
+});
 
 // // // Mount Bull Board BEFORE other routes to avoid conflicts
 // app.use('/admin/queues', serverAdapter.getRouter());
@@ -185,7 +186,7 @@ connectDb()
 
       // REPLACED: startCronJobs() with BullMQ initialization
       try {
-        // await initializeScheduledJobs();
+        await initializeScheduledJobs();
         logger.info('✓ BullMQ scheduled jobs initialized successfully');
         logger.info('⚠️  Remember to start the worker process: npm run worker');
       } catch (error) {
