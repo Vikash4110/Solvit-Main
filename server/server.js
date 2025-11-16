@@ -52,28 +52,30 @@ const app = express();
 // ==========================================================================
 
 // CORS Configuration
-const allowedOrigins =
-  process.env.NODE_ENV === 'production'
-    ? process.env.CORS_ORIGIN2.split(',').map((origin) => origin.trim())
-    : [process.env.CORS_ORIGIN1];
+const allowedOrigins = [
+  process.env.CORS_ORIGIN1, // dev
+  process.env.CORS_ORIGIN2, // prod origin 1
+  process.env.CORS_ORIGIN3, // prod origin 2
+];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow Postman or server-to-server
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log('CORS blocked for origin:', origin);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-  })
-);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true); // allow the request
+    } else {
+      callback(new Error('Not allowed by CORS')); // reject
+    }
+  },
+  credentials: true, // allow cookies, authorization headers
+  optionsSuccessStatus: 200, // some legacy browsers choke on 204
+};
+
+// Apply CORS
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
