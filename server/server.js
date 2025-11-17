@@ -76,7 +76,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 204, // correct response for preflight
 };
-
+// hii
 // Apply CORS
 app.use(cors(corsOptions));
 
