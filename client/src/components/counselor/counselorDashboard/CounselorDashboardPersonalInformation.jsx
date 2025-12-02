@@ -87,7 +87,7 @@ dayjs.extend(timezone);
 dayjs.extend(relativeTime);
 
 // Specializations from model
-const SPECIALIZATIONS = [
+const specializationOptions = [
   'Mental Health',
   'Career Counselling',
   'Relationship & Family Therapy',
@@ -223,7 +223,7 @@ const CounselorDashboardPersonalInfo = () => {
         createdAt: data.createdAt,
         isBlocked: data.isBlocked || false,
       };
-
+      console.log(transformedData);
       setCounselorData(transformedData);
       setFormData(transformedData);
     } catch (err) {
@@ -259,6 +259,21 @@ const CounselorDashboardPersonalInfo = () => {
       console.error('Error fetching profile completeness:', err);
     }
   };
+  const handleSpecializationSelect = (value) => {
+    if (!formData.specialization.includes(value)) {
+      setFormData((prev) => ({
+        ...prev,
+        specialization: [...prev.specialization, value],
+      }));
+    }
+  };
+
+  const removeSpecialization = (specialization) => {
+    setFormData((prev) => ({
+      ...prev,
+      specialization: prev.specialization.filter((spec) => spec !== specialization),
+    }));
+  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -292,7 +307,12 @@ const CounselorDashboardPersonalInfo = () => {
 
   const handleSaveChanges = async () => {
     setIsLoading(true);
+    
     try {
+
+      const changedData ={"username" : formData.username  , "phone":formData.phone ,"gender" : formData.gender,"specialization": formData.specialization, "experienceYears"  :formData.experienceYears, "professionalSummary" :formData.application.professionalSummary ,"languages": formData.application.languages}
+      console.log(changedData)  
+ 
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.COUNSELOR_PROFILE_UPDATE}`, {
         method: 'PUT',
         headers: {
@@ -300,7 +320,7 @@ const CounselorDashboardPersonalInfo = () => {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         credentials: 'include',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(changedData),
       });
 
       if (!response.ok) {
@@ -637,7 +657,7 @@ const CounselorDashboardPersonalInfo = () => {
             Professional Profile
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Manage your professional information and credentials
+            Manage your professional information 
           </p>
         </div>
 
@@ -926,7 +946,7 @@ const CounselorDashboardPersonalInfo = () => {
                 label="Account Number"
                 value={
                   counselorData.application.bankDetails.accountNo
-                    ? `****${counselorData.application.bankDetails.accountNo.slice(-4)}`
+                    ? `${counselorData.application.bankDetails.accountNo}`
                     : 'Not specified'
                 }
               />
@@ -995,30 +1015,20 @@ const CounselorDashboardPersonalInfo = () => {
               Edit Professional Profile
             </SheetTitle>
             <SheetDescription>
-              Update your professional information and credentials
+              Update your professional information 
             </SheetDescription>
           </SheetHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="professional">Professional</TabsTrigger>
-              <TabsTrigger value="credentials">Credentials</TabsTrigger>
+              {/* <TabsTrigger value="credentials">Credentials</TabsTrigger> */}
             </TabsList>
 
             {/* Basic Info Tab */}
             <TabsContent value="basic" className="space-y-4 mt-6">
               <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    value={formData?.fullName || ''}
-                    onChange={(e) => handleInputChange('fullName', e.target.value)}
-                    placeholder="Enter your full name"
-                  />
-                </div>
-
                 <div>
                   <Label htmlFor="username">Username *</Label>
                   <Input
@@ -1026,17 +1036,6 @@ const CounselorDashboardPersonalInfo = () => {
                     value={formData?.username || ''}
                     onChange={(e) => handleInputChange('username', e.target.value)}
                     placeholder="Enter username"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData?.email || ''}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="your.email@example.com"
                   />
                 </div>
 
@@ -1073,24 +1072,48 @@ const CounselorDashboardPersonalInfo = () => {
             {/* Professional Info Tab */}
             <TabsContent value="professional" className="space-y-4 mt-6">
               <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="specialization">Specialization *</Label>
-                  <Select
-                    value={formData?.specialization || ''}
-                    onValueChange={(value) => handleInputChange('specialization', value)}
-                  >
-                    <SelectTrigger id="specialization">
-                      <SelectValue placeholder="Select specialization" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="specialization" className="font-medium text-xs sm:text-sm">
+                    Specialization *
+                  </Label>
+                  <Select onValueChange={handleSpecializationSelect}>
+                    <SelectTrigger className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm sm:text-base">
+                      <span className="text-[#8b7355] text-xs sm:text-sm">Add Specialization</span>
                     </SelectTrigger>
                     <SelectContent>
-                      {SPECIALIZATIONS.map((spec) => (
-                        <SelectItem key={spec} value={spec}>
+                      {specializationOptions.map((spec) => (
+                        <SelectItem key={spec} value={spec} className="text-xs sm:text-sm">
                           {spec}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+                {formData.specialization.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] sm:text-xs font-medium">
+                      Selected Specializations ({formData.specialization.length})
+                    </Label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {formData.specialization.map((spec) => (
+                        <Badge
+                          key={spec}
+                          variant="secondary"
+                          className="px-4 bg-primary-50 dark:bg-primary-950/30 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 text-[10px] sm:text-xs font-medium"
+                        >
+                          {spec}
+                          <button
+                            type="button"
+                            onClick={() => removeSpecialization(spec)}
+                            className="ml-1.5 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          >
+                            <X className="h-2.5 w-2.5" aria-hidden="true" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="experienceYears">Years of Experience *</Label>
@@ -1128,7 +1151,7 @@ const CounselorDashboardPersonalInfo = () => {
                       <div key={lang} className="flex items-center space-x-2">
                         <Checkbox
                           id={`lang-${lang}`}
-                          checked={formData?.application?.languages?.includes(lang) || false}
+                          checked={formData?.application?.languages?.[0].includes(lang) || false}
                           onCheckedChange={(checked) => {
                             const currentLangs = formData?.application?.languages || [];
                             const newLangs = checked
@@ -1148,242 +1171,14 @@ const CounselorDashboardPersonalInfo = () => {
             </TabsContent>
 
             {/* Credentials Tab */}
-            <TabsContent value="credentials" className="space-y-4 mt-6">
-              <ScrollArea className="h-[calc(100vh-300px)]">
-                <div className="grid gap-6 pr-4">
-                  {/* Education */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-semibold">Graduation</Label>
-                    <div className="grid gap-4 pl-4 border-l-2 border-primary-200 dark:border-primary-800">
-                      <div>
-                        <Label htmlFor="gradUniv">University</Label>
-                        <Input
-                          id="gradUniv"
-                          value={formData?.application?.education?.graduation?.university || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange('application', 'education', 'graduation', {
-                              ...formData.application.education.graduation,
-                              university: e.target.value,
-                            })
-                          }
-                          placeholder="University name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="gradDegree">Degree</Label>
-                        <Input
-                          id="gradDegree"
-                          value={formData?.application?.education?.graduation?.degree || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange('application', 'education', 'graduation', {
-                              ...formData.application.education.graduation,
-                              degree: e.target.value,
-                            })
-                          }
-                          placeholder="Degree name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="gradYear">Year</Label>
-                        <Input
-                          id="gradYear"
-                          type="number"
-                          value={formData?.application?.education?.graduation?.year || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange('application', 'education', 'graduation', {
-                              ...formData.application.education.graduation,
-                              year: parseInt(e.target.value),
-                            })
-                          }
-                          placeholder="Graduation year"
-                        />
-                      </div>
-                    </div>
-                  </div>
+            
 
-                  <Separator />
 
-                  {/* Post Graduation */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-semibold">Post Graduation (Optional)</Label>
-                    <div className="grid gap-4 pl-4 border-l-2 border-primary-200 dark:border-primary-800">
-                      <div>
-                        <Label htmlFor="pgUniv">University</Label>
-                        <Input
-                          id="pgUniv"
-                          value={formData?.application?.education?.postGraduation?.university || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange(
-                              'application',
-                              'education',
-                              'postGraduation',
-                              {
-                                ...formData.application.education.postGraduation,
-                                university: e.target.value,
-                              }
-                            )
-                          }
-                          placeholder="University name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="pgDegree">Degree</Label>
-                        <Input
-                          id="pgDegree"
-                          value={formData?.application?.education?.postGraduation?.degree || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange(
-                              'application',
-                              'education',
-                              'postGraduation',
-                              {
-                                ...formData.application.education.postGraduation,
-                                degree: e.target.value,
-                              }
-                            )
-                          }
-                          placeholder="Degree name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="pgYear">Year</Label>
-                        <Input
-                          id="pgYear"
-                          type="number"
-                          value={formData?.application?.education?.postGraduation?.year || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange(
-                              'application',
-                              'education',
-                              'postGraduation',
-                              {
-                                ...formData.application.education.postGraduation,
-                                year: parseInt(e.target.value),
-                              }
-                            )
-                          }
-                          placeholder="Graduation year"
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  <Separator />
-
-                  {/* License */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-semibold">License Information</Label>
-                    <div className="grid gap-4">
-                      <div>
-                        <Label htmlFor="licenseNo">License Number</Label>
-                        <Input
-                          id="licenseNo"
-                          value={formData?.application?.license?.licenseNo || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange(
-                              'application',
-                              'license',
-                              'licenseNo',
-                              e.target.value
-                            )
-                          }
-                          placeholder="License number"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="issuingAuth">Issuing Authority</Label>
-                        <Input
-                          id="issuingAuth"
-                          value={formData?.application?.license?.issuingAuthority || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange(
-                              'application',
-                              'license',
-                              'issuingAuthority',
-                              e.target.value
-                            )
-                          }
-                          placeholder="Issuing authority name"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Bank Details */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-semibold">Bank Details</Label>
-                    <div className="grid gap-4">
-                      <div>
-                        <Label htmlFor="accountNo">Account Number</Label>
-                        <Input
-                          id="accountNo"
-                          value={formData?.application?.bankDetails?.accountNo || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange(
-                              'application',
-                              'bankDetails',
-                              'accountNo',
-                              e.target.value
-                            )
-                          }
-                          placeholder="Bank account number"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="ifscCode">IFSC Code</Label>
-                        <Input
-                          id="ifscCode"
-                          value={formData?.application?.bankDetails?.ifscCode || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange(
-                              'application',
-                              'bankDetails',
-                              'ifscCode',
-                              e.target.value
-                            )
-                          }
-                          placeholder="IFSC code"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="branchName">Branch Name</Label>
-                        <Input
-                          id="branchName"
-                          value={formData?.application?.bankDetails?.branchName || ''}
-                          onChange={(e) =>
-                            handleDeepNestedInputChange(
-                              'application',
-                              'bankDetails',
-                              'branchName',
-                              e.target.value
-                            )
-                          }
-                          placeholder="Branch name"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </ScrollArea>
-            </TabsContent>
           </Tabs>
 
           {/* Action Buttons */}
           <div className="flex gap-3 mt-6 pt-6 border-t">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setFormData(counselorData);
-                setIsEditDialogOpen(false);
-              }}
-              className="flex-1"
-              disabled={isLoading}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
             <Button onClick={handleSaveChanges} className="flex-1" disabled={isLoading}>
               {isLoading ? (
                 <>

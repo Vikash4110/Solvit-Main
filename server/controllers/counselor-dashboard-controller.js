@@ -55,25 +55,16 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
 
   // Destructure allowed fields for update
   const {
-    fullName,
     username,
-    email,
     phone,
     gender,
     specialization,
     experienceYears,
-    experienceLevel,
-    application,
+    languages,
+    professionalSummary,
   } = req.body;
 
   // Validate required fields
-  if (!fullName?.trim()) {
-    throw new ApiError(400, 'Full name is required');
-  }
-
-  if (!email?.trim()) {
-    throw new ApiError(400, 'Email is required');
-  }
 
   if (!phone?.trim()) {
     throw new ApiError(400, 'Phone number is required');
@@ -91,16 +82,6 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
     }
   }
 
-  // Check if email is being changed and if it's already taken
-  const existingEmailCounselor = await Counselor.findOne({
-    email: email.trim().toLowerCase(),
-    _id: { $ne: counselorId },
-  });
-
-  if (existingEmailCounselor) {
-    throw new ApiError(409, 'Email is already registered');
-  }
-
   // Check if phone is being changed and if it's already taken
   const existingPhoneCounselor = await Counselor.findOne({
     phone: phone.trim(),
@@ -115,84 +96,43 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
   const updateData = {};
 
   // Basic fields
-  if (fullName?.trim()) updateData.fullName = fullName.trim();
   if (username?.trim()) updateData.username = username.trim();
-  if (email?.trim()) updateData.email = email.trim().toLowerCase();
+
   if (phone?.trim()) updateData.phone = phone.trim();
   if (gender) updateData.gender = gender;
   if (specialization) updateData.specialization = specialization;
   if (experienceYears !== undefined) updateData.experienceYears = parseInt(experienceYears);
-  if (experienceLevel) updateData.experienceLevel = experienceLevel;
 
   // Application nested fields
-  if (application) {
-    updateData.application = {};
-
-    // Professional summary
-    if (application.professionalSummary !== undefined) {
-      updateData['application.professionalSummary'] = application.professionalSummary;
+  if (languages || professionalSummary) {
+    // Application nested fields
+    if (professionalSummary !== undefined) {
+      updateData['application.professionalSummary'] = professionalSummary;
     }
 
-    // Languages
-    if (Array.isArray(application.languages)) {
-      updateData['application.languages'] = application.languages;
-    }
-
-    // Education
-    if (application.education) {
-      if (application.education.graduation) {
-        updateData['application.education.graduation'] = {
-          university: application.education.graduation.university?.trim() || '',
-          degree: application.education.graduation.degree?.trim() || '',
-          year: application.education.graduation.year || '',
-        };
-      }
-
-      if (application.education.postGraduation) {
-        updateData['application.education.postGraduation'] = {
-          university: application.education.postGraduation.university?.trim() || '',
-          degree: application.education.postGraduation.degree?.trim() || '',
-          year: application.education.postGraduation.year || '',
-        };
-      }
-    }
-
-    // License
-    if (application.license) {
-      updateData['application.license'] = {
-        licenseNo: application.license.licenseNo?.trim() || '',
-        issuingAuthority: application.license.issuingAuthority?.trim() || '',
-      };
-    }
-
-    // Bank Details
-    if (application.bankDetails) {
-      updateData['application.bankDetails'] = {
-        accountNo: application.bankDetails.accountNo?.trim() || '',
-        ifscCode: application.bankDetails.ifscCode?.trim() || '',
-        branchName: application.bankDetails.branchName?.trim() || '',
-      };
+    if (Array.isArray(languages)) {
+      updateData['application.languages'] = languages;
     }
   }
+  console.log(updateData);
 
   // Update counselor profile
-  const updatedCounselor = await Counselor.findByIdAndUpdate(
-    counselorId,
-    { $set: updateData },
-    {
-      new: true,
-      runValidators: true,
-    }
-  ).select('-password -refreshToken -__v');
+  const counselor = await Counselor.findById(counselorId).select('-password -refreshToken -__v');
 
-  if (!updatedCounselor) {
+  if (counselor) {
     throw new ApiError(404, 'Counselor not found');
   }
 
+  counselor.username = updateData.username;
+  Counselor.gender = updateData.gender;
+  counselor.phone = updateData.phone;
+  counselor.specialization = updateData.specialization;
+  counselor.experienceYears = updateData.experienceYears;
+  counselor.application.professionalSummary = updateData['application.professionalSummary'];
+  counselor.application.languages = updateData['application.languages'];
+  await counselor.save();
   logger.info(`Profile updated successfully for counselor: ${counselorId}`);
-  return res
-    .status(200)
-    .json(new ApiResponse(200, updatedCounselor, 'Profile updated successfully'));
+  return res.status(200).json(new ApiResponse(200, counselor, 'Profile updated successfully'));
 });
 
 /**

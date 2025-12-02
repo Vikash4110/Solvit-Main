@@ -76,12 +76,19 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 204, // correct response for preflight
 };
-// hii
+
 // Apply CORS
 app.use(cors(corsOptions));
 
 // Handle preflight requests explicitly
-// app.options('*', cors(corsOptions));
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    cors(corsOptions)(req, res, next); // apply your CORS middleware
+  } else {
+    next();
+  }
+});
+
 
 app.use((req, res, next) => {
   console.log('Request Origin:', req.headers.origin);

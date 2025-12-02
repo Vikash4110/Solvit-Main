@@ -190,7 +190,7 @@ const SheetContent = React.forwardRef(
               "disabled:pointer-events-none disabled:opacity-50",
               (side === "top" || side === "bottom") && "top-4 right-4",
               side === "left" && "top-4 right-4",
-              side === "right" && "top-4 left-4"
+              side === "right" && "top-4 right-4"
             )}
           >
             <X className="h-5 w-5" />

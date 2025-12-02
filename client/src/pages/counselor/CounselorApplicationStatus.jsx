@@ -50,7 +50,7 @@ const iconVariants = {
 };
 
 const ApplicationStatus = () => {
-  const { counselor } = useCounselorAuth();
+  const { counselor , counselorLogout } = useCounselorAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -83,6 +83,13 @@ const ApplicationStatus = () => {
       </div>
     );
   }
+  const handleLogout = async () => {
+    try {
+      await counselorLogout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const getStatusContent = () => {
     switch (counselor.applicationStatus) {
@@ -212,11 +219,11 @@ const ApplicationStatus = () => {
                 className="space-y-3"
               >
                 <Button
-                  onClick={() => navigate('/counselor/login')}
+                   onClick={handleLogout}
                   className="w-full h-11 sm:h-12 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 dark:from-primary-600 dark:to-primary-500 dark:hover:from-primary-700 dark:hover:to-primary-600 text-white font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
-                  Back to Login
+                  Logout
                 </Button>
 
                 {counselor.applicationStatus === 'rejected' && (

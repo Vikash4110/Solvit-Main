@@ -8,6 +8,9 @@ import { logger } from '../utils/logger.js';
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+dayjs.extend(utc);
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -51,7 +54,8 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     const otpSend = await sendEmail(
       email.trim(),
       'Counselor Email Verification',
-      `Your OTP for email verification is: ${generatedOTP}. It is valid for 10 minutes.`
+      `<p>Your OTP for email verification is: <b>${generatedOTP}</b></p>
+   <p>It is valid for 10 minutes.</p>`
     );
 
     if (!otpSend) {
@@ -515,6 +519,11 @@ const loginCounselor = wrapper(async (req, res) => {
 
     const counselorData = loggedInCounselor.toObject();
     counselorData.applicationStatus = loggedInCounselor.application?.applicationStatus;
+    // 🧠 Fire-and-forget lastLogin update safely
+    Counselor.updateOne(
+      { _id: loggedInCounselor._id },
+      { $set: { lastLogin: dayjs().utc().toDate() } }
+    ).catch((err) => logger.error(`Failed to update lastLogin: ${err.message}`));
 
     return res
       .status(200)

@@ -843,11 +843,7 @@ const CounselorRegister = () => {
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="absolute right-3 top-2.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
                               >
-                                {showPassword ? (
-                                  <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
-                                ) : (
-                                  <Eye className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
-                                )}
+                            
                               </button>
                             </div>
                           </div>
