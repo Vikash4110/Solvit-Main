@@ -15,8 +15,8 @@ import {
   AlertTriangle, // ✅ ADD THIS ICON
 } from 'lucide-react';
 
-const AdminDashboard = () => {
-  const { admin, adminLogout, getAllCounselorApplications, updateApplicationStatus } =
+const ApplicationsPage = () => {
+  const { getAllCounselorApplications, updateApplicationStatus } =
     useAdminAuth();
   const navigate = useNavigate(); // ✅ ADD THIS
 
@@ -295,4 +295,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default ApplicationsPage;

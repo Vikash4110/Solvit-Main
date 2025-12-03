@@ -172,7 +172,7 @@ const processDeleteRoom = async (job) => {
  * Auto Complete the booking,  Called at scheduled autoCompleteTime
  */
 const processAutoCompletebooking = async (job) => {
-  const { bookingId, autoCompleteAt } = job.data;
+  const { bookingId, autoCompleteAt ,slotData } = job.data;
   logger.info(
     `[AutoCompleteBooking] Starting for booking: ${bookingId} (attempt ${job.attemptsMade + 1})`
   );
@@ -191,6 +191,8 @@ const processAutoCompletebooking = async (job) => {
 
     booking.status = 'completed';
     booking.completion.completedAt = autoCompleteAt;
+    booking.payout.amountToPayToCounselor = Number(slotData.basePrice);
+    booking.payout.status = 'pending';
 
     await booking.save({ validateBeforeSave: false });
     logger.info(`[AutoCompleteBooking] Completed: ${bookingId}`);

@@ -55,16 +55,6 @@ const bookingSchema = new mongoose.Schema(
         minlength: 30,
         maxlength: 2000,
       },
-      // preferredResolution: {
-      //   type: String,
-      //   enum: [
-      //     'full_refund',
-      //     'partial_refund',
-      //     'session_rescheduled',
-      //     'replace_counselor',
-      //     'no_action_needed',
-      //   ],
-      // },
       needFollowUpCall: {
         type: Boolean,
         default: false,
@@ -89,43 +79,43 @@ const bookingSchema = new mongoose.Schema(
       resolvedAt: Date,
       resolution: String,
 
-      // activityLogs: [
-      //   {
-      //     action: {
-      //       type: String,
-      //       enum: [
-      //         'submitted',
-      //         'under_review',
-      //         'resolved_valid',
-      //         'resolved_invalid',
-      //         'closed',
-      //         'evidence_added',
-      //       ],
-      //     },
-      //     by: {
-      //       type: mongoose.Schema.Types.ObjectId,
-      //       refPath: 'dispute.activityLogs.role',
-      //     },
-      //     role: {
-      //       type: String,
-      //       enum: ['client', 'counselor', 'admin'],
-      //     },
-      //     comment: String,
-      //     timestamp: {
-      //       type: Date,
-      //       default: Date.now,
-      //     },
-      //     ipAddress: String,
-      //     userAgent: String,
-      //   },
-      // ],
+      activityLogs: [
+        {
+          action: {
+            type: String,
+            enum: [
+              'submitted',
+              'under_review',
+              'resolved_valid',
+              'resolved_invalid',
+              'closed',
+              'evidence_added',
+            ],
+          },
+          by: {
+            type: mongoose.Schema.Types.ObjectId,
+            refPath: 'dispute.activityLogs.role',
+          },
+          role: {
+            type: String,
+            enum: ['client', 'counselor', 'admin'],
+          },
+          comment: String,
+          timestamp: {
+            type: Date,
+            default: Date.now,
+          },
+          ipAddress: String,
+          userAgent: String,
+        },
+      ],
     },
     payout: {
-      amount: Number,
+      amountToPayToCounselor: Number,
+      amountToRefundToClient: Number,
       status: {
         type: String,
-        enum: ['pending', 'held', 'released', 'refunded'],
-        default: 'pending',
+        enum: ['pending', 'released', 'refunded'],
       },
       releasedAt: Date,
       refundedAt: Date,
@@ -137,17 +127,6 @@ const bookingSchema = new mongoose.Schema(
       ref: 'Payment',
       default: '',
     },
-    // refund : {
-    //   refundIsuued : {
-    //     type: Boolean,
-    //     default : "false"
-    //   },
-    //   refundId :{
-    //     type: mongoose.Schema.Types.ObjectId,
-    //         ref: "Refund",
-    //         default :""
-    //   }
-    // }
   },
   {
     timestamps: true,

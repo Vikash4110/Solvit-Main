@@ -118,8 +118,8 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
 
   // Update counselor profile
   const counselor = await Counselor.findById(counselorId).select('-password -refreshToken -__v');
-
-  if (counselor) {
+  console.log(counselor);
+  if (!counselor) {
     throw new ApiError(404, 'Counselor not found');
   }
 

@@ -146,6 +146,8 @@ const CounselorApplication = () => {
       'Graduation Year': formData.education.graduation.year,
       Experience: formData.experience?.trim(),
       'Professional Summary': formData.professionalSummary?.trim(),
+      'License Number' : formData?.license?.licenseNo?.trim(),
+      'License Issuing Authority' : formData?.license?.issuingAuthority?.trim(),
       Languages: formData.languages.length > 0,
       'Bank Account Number': formData.bankDetails.accountNo?.trim(),
       'IFSC Code': formData.bankDetails.ifscCode?.trim(),
@@ -153,6 +155,7 @@ const CounselorApplication = () => {
       Resume: files.resume,
       'Degree Certificate': files.degreeCertificate,
       'Government ID': files.governmentId,
+      'License Certificate' : files.licenseCertificate
     };
 
     const missingFields = Object.entries(requiredFields)
@@ -243,6 +246,9 @@ const CounselorApplication = () => {
     if (files.resume) completed++;
     if (files.degreeCertificate) completed++;
     if (files.governmentId) completed++;
+    if (files.licenseCertificate) completed++
+    if(formData.license.licenseNo) completed++
+    if(formData.license.issuingAuthority) completed++ 
 
     return Math.round((completed / total) * 100);
   };
@@ -597,7 +603,7 @@ const CounselorApplication = () => {
             </Card>
           </motion.div>
 
-          {/* License (Optional) */}
+          {/* License  */}
           <motion.div
             variants={cardVariants}
             initial="initial"
@@ -612,8 +618,7 @@ const CounselorApplication = () => {
                   </div>
                   <div>
                     <CardTitle className="text-lg sm:text-xl text-neutral-900 dark:text-white">
-                      License{' '}
-                      <span className="text-sm text-neutral-500 font-normal">(Optional)</span>
+                      License *
                     </CardTitle>
                     <CardDescription className="text-xs sm:text-sm">
                       Professional license information
@@ -625,13 +630,14 @@ const CounselorApplication = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="licenseNo" className="text-xs sm:text-sm">
-                      License Number
+                      License Number *
                     </Label>
                     <Input
                       id="licenseNo"
                       name="licenseNo"
                       type="text"
                       placeholder="e.g., LPC-12345"
+                      required
                       value={formData.license.licenseNo}
                       onChange={(e) => handleInputChange(e, 'license')}
                       className="h-10 sm:h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700"
@@ -639,12 +645,13 @@ const CounselorApplication = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="issuingAuthority" className="text-xs sm:text-sm">
-                      Issuing Authority
+                      Issuing Authority *
                     </Label>
                     <Input
                       id="issuingAuthority"
                       name="issuingAuthority"
                       type="text"
+                      required
                       placeholder="e.g., State Board of Psychology"
                       value={formData.license.issuingAuthority}
                       onChange={(e) => handleInputChange(e, 'license')}
@@ -887,11 +894,11 @@ const CounselorApplication = () => {
                     </div>
                   </div>
 
-                  {/* License Certificate (Optional) */}
+                  {/* License Certificate  */}
                   <div className="space-y-2">
                     <Label htmlFor="licenseCertificate" className="text-xs sm:text-sm font-medium">
-                      License Certificate (PDF){' '}
-                      <span className="text-neutral-500 font-normal">(Optional)</span>
+                      License Certificate (PDF) *
+                      
                     </Label>
                     <div className="relative">
                       <input
@@ -900,6 +907,7 @@ const CounselorApplication = () => {
                         type="file"
                         accept=".pdf,application/pdf"
                         onChange={handleFileChange}
+                        required
                         className="sr-only"
                       />
                       <Label

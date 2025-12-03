@@ -23,7 +23,7 @@ import Login from './pages/client/ClientLogin';
 import Register from './pages/client/ClientRegister';
 import ServicePage from './pages/general/ServicePage';
 import ClientDashboard from './pages/client/ClientDashboard';
-import ClientDashboardDisputeForm from './components/client/ClientDashboard/ClientDashboardDisputeForm'
+import ClientDashboardDisputeForm from './components/client/ClientDashboard/ClientDashboardDisputeForm';
 import BookCounselorCalendar from './pages/client/bookCounselor';
 import BrowseCounselor from './pages/client/browseCounselor';
 import Blogs from './pages/general/Blogs';
@@ -35,6 +35,12 @@ import AdminProtectedRoute from './pages/admin/AdminProtectedRoute';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ApplicationDetail from './pages/admin/ApplicationDetail';
+import AdminDisputeManagement from './components/admin/AdminDisputeManagement';
+import AdminLayout from './components/admin/AdminLayout';
+import ApplicationsPage from './components/admin/ApplicationsPage';
+import AdminClientsManagement from './components/admin/AdminClientsManagement';
+import AdminCounselorsManagement from './components/admin/AdminCounselorsManagement';
+import AdminPaymentsManagement from './components/admin/AdminPaymentsManagement';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 
@@ -126,22 +132,34 @@ function App() {
 
               {/* 👨‍💼 ADMIN ROUTES */}
               <Route path="/admin/login" element={<AdminLogin />} />
+              {/* Admin Routes (With sidebar) */}
               <Route
-                path="/admin/dashboard"
+                path="/admin"
                 element={
                   <AdminProtectedRoute>
-                    <AdminDashboard />
+                    <AdminLayout />
                   </AdminProtectedRoute>
                 }
-              />
-              <Route
-                path="/admin/application/:counselorId"
-                element={
-                  <AdminProtectedRoute>
-                    <ApplicationDetail />
-                  </AdminProtectedRoute>
-                }
-              />
+              >
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="disputes" element={<AdminDisputeManagement />} />
+                <Route path="applications" element={<ApplicationsPage />} />
+                <Route path="application/:counselorId" element={<ApplicationDetail />} />
+                <Route path="clients" element={<AdminClientsManagement />} />
+                <Route path="counselors" element={<AdminCounselorsManagement />} />
+                <Route path="payments" element={<AdminPaymentsManagement />} />
+
+                {/* <Route path="counselors" element={<CounselorsPage />} />
+                <Route path="sessions" element={<SessionsPage />} />
+                <Route path="payments" element={<PaymentsPage />} />
+                <Route path="payouts" element={<PayoutsPage />} />
+                <Route path="messages" element={<MessagesPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="security" element={<SecurityPage />} />
+                <Route path="analytics" element={<AnalyticsPage />} /> */}
+              </Route>
 
               {/* ❌ 404 FALLBACK */}
               <Route path="*" element={<Navigate to="/" replace />} />

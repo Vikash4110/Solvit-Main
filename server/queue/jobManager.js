@@ -131,7 +131,7 @@ export const cancelRoomDeletion = async (roomId) => {
 /**
  * Schedule auto complete the booking
  */
-export const scheduleAutoCompleteBooking = async (bookingId, autoCompleteAt) => {
+export const scheduleAutoCompleteBooking = async (bookingId, autoCompleteAt, slotData) => {
   try {
     const targetTime = dayjs(autoCompleteAt).tz(timeZone);
     const now = dayjs().tz(timeZone);
@@ -145,6 +145,7 @@ export const scheduleAutoCompleteBooking = async (bookingId, autoCompleteAt) => 
       {
         bookingId,
         autoCompleteAt,
+        slotData,
       },
       delay,
       {
@@ -168,17 +169,6 @@ export const scheduleAutoCompleteBooking = async (bookingId, autoCompleteAt) => 
 export const cancelAutoCompleteBooking = async (bookingId) => {
   try {
     const jobId = `auto-complete-booking-${bookingId}`;
-    console.log('*****************************************');
-    console.log('*****************************************');
-    console.log('*****************************************');
-    console.log('*****************************************');
-    console.log('*****************************************');
-    console.log(jobId);
-    console.log('*****************************************');
-    console.log('*****************************************');
-    console.log('*****************************************');
-    console.log('*****************************************');
-    console.log('*****************************************');
 
     // ============ OPTIMIZATION: Wrap getJob in try-catch ============
     // SAVES: Prevents unnecessary error logging on missing jobs

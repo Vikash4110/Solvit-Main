@@ -82,7 +82,9 @@ const paymentVerification = wrapper(async (req, res) => {
     throw new ApiError(400, 'Missing required payment verification data');
   }
 
-  // Step 1: Verify Signature
+  // ==========================================
+  // STEP 1: VERIFY RAZORPAY SIGNATURE
+  // ==========================================
   const body = `${razorpay_order_id}|${razorpay_payment_id}`;
   const expectedSignature = crypto
     .createHmac('sha256', process.env.RAZORPAY_API_SECRET)
@@ -92,22 +94,122 @@ const paymentVerification = wrapper(async (req, res) => {
   const isAuthentic = expectedSignature === razorpay_signature;
 
   if (!isAuthentic) {
-    throw new ApiError(400, 'Invalid payment signature');
+    throw new ApiError(400, 'Invalid payment signature - Payment verification failed');
   }
 
-  // Step 2: Get required data
-  const [clientData, slotData, paymentData] = await Promise.all([
+  // ==========================================
+  // STEP 2: FETCH COMPLETE PAYMENT DATA FROM RAZORPAY
+  // ==========================================
+  let razorpayPayment;
+
+  try {
+    razorpayPayment = await instance.payments.fetch(razorpay_payment_id);
+  } catch (error) {
+    logger.error('Razorpay payment fetch error:', error);
+    throw new ApiError(500, 'Failed to fetch payment details from Razorpay');
+  }
+
+  if (!razorpayPayment) {
+    throw new ApiError(404, 'Payment not found in Razorpay');
+  }
+
+  // Check if payment is actually captured
+  if (razorpayPayment.status !== 'captured') {
+    throw new ApiError(400, `Payment status is ${razorpayPayment.status}, not captured`);
+  }
+
+  // ==========================================
+  // STEP 3: GET PLATFORM DATA
+  // ==========================================
+  const [clientData, slotData] = await Promise.all([
     Client.findById(clientId).select('-password'),
     GeneratedSlot.findById(slotId),
-    instance.payments.fetch(razorpay_payment_id),
   ]);
 
   if (!clientData) throw new ApiError(404, 'Client not found');
   if (!slotData) throw new ApiError(404, 'Slot not found');
-  if (!paymentData) throw new ApiError(404, 'Payment data not found');
+  if (slotData.status !== 'available') {
+    throw new ApiError(400, 'Slot is no longer available');
+  }
 
-  const counselorData = await Counselor.findById(slotData?.counselorId).select('-password');
+  const counselorData = await Counselor.findById(slotData.counselorId).select('-password');
   if (!counselorData) throw new ApiError(404, 'Counselor not found');
+
+  // ==========================================
+  // STEP 4: SAVE COMPLETE PAYMENT DATA
+  // ==========================================
+  const paymentData = {
+    // Razorpay IDs
+    razorpay_payment_id,
+    razorpay_order_id,
+    razorpay_signature,
+
+    // Platform references
+    clientId,
+    slotId,
+
+    // Amount details (convert paise to rupees)
+    amount: razorpayPayment.amount / 100,
+    currency: razorpayPayment.currency,
+
+    // Status & method
+    status: razorpayPayment.status,
+    method: razorpayPayment.method,
+    captured: razorpayPayment.captured,
+    international: razorpayPayment.international,
+
+    // Payment method specific details
+    bank: razorpayPayment.bank || null,
+    wallet: razorpayPayment.wallet || null,
+    vpa: razorpayPayment.vpa || null,
+    card_id: razorpayPayment.card_id || null,
+
+    // UPI specific details
+    upiDetails: razorpayPayment.upi
+      ? {
+          payer_account_type: razorpayPayment.upi.payer_account_type,
+          flow: razorpayPayment.upi.flow,
+        }
+      : undefined,
+
+    // Customer contact
+    email: razorpayPayment.email || clientData.email,
+    contact: razorpayPayment.contact || clientData.phone,
+    customer_id: razorpayPayment.customer_id || null,
+
+    // Fees (convert paise to rupees)
+    fee: razorpayPayment.fee ? razorpayPayment.fee / 100 : 0,
+    tax: razorpayPayment.tax ? razorpayPayment.tax / 100 : 0,
+
+    // Refund details
+    amount_refunded: razorpayPayment.amount_refunded / 100,
+    refund_status: razorpayPayment.refund_status,
+
+    // Transaction details
+    description: razorpayPayment.description,
+    acquirer_data: razorpayPayment.acquirer_data || {},
+
+    // Error details (should be null for successful payments)
+    error_code: razorpayPayment.error_code,
+    error_description: razorpayPayment.error_description,
+    error_source: razorpayPayment.error_source,
+    error_step: razorpayPayment.error_step,
+    error_reason: razorpayPayment.error_reason,
+
+    // Additional
+    notes: razorpayPayment.notes || {},
+    razorpay_created_at: razorpayPayment.created_at,
+  };
+
+  const payment = await Payment.create(paymentData);
+
+  logger.info(`Payment captured successfully:`, {
+    paymentId: payment._id,
+    razorpay_payment_id,
+    amount: payment.amount,
+    method: payment.method,
+    clientId,
+  });
 
   // // Step 3: Generate invoice
   // const invoiceUrl = await generateInvoice({
@@ -138,22 +240,12 @@ const paymentVerification = wrapper(async (req, res) => {
   //   refundPolicy: 'Sessions once booked are non-refundable.',
   // });
 
-  // Step 4: Save payment info
-  const payment = await Payment.create({
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature,
-    clientId,
-    slotId,
-    invoice: 'sss',
-  });
-
   // Step 5: Process booking with VideoSDK integration
   const bookingResult = await processBookingWithVideoSDK(
     clientId,
     slotId,
     payment._id,
-    slotData.totalPriceAfterPlatformFee,
+    payment.amount,
     clientData,
     counselorData,
     slotData
@@ -163,13 +255,24 @@ const paymentVerification = wrapper(async (req, res) => {
   if (!bookingResult.success) {
     throw new ApiError(400, bookingResult.message);
   }
+  // Update payment with bookingId
+  payment.bookingId = bookingResult.booking._id;
+  await payment.save({ validateBeforeSave: false });
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
+        success: true,
         booking: bookingResult.booking,
-        payment: payment._id,
+        payment: {
+          _id: payment._id,
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status,
+          method: payment.method,
+          razorpay_payment_id: payment.razorpay_payment_id,
+        },
         sessionPageUrl: bookingResult.booking.sessionPageUrl,
       },
       'Payment verified and booking completed successfully'
@@ -182,7 +285,7 @@ const processBookingWithVideoSDK = async (
   clientId,
   slotId,
   paymentId,
-  totalPriceAfterPlatformFee,
+  paidAmount,
   clientData,
   counselorData,
   slotData,
@@ -212,11 +315,6 @@ const processBookingWithVideoSDK = async (
       status: 'confirmed',
       completion: {
         autoCompleteAt: slotEndTime.clone().add(24, 'hours').utc().toDate(),
-      },
-      payout: {
-        amount: totalPriceAfterPlatformFee, // 80% to counselor
-        // releaseOn: slotEndTime.clone().add(, 'hours').utc().toDate(),
-        status: 'pending',
       },
       paymentId,
     });
@@ -250,7 +348,8 @@ const processBookingWithVideoSDK = async (
     //add auto complete booking job
     const autocompleteBookingJob = await scheduleAutoCompleteBooking(
       booking._id,
-      booking.completion.autoCompleteAt
+      booking.completion.autoCompleteAt,
+      slotData
     );
 
     // Step 6: Update slot status
@@ -268,7 +367,7 @@ const processBookingWithVideoSDK = async (
       booking,
       sessionDate,
       sessionTime,
-      totalPriceAfterPlatformFee
+      paidAmount
     );
 
     const counselorEmailHtml = generateCounselorEmailTemplate(
@@ -296,7 +395,7 @@ const processBookingWithVideoSDK = async (
       booking: {
         _id: booking._id,
         sessionId: session._id,
-        totalPriceAfterPlatformFee,
+        paidAmount,
         sessionDate,
         sessionTime,
         duration: 45,
@@ -313,51 +412,7 @@ const processBookingWithVideoSDK = async (
   }
 };
 
-// Update session attendance (handles detailed tracking)
-const updateSessionAttendance = wrapper(async (req, res) => {
-  const { bookingId } = req.params;
-  const { userId, eventType, timestamp, deviceInfo } = req.body;
 
-  if (!userId || !eventType) {
-    throw new ApiError(400, 'UserId and eventType are required');
-  }
-
-  const booking = await Booking.findOne({
-    _id: bookingId,
-    $or: [{ clientId: userId }, { counselorId: userId }],
-  });
-
-  if (!booking) {
-    throw new ApiError(404, 'Booking not found or not accessible');
-  }
-
-  const session = await Session.findOne({ booking: bookingId });
-  if (!session) {
-    throw new ApiError(404, 'Session not found');
-  }
-
-  const currentTime = new Date(timestamp) || new Date();
-  const isClient = booking.clientId.toString() === userId.toString();
-
-  // Handle different event types for detailed session tracking
-  switch (eventType) {
-    case 'participant-joined':
-      await handleParticipantJoined(session, booking, userId, currentTime, deviceInfo, isClient);
-      break;
-
-    case 'participant-left':
-      await handleParticipantLeft(session, booking, userId, currentTime, isClient);
-      break;
-
-    case 'heartbeat':
-      // Update last activity
-      break;
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { success: true }, 'Session attendance updated successfully'));
-});
 
 // Get booking details
 const getBookingDetails = wrapper(async (req, res) => {
@@ -445,7 +500,7 @@ const generateClientEmailTemplate = (
   booking,
   sessionDate,
   sessionTime,
-  totalPrice
+  paidAmount
 ) => {
   return `
     <!DOCTYPE html>
@@ -470,7 +525,7 @@ const generateClientEmailTemplate = (
             <p><span class="font-medium">Date:</span> ${sessionDate}</p>
             <p><span class="font-medium">Time:</span> ${sessionTime}</p>
             <p><span class="font-medium">Duration:</span> 45 minutes</p>
-            <p><span class="font-medium">Amount Paid:</span> ₹${totalPrice}</p>
+            <p><span class="font-medium">Amount Paid:</span> ₹${paidAmount}</p>
             <p><span class="font-medium">Booking ID:</span> ${booking._id}</p>
           </div>
         </div>
@@ -556,4 +611,4 @@ const generateCounselorEmailTemplate = (
   `;
 };
 
-export { checkout, paymentVerification, getKey, updateSessionAttendance, getBookingDetails };
+export { checkout, paymentVerification, getKey, getBookingDetails };

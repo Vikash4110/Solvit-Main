@@ -1,4 +1,5 @@
 // controllers/dispute.controller.js
+
 import { Booking } from '../models/booking-model.js';
 import { raiseDisputeSchema } from '../validators/dispute.validator.js';
 import { uploadEvidenceToCloudinary } from '../utils/cloudinary.js';
@@ -11,31 +12,34 @@ import utc from 'dayjs/plugin/utc.js';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 import { timeZone } from '../constants.js';
+
 /**
- * @desc    Raise a dispute/issue for a booking
- * @route   POST /api/disputes/raise
- * @access  Private (Client only)
+ * @desc Raise a dispute/issue for a booking
+ * @route POST /api/disputes/raise
+ * @access Private (Client only)
  */
 export const raiseDispute = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  // ✅ FIX: Don't use transactions for file uploads
+  // Transactions have 60s timeout - file uploads can take longer
 
   try {
     const clientId = req.verifiedClientId._id;
     const ipAddress = req.ip || req.connection.remoteAddress;
     const userAgent = req.headers['user-agent'];
 
+    console.log(`📝 Dispute request from client: ${clientId}`);
+    console.log(`📎 Files received: ${req.files?.length || 0}`);
+
     // ✅ STEP 1: PARSE AND VALIDATE INPUT WITH ZOD
     let validatedData;
 
     try {
-      // Convert string values to proper types if needed
       const bodyData = {
         ...req.body,
         needFollowUpCall:
           req.body.needFollowUpCall === 'true' || req.body.needFollowUpCall === true,
       };
-      console.log(bodyData);
+      console.log('📥 Request body:', bodyData);
 
       validatedData = raiseDisputeSchema.parse(bodyData);
     } catch (error) {
@@ -44,9 +48,6 @@ export const raiseDispute = async (req, res) => {
           field: err.path.join('.'),
           message: err.message,
         }));
-
-        await session.abortTransaction();
-        session.endSession();
 
         return res.status(400).json({
           success: false,
@@ -60,11 +61,9 @@ export const raiseDispute = async (req, res) => {
     const { bookingId, issueType, description, needFollowUpCall } = validatedData;
 
     // ✅ STEP 2: VERIFY BOOKING EXISTS & BELONGS TO CLIENT
-    const booking = await Booking.findById(bookingId).session(session);
+    const booking = await Booking.findById(bookingId);
 
     if (!booking) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(404).json({
         success: false,
         message: 'Booking not found',
@@ -72,8 +71,6 @@ export const raiseDispute = async (req, res) => {
     }
 
     if (booking.clientId.toString() !== clientId.toString()) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to raise a dispute for this booking',
@@ -82,8 +79,6 @@ export const raiseDispute = async (req, res) => {
 
     // ✅ STEP 3: PREVENT DUPLICATE COMPLAINTS
     if (booking.dispute.isDisputed) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({
         success: false,
         message: 'A complaint has already been filed for this booking',
@@ -95,8 +90,6 @@ export const raiseDispute = async (req, res) => {
     const disputeDeadline = dayjs(booking.completion.autoCompleteAt).tz(timeZone);
 
     if (now > disputeDeadline) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({
         success: false,
         message:
@@ -104,130 +97,141 @@ export const raiseDispute = async (req, res) => {
       });
     }
 
-    // ✅ STEP 5: UPLOAD EVIDENCE FILES TO CLOUDINARY
+    // ✅ STEP 5: UPLOAD EVIDENCE FILES TO CLOUDINARY (PARALLEL UPLOAD)
     const evidenceFiles = [];
 
     if (req.files && req.files.length > 0) {
+      console.log(`📤 Starting upload of ${req.files.length} files...`);
+
       if (req.files.length > 5) {
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({
           success: false,
           message: 'Maximum 5 files allowed',
         });
       }
 
+      // ✅ Check individual file sizes
       for (const file of req.files) {
-        try {
-          const uploadResult = await uploadEvidenceToCloudinary(
-            file.buffer,
-            file.originalname,
-            bookingId
-          );
-
-          evidenceFiles.push({
-            fileUrl: uploadResult.fileUrl,
-            fileName: uploadResult.fileName,
-            fileType: uploadResult.fileType,
-            fileSize: uploadResult.fileSize,
-          });
-        } catch (uploadError) {
-          await session.abortTransaction();
-          session.endSession();
-          return res.status(500).json({
+        if (file.size > 10 * 1024 * 1024) {
+          return res.status(400).json({
             success: false,
-            message: 'File upload failed',
-            error: uploadError.message,
+            message: `File "${file.originalname}" exceeds 10MB limit`,
           });
         }
       }
+
+      try {
+        // Upload files in parallel
+        const uploadPromises = req.files.map((file, index) => {
+          console.log(`📤 [${index + 1}/${req.files.length}] Uploading: ${file.originalname}`);
+          return uploadEvidenceToCloudinary(file.buffer, file.originalname, bookingId)
+            .then((uploadResult) => {
+              console.log(`✅ [${index + 1}/${req.files.length}] Uploaded: ${file.originalname}`);
+              return {
+                fileUrl: uploadResult.fileUrl,
+                fileName: uploadResult.fileName,
+                fileType: uploadResult.fileType,
+                fileSize: uploadResult.fileSize,
+              };
+            })
+            .catch((error) => {
+              console.error(`❌ Failed to upload ${file.originalname}:`, error);
+              throw new Error(`Failed to upload ${file.originalname}: ${error.message}`);
+            });
+        });
+
+        const uploadedFiles = await Promise.all(uploadPromises);
+        evidenceFiles.push(...uploadedFiles);
+
+        console.log(`✅ Successfully uploaded ${evidenceFiles.length} files`);
+      } catch (uploadError) {
+        console.error('❌ File upload error:', uploadError);
+        return res.status(500).json({
+          success: false,
+          message: 'File upload failed',
+          error: uploadError.message,
+        });
+      }
     }
 
-    // ✅ STEP 6: UPDATE BOOKING WITH DISPUTE
-    booking.dispute = {
-      isDisputed: true,
-      issueType,
-      description,
-      needFollowUpCall,
-      evidence: evidenceFiles,
-      status: 'under_review',
-      disputedAt: dayjs().utc().toDate(),
-      activityLogs: [
-        {
-          action: 'submitted',
-          by: clientId,
-          role: 'client',
-          comment: 'Complaint submitted by client',
-          timestamp: dayjs().utc().toDate(),
-          ipAddress,
-          userAgent,
-        },
-      ],
-    };
+    // ✅ STEP 6: UPDATE BOOKING WITH DISPUTE (Now use transaction)
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    booking.status = 'disputed';
-    booking.payout.status = 'held';
-
-    await booking.save({ session, validateBeforeSave: false });
-
-    // ✅ STEP 7: CANCEL AUTO-COMPLETE JOB (IF EXISTS)
     try {
-      await cancelAutoCompleteBooking(bookingId);
-    } catch (jobError) {
-      console.error('Job cancellation error:', jobError);
-      // Continue - not critical
+      booking.dispute = {
+        isDisputed: true,
+        issueType,
+        description,
+        needFollowUpCall,
+        evidence: evidenceFiles,
+        status: 'under_review',
+        disputedAt: dayjs().utc().toDate(),
+        activityLogs: [
+          {
+            action: 'submitted',
+            by: clientId,
+            role: 'client',
+            comment: 'Complaint submitted by client',
+            timestamp: dayjs().utc().toDate(),
+            ipAddress,
+            userAgent,
+          },
+        ],
+      };
+
+      booking.status = 'disputed';
+
+      await booking.save({ session, validateBeforeSave: false });
+
+      // ✅ STEP 7: CANCEL AUTO-COMPLETE JOB
+      try {
+        await cancelAutoCompleteBooking(bookingId);
+        console.log(`✅ Cancelled auto-complete job for booking ${bookingId}`);
+      } catch (jobError) {
+        console.error('⚠️ Job cancellation error:', jobError);
+      }
+
+      await session.commitTransaction();
+      session.endSession();
+
+      console.log(`✅ Dispute saved successfully for booking ${bookingId}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'Your complaint has been submitted successfully. Our team will review it shortly.',
+        data: {
+          bookingId: booking._id,
+          disputeStatus: booking.dispute.status,
+          disputedAt: booking.dispute.disputedAt,
+          evidenceCount: evidenceFiles.length,
+        },
+      });
+    } catch (dbError) {
+      await session.abortTransaction();
+      session.endSession();
+      throw dbError;
     }
-
-    // ✅ STEP 8: COMMIT TRANSACTION
-    await session.commitTransaction();
-    session.endSession();
-
-    // ✅ STEP 9: SEND NOTIFICATIONS (Async - don't wait)
-    // TODO: Implement notification service
-    // notifyAdmin(booking);
-    // notifyCounselor(booking);
-    // notifyClient(booking);
-
-    res.status(200).json({
-      success: true,
-      message: 'Your complaint has been submitted successfully. Our team will review it shortly.',
-      data: {
-        bookingId: booking._id,
-        disputeStatus: booking.dispute.status,
-        disputedAt: booking.dispute.disputedAt,
-      },
-    });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
-    console.error('Raise dispute error:', error);
+    console.error('❌ Raise dispute error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to submit complaint',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
     });
   }
 };
 
-
-
-
-
-
-
-
 /**
- * @desc    Get dispute status for a booking
- * @route   GET /api/disputes/status/:bookingId
- * @access  Private (Client only)
+ * @desc Get dispute status for a booking
+ * @route GET /api/disputes/status/:bookingId
+ * @access Private (Client only)
  */
 export const getDisputeStatus = async (req, res) => {
   try {
     const { bookingId } = req.params;
-    const clientId = req.user._id;
+    const clientId = req.verifiedClientId._id; // ✅ FIXED
 
-    // Validate bookingId format
     if (!mongoose.Types.ObjectId.isValid(bookingId)) {
       return res.status(400).json({
         success: false,
@@ -259,10 +263,11 @@ export const getDisputeStatus = async (req, res) => {
         disputedAt: booking.dispute.disputedAt,
         resolvedAt: booking.dispute.resolvedAt,
         resolution: booking.dispute.resolution,
+        evidenceCount: booking.dispute.evidence?.length || 0,
       },
     });
   } catch (error) {
-    console.error('Get dispute status error:', error);
+    console.error('❌ Get dispute status error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch dispute status',

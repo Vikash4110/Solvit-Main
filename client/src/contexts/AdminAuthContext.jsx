@@ -142,6 +142,278 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ ==================== NEW DISPUTE MANAGEMENT FUNCTIONS ====================
+
+  /**
+   * Get all disputes with filters
+   * @param {string} status - Filter by status (under_review, resolved_valid, resolved_invalid, closed)
+   * @param {number} page - Page number
+   * @param {number} limit - Items per page
+   * @param {string} search - Search term
+   */
+  const getAllDisputes = async (status = '', page = 1, limit = 20, search = '') => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+
+      let url = `${API_BASE_URL}/admin/disputes?page=${page}&limit=${limit}`;
+      if (status) url += `&status=${status}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+
+      const response = await axiosInstance.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return {
+        success: true,
+        data: response.data.data,
+        stats: response.data.stats,
+        pagination: response.data.pagination,
+      };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch disputes');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Get single dispute detail
+   * @param {string} bookingId - Booking ID
+   */
+  const getDisputeDetail = async (bookingId) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.get(`${API_BASE_URL}/admin/disputes/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch dispute details');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Update dispute status
+   * @param {string} bookingId - Booking ID
+   * @param {string} status - New status
+   * @param {string} resolution - Resolution comment
+   * @param {number} refundAmount - Refund amount (if resolved_valid)
+   * @param {number} payoutAmount - Payout amount (if resolved_invalid)
+   */
+  const updateDisputeStatus = async (
+    bookingId,
+    status,
+    resolution,
+    refundAmount = 0,
+    payoutAmount = 0
+  ) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.put(
+        `${API_BASE_URL}/admin/disputes/${bookingId}/status`,
+        { status, resolution, refundAmount, payoutAmount },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to update dispute status');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Add admin note to dispute
+   * @param {string} bookingId - Booking ID
+   * @param {string} note - Admin note
+   */
+  const addDisputeNote = async (bookingId, note) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.post(
+        `${API_BASE_URL}/admin/disputes/${bookingId}/note`,
+        { note },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to add note');
+      return { success: false, error: message };
+    }
+  };
+
+  // ✅ ==================== NEW CLIENT MANAGEMENT FUNCTIONS ====================
+
+  const getAllClients = async (page = 1, limit = 20, searchTerm = '', status = '') => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      let url = `${API_BASE_URL}${API_ENDPOINTS.ADMINCLIENTS}?page=${page}&limit=${limit}`;
+
+      if (searchTerm) url += `&search=${searchTerm}`;
+      if (status) url += `&status=${status}`;
+
+      const response = await axiosInstance.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch clients');
+      return { success: false, error: message };
+    }
+  };
+
+  const getClientDetails = async (clientId) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${API_ENDPOINTS.ADMINCLIENTS}/${clientId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch client details');
+      return { success: false, error: message };
+    }
+  };
+
+  const toggleClientBlock = async (clientId, block) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.patch(
+        `${API_BASE_URL}${API_ENDPOINTS.ADMINCLIENTS}/${clientId}/block`,
+        { block },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to update client status');
+      return { success: false, error: message };
+    }
+  };
+
+  const getAllCounselors = async (page = 1, limit = 20, searchTerm = '', status = '') => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      let url = `${API_BASE_URL}${API_ENDPOINTS.ADMINCOUNSELORS}?page=${page}&limit=${limit}`;
+
+      if (searchTerm) url += `&search=${searchTerm}`;
+      if (status) url += `&status=${status}`;
+
+      const response = await axiosInstance.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch counselors');
+      return { success: false, error: message };
+    }
+  };
+
+  const getCounselorDetails = async (counselorId) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch counselor details');
+      return { success: false, error: message };
+    }
+  };
+
+  const toggleCounselorBlock = async (counselorId, block) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.patch(
+        `${API_BASE_URL}${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}/block`,
+        { block },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to update counselor status');
+      return { success: false, error: message };
+    }
+  };
+
+  //Payments
+  const getAllPayments = async (
+    page = 1,
+    limit = 20,
+    searchTerm = '',
+    dateFilter = 'all',
+    method = 'all_methods'
+  ) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      let url = `${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}?page=${page}&limit=${limit}`;
+
+      if (searchTerm) url += `&search=${searchTerm}`;
+      if (dateFilter && dateFilter !== 'all') url += `&dateFilter=${dateFilter}`;
+
+      // ✅ Fixed: Only add method filter if it's not 'all_methods'
+      if (method && method !== 'all_methods') url += `&method=${method}`;
+
+      const response = await axiosInstance.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch payments');
+      return { success: false, error: message };
+    }
+  };
+
+  const getPaymentDetails = async (paymentId) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}/${paymentId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch payment details');
+      return { success: false, error: message };
+    }
+  };
+
+  const getPaymentAnalytics = async (period = '30days') => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}/analytics?period=${period}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return { success: true, data: response.data.analytics };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch payment analytics');
+      return { success: false, error: message };
+    }
+  };
+
   const value = {
     admin,
     adminLoading,
@@ -150,6 +422,19 @@ export const AdminAuthProvider = ({ children }) => {
     updateApplicationStatus,
     getAllCounselorApplications,
     getCounselorApplication,
+    getAllDisputes,
+    getDisputeDetail,
+    updateDisputeStatus,
+    addDisputeNote,
+    getAllClients, // ✅ ADD
+    getClientDetails, // ✅ ADD
+    toggleClientBlock,
+    getAllCounselors, // ✅ ADD
+    getCounselorDetails, // ✅ ADD
+    toggleCounselorBlock,
+    getAllPayments, // ✅ ADD
+    getPaymentDetails,
+    getPaymentAnalytics,
   };
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

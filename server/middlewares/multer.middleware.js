@@ -1,4 +1,5 @@
-// middleware/multer.js (or wherever your multer config is)
+// middleware/multer.middleware.js
+
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -10,10 +11,8 @@ if (!fs.existsSync(tempDir)) {
 }
 
 // ====================================
-// EXISTING CONFIGURATIONS
+// EXISTING CONFIGURATIONS (Keep as is)
 // ====================================
-
-// Configure storage for general files
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, tempDir);
@@ -25,7 +24,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// Configure storage for profile pictures (images only)
 const profilePictureStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, tempDir);
@@ -37,7 +35,6 @@ const profilePictureStorage = multer.diskStorage({
   },
 });
 
-// File filter for PDFs (application documents)
 const pdfFileFilter = (req, file, cb) => {
   if (file.mimetype === 'application/pdf') {
     cb(null, true);
@@ -46,7 +43,6 @@ const pdfFileFilter = (req, file, cb) => {
   }
 };
 
-// File filter for images (profile pictures)
 const imageFileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
@@ -56,29 +52,39 @@ const imageFileFilter = (req, file, cb) => {
 };
 
 // ====================================
-// NEW: EVIDENCE FILE FILTER (For Dispute System)
+// FIXED: EVIDENCE FILE FILTER
 // ====================================
 const evidenceFileFilter = (req, file, cb) => {
+  console.log(`🔍 Checking file: ${file.originalname} | MIME: ${file.mimetype}`);
+
   const allowedMimeTypes = [
     'image/jpeg',
-    'image/jpg',
+    'image/jpg', 
     'image/png',
     'application/pdf',
     'video/mp4',
-    'audio/mpeg',
-    'audio/mp3',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+    'audio/mpeg', // ✅ MP3 files
+    'audio/mp3',  // ✅ Alternative MP3 MIME
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+    'application/octet-stream', // ✅ ADD: For files with generic MIME type
   ];
 
   const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.mp3', '.docx'];
-
   const fileExtension = path.extname(file.originalname).toLowerCase();
 
-  if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(fileExtension)) {
+  // Check both MIME type AND file extension
+  if (allowedExtensions.includes(fileExtension)) {
+    console.log(`✅ File accepted: ${file.originalname}`);
+    cb(null, true);
+  } else if (allowedMimeTypes.includes(file.mimetype)) {
+    console.log(`✅ File accepted by MIME: ${file.originalname}`);
     cb(null, true);
   } else {
+    console.log(`❌ File rejected: ${file.originalname}`);
     cb(
-      new Error('Invalid file type. Only JPG, PNG, PDF, MP4, MP3, and DOCX files are allowed.'),
+      new Error(
+        `Invalid file type for ${file.originalname}. Only JPG, PNG, PDF, MP4, MP3, and DOCX files are allowed.`
+      ),
       false
     );
   }
@@ -87,8 +93,6 @@ const evidenceFileFilter = (req, file, cb) => {
 // ====================================
 // MULTER INSTANCES
 // ====================================
-
-// General file upload (existing)
 export const upload = multer({
   storage: storage,
   fileFilter: pdfFileFilter,
@@ -97,16 +101,14 @@ export const upload = multer({
   },
 });
 
-// Profile picture upload (existing)
 export const uploadProfilePicture = multer({
   storage: profilePictureStorage,
   fileFilter: imageFileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit for profile pictures
+    fileSize: 2 * 1024 * 1024, // 2MB limit
   },
 });
 
-// Mixed upload (existing)
 export const uploadMixed = multer({
   storage: storage,
   limits: {
@@ -114,17 +116,12 @@ export const uploadMixed = multer({
   },
 });
 
-// ====================================
-// NEW: EVIDENCE UPLOAD FOR DISPUTES
-// Uses MEMORY STORAGE (no local save)
-// Files go directly to Cloudinary
-// ====================================
+// ✅ FIXED: EVIDENCE UPLOAD
 export const uploadEvidence = multer({
-  storage: multer.memoryStorage(), // ✅ Memory storage - no disk writes
+  storage: multer.memoryStorage(),
   fileFilter: evidenceFileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB per file
     files: 5, // Max 5 files
   },
 });
-

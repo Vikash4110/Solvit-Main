@@ -104,4 +104,18 @@ export const API_ENDPOINTS = {
   ADMIN_COUNSELOR_APPLICATIONS: '/admin/counselor-applications',
   ADMIN_COUNSELOR_APPLICATION: '/admin/counselor-application',
   ADMIN_UPDATE_APPLICATION_STATUS: '/admin/update-application-status',
+  ADMIN_DISPUTES: '/admin/disputes',
+  ADMIN_DISPUTE_DETAIL: '/admin/disputes',
+  ADMIN_DISPUTE_UPDATE_STATUS: '/admin/disputes',
+  ADMIN_DISPUTE_ADD_NOTE: '/admin/disputes',
+  ADMINCLIENTS: '/admin/clients',
+  ADMINCLIENTDETAILS: (clientId) => `/admin/clients/${clientId}`,
+  ADMINCLIENTBLOCK: (clientId) => `/admin/clients/${clientId}/block`,
+  ADMINCOUNSELORS: '/admin/counselors',
+  ADMINCOUNSELORDETAILS: (counselorId) => `/admin/counselors/${counselorId}`,
+  ADMINCOUNSELORBLOCK: (counselorId) => `/admin/counselors/${counselorId}/block`,
+  // Payment endpoints
+  ADMINPAYMENTS: '/admin/payments',
+  ADMINPAYMENTDETAILS: (paymentId) => `/admin/payments/${paymentId}`,
+  ADMINPAYMENTANALYTICS: '/admin/payments/analytics',
 };
