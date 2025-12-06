@@ -1,9 +1,4 @@
 /**
- * ULTRA-OPTIMIZED Worker with minimal Redis polling
- * Optimizations: Extended polling intervals, shared connection, minimal event listeners
- *
- * ESTIMATED SAVINGS: 88% reduction in Redis commands when idle
- *
  * HOW TO START WORKER:
  * Run: node src/queue/worker.js
  * For multiple workers: run the same command in multiple terminals/processes
@@ -34,6 +29,7 @@ connectDb()
     console.error('Failed to connect to database:', error);
     process.exit(1);
   });
+
 // ============ OPTIMIZATION: Shared worker connection ============
 // SAVES: Reuses single connection instead of creating new ones
 const sharedWorkerConnection = getSharedRedisConnection(true);
@@ -172,7 +168,7 @@ const processDeleteRoom = async (job) => {
  * Auto Complete the booking,  Called at scheduled autoCompleteTime
  */
 const processAutoCompletebooking = async (job) => {
-  const { bookingId, autoCompleteAt ,slotData } = job.data;
+  const { bookingId, autoCompleteAt, slotData } = job.data;
   logger.info(
     `[AutoCompleteBooking] Starting for booking: ${bookingId} (attempt ${job.attemptsMade + 1})`
   );
@@ -278,8 +274,7 @@ const processJob = async (job) => {
   }
 };
 
-// ============ ULTRA-OPTIMIZED WORKER SETTINGS ============
-// SAVES: 88%+ of Redis polling commands compared to defaults
+// ============ WORKER SETTINGS ============
 
 const workerSettings = {
   // Shared connection across all workers
@@ -288,15 +283,15 @@ const workerSettings = {
   // ============ OPTIMIZATION 1: Reduce concurrency ============
   // Lower concurrency = fewer parallel Redis operations
   // SAVES: ~40% commands during job processing
-  concurrency: parseInt(process.env.QUEUE_CONCURRENCY) || 1, // Down from 2 to 1
+  concurrency: parseInt(process.env.QUEUE_CONCURRENCY), // Down from 2 to 1
 
   settings: {
     // ============ OPTIMIZATION 2: CRITICAL - Increase drainDelay ============
     // This controls how often workers poll when queue is EMPTY
     // Default: 5 seconds (12 polls/minute = 17,280 commands/day per worker)
-    // Optimized: 60 seconds (1 poll/minute = 1,440 commands/day per worker)
+    // Optimized: 0 seconds (1 poll/minute = 1,440 commands/day per worker)
     // SAVES: 91.7% of idle polling commands (15,840 commands/day per worker)
-    drainDelay: 60, // 60 seconds (NOTE: in SECONDS, not milliseconds!)
+    drainDelay: 300, // 300 seconds (NOTE: in SECONDS, not milliseconds!)
 
     // ============ OPTIMIZATION 3: Increase stalled check interval ============
     // This controls how often workers check for stalled (stuck) jobs

@@ -3,7 +3,7 @@
  * Removed unnecessary getJob() calls and Redis queries
  */
 
-import { addRepeatableJob, addDelayedJob, schedulerQueue, immediateQueue } from './queue.js';
+import { addRepeatableJob, addDelayedJob, immediateQueue } from './queue.js';
 import { JOB_TYPES } from '../constants.js';
 import { logger } from '../utils/logger.js';
 import dayjs from 'dayjs';

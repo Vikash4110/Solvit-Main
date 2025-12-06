@@ -981,7 +981,7 @@ const BrowseCounselor = () => {
 
                                 {/* Right: Action Buttons */}
                                 <div className="flex sm:flex-col gap-2 justify-end sm:justify-start sm:min-w-[130px] sm:pt-2">
-                                  <Button
+                                  {/* <Button
                                     variant="outline"
                                     size="sm"
                                     className="flex-1 sm:flex-none h-9 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-neutral-300 dark:border-neutral-700"
@@ -989,7 +989,7 @@ const BrowseCounselor = () => {
                                   >
                                     <User className="w-3.5 h-3.5 mr-1.5" />
                                     <span className="text-xs font-semibold">Profile</span>
-                                  </Button>
+                                  </Button> */}
                                   <Button
                                     size="sm"
                                     className="flex-1 sm:flex-none h-9 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-md"

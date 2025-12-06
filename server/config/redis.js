@@ -81,7 +81,7 @@ export const getSharedRedisConnection = (isWorker = false) => {
 
     // OPTIMIZATION 9: Reduce auto-pipelining threshold
     enableAutoPipelining: true, // Batch commands together
-    autoPipeliningIgnoredCommands: ['ping'], // Don't pipeline pings
+    autoPipeliningIgnoredCommands: ['ping', 'echo'], // Don't pipeline pings
   });
 
   // Minimal error handling (avoid excessive logging commands)

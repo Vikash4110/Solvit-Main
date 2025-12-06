@@ -5,7 +5,10 @@ import { Counselor } from '../models/counselor-model.js';
 import { Booking } from '../models/booking-model.js';
 import { Client } from '../models/client-model.js';
 import { Payment } from '../models/payment-model.js';
-import { sendEmail } from '../utils/nodeMailer.js';
+import {
+  sendCounselorApplicationRejected,
+  sendCounselorApplicationApproved,
+} from '../services/emailService.js';
 import { wrapper } from '../utils/wrapper.js';
 import mongoose from 'mongoose';
 import dayjs from 'dayjs';
@@ -169,16 +172,13 @@ const updateApplicationStatus = wrapper(async (req, res) => {
   await counselor.save({ validateBeforeSave: false });
 
   // Send email notification
-  const emailSubject =
-    status === 'approved' ? 'Counselor Application Approved' : 'Counselor Application Update';
-
-  const emailMessage =
-    status === 'approved'
-      ? `Dear ${counselor.fullName},\n\nCongratulations! Your counselor application has been approved. You can now access your dashboard and start accepting clients.\n\nBest regards,\nThe Counseling Team`
-      : `Dear ${counselor.fullName},\n\nWe regret to inform you that your counselor application has been rejected.${rejectionReason ? `\n\nReason: ${rejectionReason}` : ''}\n\nIf you have any questions, please contact our support team.\n\nBest regards,\nThe Counseling Team`;
 
   try {
-    await sendEmail(counselor.email, emailSubject, emailMessage);
+    if (status === 'approved') {
+      await sendCounselorApplicationApproved(counselor.email, counselor.fullName);
+    } else if (status === 'rejected') {
+      await sendCounselorApplicationRejected(counselor.email, counselor.fullName, rejectionReason);
+    }
   } catch (emailError) {
     console.error('Failed to send status update email:', emailError);
   }

@@ -1,9 +1,13 @@
 import { OTP } from '../models/clientOTP-model.js';
 import { Counselor } from '../models/counselor-model.js';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
-import { sendEmail } from '../utils/nodeMailer.js';
 import { wrapper } from '../utils/wrapper.js';
 import { logger } from '../utils/logger.js';
+import {
+  sendCounselorRegistrationOTP,
+  sendCounselorForgotPasswordOTP,
+  sendCounselorApplicationSubmitted,
+} from '../services/emailService.js';
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/;
@@ -51,12 +55,7 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     });
 
     // Send email with timeout handling
-    const otpSend = await sendEmail(
-      email.trim(),
-      'Counselor Email Verification',
-      `<p>Your OTP for email verification is: <b>${generatedOTP}</b></p>
-   <p>It is valid for 10 minutes.</p>`
-    );
+    const otpSend = await sendCounselorRegistrationOTP(email.trim(), generatedOTP, 'Counselor', 10);
 
     if (!otpSend) {
       logger.error(`Failed to send counselor OTP email to: ${email}`);
@@ -175,11 +174,7 @@ const forgotPassword = wrapper(async (req, res) => {
     }
 
     const generatedOTP = generateOTP();
-    const otpSend = await sendEmail(
-      email.trim(),
-      'Password Reset Request',
-      `Your OTP for password reset is: ${generatedOTP}. It is valid for 10 minutes.`
-    );
+    const otpSend = await sendCounselorForgotPasswordOTP(email.trim(), generatedOTP, 'Counselor');
 
     if (!otpSend) {
       return res.status(500).json({
@@ -288,12 +283,6 @@ const resetPassword = wrapper(async (req, res) => {
       email: email.trim(),
       purpose: 'reset',
     });
-
-    await sendEmail(
-      email.trim(),
-      'Password Reset Successful',
-      'Your password has been successfully reset. Please log in with your new password.'
-    );
 
     return res.status(200).json({
       success: true,
@@ -786,11 +775,7 @@ const submitCounselorApplication = wrapper(async (req, res) => {
     );
 
     // Send confirmation email
-    await sendEmail(
-      counselor.email,
-      'Counselor Application Submitted',
-      `Dear ${counselor.fullName},\n\nYour application has been submitted successfully. We will review it and get back to you within 24-48 hours.\n\nThank you for your interest in joining our platform.\n\nBest regards,\nThe Counseling Team`
-    );
+    await sendCounselorApplicationSubmitted(counselor.email, counselor.fullName);
 
     return res.status(200).json({
       success: true,

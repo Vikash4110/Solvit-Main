@@ -14,10 +14,12 @@ import { contactRouter } from './routes/contact-routes.js';
 import { priceRouter } from './routes/price-routes.js';
 import { disputeRouter } from './routes/dispute.route.js';
 import { adminRouter } from './routes/admin-routes.js';
-
 import { videoCallRouter } from './routes/videoCall.routes.js';
 import { counselorDashboardRouter } from './routes/counselor-dashboard-routes.js';
 
+//brevo initailizationa and verification on stratup
+import { initializeBrevo, verifyBrevoConnection } from './services/emailService.js';
+import errorHandler from './middlewares/brevo.errorHandler.middleware.js';
 // Security
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -196,6 +198,9 @@ app.use((err, req, res, next) => {
 
 const Port = process.env.PORT || 8000;
 
+//Brevo error handler middleware
+app.use(errorHandler);
+
 // ============ MODIFIED: Database Connection & Server Start ============
 connectDb()
   .then(async () => {
@@ -203,8 +208,15 @@ connectDb()
       console.log(`Server is running on port ${Port}`);
       logger.info(`Bull Board Dashboard: http://localhost:${Port}/admin/queues`);
 
-      // REPLACED: startCronJobs() with BullMQ initialization
       try {
+        //Brevo initialization and verification
+        const brevoInitialized = initializeBrevo();
+
+        if (brevoInitialized) {
+          console.log('Server starting with email service');
+        } else {
+          console.warn('⚠️  Server starting without email service');
+        }
         // await initializeScheduledJobs();
         logger.info('✓ BullMQ scheduled jobs initialized successfully');
         logger.info('⚠️  Remember to start the worker process: npm run worker');
@@ -221,27 +233,27 @@ connectDb()
 
 // ============ NEW: Graceful Shutdown ============
 
-const gracefulShutdown = async (signal) => {
-  logger.info(`\n${signal} received. Shutting down gracefully...`);
+// const gracefulShutdown = async (signal) => {
+//   logger.info(`\n${signal} received. Shutting down gracefully...`);
 
-  try {
-    // 1. Close queues first
-    await closeQueues();
-    logger.info('BullMQ queues closed');
+//   try {
+//     // 1. Close queues first
+//     await closeQueues();
+//     logger.info('BullMQ queues closed');
 
-    // 2. Close shared Redis connections
-    await closeAllConnections();
-    logger.info('Redis connections closed');
+//     // 2. Close shared Redis connections
+//     await closeAllConnections();
+//     logger.info('Redis connections closed');
 
-    process.exit(0);
-  } catch (error) {
-    logger.error(`Error during shutdown: ${error.message}`);
-    process.exit(1);
-  }
-};
+//     process.exit(0);
+//   } catch (error) {
+//     logger.error(`Error during shutdown: ${error.message}`);
+//     process.exit(1);
+//   }
+// };
 
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+// process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+// process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 // ====================================================
 
 export default app;

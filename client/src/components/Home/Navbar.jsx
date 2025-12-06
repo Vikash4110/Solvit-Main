@@ -286,7 +286,7 @@ const Navbar = () => {
       hover:bg-primary-50 dark:hover:bg-primary-900/30
       hover:text-primary-700 dark:hover:text-primary-300
       rounded-xl font-medium cursor-pointer
-      transition-all duration-200
+      transition-all duration-200 
     "
               >
                 <BookOpen className="h-4 w-4" />

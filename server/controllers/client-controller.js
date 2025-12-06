@@ -1,7 +1,10 @@
 import { Client } from '../models/client-model.js';
 import { OTP } from '../models/clientOTP-model.js';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
-import { sendEmail } from '../utils/nodeMailer.js';
+import {
+  sendClientRegistrationOTP,
+  sendClientForgotPasswordOTP,
+} from '../services/emailService.js';
 import { wrapper } from '../utils/wrapper.js';
 import { logger } from '../utils/logger.js';
 import dayjs from 'dayjs';
@@ -59,11 +62,7 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     });
 
     // Send email with timeout handling
-    const otpSend = await sendEmail(
-      email.trim(),
-      'Email Verification',
-      `OTP for Email Verification: ${generatedOTP}`
-    );
+    const otpSend = await sendClientRegistrationOTP(email.trim(), generatedOTP, `User`, 10);
 
     if (!otpSend) {
       logger.error(`Failed to send OTP email to: ${email}`);
@@ -197,11 +196,7 @@ const forgotPassword = wrapper(async (req, res) => {
     });
 
     // Send email with timeout handling
-    const otpSend = await sendEmail(
-      email.trim(),
-      'Password Reset',
-      `OTP for Password Reset: ${generatedOTP}`
-    );
+    const otpSend = await sendClientForgotPasswordOTP(email.trim(), generatedOTP, 'User');
 
     if (!otpSend) {
       logger.error(`Failed to send password reset OTP email to: ${email}`);
