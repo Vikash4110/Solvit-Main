@@ -1,277 +1,126 @@
-/**
- * PAYMENT RECONCILIATION JOB - PRODUCTION OPTIMIZED
- * Features:
- * - Detect orphaned payments (captured but not linked to bookings)
- * - Unlock slots with missing/failed bookings
- * - Fix data inconsistencies
- * - Alert on anomalies
- * - Auto-refund stuck payments
- * Runs: Every 15 minutes
- */
+// jobs/paymentReconciliation.js
 
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
 import { Payment } from '../../models/payment-model.js';
 import { Booking } from '../../models/booking-model.js';
-import { GeneratedSlot } from '../../models/generatedSlots-model.js';
-import { Session } from '../../models/session.model.js';
-
-import { FailedAction } from '../../models/failedAction.model.js';
-import { initiateRefund } from '../../controllers/payment-controller.js';
-import JobLogger from '../utils/jobLogger.js';
-import CronErrorHandler from '../utils/errorHandler.js';
-import JobScheduler from '../utils/jobScheduler.js';
-import AlertingService from '../utils/alerting.js';
-import cronConfig from '../../config/cronConfig.js';
-import dayjs from 'dayjs';
+import { initiateRefund } from '../../services/refundService.js'; // ✅ Import from service
+import { logger } from '../../utils/logger.js';
 import pLimit from 'p-limit';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
 
 dayjs.extend(utc);
-dayjs.extend(timezone);
 
-// ═══════════════════════════════════════════════════════════════
-// CONFIGURATION
-// ═══════════════════════════════════════════════════════════════
-const ORPHANED_PAYMENT_THRESHOLD_MINUTES = 10; // Payments older than 10 min
-const STUCK_SLOT_THRESHOLD_MINUTES = 15; // Slots locked > 15 min without booking
-const MAX_PER_RUN = 100; // Process max 100 anomalies per run
-const CONCURRENCY = 3; // Process 3 at a time (refunds are slow)
+const limit = pLimit(5); // Process 5 refunds concurrently
 
-// ═══════════════════════════════════════════════════════════════
-// PROCESS ORPHANED PAYMENTS
-// ═══════════════════════════════════════════════════════════════
+class JobLogger {
+  constructor(jobName) {
+    this.jobName = jobName;
+    this.startTime = null;
+    this.processed = 0;
+    this.succeeded = 0;
+    this.failed = 0;
+    this.errors = [];
+  }
+
+  start() {
+    this.startTime = Date.now();
+    logger.info(`[${this.jobName}] Job started`);
+  }
+
+  incrementProcessed(count = 1) {
+    this.processed += count;
+  }
+
+  incrementSucceeded() {
+    this.succeeded++;
+  }
+
+  incrementFailed(error) {
+    this.failed++;
+    this.errors.push(error.message || error);
+  }
+
+  complete() {
+    const duration = Date.now() - this.startTime;
+    logger.info(`[${this.jobName}] Job completed`, {
+      duration: `${duration}ms`,
+      processed: this.processed,
+      succeeded: this.succeeded,
+      failed: this.failed,
+    });
+
+    if (this.errors.length > 0) {
+      logger.error(`[${this.jobName}] Errors:`, this.errors.slice(0, 10));
+    }
+  }
+}
+
 /**
- * Find payments that are captured_unlinked for too long
- * This indicates payment verification crashed/failed
+ * Process orphaned payments (captured but no booking after 30 minutes)
  */
 async function processOrphanedPayments(jobLogger) {
-  const cutoffTime = dayjs().utc().subtract(ORPHANED_PAYMENT_THRESHOLD_MINUTES, 'minutes').toDate();
-
-  const limit = pLimit(CONCURRENCY);
-  let totalProcessed = 0;
-
   try {
-    // Find orphaned payments
+    const cutoffTime = dayjs().utc().subtract(30, 'minutes').toDate();
+
     const orphanedPayments = await Payment.find({
       status: 'captured_unlinked',
+      bookingStatus: 'payment_captured',
       createdAt: { $lt: cutoffTime },
     })
-      .select('_id razorpay_payment_id amount clientId bookingId createdAt')
-      .sort({ createdAt: 1 })
-      .limit(MAX_PER_RUN)
+      .select('_id razorpay_payment_id amount createdAt clientId slotId')
+      .limit(50)
       .lean();
 
     if (orphanedPayments.length === 0) {
-      return totalProcessed;
+      return 0;
     }
 
     jobLogger.incrementProcessed(orphanedPayments.length);
 
-    // Alert if too many orphaned payments
-    if (orphanedPayments.length >= 10) {
-      await AlertingService.sendSlackAlert(
-        'High Orphaned Payments Detected',
-        `Found ${orphanedPayments.length} payments stuck in captured_unlinked state. ` +
-          `This may indicate payment verification failures.`,
-        'critical'
-      );
-    }
-
-    // ✅ Process concurrently
-    const promises = orphanedPayments.map((payment) =>
+    const refundPromises = orphanedPayments.map((paymentDoc) =>
       limit(async () => {
         try {
-          // Check if booking exists
-          const booking = await Booking.findOne({ paymentId: payment._id });
+          const ageMinutes = dayjs().diff(dayjs(paymentDoc.createdAt), 'minutes');
 
-          if (booking) {
-            // Booking exists, just update payment status
-            await Payment.findByIdAndUpdate(payment._id, {
-              $set: {
-                status: 'captured',
-                bookingStatus: 'completed',
-              },
-            });
+          logger.info(`Processing orphaned payment: ${paymentDoc._id}, age: ${ageMinutes}min`);
 
+          const result = await initiateRefund(
+            paymentDoc,
+            'booking_failed',
+            `phase=CRON_RECONCILIATION | age=${ageMinutes}min | threshold=30min`,
+            null,
+            3,
+            logger
+          );
+
+          if (result.success) {
             jobLogger.incrementSucceeded();
-            return { paymentId: payment._id, action: 'linked', success: true };
-          }
-
-          // No booking found - this is a real orphan
-          // Check age - if > 30 minutes, initiate refund
-          const ageMinutes = dayjs().diff(dayjs(payment.createdAt), 'minutes');
-
-          if (ageMinutes > 30) {
-            // Initiate refund with retry
-            const paymentDoc = await Payment.findById(payment._id);
-
-            const refundResult = await CronErrorHandler.withRetry(
-              async () => {
-                // Import initiateRefund from controller (make sure it's exported)
-                // Or create a service for refunds
-                return await initiateRefund(
-                  paymentDoc,
-                  'Payment orphaned - booking creation failed',
-                  null
-                );
-              },
-              {
-                maxRetries: 2,
-                operationName: `RefundOrphanedPayment-${payment._id}`,
-              }
-            );
-
-            if (refundResult.success) {
-              jobLogger.incrementSucceeded();
-              return { paymentId: payment._id, action: 'refunded', success: true };
-            } else {
-              throw new Error(`Refund failed: ${refundResult.error}`);
-            }
           } else {
-            // Still within grace period, just log to FailedAction
-            await FailedAction.create({
-              type: 'orphaned_payment',
-              paymentId: payment._id,
-              razorpay_payment_id: payment.razorpay_payment_id,
-              amount: payment.amount,
-              ageMinutes,
-              error: 'Payment captured but no booking created',
-              metadata: {
-                clientId: payment.clientId,
-                createdAt: payment.createdAt,
-              },
-            });
-
-            jobLogger.incrementSucceeded();
-            return { paymentId: payment._id, action: 'logged', success: true };
+            jobLogger.incrementFailed(new Error(result.error));
           }
         } catch (error) {
           jobLogger.incrementFailed(error);
-
-          // Log to FailedAction
-          await FailedAction.create({
-            type: 'orphaned_payment_processing_failed',
-            paymentId: payment._id,
-            error: error.message,
-            errorStack: error.stack,
-          });
-
-          return { paymentId: payment._id, success: false };
+          logger.error(`Orphaned payment refund failed: ${paymentDoc._id}`, error);
         }
       })
     );
 
-    await Promise.all(promises);
-    totalProcessed += orphanedPayments.length;
-
-    return totalProcessed;
+    await Promise.all(refundPromises);
+    return orphanedPayments.length;
   } catch (error) {
     jobLogger.incrementFailed(error);
     throw error;
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// PROCESS STUCK SLOTS
-// ═══════════════════════════════════════════════════════════════
 /**
- * Find slots that are marked as booked but have no valid booking
- * This happens when transaction fails but slot lock doesn't rollback
- */
-async function processStuckSlots(jobLogger) {
-  const cutoffTime = dayjs().utc().subtract(STUCK_SLOT_THRESHOLD_MINUTES, 'minutes').toDate();
-
-  try {
-    // Find slots that are booked
-    const bookedSlots = await GeneratedSlot.find({
-      status: 'booked',
-      isBooked: true,
-      updatedAt: { $lt: cutoffTime }, // Locked for > 15 minutes
-    })
-      .select('_id bookingId counselorId startTime endTime updatedAt')
-      .limit(MAX_PER_RUN)
-      .lean();
-
-    if (bookedSlots.length === 0) {
-      return 0;
-    }
-
-    jobLogger.incrementProcessed(bookedSlots.length);
-
-    let unlocked = 0;
-
-    for (const slot of bookedSlots) {
-      try {
-        // Check if valid booking exists
-        const booking = await Booking.findOne({
-          slotId: slot._id,
-          status: 'confirmed',
-        });
-
-        if (!booking) {
-          // No valid booking - unlock the slot
-          await GeneratedSlot.findByIdAndUpdate(slot._id, {
-            $set: {
-              status: 'available',
-              isBooked: false,
-              bookingId: null,
-            },
-          });
-
-          unlocked++;
-          jobLogger.incrementSucceeded();
-
-          // Log to FailedAction for audit
-          await FailedAction.create({
-            type: 'stuck_slot_unlocked',
-            slotId: slot._id,
-            error: 'Slot was locked but no valid booking found',
-            metadata: {
-              counselorId: slot.counselorId,
-              startTime: slot.startTime,
-              lockedDuration: dayjs().diff(dayjs(slot.updatedAt), 'minutes'),
-            },
-          });
-        } else {
-          // Valid booking exists, slot is correctly locked
-          jobLogger.incrementSucceeded();
-        }
-      } catch (error) {
-        jobLogger.incrementFailed(error);
-      }
-    }
-
-    // Alert if too many stuck slots
-    if (unlocked >= 5) {
-      await AlertingService.sendSlackAlert(
-        'High Stuck Slots Detected',
-        `Unlocked ${unlocked} slots that were stuck without valid bookings. ` +
-          `This may indicate transaction rollback issues.`,
-        'warning'
-      );
-    }
-
-    return unlocked;
-  } catch (error) {
-    jobLogger.incrementFailed(error);
-    throw error;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// PROCESS MISMATCHED BOOKINGS
-// ═══════════════════════════════════════════════════════════════
-/**
- * Find bookings where payment status doesn't match booking status
+ * Process stuck payments (pending_resources for > 10 minutes)
  */
 async function processMismatchedBookings(jobLogger) {
   try {
-    // Find payments stuck in pending_resources > 10 min
     const stuckPayments = await Payment.find({
       bookingStatus: 'pending_resources',
-      createdAt: {
-        $lt: dayjs().utc().subtract(10, 'minutes').toDate(),
-      },
+      createdAt: { $lt: dayjs().utc().subtract(10, 'minutes').toDate() },
     })
       .select('_id bookingId createdAt')
       .limit(50)
@@ -280,7 +129,6 @@ async function processMismatchedBookings(jobLogger) {
     if (stuckPayments.length === 0) return 0;
 
     jobLogger.incrementProcessed(stuckPayments.length);
-
     let fixed = 0;
 
     for (const payment of stuckPayments) {
@@ -288,25 +136,18 @@ async function processMismatchedBookings(jobLogger) {
         const booking = await Booking.findById(payment.bookingId).lean();
         if (!booking) continue;
 
-        const session = await Session.findOne({ bookingId: booking._id });
-
-        if (session && session.videoSDKRoomId) {
-          // Session exists → mark payment bookingStatus as completed
+        // ✅ Check videoSDKRoomId directly on booking (no Session model)
+        if (booking.videoSDKRoomId) {
           await Payment.findByIdAndUpdate(payment._id, {
             $set: { bookingStatus: 'completed' },
           });
           fixed++;
           jobLogger.incrementSucceeded();
         } else {
-          await FailedAction.create({
-            type: 'payment_stuck_pending_resources',
-            bookingId: booking._id,
+          // Still no VideoSDK room - needs manual intervention
+          logger.warn(`Booking ${booking._id} has no VideoSDK room`, {
             paymentId: payment._id,
-            error: 'Payment stuck in pending_resources without session',
-            metadata: {
-              createdAt: payment.createdAt,
-              ageMinutes: dayjs().diff(dayjs(payment.createdAt), 'minutes'),
-            },
+            ageMinutes: dayjs().diff(dayjs(payment.createdAt), 'minutes'),
           });
           jobLogger.incrementSucceeded();
         }
@@ -322,46 +163,36 @@ async function processMismatchedBookings(jobLogger) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MAIN EXECUTION
-// ═══════════════════════════════════════════════════════════════
+/**
+ * Main reconciliation function
+ */
 export async function reconcilePayments() {
   const jobLogger = new JobLogger('PaymentReconciliation');
   jobLogger.start();
 
   try {
-    const orphanedProcessed = await processOrphanedPayments(jobLogger);
-    const slotsUnlocked = await processStuckSlots(jobLogger);
-    const bookingsFixed = await processMismatchedBookings(jobLogger);
+    const [orphanedCount, mismatchedCount] = await Promise.all([
+      processOrphanedPayments(jobLogger),
+      processMismatchedBookings(jobLogger),
+    ]);
 
     jobLogger.complete();
 
-    // ✅ Update job execution record
-    await JobScheduler.updateJobExecution('paymentReconciliation', {
-      status: 'success',
-      duration: Date.now() - jobLogger.startTime,
-      processed: jobLogger.metrics.processed,
-      succeeded: jobLogger.metrics.succeeded,
-      failed: jobLogger.metrics.failed,
-    });
-
     return {
       success: true,
-      orphanedProcessed,
-      slotsUnlocked,
-      bookingsFixed,
+      orphanedProcessed: orphanedCount,
+      mismatchedFixed: mismatchedCount,
+      totalProcessed: jobLogger.processed,
+      succeeded: jobLogger.succeeded,
+      failed: jobLogger.failed,
     };
   } catch (error) {
-    jobLogger.error(error);
+    logger.error('Payment reconciliation failed:', error);
+    jobLogger.complete();
 
-    await JobScheduler.updateJobExecution('paymentReconciliation', {
-      status: 'failed',
-      duration: Date.now() - jobLogger.startTime,
+    return {
+      success: false,
       error: error.message,
-    });
-
-    throw error;
+    };
   }
 }
-
-export default reconcilePayments;

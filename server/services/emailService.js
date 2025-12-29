@@ -1948,6 +1948,315 @@ Need help? Contact support@solvitcounselling.cloud
   }
 }
 
+/**
+ * Send refund notification email to client
+ * @param {Object} clientData - Client information
+ * @param {Object} refundData - Refund details
+ * @param {String} reason - Reason for refund
+ * @param {Number} refundAmount - Refunded amount
+ * @param {String} refundId - Razorpay refund ID
+ */
+async function sendRefundNotificationToClient(
+  clientData,
+  refundData,
+  reason,
+  refundAmount,
+  refundId
+) {
+  const emailOptions = {
+    sender: {
+      email: process.env.BREVO_SENDER_EMAIL || 'system@solvitcounselling.com',
+      name: process.env.BREVO_SENDER_NAME || 'Solvit Counseling',
+    },
+    to: [
+      {
+        email: clientData.email,
+        name: clientData.fullName || clientData.name || clientData.email,
+      },
+    ],
+    subject: 'Refund Processed - Solvit Counseling',
+    htmlContent: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Refund Processed - Solvit</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb;">
+  <!-- Wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <!-- Main Container -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+          
+          <!-- Header with Logo & Gradient -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
+              <!-- Logo -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <img src="${process.env.LOGO_URL || 'https://solvitcounselling.cloud/logo.png'}" alt="Solvit Counseling" style="width: 140px; height: 140px; display: block; margin: 0 auto 20px auto; border-radius: 50%; object-fit: cover;">
+                  </td>
+                </tr>
+              </table>
+              
+              <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">Refund Processed</h1>
+              <p style="color: #e0e7ee; margin: 8px 0 0 0; font-size: 14px; font-weight: 500;">Your payment has been refunded</p>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 48px 40px;">
+              
+              <!-- Greeting -->
+              <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 22px; font-weight: 700;">Dear ${clientData.fullName || 'Valued Customer'},</h2>
+              
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.65; margin: 0 0 32px 0;">
+                Your refund has been successfully processed by <strong style="color: #7C3AED;">Solvit</strong>. The amount will be credited to your original payment method within 5-7 business days.
+              </p>
+
+              <!-- Refund Details Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td style="background: #f8fafc; border-left: 4px solid #059669; border-radius: 8px; padding: 24px 20px;">
+                    <h3 style="color: #059669; margin: 0 0 16px 0; font-size: 18px; font-weight: 700;">💰 Refund Details</h3>
+                    
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding: 8px 0;">
+                          <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Refund Amount</p>
+                          <p style="color: #059669; font-size: 24px; margin: 4px 0 0 0; font-weight: 700;">₹${refundAmount}</p>
+                        </td>
+                      </tr>
+                      
+                      <tr>
+                        <td style="padding: 8px 0;">
+                          <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Refund ID</p>
+                          <p style="color: #1f2937; font-size: 14px; margin: 4px 0 0 0; font-family: 'Courier New', monospace;">${refundId}</p>
+                        </td>
+                      </tr>
+                      
+                      <tr>
+                        <td style="padding: 8px 0;">
+                          <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Payment ID</p>
+                          <p style="color: #1f2937; font-size: 14px; margin: 4px 0 0 0; font-family: 'Courier New', monospace;">${refundData.razorpay_payment_id || 'N/A'}</p>
+                        </td>
+                      </tr>
+                      
+                      <tr>
+                        <td style="padding: 8px 0;">
+                          <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Processed On</p>
+                          <p style="color: #1f2937; font-size: 14px; margin: 4px 0 0 0;">${new Date().toLocaleDateString(
+                            'en-IN',
+                            {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            }
+                          )}</p>
+                        </td>
+                      </tr>
+                      
+                      ${
+                        reason
+                          ? `
+                      <tr>
+                        <td style="padding: 8px 0;">
+                          <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Reason</p>
+                          <p style="color: #1f2937; font-size: 14px; margin: 4px 0 0 0; line-height: 1.6;">${reason}</p>
+                        </td>
+                      </tr>
+                      `
+                          : ''
+                      }
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Timeline Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%); border-radius: 8px; padding: 24px;">
+                    <p style="color: #1e40af; font-size: 15px; font-weight: 600; margin: 0 0 16px 0;">⏱️ What Happens Next?</p>
+                    
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td style="color: #7C3AED; font-weight: 700; padding: 0 12px 10px 0; vertical-align: top; font-size: 14px; width: 30px;">1.</td>
+                        <td style="color: #374151; font-size: 14px; line-height: 1.6; padding-bottom: 10px;">Refund initiated by Solvit (Completed ✅)</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #7C3AED; font-weight: 700; padding: 0 12px 10px 0; vertical-align: top; font-size: 14px;">2.</td>
+                        <td style="color: #374151; font-size: 14px; line-height: 1.6; padding-bottom: 10px;">Payment gateway processes refund (1-2 business days)</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #7C3AED; font-weight: 700; padding: 0 12px 0 0; vertical-align: top; font-size: 14px;">3.</td>
+                        <td style="color: #374151; font-size: 14px; line-height: 1.6;">Amount credited to your account (<strong>5-7 business days</strong>)</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Important Notice -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px 20px;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td style="vertical-align: middle; padding-right: 12px; font-size: 20px; width: 30px;">ℹ️</td>
+                        <td style="vertical-align: middle;">
+                          <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.5;">
+                            <strong>Processing Time:</strong> The refund typically appears in your account within <strong>5-7 business days</strong>, depending on your bank's processing time.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Support Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td style="background: #f3f4f6; border-left: 4px solid #7C3AED; border-radius: 8px; padding: 20px;">
+                    <p style="color: #374151; margin: 0; font-size: 14px; line-height: 1.6;">
+                      <strong style="color: #7C3AED;">Need Help?</strong><br>
+                      If the refund doesn't appear in your account after 7 business days, or if you have any questions, please contact our support team with your Refund ID.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0;">
+                <tr>
+                  <td style="border-top: 1px solid #e5e7eb;"></td>
+                </tr>
+              </table>
+
+              <!-- Help Text -->
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                We apologize for any inconvenience caused. We're committed to providing you with the best counseling experience. For any concerns, contact us at <a href="mailto:support@solvitcounselling.com" style="color: #7C3AED; text-decoration: none; font-weight: 600;">support@solvitcounselling.com</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #fafafa; padding: 32px 40px; border-top: 1px solid #f3f4f6;">
+              
+              <!-- Social Links -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td align="center">
+                    <p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0; font-weight: 500;">Connect with us</p>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding: 0 6px;">
+                          <a href="https://www.linkedin.com/company/solvitcounselling" style="text-decoration: none;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" style="width: 28px; height: 28px; display: block; opacity: 0.8;">
+                          </a>
+                        </td>
+                        <td style="padding: 0 6px;">
+                          <a href="https://x.com/solvitforyou?s=21" style="text-decoration: none;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter" style="width: 28px; height: 28px; display: block; opacity: 0.8;">
+                          </a>
+                        </td>
+                        <td style="padding: 0 6px;">
+                          <a href="https://www.instagram.com/solvitcounselling" style="text-decoration: none;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 28px; height: 28px; display: block; opacity: 0.8;">
+                          </a>
+                        </td>
+                        <td style="padding: 0 6px;">
+                          <a href="https://www.facebook.com/share/12HYipkeXG9" style="text-decoration: none;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" style="width: 28px; height: 28px; display: block; opacity: 0.8;">
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Legal Footer -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0 0 6px 0;">
+                      © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
+                    </p>
+                    <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 0;">
+                      Solvit Pvt. Ltd. | Atal Nagar, Naya Raipur - 493661, India
+                    </p>
+                    <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 8px 0 0 0;">
+                      This is an automated message, please do not reply.<br>
+                      Need help? <a href="mailto:support@solvitcounselling.com" style="color: #7C3AED; text-decoration: none;">Contact Support</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+    textContent: `SOLVIT COUNSELING - REFUND PROCESSED
+
+Dear ${clientData.fullName || 'Valued Customer'},
+
+Your refund has been successfully processed by Solvit. The amount will be credited to your original payment method within 5-7 business days.
+
+REFUND DETAILS
+--------------
+Refund Amount: ₹${refundAmount}
+Refund ID: ${refundId}
+Payment ID: ${refundData.razorpay_payment_id || 'N/A'}
+Processed On: ${new Date().toLocaleDateString('en-IN', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })}
+${reason ? `Reason: ${reason}` : ''}
+
+WHAT HAPPENS NEXT?
+------------------
+1. Refund initiated by Solvit (Completed ✅)
+2. Payment gateway processes refund (1-2 business days)
+3. Amount credited to your account (5-7 business days)
+
+PROCESSING TIME
+The refund typically appears in your account within 5-7 business days, depending on your bank's processing time.
+
+NEED HELP?
+If the refund doesn't appear in your account after 7 business days, or if you have any questions, please contact our support team at support@solvitcounselling.com with your Refund ID.
+
+---
+© ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
+Solvit Pvt. Ltd. | Atal Nagar, Naya Raipur - 493661, India
+
+This is an automated message, please do not reply.`,
+  };
+
+  try {
+    return await sendEmailWithRetry(emailOptions);
+  } catch (error) {
+    console.error('Failed to send refund notification:', error.message);
+    throw new Error('Unable to send refund notification. Please contact support.');
+  }
+}
+
 export {
   initializeBrevo,
   verifyBrevoConnection,
@@ -1960,4 +2269,5 @@ export {
   sendCounselorApplicationRejected,
   sendBookingConfirmationToClient,
   sendBookingNotificationToCounselor,
+  sendRefundNotificationToClient,
 };

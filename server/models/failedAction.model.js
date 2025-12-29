@@ -10,7 +10,13 @@ const failedActionSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ['room_deletion', 'booking_completion', 'slot_creation', 'slot_deletion'],
+      enum: [
+        'room_deletion',
+        'booking_completion',
+        'slot_creation',
+        'slot_deletion',
+        'counselors_missing_slots',
+      ],
       index: true,
     },
     bookingId: {

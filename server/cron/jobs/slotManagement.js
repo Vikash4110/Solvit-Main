@@ -48,7 +48,7 @@ dayjs.extend(isSameOrBefore);
 const TIMEZONE = timeZone;
 const SLOT_DURATION = slotDuration; // minutes
 const PLATFORM_FEE_PERCENTAGE = paltformFeePercentage; // 15%
-const DAYS_AHEAD = cronConfig.slotManagement.DAYS_AHEAD; // Always maintain 30 days of slots
+const DAYS_AHEAD = cronConfig.slotManagement.daysAhead; // Always maintain 30 days of slots
 const CONCURRENCY = cronConfig.slotManagement.concurrency; // Process 10 counselors at a time
 const BULK_INSERT_SIZE = cronConfig.slotManagement.bulkInsertSize; // Insert slots in batches of 100
 
