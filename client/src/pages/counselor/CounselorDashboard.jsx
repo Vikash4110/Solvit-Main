@@ -11,7 +11,7 @@ import CounselorDashboardPersonalInformation from '@/components/counselor/counse
 import CounselorDashboardBlogManager from '@/components/counselor/counselorDashboard/CounselorDashboardBlogManager.jsx'
 import CounselorDashboardSlotsManager from '@/components/counselor/counselorDashboard/CounselorDashboardSlotsManager.jsx'
 import CounselorDashboardRecurringAvailabilityManager from '@/components/counselor/counselorDashboard/CounselorDashboardRecurringAvailabilityManager.jsx'
-import CounselorDashboardMySessions from '@/components/counselor/CounselorDashboard/CounselorDashboardMySessions.jsx'
+import CounselorDashboardMySessions from '@/components/counselor/counselorDashboard/CounselorDashboardMySessions.jsx'
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 
 import { Button } from '@/components/ui/button';
