@@ -351,66 +351,99 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
-  //Payments
+  // ✅ ==================== NEW CLIENT MANAGEMENT FUNCTIONS ====================
   const getAllPayments = async (
     page = 1,
     limit = 20,
-    searchTerm = '',
+    search = '',
     dateFilter = 'all',
-    method = 'all_methods'
+    methodFilter = 'all_methods',
+    statusFilter = 'all_statuses',
+    refundFilter = 'all_refunds',
+    bookingStatusFilter = 'all_booking_statuses'
   ) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      let url = `${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}?page=${page}&limit=${limit}`;
-
-      if (searchTerm) url += `&search=${searchTerm}`;
-      if (dateFilter && dateFilter !== 'all') url += `&dateFilter=${dateFilter}`;
-
-      // ✅ Fixed: Only add method filter if it's not 'all_methods'
-      if (method && method !== 'all_methods') url += `&method=${method}`;
-
-      const response = await axiosInstance.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        search,
+        dateFilter,
+        methodFilter,
+        statusFilter,
+        refundFilter,
+        bookingStatusFilter,
       });
 
-      return { success: true, data: response.data };
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}?${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('adminAccessToken')}`,
+        },
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch payments');
+      }
+
+      return { success: true, data };
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to fetch payments');
-      return { success: false, error: message };
+      console.error('Get all payments error:', error);
+      return { success: false, error: error.message };
     }
   };
 
   const getPaymentDetails = async (paymentId) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.get(
-        `${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}/${paymentId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}/${paymentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('adminAccessToken')}`,
+        },
+        credentials: 'include',
+      });
 
-      return { success: true, data: response.data.data };
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch payment details');
+      }
+
+      return { success: true, data: data.data };
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to fetch payment details');
-      return { success: false, error: message };
+      console.error('Get payment details error:', error);
+      return { success: false, error: error.message };
     }
   };
 
   const getPaymentAnalytics = async (period = '30days') => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.get(
+      const response = await fetch(
         `${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}/analytics?period=${period}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('adminAccessToken')}`,
+          },
+          credentials: 'include',
         }
       );
 
-      return { success: true, data: response.data.analytics };
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch payment analytics');
+      }
+
+      return { success: true, data: data.analytics };
     } catch (error) {
-      const message = getErrorMessage(error, 'Failed to fetch payment analytics');
-      return { success: false, error: message };
+      console.error('Get payment analytics error:', error);
+      return { success: false, error: error.message };
     }
   };
 
@@ -432,7 +465,7 @@ export const AdminAuthProvider = ({ children }) => {
     getAllCounselors, // ✅ ADD
     getCounselorDetails, // ✅ ADD
     toggleCounselorBlock,
-    getAllPayments, // ✅ ADD
+    getAllPayments,
     getPaymentDetails,
     getPaymentAnalytics,
   };

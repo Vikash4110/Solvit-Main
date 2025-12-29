@@ -398,7 +398,8 @@ const canJoinSession = (booking) => {
   const minutesDiffEnd = endTime.diff(now, 'minute');
 
   // Can join 10 minutes before to 90 minutes afte
-  return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
+  // return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
+  return true;
 };
 
 //helper function to determine if user can raise issue

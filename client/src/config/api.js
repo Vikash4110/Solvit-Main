@@ -44,6 +44,7 @@ export const API_ENDPOINTS = {
   PAYMENT_GET_KEY: '/payment/getkey',
   PAYMENT_CHECKOUT: '/payment/checkout',
   PAYMENT_VERIFICATION: '/payment/paymentverification',
+  PAYMENT_CHECK_RECENT: '/payment/check-recent',
 
   // Slot management endpoints
   SLOT_MANAGEMENT_GET_ALL: '/slotManagement/get-all-generated-slots',
@@ -52,6 +53,7 @@ export const API_ENDPOINTS = {
   SLOT_MANAGEMENT_MY_RECURRING: '/slotManagement/my-recurring-availability',
   SLOT_MANAGEMENT_SET_RECURRING: '/slotManagement/set-recurring-availability',
   SLOT_MANAGEMENT_GENERATE_SLOTS: '/slotManagement/generating-actual-slots',
+  SLOT_MANAGEMENT_ADD_CUSTOM: '/slotManagement/add-custom-slot',
 
   // ✅ CORRECTED BLOG ENDPOINTS - Unified approach
   // Public blog endpoints (no auth required)
@@ -82,10 +84,8 @@ export const API_ENDPOINTS = {
   COUNSELOR_APPLICATION_SUBMIT: '/counselor/dashboard/application/submit',
   COUNSELOR_APPLICATION_STATUS: '/counselor/dashboard/application/status',
 
-  //Client Dashboard Upcomming Sessions Endpoints
-  COUNSELOR_SESSIONS_UPCOMING: '/counselor/dashboard/sessions/upcoming',
-  COUNSELOR_SESSION_DETAILS: '/counselor/dashboard/sessions',
-  COUNSELOR_SESSION_JOIN: '/counselor/dashboard/sessions',
+  //Counselor Dashboard My Sessions Endpoints
+  COUNSELOR_BOOKINGS: '/counselor/dashboard/bookings',
 
   // ✅ Contact endpoint
   CONTACT_SEND_EMAIL: '/contact/send-email',

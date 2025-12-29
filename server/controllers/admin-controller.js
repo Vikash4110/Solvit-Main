@@ -5,6 +5,7 @@ import { Counselor } from '../models/counselor-model.js';
 import { Booking } from '../models/booking-model.js';
 import { Client } from '../models/client-model.js';
 import { Payment } from '../models/payment-model.js';
+import { PaymentRefund } from '../models/paymentRefund.model.js';
 import {
   sendCounselorApplicationRejected,
   sendCounselorApplicationApproved,
@@ -736,8 +737,10 @@ export const toggleCounselorBlock = wrapper(async (req, res) => {
 
 // ✅ ==================== Payment Management ====================
 
+// ==================== PRODUCTION-GRADE PAYMENT MANAGEMENT ====================
+
 /**
- * @desc Get all payments with pagination, filters, and stats
+ * @desc Get all payments with advanced filters, refund info, and pagination
  * @route GET /admin/payments
  * @access Private (Admin only)
  */
@@ -747,264 +750,425 @@ export const getAllPayments = wrapper(async (req, res) => {
     limit = 20,
     search = '',
     dateFilter = 'all',
-    method = '', // Filter by payment method
-    status = '', // Filter by status
+    methodFilter = 'all_methods',
+    statusFilter = 'all_statuses',
+    refundFilter = 'all_refunds',
+    bookingStatusFilter = 'all_booking_statuses',
   } = req.query;
 
-  const filter = { status: 'captured' }; // Only show captured payments
-  // ==========================================
-  // DATE FILTER
-  // ==========================================
-  const now = dayjs();
-  if (dateFilter === 'today') {
-    filter.createdAt = {
-      $gte: now.startOf('day').toDate(),
-      $lte: now.endOf('day').toDate(),
-    };
-  } else if (dateFilter === 'week') {
-    filter.createdAt = {
-      $gte: now.startOf('week').toDate(),
-      $lte: now.endOf('week').toDate(),
-    };
-  } else if (dateFilter === 'month') {
-    filter.createdAt = {
-      $gte: now.startOf('month').toDate(),
-      $lte: now.endOf('month').toDate(),
-    };
-  }
+  try {
+    // ========================================
+    // BUILD FILTER QUERY
+    // ========================================
+    const filter = {};
 
-  // ==========================================
-  // PAYMENT METHOD FILTER
-  // ==========================================
-  if (method) {
-    filter.method = method;
-  }
+    // Date Filter
+    if (dateFilter !== 'all') {
+      const now = dayjs();
+      let startDate;
 
-  // ==========================================
-  // SEARCH FILTER
-  // ==========================================
-  if (search) {
-    const clients = await Client.find({
-      $or: [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
-      ],
-    }).select('_id');
+      switch (dateFilter) {
+        case 'today':
+          startDate = now.startOf('day');
+          break;
+        case 'yesterday':
+          startDate = now.subtract(1, 'day').startOf('day');
+          break;
+        case 'last_7_days':
+          startDate = now.subtract(7, 'days').startOf('day');
+          break;
+        case 'last_30_days':
+          startDate = now.subtract(30, 'days').startOf('day');
+          break;
+        case 'this_month':
+          startDate = now.startOf('month');
+          break;
+        case 'last_month':
+          startDate = now.subtract(1, 'month').startOf('month');
+          break;
+        default:
+          startDate = null;
+      }
 
-    filter.$or = [
-      { razorpay_payment_id: { $regex: search, $options: 'i' } },
-      { razorpay_order_id: { $regex: search, $options: 'i' } },
-      { clientId: { $in: clients.map((c) => c._id) } },
-    ];
-  }
+      if (startDate) {
+        filter.createdAt = { $gte: startDate.toDate() };
+        if (dateFilter === 'yesterday') {
+          filter.createdAt.$lte = now.startOf('day').toDate();
+        }
+      }
+    }
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+    // Payment Method Filter
+    if (methodFilter && methodFilter !== 'all_methods') {
+      filter.method = methodFilter;
+    }
 
-  // ==========================================
-  // FETCH PAYMENTS
-  // ==========================================
-  const payments = await Payment.find(filter)
-    .populate({
-      path: 'clientId',
-      select: 'fullName email phone profilePicture',
-    })
-    .populate({
-      path: 'slotId',
-      select: 'basePrice startTime endTime counselorId',
-      populate: {
-        path: 'counselorId',
-        select: 'fullName email profilePicture experienceLevel',
+    // Payment Status Filter
+    if (statusFilter && statusFilter !== 'all_statuses') {
+      filter.status = statusFilter;
+    }
+
+    // Refund Status Filter
+    if (refundFilter && refundFilter !== 'all_refunds') {
+      if (refundFilter === 'refunded') {
+        filter.refund_status = { $in: ['partial', 'full'] };
+      } else if (refundFilter === 'no_refund') {
+        filter.refund_status = null;
+      } else {
+        filter.refund_status = refundFilter; // 'partial' or 'full'
+      }
+    }
+
+    // Booking Status Filter
+    if (bookingStatusFilter && bookingStatusFilter !== 'all_booking_statuses') {
+      filter.bookingStatus = bookingStatusFilter;
+    }
+
+    // Search Filter
+    if (search) {
+      const searchRegex = { $regex: search, $options: 'i' };
+      filter.$or = [
+        { razorpay_payment_id: searchRegex },
+        { razorpay_order_id: searchRegex },
+        { email: searchRegex },
+        { contact: searchRegex },
+      ];
+    }
+
+    // ========================================
+    // FETCH PAYMENTS WITH POPULATION
+    // ========================================
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [payments, total] = await Promise.all([
+      Payment.find(filter)
+        .populate({
+          path: 'clientId',
+          select: 'fullName email phone profilePicture username',
+        })
+        .populate({
+          path: 'slotId',
+          select: 'basePrice startTime endTime counselorId',
+          populate: {
+            path: 'counselorId',
+            select: 'fullName email phone profilePicture experienceLevel',
+          },
+        })
+        .populate({
+          path: 'bookingId',
+          select: 'status sessionId completion dispute payout',
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Payment.countDocuments(filter),
+    ]);
+
+    // ========================================
+    // FETCH REFUND DATA FOR EACH PAYMENT
+    // ========================================
+    const paymentIds = payments.map((p) => p._id);
+    const refunds = await PaymentRefund.find({
+      paymentId: { $in: paymentIds },
+    }).lean();
+
+    // Map refunds to payments
+    const refundMap = refunds.reduce((acc, refund) => {
+      const paymentId = refund.paymentId.toString();
+      if (!acc[paymentId]) acc[paymentId] = [];
+      acc[paymentId].push(refund);
+      return acc;
+    }, {});
+
+    // Attach refunds to payments
+    const paymentsWithRefunds = payments.map((payment) => ({
+      ...payment,
+      refunds: refundMap[payment._id.toString()] || [],
+    }));
+
+    // ========================================
+    // CALCULATE COMPREHENSIVE STATS (NO ROUNDING)
+    // ========================================
+    const allPayments = await Payment.find({}).lean();
+
+    const totalRevenue = allPayments.reduce((sum, p) => sum + p.amount, 0);
+
+    const platformRevenue = allPayments.reduce((sum, p) => {
+      const counselorPayout = p.slotId?.basePrice || 0;
+      return sum + (p.amount - counselorPayout);
+    }, 0);
+
+    const totalRazorpayFees = allPayments.reduce((sum, p) => sum + (p.fee || 0), 0);
+    const netRevenue = totalRevenue - totalRazorpayFees;
+
+    const todayStart = dayjs().startOf('day').toDate();
+    const todayPayments = allPayments.filter((p) => new Date(p.createdAt) >= todayStart);
+    const todayRevenue = todayPayments.reduce((sum, p) => sum + p.amount, 0);
+
+    // Refund Stats
+    const refundedPayments = allPayments.filter((p) => p.refund_status !== null);
+    const totalRefunded = refundedPayments.reduce((sum, p) => sum + (p.amount_refunded || 0), 0);
+    const partialRefunds = allPayments.filter((p) => p.refund_status === 'partial').length;
+    const fullRefunds = allPayments.filter((p) => p.refund_status === 'full').length;
+
+    // Status Breakdown
+    const statusBreakdown = await Payment.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+        },
       },
-    })
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(parseInt(limit));
+    ]);
 
-  const total = await Payment.countDocuments(filter);
-
-  // ==========================================
-  // CALCULATE COMPREHENSIVE STATS
-  // ==========================================
-  const allPayments = await Payment.find({ status: 'captured' }).populate('slotId');
-
-  // Total revenue
-  const totalRevenue = allPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-
-  // Platform revenue (amount - counselor base price)
-  const platformRevenue = allPayments.reduce((sum, p) => {
-    const counselorPayout = p.slotId?.basePrice || 0;
-    return sum + (p.amount - counselorPayout);
-  }, 0);
-
-  // Total Razorpay fees
-  const totalRazorpayFees = allPayments.reduce((sum, p) => sum + (p.fee || 0), 0);
-
-  // Net revenue (after Razorpay fees)
-  const netRevenue = totalRevenue - totalRazorpayFees;
-
-  // Today's revenue
-  const todayPayments = await Payment.find({
-    status: 'captured',
-    createdAt: {
-      $gte: now.startOf('day').toDate(),
-      $lte: now.endOf('day').toDate(),
-    },
-  });
-  const todayRevenue = todayPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-
-  // Payment method breakdown
-  const methodStats = await Payment.aggregate([
-    { $match: { status: 'captured' } },
-    {
-      $group: {
-        _id: '$method',
-        count: { $sum: 1 },
-        totalAmount: { $sum: '$amount' },
+    // Booking Status Breakdown
+    const bookingStatusBreakdown = await Payment.aggregate([
+      {
+        $group: {
+          _id: '$bookingStatus',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+        },
       },
-    },
-  ]);
+    ]);
 
-  return res.status(200).json({
-    success: true,
-    payments,
-    stats: {
-      totalPayments: allPayments.length,
-      totalRevenue: totalRevenue, // ✅ No rounding
-      platformRevenue: platformRevenue, // ✅ No rounding
-      netRevenue: netRevenue, // ✅ No rounding
-      todayRevenue: todayRevenue, // ✅ No rounding
-      razorpayFees: totalRazorpayFees, // ✅ No rounding, fee only (not fee + tax)
-      methodBreakdown: methodStats,
-    },
-    pagination: {
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(total / parseInt(limit)),
-      totalPayments: total,
-      limit: parseInt(limit),
-    },
-  });
+    // Method Breakdown
+    const methodStats = await Payment.aggregate([
+      {
+        $group: {
+          _id: '$method',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    // ========================================
+    // RESPONSE
+    // ========================================
+    return res.status(200).json({
+      success: true,
+      payments: paymentsWithRefunds,
+      stats: {
+        totalPayments: allPayments.length,
+        totalRevenue, // NO ROUNDING
+        platformRevenue, // NO ROUNDING
+        netRevenue, // NO ROUNDING
+        todayRevenue, // NO ROUNDING
+        razorpayFees: totalRazorpayFees, // NO ROUNDING
+        totalRefunded, // NO ROUNDING
+        refundCount: refundedPayments.length,
+        partialRefunds,
+        fullRefunds,
+        methodBreakdown: methodStats,
+        statusBreakdown,
+        bookingStatusBreakdown,
+      },
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalPayments: total,
+        limit: parseInt(limit),
+      },
+    });
+  } catch (error) {
+    console.error('❌ Get all payments error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch payments',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+    });
+  }
 });
 
 /**
- * @desc Get detailed payment information
+ * @desc Get detailed payment information with full refund history
  * @route GET /admin/payments/:paymentId
  * @access Private (Admin only)
  */
 export const getPaymentDetails = wrapper(async (req, res) => {
   const { paymentId } = req.params;
 
-  const payment = await Payment.findById(paymentId)
-    .populate({
-      path: 'clientId',
-      select: 'fullName email phone profilePicture username address',
-    })
-    .populate({
-      path: 'slotId',
-      select: 'basePrice startTime endTime counselorId',
-      populate: {
-        path: 'counselorId',
-        select: 'fullName email phone profilePicture experienceLevel specialization',
-      },
-    })
-    .populate({
-      path: 'bookingId',
-      select: 'status sessionId completion dispute payout',
-    });
+  try {
+    // Validate payment ID
+    if (!mongoose.Types.ObjectId.isValid(paymentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment ID format',
+      });
+    }
 
-  if (!payment) {
-    return res.status(404).json({
+    // Fetch payment with full population
+    const payment = await Payment.findById(paymentId)
+      .populate({
+        path: 'clientId',
+        select: '-password',
+      })
+      .populate({
+        path: 'slotId',
+        populate: {
+          path: 'counselorId',
+          select: '-password',
+        },
+      })
+      .populate({
+        path: 'bookingId',
+        select: 'status sessionId completion dispute payout',
+      })
+      .lean();
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment not found',
+      });
+    }
+
+    // Fetch all refunds for this payment
+    const refunds = await PaymentRefund.find({ paymentId: payment._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Calculate derived values (NO ROUNDING)
+    const counselorPayout = payment.slotId?.basePrice || 0;
+    const platformFee = payment.amount - counselorPayout;
+    const netAmountReceived = payment.amount - (payment.fee || 0);
+    const totalRefundProcessed = refunds
+      .filter((r) => r.status === 'processed')
+      .reduce((sum, r) => sum + r.amount, 0);
+
+    // ========================================
+    // RESPONSE WITH COMPREHENSIVE DATA
+    // ========================================
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...payment,
+        refunds, // Full refund history
+        calculated: {
+          platformFee, // NO ROUNDING
+          counselorPayout, // NO ROUNDING
+          netAmountReceived, // NO ROUNDING
+          razorpayTotalFee: payment.fee || 0, // Fee only
+          totalRefundProcessed, // NO ROUNDING
+          remainingAmount: payment.amount - (payment.amount_refunded || 0), // NO ROUNDING
+        },
+      },
+    });
+  } catch (error) {
+    console.error('❌ Get payment details error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Payment not found',
+      message: 'Failed to fetch payment details',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
     });
   }
-
-  // Calculate derived values
-  const counselorPayout = payment.slotId?.basePrice || 0;
-  const platformFee = payment.amount - counselorPayout;
-  const netAmountReceived = payment.amount - (payment.fee || 0);
-
-  return res.status(200).json({
-    success: true,
-    data: {
-      ...payment.toObject(),
-      calculated: {
-        platformFee: platformFee, // ✅ No rounding
-        counselorPayout: counselorPayout, // ✅ No rounding
-        netAmountReceived: netAmountReceived, // ✅ No rounding
-        razorpayTotalFee: payment.fee || 0, // ✅ Fee only (not fee + tax)
-      },
-    },
-  });
 });
 
 /**
- * @desc Get payment analytics
+ * @desc Get payment analytics with refund insights
  * @route GET /admin/payments/analytics
  * @access Private (Admin only)
  */
 export const getPaymentAnalytics = wrapper(async (req, res) => {
   const { period = '30days' } = req.query;
 
-  const now = dayjs();
-  let startDate;
+  try {
+    const now = dayjs();
+    let startDate;
 
-  switch (period) {
-    case '7days':
-      startDate = now.subtract(7, 'days');
-      break;
-    case '30days':
-      startDate = now.subtract(30, 'days');
-      break;
-    case '90days':
-      startDate = now.subtract(90, 'days');
-      break;
-    case 'year':
-      startDate = now.subtract(1, 'year');
-      break;
-    default:
-      startDate = now.subtract(30, 'days');
+    switch (period) {
+      case '7days':
+        startDate = now.subtract(7, 'days');
+        break;
+      case '30days':
+        startDate = now.subtract(30, 'days');
+        break;
+      case '90days':
+        startDate = now.subtract(90, 'days');
+        break;
+      case 'year':
+        startDate = now.subtract(1, 'year');
+        break;
+      default:
+        startDate = now.subtract(30, 'days');
+    }
+
+    const payments = await Payment.find({
+      createdAt: { $gte: startDate.toDate() },
+    })
+      .populate('slotId')
+      .lean();
+
+    // Get refunds for the same period
+    const refunds = await PaymentRefund.find({
+      createdAt: { $gte: startDate.toDate() },
+    }).lean();
+
+    // Daily revenue trend (NO ROUNDING)
+    const dailyRevenue = payments.reduce((acc, payment) => {
+      const date = dayjs(payment.createdAt).format('YYYY-MM-DD');
+      if (!acc[date]) {
+        acc[date] = { date, revenue: 0, count: 0, refunded: 0 };
+      }
+      acc[date].revenue += payment.amount;
+      acc[date].count += 1;
+      acc[date].refunded += payment.amount_refunded || 0;
+      return acc;
+    }, {});
+
+    // Payment method distribution (NO ROUNDING)
+    const methodDistribution = payments.reduce((acc, payment) => {
+      const method = payment.method || 'unknown';
+      if (!acc[method]) {
+        acc[method] = { method, count: 0, revenue: 0 };
+      }
+      acc[method].count += 1;
+      acc[method].revenue += payment.amount;
+      return acc;
+    }, {});
+
+    // Refund analytics
+    const refundAnalytics = {
+      totalRefunds: refunds.length,
+      processedRefunds: refunds.filter((r) => r.status === 'processed').length,
+      failedRefunds: refunds.filter((r) => r.status === 'failed').length,
+      totalRefundAmount: refunds.reduce(
+        (sum, r) => sum + (r.status === 'processed' ? r.amount : 0),
+        0
+      ),
+      refundsByReason: refunds.reduce((acc, refund) => {
+        const reason = refund.reason || 'unknown';
+        if (!acc[reason]) acc[reason] = 0;
+        acc[reason] += 1;
+        return acc;
+      }, {}),
+    };
+
+    const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+    const averageTransactionValue = payments.length > 0 ? totalRevenue / payments.length : 0;
+
+    return res.status(200).json({
+      success: true,
+      analytics: {
+        dailyRevenue: Object.values(dailyRevenue),
+        methodDistribution: Object.values(methodDistribution),
+        totalRevenue, // NO ROUNDING
+        totalTransactions: payments.length,
+        averageTransactionValue, // NO ROUNDING
+        refundAnalytics,
+      },
+    });
+  } catch (error) {
+    console.error('❌ Get payment analytics error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch payment analytics',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+    });
   }
-
-  const payments = await Payment.find({
-    createdAt: { $gte: startDate.toDate() },
-  }).populate('slotId');
-
-  // Daily revenue trend - NO ROUNDING
-  const dailyRevenue = payments.reduce((acc, payment) => {
-    const date = dayjs(payment.createdAt).format('YYYY-MM-DD');
-    if (!acc[date]) {
-      acc[date] = { date, revenue: 0, count: 0 };
-    }
-    acc[date].revenue += payment.amount;
-    acc[date].count += 1;
-    return acc;
-  }, {});
-
-  // Payment method distribution - NO ROUNDING
-  const methodDistribution = payments.reduce((acc, payment) => {
-    const method = payment.method || 'unknown';
-    if (!acc[method]) {
-      acc[method] = { method, count: 0, revenue: 0 };
-    }
-    acc[method].count += 1;
-    acc[method].revenue += payment.amount;
-    return acc;
-  }, {});
-
-  const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
-  const averageTransactionValue = payments.length > 0 ? totalRevenue / payments.length : 0;
-
-  return res.status(200).json({
-    success: true,
-    analytics: {
-      dailyRevenue: Object.values(dailyRevenue),
-      methodDistribution: Object.values(methodDistribution),
-      totalRevenue: totalRevenue, // ✅ No rounding
-      totalTransactions: payments.length,
-      averageTransactionValue: averageTransactionValue, // ✅ No rounding
-    },
-  });
 });
 
 // ✅ ==================== EXPORTS ====================

@@ -55,7 +55,7 @@ function Calendar({
 
   return (
     <DayPicker
-      showOutsideDays={showOutsideDays}
+      // showOutsideDays={showOutsideDays}
       className={cn(
         "group/calendar p-4 sm:p-5",
         "[--cell-size:3rem] sm:[--cell-size:3rem]",
@@ -160,7 +160,7 @@ function Calendar({
           defaultClassNames.range_end
         ),
         today: cn(
-          "bg-primary-100 dark:bg-primary-900/20",
+         
           "text-primary-800 dark:text-primary-200",
           "rounded-full",
           "font-semibold ring-2 ring-primary-500",
@@ -237,7 +237,7 @@ function CalendarDayButton({ className, day, modifiers, hasSlotsDates = [], ...p
     <Button
       ref={ref}
       variant="ghost"
-      size="icon"
+      size="xl"
       data-day={dateString}
       data-has-slots={hasSlots}
       data-selected-single={
@@ -304,8 +304,7 @@ function CalendarDayButton({ className, day, modifiers, hasSlotsDates = [], ...p
       {hasSlots && !modifiers.selected && (
         <div className="absolute bottom-1 flex gap-0.5">
           <div className="w-1 h-1 rounded-full bg-primary-600" />
-          <div className="w-1 h-1 rounded-full bg-primary-600" />
-          <div className="w-1 h-1 rounded-full bg-primary-600" />
+         
         </div>
       )}
     </Button>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,7 +28,7 @@ import {
 
 // Import your background image
 import BackgroundImage from '../../assets/registerAndLogin/image.jpg';
-
+import { API_BASE_URL } from '../../config/api';
 // Animation variants
 const pageVariants = {
   initial: { opacity: 0 },
@@ -107,6 +106,9 @@ const ClientLogin = () => {
     } finally {
       setLoading(false);
     }
+  };
+  const handleGoogleLogin = async () => {
+    window.location.href = 'http://localhost:8000/api/v1/oauth/show-google-login-page';
   };
 
   const handleForgotPasswordSendOtp = async (e) => {
@@ -233,7 +235,10 @@ const ClientLogin = () => {
                       const isCompleted = step > item.number;
 
                       return (
-                        <div key={item.number} className="flex flex-col items-center flex-1 relative">
+                        <div
+                          key={item.number}
+                          className="flex flex-col items-center flex-1 relative"
+                        >
                           <motion.div
                             initial={false}
                             animate={{
@@ -243,8 +248,8 @@ const ClientLogin = () => {
                               isCompleted
                                 ? 'bg-green-500 dark:bg-green-600 shadow-md shadow-green-500/20'
                                 : isActive
-                                ? 'bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 ring-3 ring-primary-100 dark:ring-primary-900/30 shadow-md shadow-primary-500/20'
-                                : 'bg-neutral-200 dark:bg-neutral-800'
+                                  ? 'bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 ring-3 ring-primary-100 dark:ring-primary-900/30 shadow-md shadow-primary-500/20'
+                                  : 'bg-neutral-200 dark:bg-neutral-800'
                             }`}
                           >
                             {isCompleted ? (
@@ -390,6 +395,22 @@ const ClientLogin = () => {
                               <ArrowRight className="ml-2 h-5 w-5" />
                             </>
                           )}
+                        </Button>
+                        <Button
+                          onClick={handleGoogleLogin}
+                          variant="outline"
+                          className="w-full h-11 sm:h-12 border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark>:hover:bg-neutral-800 transition-all duration-200"
+                        >
+                          <div className="flex items-center justify-center space-x-2">
+                            <img
+                              src="https://www.svgrepo.com/show/355037/google.svg"
+                              alt="Google Logo"
+                              className="h-5 w-5"
+                            />
+                            <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-medium">
+                              Sign in with Google
+                            </span>
+                          </div>
                         </Button>
 
                         <div className="relative">

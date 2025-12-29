@@ -20,7 +20,8 @@ const paymentSchema = new mongoose.Schema(
     },
     razorpay_signature: {
       type: String,
-      required: true,
+      required: false, // ✅ CHANGED - Allow null for unlinked payments
+      default: null,
     },
 
     // ==========================================
@@ -41,6 +42,24 @@ const paymentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Booking',
     },
+    idempotencyKey: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+
+    bookingStatus: {
+      type: String,
+      enum: [
+        'pending',
+        'completed',
+        'failed',
+        'refunded',
+        'payment_captured', // ✅ ADD
+        'pending_resources', // ✅ ADD
+      ],
+      default: 'pending',
+    },
 
     // ==========================================
     // PAYMENT AMOUNT DETAILS
@@ -60,7 +79,7 @@ const paymentSchema = new mongoose.Schema(
     // ==========================================
     status: {
       type: String,
-      enum: ['created', 'authorized', 'captured', 'failed'],
+      enum: ['created', 'authorized', 'captured', 'failed', 'captured_unlinked'],
       default: 'captured',
       index: true,
     },

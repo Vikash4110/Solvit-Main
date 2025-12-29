@@ -52,12 +52,12 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
           path: '/admin/dashboard',
           badge: null,
         },
-        {
-          name: 'Analytics',
-          icon: BarChart3,
-          path: '/admin/analytics',
-          badge: null,
-        },
+        // {
+        //   name: 'Analytics',
+        //   icon: BarChart3,
+        //   path: '/admin/analytics',
+        //   badge: null,
+        // },
       ],
     },
     {
@@ -67,13 +67,13 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
           name: 'Applications',
           icon: FileText,
           path: '/admin/applications',
-          badge: { count: 5, variant: 'default' }, // You can make this dynamic
+          badge: null, // You can make this dynamic
         },
         {
           name: 'Disputes',
           icon: AlertTriangle,
           path: '/admin/disputes',
-          badge: { count: 3, variant: 'destructive' },
+          badge: null,
         },
         {
           name: 'Clients',
@@ -119,7 +119,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
           name: 'Messages',
           icon: MessageSquare,
           path: '/admin/messages',
-          badge: { count: 12, variant: 'secondary' },
+          badge: null,
         },
         {
           name: 'Notifications',

@@ -34,85 +34,11 @@ export function MeetingDetailsScreen({ sessionData, handleOnClickJoin, handleCli
             Your Session Awaits
           </h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">
-            Everything is set up. Join when you're ready to begin your counseling session.
+            Everything is set up. Join when you're ready to begin the counseling session.
           </p>
         </div>
 
-        {/* Session Details Card - Using WhySolvit/OurServices Card Style */}
-        {sessionData && (
-          <Card className="group relative overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 transition-all duration-500">
-            {/* Decorative Corner Element */}
-            <div className="absolute -top-8 -right-8 w-24 h-24 bg-gradient-to-br from-primary-400/20 to-primary-600/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
-
-            <CardHeader className="relative pb-4">
-              <div className="flex items-center gap-3">
-                {/* Icon Badge with HowItWorks Style */}
-                <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 shadow-lg group-hover:shadow-xl group-hover:shadow-primary-500/40 transition-all duration-500">
-                  <Video className="h-6 w-6 text-white" />
-                  <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-primary-900 dark:text-white">
-                    Session Information
-                  </h3>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                    Your counseling session details
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="relative space-y-3">
-              {sessionData.title && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700/50 transition-all duration-300 group-hover:border-primary-200 dark:group-hover:border-primary-800/50 group-hover:bg-primary-50/50 dark:group-hover:bg-primary-900/10">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
-                    <Calendar className="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                      Session Title
-                    </p>
-                    <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                      {sessionData.title}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {sessionData.time && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700/50 transition-all duration-300 group-hover:border-primary-200 dark:group-hover:border-primary-800/50 group-hover:bg-primary-50/50 dark:group-hover:bg-primary-900/10">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
-                    <Clock className="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                      Scheduled Time
-                    </p>
-                    <p className="text-sm font-semibold text-neutral-900 dark:text-white">
-                      {sessionData.time}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {sessionData.host && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700/50 transition-all duration-300 group-hover:border-primary-200 dark:group-hover:border-primary-800/50 group-hover:bg-primary-50/50 dark:group-hover:bg-primary-900/10">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
-                    <User className="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                      Counselor
-                    </p>
-                    <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                      {sessionData.host}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        
 
         {/* Action Buttons - Homepage Button Style */}
         <div className="space-y-3">

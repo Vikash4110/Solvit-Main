@@ -13,14 +13,16 @@ import { wrapper } from '../utils/wrapper.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { sendEmail } from '../utils/nodeMailer.js';
-import puppeteer from 'puppeteer';
 import { invoiceTemplate } from '../utils/InvoiceTemplate.js';
 import path from 'path';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
-import dailyService from './daily.controller.js';
+import videoSDKService from '../services/videoSDK.service.js';
 import { logger } from '../utils/logger.js';
 
 import { timeZone, slotDuration, earlyJoinMinutesForSession } from '../constants.js';
+
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -55,7 +57,7 @@ const checkout = wrapper(async (req, res) => {
   }
 
   const options = {
-    amount: totalPriceAfterPlatformFee * 100, // Convert to paise
+    amount: Math.round(totalPriceAfterPlatformFee * 100), // Convert to paise
     currency: 'INR',
     notes: { clientId, slotId },
     receipt: `receipt_${Date.now()}`,
@@ -68,7 +70,7 @@ const checkout = wrapper(async (req, res) => {
     .json(new ApiResponse(200, { order }, 'Razorpay order created successfully'));
 });
 
-// Enhanced payment verification with Daily.co integration
+// Enhanced payment verification with VideoSDK integration
 const paymentVerification = wrapper(async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, clientId, slotId } = req.body;
 
@@ -76,7 +78,9 @@ const paymentVerification = wrapper(async (req, res) => {
     throw new ApiError(400, 'Missing required payment verification data');
   }
 
-  // Step 1: Verify Signature
+  // ==========================================
+  // STEP 1: VERIFY RAZORPAY SIGNATURE
+  // ==========================================
   const body = `${razorpay_order_id}|${razorpay_payment_id}`;
   const expectedSignature = crypto
     .createHmac('sha256', process.env.RAZORPAY_API_SECRET)
@@ -86,88 +90,185 @@ const paymentVerification = wrapper(async (req, res) => {
   const isAuthentic = expectedSignature === razorpay_signature;
 
   if (!isAuthentic) {
-    throw new ApiError(400, 'Invalid payment signature');
+    throw new ApiError(400, 'Invalid payment signature - Payment verification failed');
   }
 
-  // Step 2: Get required data
-  const [clientData, slotData, paymentData] = await Promise.all([
+  // ==========================================
+  // STEP 2: FETCH COMPLETE PAYMENT DATA FROM RAZORPAY
+  // ==========================================
+  let razorpayPayment;
+
+  try {
+    razorpayPayment = await instance.payments.fetch(razorpay_payment_id);
+  } catch (error) {
+    logger.error('Razorpay payment fetch error:', error);
+    throw new ApiError(500, 'Failed to fetch payment details from Razorpay');
+  }
+
+  if (!razorpayPayment) {
+    throw new ApiError(404, 'Payment not found in Razorpay');
+  }
+
+  // Check if payment is actually captured
+  if (razorpayPayment.status !== 'captured') {
+    throw new ApiError(400, `Payment status is ${razorpayPayment.status}, not captured`);
+  }
+
+  // ==========================================
+  // STEP 3: GET PLATFORM DATA
+  // ==========================================
+  const [clientData, slotData] = await Promise.all([
     Client.findById(clientId).select('-password'),
     GeneratedSlot.findById(slotId),
-    instance.payments.fetch(razorpay_payment_id),
   ]);
 
   if (!clientData) throw new ApiError(404, 'Client not found');
   if (!slotData) throw new ApiError(404, 'Slot not found');
-  if (!paymentData) throw new ApiError(404, 'Payment data not found');
+  if (slotData.status !== 'available') {
+    throw new ApiError(400, 'Slot is no longer available');
+  }
 
-  const counselorData = await Counselor.findById(slotData?.counselorId).select('-password');
+  const counselorData = await Counselor.findById(slotData.counselorId).select('-password');
   if (!counselorData) throw new ApiError(404, 'Counselor not found');
 
-  // Step 3: Generate invoice
-
-  const invoiceUrl = await generateInvoice({
-    invoiceNumber: `INV-${Date.now()}`,
-    invoiceDate: dayjs().tz(timeZone).format('YYYY-MM-DD'),
-    clientName: clientData?.fullName || '',
-    clientEmail: clientData?.email || '',
-    clientPhone: clientData?.phone || '',
-    clientAddress: clientData?.address || '',
-    items: [
-      {
-        description: `Counseling Session with Dr. ${counselorData?.fullName || ''}`,
-        dateTime: `${dayjs(slotData?.startTime).tz(timeZone).format('dddd, MMMM D, YYYY')}, ${dayjs(slotData?.startTime).tz(timeZone).format('hh:mm A')} - ${dayjs(slotData?.endTime).tz(timeZone).format('hh:mm A')}`,
-        duration: `${slotDuration} minutes`,
-        rate: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
-        quantity: 1,
-        amount: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
-      },
-    ],
-    subtotal: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
-    taxRate: 18,
-    taxAmount: Number(slotData?.totalPriceAfterPlatformFee) * 0.18,
-    discount: 0,
-    total: slotData?.totalPriceAfterPlatformFee,
-    paymentMethod: paymentData.method || '',
-    paymentId: razorpay_payment_id,
-    paymentStatus: 'Paid',
-    refundPolicy: 'Sessions once booked are non-refundable.',
-  });
-  console.log('********************************');
-  console.log(invoiceUrl);
-  console.log('********************************');
-
-  // Step 4: Save payment info
-  const payment = await Payment.create({
-    razorpay_order_id,
+  // ==========================================
+  // STEP 4: SAVE COMPLETE PAYMENT DATA
+  // ==========================================
+  const paymentData = {
+    // Razorpay IDs
     razorpay_payment_id,
+    razorpay_order_id,
     razorpay_signature,
+
+    // Platform references
     clientId,
     slotId,
-    invoice: invoiceUrl,
+
+    // Amount details (convert paise to rupees)
+    amount: razorpayPayment.amount / 100,
+    currency: razorpayPayment.currency,
+
+    // Status & method
+    status: razorpayPayment.status,
+    method: razorpayPayment.method,
+    captured: razorpayPayment.captured,
+    international: razorpayPayment.international,
+
+    // Payment method specific details
+    bank: razorpayPayment.bank || null,
+    wallet: razorpayPayment.wallet || null,
+    vpa: razorpayPayment.vpa || null,
+    card_id: razorpayPayment.card_id || null,
+
+    // UPI specific details
+    upiDetails: razorpayPayment.upi
+      ? {
+          payer_account_type: razorpayPayment.upi.payer_account_type,
+          flow: razorpayPayment.upi.flow,
+        }
+      : undefined,
+
+    // Customer contact
+    email: razorpayPayment.email || clientData.email,
+    contact: razorpayPayment.contact || clientData.phone,
+    customer_id: razorpayPayment.customer_id || null,
+
+    // Fees (convert paise to rupees)
+    fee: razorpayPayment.fee ? razorpayPayment.fee / 100 : 0,
+    tax: razorpayPayment.tax ? razorpayPayment.tax / 100 : 0,
+
+    // Refund details
+    amount_refunded: razorpayPayment.amount_refunded / 100,
+    refund_status: razorpayPayment.refund_status,
+
+    // Transaction details
+    description: razorpayPayment.description,
+    acquirer_data: razorpayPayment.acquirer_data || {},
+
+    // Error details (should be null for successful payments)
+    error_code: razorpayPayment.error_code,
+    error_description: razorpayPayment.error_description,
+    error_source: razorpayPayment.error_source,
+    error_step: razorpayPayment.error_step,
+    error_reason: razorpayPayment.error_reason,
+
+    // Additional
+    notes: razorpayPayment.notes || {},
+    razorpay_created_at: razorpayPayment.created_at,
+  };
+
+  const payment = await Payment.create(paymentData);
+
+  logger.info(`Payment captured successfully:`, {
+    paymentId: payment._id,
+    razorpay_payment_id,
+    amount: payment.amount,
+    method: payment.method,
+    clientId,
   });
 
-  // Step 5: Process booking with Daily.co integration
-  const bookingResult = await processBookingWithDaily(
+  // // Step 3: Generate invoice
+  // const invoiceUrl = await generateInvoice({
+  //   invoiceNumber: `INV-${Date.now()}`,
+  //   invoiceDate: dayjs().tz(timeZone).format('YYYY-MM-DD'),
+  //   clientName: clientData?.fullName || '',
+  //   clientEmail: clientData?.email || '',
+  //   clientPhone: clientData?.phone || '',
+  //   clientAddress: clientData?.address || '',
+  //   items: [
+  //     {
+  //       description: `Video Counseling Session with Dr. ${counselorData?.fullName || ''}`,
+  //       dateTime: `${dayjs(slotData?.startTime).tz(timeZone).format('dddd, MMMM D, YYYY')}, ${dayjs(slotData?.startTime).tz(timeZone).format('hh:mm A')} - ${dayjs(slotData?.endTime).tz(timeZone).format('hh:mm A')}`,
+  //       duration: `${slotDuration} minutes`,
+  //       rate: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
+  //       quantity: 1,
+  //       amount: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
+  //     },
+  //   ],
+  //   subtotal: Number(slotData?.totalPriceAfterPlatformFee) * 0.82,
+  //   taxRate: 18,
+  //   taxAmount: Number(slotData?.totalPriceAfterPlatformFee) * 0.18,
+  //   discount: 0,
+  //   total: slotData?.totalPriceAfterPlatformFee,
+  //   paymentMethod: paymentData.method || '',
+  //   paymentId: razorpay_payment_id,
+  //   paymentStatus: 'Paid',
+  //   refundPolicy: 'Sessions once booked are non-refundable.',
+  // });
+
+  // Step 5: Process booking with VideoSDK integration
+  const bookingResult = await processBookingWithVideoSDK(
     clientId,
     slotId,
     payment._id,
-    slotData.totalPriceAfterPlatformFee,
+    payment.amount,
     clientData,
     counselorData,
-    slotData,
-    invoiceUrl
+    slotData
+    // invoiceUrl
   );
 
   if (!bookingResult.success) {
     throw new ApiError(400, bookingResult.message);
   }
+  // Update payment with bookingId
+  payment.bookingId = bookingResult.booking._id;
+  await payment.save({ validateBeforeSave: false });
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
+        success: true,
         booking: bookingResult.booking,
-        payment: payment._id,
+        payment: {
+          _id: payment._id,
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status,
+          method: payment.method,
+          razorpay_payment_id: payment.razorpay_payment_id,
+        },
         sessionPageUrl: bookingResult.booking.sessionPageUrl,
       },
       'Payment verified and booking completed successfully'
@@ -175,12 +276,12 @@ const paymentVerification = wrapper(async (req, res) => {
   );
 });
 
-// Enhanced booking processing with Daily.co integration
-const processBookingWithDaily = async (
+// Enhanced booking processing with VideoSDK integration
+const processBookingWithVideoSDK = async (
   clientId,
   slotId,
   paymentId,
-  totalPriceAfterPlatformFee,
+  paidAmount,
   clientData,
   counselorData,
   slotData,
@@ -192,59 +293,42 @@ const processBookingWithDaily = async (
       return { success: false, message: 'Slot is not available for booking' };
     }
 
-    // Step 2: Create Daily.co room for the session
+    // Step 2: Create VideoSDK meeting room
     const slotStartTime = dayjs(slotData.startTime).tz(timeZone);
     const slotEndTime = dayjs(slotData.endTime).tz(timeZone);
 
-    // Create Daily room with session duration (45 minutes)
-    const dailyRoomData = await dailyService.createRoom(
-      slotId,
-      'video', // Default to video, can be changed based on slot type
-      slotDuration // 45 minutes duration
-    );
+    // Create VideoSDK room
 
-    // Step 3: Create Session record first
-    const session = new Session({
-      bookingId: null, // Will be updated after booking is created
-      dailyRoomId: dailyRoomData.roomId,
-      dailyRoomUrl: dailyRoomData.roomUrl,
-      sessionEvents: [
-        {
-          type: 'room-created',
-          timestamp: dayjs().utc().toDate(),
-          metadata: {
-            roomData: dailyRoomData,
-            slotInfo: {
-              startTime: slotData.startTime,
-              endTime: slotData.endTime,
-            },
-          },
-        },
-      ],
-    });
+    const videoSDKRoom = await videoSDKService.createRoom();
 
-    // Step 4: Create booking record with Daily.co integration
+    if (!videoSDKRoom.success) {
+      throw new Error('Failed to create video meeting room');
+    }
+    // Step 4: Create booking record
     const booking = new Booking({
       clientId,
       slotId,
-
       status: 'confirmed',
       completion: {
-        autoConfirmAt: slotEndTime.clone().add(48, 'hours').utc().toDate(), // Auto-confirm after 48 hours
-      },
-      payout: {
-        amount: totalPriceAfterPlatformFee * 0.8, // 80% to counselor (20% platform fee)
-        releaseOn: slotEndTime.clone().add(48, 'hours').utc().toDate(),
-        status: 'pending',
+        autoCompleteAt: slotEndTime.clone().add(24, 'hours').utc().toDate(),
+        disputeWindowOpenAt: slotEndTime.clone().utc().toDate(),
       },
       paymentId,
     });
-
     await booking.save();
 
-    // Step 5: Update session with booking reference
-    session.bookingId = booking._id;
-    await session.save();
+    // Step 3: Create Session record first
+    const session = new Session({
+      bookingId: booking._id,
+      videoSDKRoomId: videoSDKRoom.roomId,
+      meetingUrl: null,
+      scheduledStartTime: slotData.startTime,
+      scheduledEndTime: slotData.endTime,
+      status: 'scheduled',
+      videoSDKRoomInfo: videoSDKRoom,
+    });
+
+    await session.save({ validateBeforeSave: false });
 
     // Update booking with session reference
     booking.sessionId = session._id;
@@ -255,7 +339,7 @@ const processBookingWithDaily = async (
     slotData.bookingId = booking._id;
     await slotData.save({ validateBeforeSave: false });
 
-    // Step 7: Send enhanced confirmation emails with Daily.co session links
+    // Step 7: Send enhanced confirmation emails
     const sessionDate = slotStartTime.format('dddd, D MMMM YYYY');
     const sessionTime = slotStartTime.format('hh:mm A');
 
@@ -265,7 +349,7 @@ const processBookingWithDaily = async (
       booking,
       sessionDate,
       sessionTime,
-      totalPriceAfterPlatformFee
+      paidAmount
     );
 
     const counselorEmailHtml = generateCounselorEmailTemplate(
@@ -276,7 +360,7 @@ const processBookingWithDaily = async (
       sessionTime
     );
 
-    // Send emails with invoice attachment
+    // Send emails
     await Promise.all([
       sendEmail(clientData.email, '🎯 Video Session Confirmed - Solvit', clientEmailHtml, [
         { filename: 'invoice.pdf', path: invoiceUrl },
@@ -285,7 +369,7 @@ const processBookingWithDaily = async (
     ]);
 
     logger.info(
-      `Booking created successfully: ${booking._id} with Daily.co room: ${dailyRoomData.roomId}`
+      `Booking created successfully: ${booking._id} with VideoSDK room: ${videoSDKRoom.meetingId}`
     );
 
     return {
@@ -293,10 +377,7 @@ const processBookingWithDaily = async (
       booking: {
         _id: booking._id,
         sessionId: session._id,
-        sessionPageUrl: `${process.env.FRONTEND_URL}/video-call/${booking._id}`,
-        dailyRoomUrl: dailyRoomData.roomUrl,
-        dailyRoomId: dailyRoomData.roomId,
-        totalPriceAfterPlatformFee,
+        paidAmount,
         sessionDate,
         sessionTime,
         duration: 45,
@@ -311,199 +392,6 @@ const processBookingWithDaily = async (
       message: `Failed to process booking: ${error.message}`,
     };
   }
-};
-
-// Generate token for joining session
-const getSessionToken = wrapper(async (req, res) => {
-  const { bookingId } = req.params;
-  const userId = req.verifiedUser?._id;
-
-  if (!userId) {
-    throw new ApiError(401, 'User authentication required');
-  }
-
-  const booking = await Booking.findOne({
-    _id: bookingId,
-    status: { $in: ['confirmed'] },
-  }).populate('clientId slotId sessionId');
-
-  console.log(booking);
-
-  if (!booking) {
-    throw new ApiError(404, 'Booking not found or not accessible');
-  }
-
-  // Check session timing
-  const slotData = booking.slotId;
-  const sessionStartTime = dayjs(`${slotData.startTime}`).tz(timeZone);
-  const sessionEndTime = dayjs(`${slotData.endTime}`).tz(timeZone);
-  const now = dayjs().tz(timeZone);
-
-  if (now.isBefore(sessionStartTime.clone().subtract(earlyJoinMinutesForSession, 'minute'))) {
-    throw new ApiError(
-      400,
-      'Session has not started yet. Please join closer to the scheduled time.'
-    );
-  }
-
-  if (now.isAfter(sessionEndTime)) {
-    throw new ApiError(400, 'Session has alreday ended');
-  }
-
-  const isClient = booking.clientId._id.toString() === userId.toString();
-
-  // Generate meeting token
-  const token = await dailyService.generateMeetingToken(
-    booking.sessionId.dailyRoomUrl,
-    userId,
-    isClient
-  );
-
-  // // Update booking status if first participant
-  // if (booking.status === 'confirmed') {
-  //   booking.status = 'ongoing';
-  //   await booking.save();
-  // }
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        roomUrl: booking.sessionId.dailyRoomUrl,
-        token,
-        bookingDetails: {
-          id: booking._id,
-          sessionId: booking.sessionId,
-          sessionType: 'video',
-          duration: 45,
-          client: booking.clientId.fullName,
-          counselor: booking.slotId.counselorId,
-          status: booking.status,
-        },
-      },
-      'Session token generated successfully'
-    )
-  );
-});
-
-// Update session attendance (handles detailed tracking)
-const updateSessionAttendance = wrapper(async (req, res) => {
-  const { bookingId } = req.params;
-  const { userId, eventType, timestamp, deviceInfo } = req.body;
-
-  if (!userId || !eventType) {
-    throw new ApiError(400, 'UserId and eventType are required');
-  }
-
-  const booking = await Booking.findOne({
-    _id: bookingId,
-    $or: [{ clientId: userId }, { counselorId: userId }],
-  });
-
-  if (!booking) {
-    throw new ApiError(404, 'Booking not found or not accessible');
-  }
-
-  const session = await Session.findOne({ booking: bookingId });
-  if (!session) {
-    throw new ApiError(404, 'Session not found');
-  }
-
-  const currentTime = new Date(timestamp) || new Date();
-  const isClient = booking.clientId.toString() === userId.toString();
-
-  // Handle different event types for detailed session tracking
-  switch (eventType) {
-    case 'participant-joined':
-      await handleParticipantJoined(session, booking, userId, currentTime, deviceInfo, isClient);
-      break;
-
-    case 'participant-left':
-      await handleParticipantLeft(session, booking, userId, currentTime, isClient);
-      break;
-
-    case 'heartbeat':
-      // Update last activity
-      break;
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { success: true }, 'Session attendance updated successfully'));
-});
-
-// Helper functions for session management
-const handleParticipantJoined = async (
-  session,
-  booking,
-  userId,
-  timestamp,
-  deviceInfo,
-  isClient
-) => {
-  // Add to session participants
-  const participantData = {
-    user: userId,
-    joinedAt: timestamp,
-    deviceInfo: deviceInfo || {},
-  };
-
-  session.participants.push(participantData);
-
-  // Update session start time if first participant
-  if (!session.startedAt) {
-    session.startedAt = timestamp;
-    booking.attendance.summary.sessionStartedAt = timestamp;
-  }
-
-  // Add event
-  session.sessionEvents.push({
-    type: 'participant-joined',
-    timestamp,
-    participantId: userId.toString(),
-    metadata: { isClient, deviceInfo },
-  });
-
-  await session.save();
-  await booking.save();
-};
-
-const handleParticipantLeft = async (session, booking, userId, timestamp, isClient) => {
-  // Find and update participant
-  const participant = session.participants.find((p) => p.user.toString() === userId.toString());
-  if (participant && !participant.leftAt) {
-    participant.leftAt = timestamp;
-    participant.duration = Math.floor((timestamp - participant.joinedAt) / 1000);
-
-    // Update booking attendance summary
-    const minutes = Math.floor(participant.duration / 60);
-    if (isClient) {
-      booking.attendance.summary.clientMinutes = minutes;
-    } else {
-      booking.attendance.summary.counselorMinutes = minutes;
-    }
-  }
-
-  // Add event
-  session.sessionEvents.push({
-    type: 'participant-left',
-    timestamp,
-    participantId: userId.toString(),
-    metadata: { isClient, duration: participant?.duration },
-  });
-
-  // Check if both participants have left
-  const allLeft = session.participants.every((p) => p.leftAt);
-  if (allLeft && !session.endedAt) {
-    session.endedAt = timestamp;
-    session.actualDuration = Math.floor((timestamp - session.startedAt) / 1000);
-    booking.attendance.summary.sessionEndedAt = timestamp;
-    booking.status = 'completed_pending';
-    booking.completion.completedPendingAt = timestamp;
-  }
-
-  await session.save();
-  await booking.save();
 };
 
 // Get booking details
@@ -532,8 +420,10 @@ const generateInvoice = async (invoiceData) => {
 
   try {
     browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'], // ✅ Better for production
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(), // ✅ dynamic Chrome path for Render
+      headless: chromium.headless,
     });
     const page = await browser.newPage();
 
@@ -590,7 +480,7 @@ const generateClientEmailTemplate = (
   booking,
   sessionDate,
   sessionTime,
-  totalPrice
+  paidAmount
 ) => {
   return `
     <!DOCTYPE html>
@@ -615,7 +505,7 @@ const generateClientEmailTemplate = (
             <p><span class="font-medium">Date:</span> ${sessionDate}</p>
             <p><span class="font-medium">Time:</span> ${sessionTime}</p>
             <p><span class="font-medium">Duration:</span> 45 minutes</p>
-            <p><span class="font-medium">Amount Paid:</span> ₹${totalPrice}</p>
+            <p><span class="font-medium">Amount Paid:</span> ₹${paidAmount}</p>
             <p><span class="font-medium">Booking ID:</span> ${booking._id}</p>
           </div>
         </div>
@@ -701,11 +591,4 @@ const generateCounselorEmailTemplate = (
   `;
 };
 
-export {
-  checkout,
-  paymentVerification,
-  getKey,
-  getSessionToken,
-  updateSessionAttendance,
-  getBookingDetails,
-};
+export { checkout, paymentVerification, getKey, getBookingDetails };

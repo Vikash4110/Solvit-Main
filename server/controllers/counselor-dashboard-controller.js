@@ -7,6 +7,7 @@ import timezone from 'dayjs/plugin/timezone.js';
 import { Counselor } from '../models/counselor-model.js';
 import { Session } from '../models/session.model.js';
 import { GeneratedSlot } from '../models/generatedSlots-model.js';
+import { Booking } from '../models/booking-model.js';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
@@ -124,7 +125,7 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
   }
 
   counselor.username = updateData.username;
-  Counselor.gender = updateData.gender;
+  counselor.gender = updateData.gender;
   counselor.phone = updateData.phone;
   counselor.specialization = updateData.specialization;
   counselor.experienceYears = updateData.experienceYears;
@@ -428,430 +429,235 @@ export const getCounselorApplicationStatus = wrapper(async (req, res) => {
     .json(new ApiResponse(200, statusInfo, 'Application status retrieved successfully'));
 });
 
+// Reuse the same logic style as client dashboard
+const canJoinSessionForCounselor = (booking) => {
+  if (!booking.videoSDKRoomId || !booking.startTime || !booking.endTime) return false;
+
+  const now = dayjs().utc();
+  const startTime = dayjs.utc(booking.startTime);
+  const endTime = dayjs.utc(booking.endTime);
+
+  const minutesDiffStart = startTime.diff(now, 'minute');
+  const minutesDiffEnd = endTime.diff(now, 'minute');
+
+  // Same semantics as client: join from earlyJoinMinutesForSession before start until session end
+  return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
+};
+
 /**
- * @desc Get counselor upcoming sessions with join capability
- * @route GET /api/v1/counselor/sessions/upcoming
+ * @desc Get counselor bookings with filters and pagination
+ * @route GET /api/v1/counselor-dashboard/bookings
  * @access Private (Counselor only)
  */
-export const getCounselorUpcomingSessions = wrapper(async (req, res) => {
-  const counselorId = req.verifiedCounselorId._id;
-  const { page = 1, perPage = 20 } = req.query;
+export const getCounselorBookings = wrapper(async (req, res) => {
+  const rawFilter = (req.query.filter || 'upcoming').toString();
+  const rawPage = req.query.page || '1';
+  const rawPerPage = req.query.perPage || '20';
 
-  logger.info(`Fetching upcoming sessions for counselor: ${counselorId}`);
+  const counselorId = req.verifiedCounselorId?._id;
+  if (!counselorId) {
+    throw new ApiError(401, 'Unauthorized: counselor id missing');
+  }
 
-  const skip = (parseInt(page) - 1) * parseInt(perPage);
-  const now = dayjs().utc();
+  // Input validation
+  const allowedFilters = ['upcoming', 'inProgress', 'disputed', 'completed', 'cancelled', 'all'];
+  const filter = allowedFilters.includes(rawFilter) ? rawFilter : 'upcoming';
 
-  // Aggregation pipeline to get upcoming sessions
+  let page = parseInt(rawPage, 10);
+  let perPage = parseInt(rawPerPage, 10);
+
+  if (Number.isNaN(page) || page < 1) page = 1;
+  if (Number.isNaN(perPage) || perPage < 1) perPage = 20;
+  if (perPage > 50) perPage = 50; // hard cap
+
+  logger.info(
+    `Fetching counselor bookings | counselorId=${counselorId} filter=${filter} page=${page} perPage=${perPage}`
+  );
+
+  // Build status filter
+  let statusFilter = {};
+  switch (filter) {
+    case 'upcoming':
+      statusFilter = { status: 'confirmed' };
+      break;
+    case 'inProgress':
+      statusFilter = { status: 'dispute_window_open' };
+      break;
+    case 'disputed':
+      statusFilter = { status: 'disputed' };
+      break;
+    case 'completed':
+      statusFilter = { status: 'completed' };
+      break;
+    case 'cancelled':
+      statusFilter = { status: 'cancelled' };
+      break;
+    case 'all':
+    default:
+      statusFilter = {};
+      break;
+  }
+
+  const skip = (page - 1) * perPage;
+
+  // Aggregation pipeline
   const pipeline = [
-    // Step 1: Find booked slots for this counselor
-    {
-      $match: {
-        counselorId: new mongoose.Types.ObjectId(counselorId),
-        status: 'booked',
-      },
-    },
-    // Step 2: Lookup booking details
     {
       $lookup: {
-        from: 'bookings',
-        localField: 'bookingId',
+        from: 'generatedslots',
+        localField: 'slotId',
         foreignField: '_id',
-        as: 'bookingData',
+        as: 'slotData',
       },
     },
-    {
-      $unwind: '$bookingData',
-    },
-    // Step 3: Lookup session details
-    {
-      $lookup: {
-        from: 'sessions',
-        localField: 'bookingData.sessionId',
-        foreignField: '_id',
-        as: 'sessionData',
-      },
-    },
-    {
-      $unwind: '$sessionData',
-    },
-    // Step 4: Only get scheduled sessions
+    { $unwind: '$slotData' },
     {
       $match: {
-        'sessionData.status': 'scheduled',
+        'slotData.counselorId': new mongoose.Types.ObjectId(counselorId),
+        ...statusFilter,
       },
     },
-    // Step 5: Lookup client details
     {
       $lookup: {
         from: 'clients',
-        localField: 'bookingData.clientId',
+        localField: 'clientId',
         foreignField: '_id',
         as: 'clientData',
       },
     },
     {
-      $unwind: '$clientData',
-    },
-    // Step 6: Lookup payment details
-    {
-      $lookup: {
-        from: 'payments',
-        localField: 'bookingData.paymentId',
-        foreignField: '_id',
-        as: 'paymentData',
-      },
-    },
-    // Step 7: Project required fields
-    {
-      $addFields: {
-        slotInfo: {
-          slotId: '$_id',
-          startTime: '$startTime',
-          endTime: '$endTime',
-          price: '$totalPriceAfterPlatformFee',
-        },
-        sessionInfo: '$sessionData',
-        clientInfo: {
-          clientId: '$clientData._id',
-          fullName: '$clientData.fullName',
-          profilePicture: '$clientData.profilePicture',
-          username: '$clientData.username',
-          email: '$clientData.email',
-          phone: '$clientData.phone',
-        },
-        bookingInfo: {
-          bookingId: '$bookingData._id',
-          status: '$bookingData.status',
-          createdAt: '$bookingData.createdAt',
-        },
-        paymentInfo: { $arrayElemAt: ['$paymentData', 0] },
-      },
-    },
-    // Step 8: Final projection
-    {
-      $project: {
-        _id: 0,
-        sessionId: '$sessionInfo._id',
-        bookingId: '$bookingInfo.bookingId',
-        slotId: '$slotInfo.slotId',
-
-        // Client Information
-        client: {
-          clientId: '$clientInfo.clientId',
-          fullName: '$clientInfo.fullName',
-          profilePicture: '$clientInfo.profilePicture',
-          username: '$clientInfo.username',
-          email: '$clientInfo.email',
-          phone: '$clientInfo.phone',
-        },
-
-        // Session Details
-        session: {
-          videoSDKRoomId: '$sessionInfo.videoSDKRoomId',
-          status: '$sessionInfo.status',
-          scheduledStartTime: '$sessionInfo.scheduledStartTime',
-          scheduledEndTime: '$sessionInfo.scheduledEndTime',
-        },
-
-        // Timing
-        startTime: '$slotInfo.startTime',
-        endTime: '$slotInfo.endTime',
-
-        // Booking Details
-        bookingStatus: '$bookingInfo.status',
-        bookingCreatedAt: '$bookingInfo.createdAt',
-
-        // Payment
-        price: '$slotInfo.price',
-        paymentStatus: '$paymentInfo.status',
-
-        createdAt: '$bookingInfo.createdAt',
-      },
-    },
-    // Step 9: Sort by start time (ascending)
-    {
-      $sort: { startTime: 1 },
-    },
-    // Step 10: Pagination
-    {
-      $skip: skip,
-    },
-    {
-      $limit: parseInt(perPage),
-    },
-  ];
-
-  const sessions = await GeneratedSlot.aggregate(pipeline);
-
-  // Get total count
-  const countPipeline = [
-    {
-      $match: {
-        counselorId: new mongoose.Types.ObjectId(counselorId),
-        status: 'booked',
-      },
-    },
-    {
-      $lookup: {
-        from: 'bookings',
-        localField: 'bookingId',
-        foreignField: '_id',
-        as: 'bookingData',
-      },
-    },
-    {
-      $unwind: '$bookingData',
-    },
-    {
       $lookup: {
         from: 'sessions',
-        localField: 'bookingData.sessionId',
+        localField: 'sessionId',
         foreignField: '_id',
         as: 'sessionData',
       },
     },
     {
-      $unwind: '$sessionData',
-    },
-    {
-      $match: {
-        'sessionData.status': 'scheduled',
+      $lookup: {
+        from: 'payments',
+        localField: 'paymentId',
+        foreignField: '_id',
+        as: 'paymentData',
       },
     },
     {
-      $count: 'total',
+      $addFields: {
+        slotInfo: '$slotData',
+        sessionInfo: { $arrayElemAt: ['$sessionData', 0] },
+        clientInfo: { $arrayElemAt: ['$clientData', 0] },
+        paymentInfo: { $arrayElemAt: ['$paymentData', 0] },
+      },
     },
+    {
+      $project: {
+        bookingId: '$_id',
+        status: 1,
+        createdAt: 1,
+        // Client info
+        clientName: '$clientInfo.fullName',
+        clientPhoto: '$clientInfo.profilePicture',
+        clientEmail: '$clientInfo.email',
+        clientPhone: '$clientInfo.phone',
+        // Slot/session info
+        startTime: '$slotInfo.startTime',
+        endTime: '$slotInfo.endTime',
+        earnings: '$slotInfo.basePrice', // counselor earning (pre-payout)
+        totalPrice: '$slotInfo.totalPriceAfterPlatformFee',
+        videoSDKRoomId: '$sessionInfo.videoSDKRoomId',
+        // Dispute info (optional)
+        dispute: 1,
+      },
+    },
+    {
+      $sort:
+        filter === 'upcoming' ? { startTime: 1, createdAt: -1 } : { startTime: -1, createdAt: -1 },
+    },
+    { $skip: skip },
+    { $limit: perPage },
   ];
 
-  const countResult = await GeneratedSlot.aggregate(countPipeline);
-  const totalCount = countResult.length > 0 ? countResult[0].total : 0;
+  let bookings;
+  try {
+    bookings = await Booking.aggregate(pipeline);
+  } catch (error) {
+    logger.error('Error running counselor bookings aggregation', {
+      error: error.message,
+      stack: error.stack,
+      counselorId,
+      filter,
+    });
+    throw new ApiError(500, 'Failed to fetch bookings');
+  }
 
-  // Enrich sessions with computed fields
-  const enrichedSessions = sessions.map((session) => {
-    const startTime = dayjs.utc(session.startTime);
-    const endTime = dayjs.utc(session.endTime);
-    const minutesUntilStart = startTime.diff(now, 'minute');
-    const minutesUntilEnd = endTime.diff(now, 'minute');
+  // Total count for pagination
+  const countPipeline = [
+    {
+      $lookup: {
+        from: 'generatedslots',
+        localField: 'slotId',
+        foreignField: '_id',
+        as: 'slotData',
+      },
+    },
+    { $unwind: '$slotData' },
+    {
+      $match: {
+        'slotData.counselorId': new mongoose.Types.ObjectId(counselorId),
+        ...statusFilter,
+      },
+    },
+    { $count: 'total' },
+  ];
 
-    // Can join X minutes before session starts and until session ends
-    const canJoin = minutesUntilStart <= earlyJoinMinutesForSession && minutesUntilEnd > 0;
+  let totalCount = 0;
+  try {
+    const countResult = await Booking.aggregate(countPipeline);
+    totalCount = countResult[0]?.total || 0;
+  } catch (error) {
+    logger.error('Error counting counselor bookings', {
+      error: error.message,
+      stack: error.stack,
+      counselorId,
+      filter,
+    });
+    throw new ApiError(500, 'Failed to count bookings');
+  }
 
-    // Determine session timing status
-    let timingStatus = 'upcoming';
-    if (canJoin && minutesUntilStart <= 0) {
-      timingStatus = 'in_progress';
-    } else if (canJoin) {
-      timingStatus = 'ready_to_join';
-    } else if (minutesUntilEnd <= 0) {
-      timingStatus = 'ended';
-    }
+  // Compute canJoin per booking with robust checks
+  const enrichedBookings = bookings.map((booking) => {
+    const canJoin = canJoinSessionForCounselor(booking);
 
     return {
-      ...session,
+      ...booking,
       canJoin,
-      timingStatus,
-      minutesUntilStart,
-      minutesUntilEnd,
-
-      // Format times in timezone
-      startTimeFormatted: startTime.tz(timeZone).format('DD MMM YYYY, hh:mm A'),
-      endTimeFormatted: endTime.tz(timeZone).format('hh:mm A'),
-      dateFormatted: startTime.tz(timeZone).format('DD MMMM YYYY'),
-      timeRangeFormatted: `${startTime.tz(timeZone).format('hh:mm A')} - ${endTime.tz(timeZone).format('hh:mm A')}`,
-
-      // Smart time display
-      timeUntilSession: getSmartTimeDisplay(minutesUntilStart),
+      // For counselor UI convenience, also include a formatted cancellationDeadline if needed later
+      // cancellationDeadline: booking.startTime
+      //   ? dayjs.utc(booking.startTime).tz(timeZone).subtract(24, 'hour').format('YYYY-MM-DD hh:mm A')
+      //   : null,
     };
   });
 
   logger.info(
-    `Retrieved ${enrichedSessions.length} upcoming sessions for counselor: ${counselorId}`
+    `Counselor bookings fetched | counselorId=${counselorId} count=${enrichedBookings.length} total=${totalCount}`
   );
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
-        sessions: enrichedSessions,
+        bookings: enrichedBookings,
         pagination: {
-          currentPage: parseInt(page),
-          perPage: parseInt(perPage),
+          currentPage: page,
+          perPage,
           totalCount,
-          totalPages: Math.ceil(totalCount / parseInt(perPage)),
+          totalPages: Math.ceil(totalCount / perPage) || 1,
         },
       },
-      'Upcoming sessions retrieved successfully'
+      'Counselor bookings fetched successfully'
     )
   );
 });
-
-/**
- * @desc Join a session
- * @route POST /api/v1/counselor/sessions/:sessionId/join
- * @access Private (Counselor only)
- */
-export const joinSession = wrapper(async (req, res) => {
-  const counselorId = req.verifiedCounselorId._id;
-  const { sessionId } = req.params;
-
-  logger.info(`Counselor ${counselorId} attempting to join session: ${sessionId}`);
-
-  // Find session with related data
-  const session = await Session.findById(sessionId).populate({
-    path: 'bookingId',
-    populate: {
-      path: 'slotId',
-      match: { counselorId: counselorId },
-    },
-  });
-
-  if (!session) {
-    throw new ApiError(404, 'Session not found');
-  }
-
-  if (!session.bookingId || !session.bookingId.slotId) {
-    throw new ApiError(403, 'You are not authorized to join this session');
-  }
-
-  if (session.status !== 'scheduled') {
-    throw new ApiError(400, `Cannot join session with status: ${session.status}`);
-  }
-
-  // Check if counselor can join
-  const now = dayjs().utc();
-  const startTime = dayjs.utc(session.scheduledStartTime);
-  const endTime = dayjs.utc(session.scheduledEndTime);
-  const minutesUntilStart = startTime.diff(now, 'minute');
-  const minutesUntilEnd = endTime.diff(now, 'minute');
-
-  const canJoin = minutesUntilStart <= earlyJoinMinutesForSession && minutesUntilEnd > 0;
-
-  if (!canJoin) {
-    if (minutesUntilStart > earlyJoinMinutesForSession) {
-      throw new ApiError(
-        400,
-        `Session can be joined ${earlyJoinMinutesForSession} minutes before start time`
-      );
-    } else if (minutesUntilEnd <= 0) {
-      throw new ApiError(400, 'This session has already ended');
-    }
-  }
-
-  // Update session status to active
-  session.status = 'active';
-  await session.save();
-
-  logger.info(`Counselor ${counselorId} successfully joined session: ${sessionId}`);
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        sessionId: session._id,
-        videoSDKRoomId: session.videoSDKRoomId,
-        status: session.status,
-        scheduledStartTime: session.scheduledStartTime,
-        scheduledEndTime: session.scheduledEndTime,
-      },
-      'Session joined successfully'
-    )
-  );
-});
-
-/**
- * @desc Get single session details
- * @route GET /api/v1/counselor/sessions/:sessionId
- * @access Private (Counselor only)
- */
-export const getCounselorSessionDetails = wrapper(async (req, res) => {
-  const counselorId = req.verifiedCounselorId._id;
-  const { sessionId } = req.params;
-
-  logger.info(`Fetching session details for counselor: ${counselorId}, session: ${sessionId}`);
-
-  const session = await Session.findById(sessionId)
-    .populate({
-      path: 'bookingId',
-      populate: [
-        {
-          path: 'clientId',
-          select: 'fullName profilePicture username email phone',
-        },
-        {
-          path: 'slotId',
-          match: { counselorId: counselorId },
-        },
-        {
-          path: 'paymentId',
-        },
-      ],
-    })
-    .lean();
-
-  if (!session || !session.bookingId || !session.bookingId.slotId) {
-    throw new ApiError(404, 'Session not found or you are not authorized to view it');
-  }
-
-  const now = dayjs().utc();
-  const startTime = dayjs.utc(session.scheduledStartTime);
-  const endTime = dayjs.utc(session.scheduledEndTime);
-  const minutesUntilStart = startTime.diff(now, 'minute');
-  const minutesUntilEnd = endTime.diff(now, 'minute');
-
-  const canJoin = minutesUntilStart <= earlyJoinMinutesForSession && minutesUntilEnd > 0;
-
-  const enrichedSession = {
-    sessionId: session._id,
-    videoSDKRoomId: session.videoSDKRoomId,
-    status: session.status,
-    scheduledStartTime: session.scheduledStartTime,
-    scheduledEndTime: session.scheduledEndTime,
-
-    booking: {
-      bookingId: session.bookingId._id,
-      status: session.bookingId.status,
-      createdAt: session.bookingId.createdAt,
-    },
-
-    client: session.bookingId.clientId,
-
-    slot: session.bookingId.slotId,
-
-    payment: session.bookingId.paymentId,
-
-    // Computed fields
-    canJoin,
-    minutesUntilStart,
-    minutesUntilEnd,
-    startTimeFormatted: startTime.tz(timeZone).format('DD MMM YYYY, hh:mm A'),
-    endTimeFormatted: endTime.tz(timeZone).format('hh:mm A'),
-    timeUntilSession: getSmartTimeDisplay(minutesUntilStart),
-  };
-
-  logger.info(`Session details retrieved for counselor: ${counselorId}`);
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, enrichedSession, 'Session details retrieved successfully'));
-});
-
-// Helper function for smart time display
-const getSmartTimeDisplay = (minutesUntilStart) => {
-  if (minutesUntilStart <= 0) {
-    return 'Session started';
-  } else if (minutesUntilStart < 60) {
-    return `Starts in ${minutesUntilStart} minute${minutesUntilStart !== 1 ? 's' : ''}`;
-  } else if (minutesUntilStart < 1440) {
-    // Less than 24 hours
-    const hours = Math.floor(minutesUntilStart / 60);
-    return `Starts in ${hours} hour${hours !== 1 ? 's' : ''}`;
-  } else {
-    const days = Math.floor(minutesUntilStart / 1440);
-
-    return `Starts in ${days} day${days !== 1 ? 's' : ''}`;
-  }
-};
 
 export default {
   getCounselorProfile,

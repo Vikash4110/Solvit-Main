@@ -3,7 +3,6 @@
 import { Booking } from '../models/booking-model.js';
 import { raiseDisputeSchema } from '../validators/dispute.validator.js';
 import { uploadEvidenceToCloudinary } from '../utils/cloudinary.js';
-import { cancelAutoCompleteBooking } from '../queue/jobManager.js';
 import mongoose from 'mongoose';
 import { ZodError } from 'zod';
 import dayjs from 'dayjs';
@@ -183,14 +182,6 @@ export const raiseDispute = async (req, res) => {
       booking.status = 'disputed';
 
       await booking.save({ session, validateBeforeSave: false });
-
-      // ✅ STEP 7: CANCEL AUTO-COMPLETE JOB
-      try {
-        await cancelAutoCompleteBooking(bookingId);
-        console.log(`✅ Cancelled auto-complete job for booking ${bookingId}`);
-      } catch (jobError) {
-        console.error('⚠️ Job cancellation error:', jobError);
-      }
 
       await session.commitTransaction();
       session.endSession();

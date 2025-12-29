@@ -277,7 +277,7 @@ const Navbar = () => {
                 </Button>
               )}
 
-              <Button
+              {/* <Button
                 variant="ghost"
                 onClick={() => navigate('/blogs')}
                 className="
@@ -291,7 +291,7 @@ const Navbar = () => {
               >
                 <BookOpen className="h-4 w-4" />
                 Blogs
-              </Button>
+              </Button> */}
 
               {isAuthenticated ? (
                 <Button

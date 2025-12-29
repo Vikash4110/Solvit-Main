@@ -102,7 +102,7 @@ async function sendCounselorRegistrationOTP(email, otp, userName, expiryMinutes)
                 
                 <!-- Header with Logo & Gradient -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); padding: 48px 40px 40px 40px; text-align: center;">
+                  <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
                     <!-- Logo -->
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
@@ -139,7 +139,7 @@ async function sendCounselorRegistrationOTP(email, otp, userName, expiryMinutes)
                     <!-- OTP Card with Solvit Theme -->
                     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
                       <tr>
-                        <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);">
+                        <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);">
                           <p style="color: #e9d5ff; font-size: 11px; font-weight: 600; letter-spacing: 2px; margin: 0 0 12px 0; text-transform: uppercase;">
                             Your Verification Code
                           </p>
@@ -249,7 +249,7 @@ async function sendCounselorRegistrationOTP(email, otp, userName, expiryMinutes)
                             © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 0;">
-                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 8px 0 0 0;">
                             This is an automated message, please do not reply.<br>
@@ -284,7 +284,7 @@ Didn't request this code?
 If you didn't attempt to register as a counselor on Solvit, please disregard this email. Contact support@solvitcounselling.cloud if you have concerns.
 
 ---
-Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India
+Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
 
 © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
 This is an automated message, please do not reply.`,
@@ -323,7 +323,7 @@ async function sendClientRegistrationOTP(email, otp, userName, expiryMinutes) {
                 
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); padding: 48px 40px 40px 40px; text-align: center;">
+                  <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td align="center">
@@ -351,7 +351,7 @@ async function sendClientRegistrationOTP(email, otp, userName, expiryMinutes) {
                     <!-- OTP Card -->
                     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
                       <tr>
-                        <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);">
+                        <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);">
                           <p style="color: #e9d5ff; font-size: 11px; font-weight: 600; letter-spacing: 2px; margin: 0 0 12px 0; text-transform: uppercase;">
                             Your Verification Code
                           </p>
@@ -443,7 +443,7 @@ async function sendClientRegistrationOTP(email, otp, userName, expiryMinutes) {
                             © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
                           </p>
                         </td>
                       </tr>
@@ -505,7 +505,7 @@ async function sendCounselorForgotPasswordOTP(email, otp, userName, expiryMinute
                 
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); padding: 48px 40px 40px 40px; text-align: center;">
+                  <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td align="center">
@@ -533,7 +533,7 @@ async function sendCounselorForgotPasswordOTP(email, otp, userName, expiryMinute
                     <!-- OTP Card -->
                     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
                       <tr>
-                        <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);">
+                        <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);">
                           <p style="color: #e9d5ff; font-size: 11px; font-weight: 600; letter-spacing: 2px; margin: 0 0 12px 0; text-transform: uppercase;">
                             Your Password Reset Code
                           </p>
@@ -625,7 +625,7 @@ async function sendCounselorForgotPasswordOTP(email, otp, userName, expiryMinute
                             © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
                           </p>
                         </td>
                       </tr>
@@ -654,7 +654,7 @@ Didn't request this? Your account is safe. Ignore this email or contact support@
 Need help? support@solvitcounselling.com
 
 © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
-Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India`,
+Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India`,
   };
 
   try {
@@ -690,7 +690,7 @@ async function sendClientForgotPasswordOTP(email, otp, userName, expiryMinutes =
                 
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); padding: 48px 40px 40px 40px; text-align: center;">
+                  <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td align="center">
@@ -718,7 +718,7 @@ async function sendClientForgotPasswordOTP(email, otp, userName, expiryMinutes =
                     <!-- OTP Card -->
                     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
                       <tr>
-                        <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);">
+                        <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);">
                           <p style="color: #e9d5ff; font-size: 11px; font-weight: 600; letter-spacing: 2px; margin: 0 0 12px 0; text-transform: uppercase;">
                             Your Password Reset Code
                           </p>
@@ -810,7 +810,7 @@ async function sendClientForgotPasswordOTP(email, otp, userName, expiryMinutes =
                             © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
                           </p>
                         </td>
                       </tr>
@@ -839,7 +839,7 @@ Didn't request this? Your account is safe. Ignore this email or contact support@
 Need help? support@solvitcounselling.com
 
 © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
-Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India`,
+Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India`,
   };
 
   try {
@@ -875,7 +875,7 @@ async function sendCounselorApplicationSubmitted(email, userName) {
                 
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); padding: 48px 40px 40px 40px; text-align: center;">
+                  <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td align="center">
@@ -1006,7 +1006,7 @@ async function sendCounselorApplicationSubmitted(email, userName) {
                             © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
                           </p>
                         </td>
                       </tr>
@@ -1038,7 +1038,7 @@ Track your application: Check your status anytime in your counselor dashboard un
 Questions? Contact support@solvitcounselling.com
 
 © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
-Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India`,
+Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India`,
   };
 
   try {
@@ -1197,7 +1197,7 @@ async function sendCounselorApplicationApproved(email, userName) {
                             © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
                           </p>
                         </td>
                       </tr>
@@ -1227,7 +1227,7 @@ GET STARTED IN 3 STEPS:
 Need help? Contact support@solvitcounselling.com
 
 © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
-Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India`,
+Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India`,
   };
 
   try {
@@ -1263,7 +1263,7 @@ async function sendCounselorApplicationRejected(email, userName, rejectionReason
                 
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%); padding: 48px 40px 40px 40px; text-align: center;">
+                  <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td align="center">
@@ -1392,7 +1392,7 @@ async function sendCounselorApplicationRejected(email, userName, rejectionReason
                             © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
                           </p>
                         </td>
                       </tr>
@@ -1419,7 +1419,7 @@ FUTURE APPLICATIONS:
 You may reapply after addressing the concerns mentioned above. We appreciate your interest in contributing to mental health support.
 
 © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
-Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India`,
+Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India`,
   };
 
   try {
@@ -1427,6 +1427,524 @@ Solvit Pvt. Ltd. Atal Nagar, Naya Raipur – 493661, India`,
   } catch (error) {
     console.error('Failed to send rejection email:', error.message);
     throw new Error('Unable to send application update. Please try again later.');
+  }
+}
+
+// ========================================
+// Booking Confirmation Emails (Payment)
+// ========================================
+
+/**
+ * Send booking confirmation email to client
+ */
+async function sendBookingConfirmationToClient(
+  clientData,
+  counselorData,
+  booking,
+  sessionDate,
+  sessionTime,
+  paidAmount
+) {
+  const emailOptions = {
+    sender: {
+      email: process.env.BREVO_SENDER_EMAIL || 'system@solvitcounselling.com',
+      name: process.env.BREVO_SENDER_NAME || 'Solvit Counseling',
+    },
+    to: [{ email: clientData.email, name: clientData.fullName }],
+    subject: '🎯 Counselling Session Confirmed - Solvit',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Booking Confirmed - Solvit</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb;">
+        <!-- Wrapper -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <!-- Main Container -->
+              <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+
+                <!-- Header with Logo & Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
+                    <!-- Logo -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center">
+                         <img src="${process.env.LOGO_URL || 'https://solvitcounselling.cloud/logo.png'}" alt="Solvit Counseling" style="width: 140px; height: 140px; display: block; margin: 0 auto 20px auto; border-radius: 50%; object-fit: cover;" />
+                        </td>
+                      </tr>
+                    </table>
+                    <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">
+                      Session Confirmed! 🎉
+                    </h1>
+                    <p style="color: #e0e7ee; margin: 8px 0 0 0; font-size: 14px; font-weight: 500;">
+                      Your counseling session is all set
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 48px 40px;">
+                    <!-- Greeting -->
+                    <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 22px; font-weight: 700;">
+                      Dear ${clientData.fullName},
+                    </h2>
+
+                    <p style="color: #4b5563; font-size: 16px; line-height: 1.65; margin: 0 0 32px 0;">
+                      Great news! Your counseling session has been successfully booked and your payment is confirmed.
+                    </p>
+
+                    <!-- Session Details Card -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
+                      <tr>
+                        <td style="background: #f8fafc; border-left: 4px solid #1C3C63; border-radius: 8px; padding: 24px 20px;">
+                          <h3 style="color: #1C3C63; margin: 0 0 16px 0; font-size: 18px; font-weight: 700;">
+                            📅 Session Details
+                          </h3>
+
+                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Counselor:</p>
+                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0; font-weight: 600;">${counselorData.fullName}</p>
+                              </td>
+                            </tr>
+                            
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Date:</p>
+                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0;">${sessionDate}</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Time:</p>
+                                <p style="color: #1C3C63; font-size: 20px; margin: 4px 0 0 0; font-weight: 700;">${sessionTime}</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Duration:</p>
+                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0;">45 minutes</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Amount Paid:</p>
+                                <p style="color: #059669; font-size: 18px; margin: 4px 0 0 0; font-weight: 700;">₹${paidAmount}</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Booking ID:</p>
+                                <p style="color: #1f2937; font-size: 14px; margin: 4px 0 0 0; font-family: 'Courier New', monospace;">${booking._id}</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Important Guidelines -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+                      <tr>
+                        <td style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px;">
+                          <p style="color: #92400e; margin: 0 0 12px 0; font-size: 16px; font-weight: 700;">
+                            ⚠️ Important Guidelines
+                          </p>
+                          <ul style="color: #92400e; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                            <li><strong>Join 5-10 minutes before</strong> your scheduled time</li>
+                            <li>Test your <strong>camera and microphone</strong> beforehand</li>
+                            <li>Find a <strong>quiet, well-lit space</strong> for the session</li>
+                            <li>Ensure a <strong>stable internet connection</strong></li>
+                            <li>Keep your session link <strong>private and secure</strong></li>
+                          </ul>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+                      The counselling session link will become active in your dashboard 10 minutes before the scheduled time.
+                    </p>
+
+                    <!-- Divider -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0;">
+                      <tr>
+                        <td style="border-top: 1px solid #e5e7eb;"></td>
+                      </tr>
+                    </table>
+
+                    <!-- Help Text -->
+                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                      If you need to reschedule or have any questions, please contact us at 
+                      <a href="mailto:support@solvitcounselling.com" style="color: #1C3C63; text-decoration: none; font-weight: 600;">support@solvitcounselling.cloud</a>
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background: #fafafa; padding: 32px 40px; border-top: 1px solid #f3f4f6;">
+
+                    <!-- Social Links -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                      <tr>
+                        <td align="center">
+                          <p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0; font-weight: 500;">
+                            Connect with us
+                          </p>
+                          <table cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 0 6px;">
+                                <a href="https://www.linkedin.com/company/solvitcounselling/" style="text-decoration: none;">
+                                  <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
+                                </a>
+                              </td>
+                              <td style="padding: 0 6px;">
+                                <a href="https://x.com/solvitforyou?s=21" style="text-decoration: none;">
+                                  <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
+                                </a>
+                              </td>
+                              <td style="padding: 0 6px;">
+                                <a href="https://www.instagram.com/solvitcounselling" style="text-decoration: none;">
+                                  <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
+                                </a>
+                              </td>
+                              <td style="padding: 0 6px;">
+                                <a href="https://www.facebook.com/share/12HYipkeXG9/" style="text-decoration: none;">
+                                  <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Legal Footer -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center">
+                          <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0 0 6px 0;">
+                            © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
+                          </p>
+                          <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 0;">
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
+                          </p>
+                          <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 8px 0 0 0;">
+                            This is an automated message, please do not reply.<br>
+                            Need help? <a href="mailto:support@solvitcounselling.com" style="color: #1C3C63; text-decoration: none;">Contact Support</a>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    textContent: `SOLVIT COUNSELING - SESSION CONFIRMED
+
+Dear \${clientData.fullName},
+
+Your counseling session has been successfully booked!
+
+SESSION DETAILS:
+- Counselor: \${counselorData.fullName}
+- Specialization: \${counselorData.specialization || 'General Counseling'}
+- Date: \${sessionDate}
+- Time: \${sessionTime}
+- Duration: 45 minutes
+- Amount Paid: ₹\${paidAmount}
+- Booking ID: \${booking._id}
+
+IMPORTANT GUIDELINES:
+- Join 5-10 minutes before your scheduled time
+- Test your camera and microphone beforehand
+- Find a quiet, well-lit space
+- Ensure stable internet connection
+- Keep your session link private
+
+You will receive a reminder email 24 hours before your appointment.
+
+Need help? Contact support@solvitcounselling.cloud
+
+© \${new Date().getFullYear()} Solvit Counseling. All rights reserved.`,
+  };
+
+  try {
+    const response = await apiInstance.sendTransacEmail(emailOptions);
+    console.log(`✅ Booking confirmation sent to client: \${clientData.email}`);
+    return { success: true, messageId: response.messageId };
+  } catch (err) {
+    console.error(`❌ Failed to send booking confirmation to client:`, err.message);
+    throw err;
+  }
+}
+
+/**
+ * Send booking notification email to counselor
+ */
+async function sendBookingNotificationToCounselor(
+  clientData,
+  counselorData,
+  booking,
+  sessionDate,
+  sessionTime
+) {
+  const emailOptions = {
+    sender: {
+      email: process.env.BREVO_SENDER_EMAIL || 'system@solvitcounselling.com',
+      name: process.env.BREVO_SENDER_NAME || 'Solvit Counseling',
+    },
+    to: [{ email: counselorData.email, name: counselorData.fullName }],
+    subject: '📅 New Counselling Session Booking - Solvit',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>New Booking - Solvit</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb;">
+        <!-- Wrapper -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <!-- Main Container -->
+              <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+
+                <!-- Header with Logo & Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #1C3C63 0%, #2C5C93 100%); padding: 48px 40px 40px 40px; text-align: center;">
+                    <!-- Logo -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center">
+                          <img src="${process.env.LOGO_URL || 'https://solvitcounselling.cloud/logo.png'}" alt="Solvit Counseling" style="width: 140px; height: 140px; display: block; margin: 0 auto 20px auto; border-radius: 50%; object-fit: cover;" />
+                        </td>
+                      </tr>
+                    </table>
+                    <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">
+                      New Counselling Session Booking 📅
+                    </h1>
+                    <p style="color: #e0e7ee; margin: 8px 0 0 0; font-size: 14px; font-weight: 500;">
+                      You have a new client session
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 48px 40px;">
+                    <!-- Greeting -->
+                    <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 22px; font-weight: 700;">
+                      Dear ${counselorData.fullName},
+                    </h2>
+
+                    <p style="color: #4b5563; font-size: 16px; line-height: 1.65; margin: 0 0 32px 0;">
+                      You have received a new counselling session booking with confirmed payment.
+                    </p>
+
+                    <!-- Client Information Card -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                      <tr>
+                        <td style="background: #f8fafc; border-left: 4px solid #1C3C63; border-radius: 8px; padding: 24px 20px;">
+                          <h3 style="color: #1C3C63; margin: 0 0 16px 0; font-size: 18px; font-weight: 700;">
+                            👤 Client Information
+                          </h3>
+
+                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Client Name:</p>
+                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0; font-weight: 600;">${clientData.fullName}</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Session Schedule Card -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
+                      <tr>
+                        <td style="background: #f8fafc; border-left: 4px solid #059669; border-radius: 8px; padding: 24px 20px;">
+                          <h3 style="color: #059669; margin: 0 0 16px 0; font-size: 18px; font-weight: 700;">
+                            📆 Session Schedule
+                          </h3>
+
+                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Date:</p>
+                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0;">${sessionDate}</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Time:</p>
+                                <p style="color: #059669; font-size: 20px; margin: 4px 0 0 0; font-weight: 700;">${sessionTime}</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Duration:</p>
+                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0;">45 minutes</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Booking ID:</p>
+                                <p style="color: #1f2937; font-size: 14px; margin: 4px 0 0 0; font-family: 'Courier New', monospace;">${booking._id}</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Dashboard Access Notice -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+                      <tr>
+                        <td style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px;">
+                          <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6;">
+                            💡 <strong>Quick Access:</strong> The counselling session link will become active in your dashboard 10 minutes before the scheduled time.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0;">
+                      Please ensure you're prepared and available at the scheduled time.
+                    </p>
+
+                    <!-- Divider -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0;">
+                      <tr>
+                        <td style="border-top: 1px solid #e5e7eb;"></td>
+                      </tr>
+                    </table>
+
+                    <!-- Help Text -->
+                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                      If you have any questions or need to make changes, please contact us at 
+                      <a href="mailto:support@solvitcounselling.com" style="color: #1C3C63; text-decoration: none; font-weight: 600;">support@solvitcounselling.cloud</a>
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background: #fafafa; padding: 32px 40px; border-top: 1px solid #f3f4f6;">
+
+                    <!-- Social Links -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                      <tr>
+                        <td align="center">
+                          <p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0; font-weight: 500;">
+                            Connect with us
+                          </p>
+                          <table cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 0 6px;">
+                                <a href="https://www.linkedin.com/company/solvitcounselling/" style="text-decoration: none;">
+                                  <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
+                                </a>
+                              </td>
+                              <td style="padding: 0 6px;">
+                                <a href="https://x.com/solvitforyou?s=21" style="text-decoration: none;">
+                                  <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
+                                </a>
+                              </td>
+                              <td style="padding: 0 6px;">
+                                <a href="https://www.instagram.com/solvitcounselling" style="text-decoration: none;">
+                                  <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
+                                </a>
+                              </td>
+                              <td style="padding: 0 6px;">
+                                <a href="https://www.facebook.com/share/12HYipkeXG9/" style="text-decoration: none;">
+                                  <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Legal Footer -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center">
+                          <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0 0 6px 0;">
+                            © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.
+                          </p>
+                          <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 0;">
+                            Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
+                          </p>
+                          <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 8px 0 0 0;">
+                            This is an automated message, please do not reply.<br>
+                            Need help? <a href="mailto:support@solvitcounselling.com" style="color: #1C3C63; text-decoration: none;">Contact Support</a>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    textContent: `SOLVIT COUNSELING - NEW SESSION BOOKING
+
+Dear Dr. ${counselorData.fullName},
+
+You have received a new session booking with confirmed payment.
+
+CLIENT INFORMATION:
+- Name: ${clientData.fullName}
+- Email: ${clientData.email}
+- Phone: ${clientData.phone || 'Not provided'}
+
+SESSION SCHEDULE:
+- Date: ${sessionDate}
+- Time: ${sessionTime}
+- Duration: 45 minutes
+- Booking ID: ${booking._id}
+
+The video session link will be available in your dashboard 1 hour before the scheduled time.
+
+Please ensure you're prepared and available at the scheduled time.
+
+Need help? Contact support@solvitcounselling.cloud
+
+© ${new Date().getFullYear()} Solvit Counseling. All rights reserved.`,
+  };
+
+  try {
+    const response = await apiInstance.sendTransacEmail(emailOptions);
+    console.log(`✅ Booking notification sent to counselor: ${counselorData.email}`);
+    return { success: true, messageId: response.messageId };
+  } catch (err) {
+    console.error(`❌ Failed to send booking notification to counselor:`, err.message);
+    throw err;
   }
 }
 
@@ -1440,4 +1958,6 @@ export {
   sendCounselorApplicationSubmitted,
   sendCounselorApplicationApproved,
   sendCounselorApplicationRejected,
+  sendBookingConfirmationToClient,
+  sendBookingNotificationToCounselor,
 };

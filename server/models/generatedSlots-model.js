@@ -39,5 +39,11 @@ const GeneratedSlotSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
+GeneratedSlotSchema.index(
+  { counselorId: 1, startTime: 1 },
+  {
+    unique: true,
+    name: 'unique_slot_per_counselor',
+  }
+);
 export const GeneratedSlot = mongoose.model('GeneratedSlot', GeneratedSlotSchema);

@@ -484,67 +484,67 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
     );
   };
 
-  const RecordingBTN = () => {
-    const { startRecording, stopRecording, recordingState } = useMeeting();
-    const defaultOptions = {
-      loop: true,
-      autoplay: true,
-      animationData: recordingBlink,
-      rendererSettings: {
-        preserveAspectRatio: 'xMidYMid slice',
-      },
-      height: 64,
-      width: 160,
-    };
+  // const RecordingBTN = () => {
+  //   const { startRecording, stopRecording, recordingState } = useMeeting();
+  //   const defaultOptions = {
+  //     loop: true,
+  //     autoplay: true,
+  //     animationData: recordingBlink,
+  //     rendererSettings: {
+  //       preserveAspectRatio: 'xMidYMid slice',
+  //     },
+  //     height: 64,
+  //     width: 160,
+  //   };
 
-    const isRecording = useIsRecording();
-    const isRecordingRef = useRef(isRecording);
+  //   const isRecording = useIsRecording();
+  //   const isRecordingRef = useRef(isRecording);
 
-    useEffect(() => {
-      isRecordingRef.current = isRecording;
-    }, [isRecording]);
+  //   useEffect(() => {
+  //     isRecordingRef.current = isRecording;
+  //   }, [isRecording]);
 
-    const { isRequestProcessing } = useMemo(
-      () => ({
-        isRequestProcessing:
-          recordingState === Constants.recordingEvents.RECORDING_STARTING ||
-          recordingState === Constants.recordingEvents.RECORDING_STOPPING,
-      }),
-      [recordingState]
-    );
+  //   const { isRequestProcessing } = useMemo(
+  //     () => ({
+  //       isRequestProcessing:
+  //         recordingState === Constants.recordingEvents.RECORDING_STARTING ||
+  //         recordingState === Constants.recordingEvents.RECORDING_STOPPING,
+  //     }),
+  //     [recordingState]
+  //   );
 
-    const _handleClick = () => {
-      const isRecording = isRecordingRef.current;
+  //   const _handleClick = () => {
+  //     const isRecording = isRecordingRef.current;
 
-      if (isRecording) {
-        stopRecording();
-      } else {
-        startRecording();
-      }
-    };
+  //     if (isRecording) {
+  //       stopRecording();
+  //     } else {
+  //       startRecording();
+  //     }
+  //   };
 
-    return (
-      <OutlinedButton
-        Icon={Circle}
-        onClick={_handleClick}
-        isFocused={isRecording}
-        bgColor={isRecording ? 'bg-gradient-to-br from-red-500 to-red-600 animate-pulse' : 'bg-neutral-800'}
-        tooltip={
-          recordingState === Constants.recordingEvents.RECORDING_STARTED
-            ? 'Stop Recording'
-            : recordingState === Constants.recordingEvents.RECORDING_STARTING
-              ? 'Starting Recording'
-              : recordingState === Constants.recordingEvents.RECORDING_STOPPED
-                ? 'Start Recording'
-                : recordingState === Constants.recordingEvents.RECORDING_STOPPING
-                  ? 'Stopping Recording'
-                  : 'Start Recording'
-        }
-        lottieOption={isRecording ? defaultOptions : null}
-        isRequestProcessing={isRequestProcessing}
-      />
-    );
-  };
+  //   return (
+  //     <OutlinedButton
+  //       Icon={Circle}
+  //       onClick={_handleClick}
+  //       isFocused={isRecording}
+  //       bgColor={isRecording ? 'bg-gradient-to-br from-red-500 to-red-600 animate-pulse' : 'bg-neutral-800'}
+  //       tooltip={
+  //         recordingState === Constants.recordingEvents.RECORDING_STARTED
+  //           ? 'Stop Recording'
+  //           : recordingState === Constants.recordingEvents.RECORDING_STARTING
+  //             ? 'Starting Recording'
+  //             : recordingState === Constants.recordingEvents.RECORDING_STOPPED
+  //               ? 'Start Recording'
+  //               : recordingState === Constants.recordingEvents.RECORDING_STOPPING
+  //                 ? 'Stopping Recording'
+  //                 : 'Start Recording'
+  //       }
+  //       lottieOption={isRecording ? defaultOptions : null}
+  //       isRequestProcessing={isRequestProcessing}
+  //     />
+  //   );
+  // };
 
   const ScreenShareBTN = ({ isMobile, isTab }) => {
     const { localScreenShareOn, toggleScreenShare, presenterId } = useMeeting();
@@ -721,7 +721,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
       <LeaveBTN />
       <MicBTN />
       <WebCamBTN />
-      <RecordingBTN />
+      {/* <RecordingBTN /> */}
       <OutlinedButton Icon={MoreHorizontal} onClick={handleClickFAB} />
       <Transition appear show={Boolean(open)} as={Fragment}>
         <Dialog as="div" className="relative" style={{ zIndex: 9999 }} onClose={handleCloseFAB}>
@@ -791,7 +791,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
       <MeetingIdCopyBTN />
 
       <div className="flex flex-1 items-center justify-center gap-3" ref={tollTipEl}>
-        <RecordingBTN />
+        {/* <RecordingBTN /> */}
         <RaiseHandBTN isMobile={isMobile} isTab={isTab} />
         <MicBTN />
         <WebCamBTN />

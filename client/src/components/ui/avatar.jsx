@@ -10,7 +10,8 @@ const Avatar = React.forwardRef(
       md: "h-9 w-9 text-sm sm:h-10 sm:w-10",
       lg: "h-12 w-12 text-base sm:h-14 sm:w-14",
       xl: "h-14 w-14 text-lg sm:h-16 sm:w-16",
-      "2xl": "h-16 w-16 text-xl sm:h-20 sm:w-20",
+      "2xl": "h-20 w-20 text-xl sm:h-32 sm:w-32",
+   
     };
 
     const statusSizeMap = {

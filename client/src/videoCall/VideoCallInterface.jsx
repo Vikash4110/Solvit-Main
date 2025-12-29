@@ -124,10 +124,11 @@ function VideoCallInterface() {
                 setMeetingStarted(false);
               }}
               setIsMeetingLeft={setIsMeetingLeft}
+              participantId={participantId}
             />
           </MeetingProvider>
         ) : isMeetingLeft ? (
-          <LeaveScreen setIsMeetingLeft={setIsMeetingLeft} />
+          <LeaveScreen setIsMeetingLeft={setIsMeetingLeft} participantId={participantId} />
         ) : (
           <JoiningScreen
             meetingId={meetingId}

@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Shield,
   Sparkles,
+  Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
@@ -40,6 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Animation variants
 const fadeInUp = {
@@ -174,9 +176,9 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
       updated[dayIndex] = {
         ...updated[dayIndex],
         isAvailable: !updated[dayIndex].isAvailable,
-        timeRanges: !updated[dayIndex].isAvailable 
-          ? [{ startTime: '9:00 AM', endTime: '10:00 AM' }] 
-          : []
+        timeRanges: !updated[dayIndex].isAvailable
+          ? [{ startTime: '9:00 AM', endTime: '10:00 AM' }]
+          : [],
       };
       return updated;
     });
@@ -187,7 +189,10 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
       const updated = [...prev];
       updated[dayIndex] = {
         ...updated[dayIndex],
-        timeRanges: [...updated[dayIndex].timeRanges, { startTime: '9:00 AM', endTime: '10:00 AM' }]
+        timeRanges: [
+          ...updated[dayIndex].timeRanges,
+          { startTime: '9:00 AM', endTime: '10:00 AM' },
+        ],
       };
       return updated;
     });
@@ -198,7 +203,7 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
       const updated = [...prev];
       updated[dayIndex] = {
         ...updated[dayIndex],
-        timeRanges: updated[dayIndex].timeRanges.filter((_, idx) => idx !== timeRangeIndex)
+        timeRanges: updated[dayIndex].timeRanges.filter((_, idx) => idx !== timeRangeIndex),
       };
       return updated;
     });
@@ -211,7 +216,7 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
         ...updated[dayIndex],
         timeRanges: updated[dayIndex].timeRanges.map((range, idx) =>
           idx === timeRangeIndex ? { ...range, [field]: value } : range
-        )
+        ),
       };
       return updated;
     });
@@ -276,15 +281,18 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
         price: day.isAvailable ? Number(globalPrice) : 0,
       }));
 
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_SET_RECURRING}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ weeklyAvailability: weeklyAvailabilityWithPrice }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_SET_RECURRING}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          credentials: 'include',
+          body: JSON.stringify({ weeklyAvailability: weeklyAvailabilityWithPrice }),
+        }
+      );
 
       const data = await response.json();
 
@@ -315,7 +323,15 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
   };
 
   const getDayShort = (day) => {
-    return { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' }[day];
+    return {
+      Monday: 'Mon',
+      Tuesday: 'Tue',
+      Wednesday: 'Wed',
+      Thursday: 'Thu',
+      Friday: 'Fri',
+      Saturday: 'Sat',
+      Sunday: 'Sun',
+    }[day];
   };
 
   const getSummary = () => {
@@ -327,11 +343,18 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
   if (initialLoading) {
     return (
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-transparent py-16">
-        <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="max-w-4xl mx-auto p-4">
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="max-w-4xl mx-auto p-4"
+        >
           <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 shadow-lg">
             <CardContent className="py-12 flex flex-col items-center gap-3">
               <Loader2 className="w-7 h-7 animate-spin text-primary-600" />
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading availability settings...</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Loading availability settings...
+              </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -361,40 +384,65 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                 </div>
                 <DialogTitle className="text-lg">Confirm Availability Update</DialogTitle>
               </div>
-              <DialogDescription className="text-sm">Review your weekly schedule before saving changes</DialogDescription>
+              <DialogDescription className="text-sm">
+                Review your weekly schedule before saving changes
+              </DialogDescription>
             </DialogHeader>
 
             <Card className="bg-neutral-50 dark:bg-neutral-900 border">
               <CardContent className="pt-4 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Available Days</span>
-                  <Badge variant="secondary" className="text-xs">{summary.availableDaysCount} / 7</Badge>
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+                    Available Days
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {summary.availableDaysCount} / 7
+                  </Badge>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Total Slots</span>
-                  <Badge variant="secondary" className="text-xs">{summary.totalSlots}</Badge>
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+                    Total Slots
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {summary.totalSlots}
+                  </Badge>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Session Price</span>
-                  <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+                    Session Price
+                  </span>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs"
+                  >
                     ₹{globalPrice}
                   </Badge>
                 </div>
-                
+
                 {summary.availableDays.length > 0 && (
                   <>
                     <Separator />
                     <div className="space-y-2">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Schedule Details</span>
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+                        Schedule Details
+                      </span>
                       <div className="space-y-1.5 max-h-36 overflow-y-auto">
                         {summary.availableDays.map((day) => (
-                          <div key={day.dayOfWeek} className="p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
-                            <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 mb-1">{day.dayOfWeek}</div>
+                          <div
+                            key={day.dayOfWeek}
+                            className="p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
+                          >
+                            <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 mb-1">
+                              {day.dayOfWeek}
+                            </div>
                             <ul className="space-y-0.5">
                               {day.timeRanges.map((range, idx) => (
-                                <li key={idx} className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
+                                <li
+                                  key={idx}
+                                  className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1"
+                                >
                                   <Timer className="w-3 h-3 text-primary-600" />
                                   {range.startTime} - {range.endTime}
                                 </li>
@@ -410,7 +458,12 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
             </Card>
 
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setShowDialog(false)} disabled={loading} size="sm">
+              <Button
+                variant="outline"
+                onClick={() => setShowDialog(false)}
+                disabled={loading}
+                size="sm"
+              >
                 Cancel
               </Button>
               <Button onClick={handleConfirmSave} disabled={loading} size="sm">
@@ -426,8 +479,7 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
         </Dialog>
 
         {/* Header Section */}
-        <motion.div className="text-center mb-12 space-y-4" variants={containerVariants}>         
-
+        <motion.div className="text-center mb-12 space-y-4" variants={containerVariants}>
           <motion.h2
             className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.1] tracking-tight"
             variants={fadeInUp}
@@ -443,15 +495,39 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
             className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed"
             variants={fadeInUp}
           >
-            Configure your recurring schedule and session pricing. Set your availability once and let clients book when it suits you both.
+            Configure your recurring schedule and session pricing. Set your availability once and
+            let clients book when it suits you both.
           </motion.p>
+        </motion.div>
+
+        {/* Important Notice Alert */}
+        <motion.div variants={fadeInUp} className="mb-6">
+          <Alert className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 via-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:via-amber-950/20 dark:to-orange-950/20 shadow-md">
+            <Info className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+            <AlertTitle className="text-amber-900 dark:text-amber-200 font-bold text-sm mb-2">
+              Important: Recurring Availability Update
+            </AlertTitle>
+            <AlertDescription className="text-amber-800 dark:text-amber-300 text-sm leading-relaxed space-y-2">
+              <p>
+                Saving your weekly availability will{' '}
+                <strong className="font-semibold">replace all existing unbooked slots</strong> with
+                new slots generated according to your updated schedule. Booked sessions remain
+                unaffected.
+              </p>
+              <p className="pt-1">
+                If you prefer to add specific time slots while retaining your current availability,
+                please use the <strong className="font-semibold">Slots Manager</strong> section
+                instead.
+              </p>
+            </AlertDescription>
+          </Alert>
         </motion.div>
 
         {/* Price Input Card */}
         <motion.div variants={fadeInUp} className="mb-6">
           <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 transition-all duration-500">
             <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
+
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -469,12 +545,17 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="global-price" className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  <Label
+                    htmlFor="global-price"
+                    className="text-xs font-medium text-neutral-700 dark:text-neutral-300"
+                  >
                     Price per Session
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative w-28">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm font-medium">₹</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm font-medium">
+                        ₹
+                      </span>
                       <Input
                         id="global-price"
                         type="number"
@@ -483,7 +564,9 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                         value={globalPrice}
                         onChange={(e) => setGlobalPrice(e.target.value)}
                         className={`pl-6 h-9 text-sm ${
-                          globalPrice && !validatePriceInput(globalPrice).isValid ? 'border-red-500' : ''
+                          globalPrice && !validatePriceInput(globalPrice).isValid
+                            ? 'border-red-500'
+                            : ''
                         }`}
                         placeholder={priceConstraints.minPrice.toString()}
                       />
@@ -521,7 +604,10 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
               >
                 <span className="font-semibold text-xs">{getDayShort(day.dayOfWeek)}</span>
                 {day.isAvailable && (
-                  <Badge variant="secondary" className="ml-1.5 h-4 min-w-4 px-1 text-xs bg-white/20">
+                  <Badge
+                    variant="secondary"
+                    className="ml-1.5 h-4 min-w-4 px-1 text-xs bg-white/20"
+                  >
                     {day.timeRanges.length}
                   </Badge>
                 )}
@@ -541,7 +627,8 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
               {/* Day Header */}
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg transition-all duration-300 ${
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg transition-all duration-300 ${
                       selectedDay.isAvailable
                         ? 'bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 text-white group-hover:scale-110 group-hover:rotate-6'
                         : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
@@ -555,7 +642,8 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                     </h3>
                     {selectedDay.isAvailable && (
                       <p className="text-xs font-semibold text-primary-600 dark:text-primary-400">
-                        {selectedDay.timeRanges.length} slot{selectedDay.timeRanges.length !== 1 ? 's' : ''}
+                        {selectedDay.timeRanges.length} slot
+                        {selectedDay.timeRanges.length !== 1 ? 's' : ''}
                       </p>
                     )}
                   </div>
@@ -564,7 +652,7 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                   checked={selectedDay.isAvailable}
                   onCheckedChange={() => toggleDayAvailability(selectedDayIndex)}
                   aria-label={`Toggle ${selectedDay.dayOfWeek} availability`}
-                  className ="z-10"
+                  className="z-10"
                 />
               </div>
 
@@ -585,7 +673,8 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                         exit={{ opacity: 0, x: 10 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <div className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all duration-200 ${
+                        <div
+                          className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all duration-200 ${
                             !isValidTimeRange(timeRange.startTime, timeRange.endTime)
                               ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/20'
                               : 'border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50'
@@ -594,7 +683,9 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                           <Timer className="w-4 h-4 text-primary-600 shrink-0" />
                           <Select
                             value={timeRange.startTime}
-                            onValueChange={(val) => updateTimeRange(selectedDayIndex, idx, 'startTime', val)}
+                            onValueChange={(val) =>
+                              updateTimeRange(selectedDayIndex, idx, 'startTime', val)
+                            }
                           >
                             <SelectTrigger className="h-9 text-xs">
                               <SelectValue />
@@ -612,7 +703,9 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                           <span className="text-xs text-neutral-400 font-medium">to</span>
                           <Select
                             value={timeRange.endTime}
-                            onValueChange={(val) => updateTimeRange(selectedDayIndex, idx, 'endTime', val)}
+                            onValueChange={(val) =>
+                              updateTimeRange(selectedDayIndex, idx, 'endTime', val)
+                            }
                           >
                             <SelectTrigger className="h-9 text-xs">
                               <SelectValue />
@@ -674,32 +767,44 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300">
                   <TrendingUp className="w-5 h-5 text-white" />
                 </div>
-                <CardTitle className="text-base font-bold text-neutral-900 dark:text-white">Weekly Summary</CardTitle>
+                <CardTitle className="text-base font-bold text-neutral-900 dark:text-white">
+                  Weekly Summary
+                </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Available Days</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+                  Available Days
+                </span>
                 <Badge variant="secondary" className="font-semibold text-xs">
                   {summary.availableDaysCount} of 7
                 </Badge>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Total Time Slots</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+                  Total Time Slots
+                </span>
                 <Badge variant="secondary" className="font-semibold text-xs">
                   {summary.totalSlots} slot{summary.totalSlots !== 1 ? 's' : ''}
                 </Badge>
               </div>
-              
+
               {summary.availableDays.length > 0 && (
                 <>
                   <Separator />
                   <div className="space-y-2">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Selected Days</span>
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+                      Selected Days
+                    </span>
                     <div className="flex flex-wrap gap-1.5">
                       {summary.availableDays.map((day) => (
-                        <Badge key={day.dayOfWeek} variant="outline" className="font-semibold text-xs">
+                        <Badge
+                          key={day.dayOfWeek}
+                          variant="outline"
+                          className="font-semibold text-xs"
+                        >
                           {getDayShort(day.dayOfWeek)} ({day.timeRanges.length})
                         </Badge>
                       ))}
@@ -724,8 +829,6 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
             Save Availability & Generate Slots
           </Button>
         </motion.div>
-
-        
       </motion.div>
     </section>
   );

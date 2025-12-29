@@ -6,6 +6,7 @@ import {
   getAllgeneratedSlots,
   managingIndividualSlot,
   managingSlotsOfADay,
+  addCustomSlot,
 } from '../controllers/slotsManager-controller.js';
 
 import { verifyJWTCounselor } from '../middlewares/counselorAuth-middleware.js';
@@ -29,5 +30,6 @@ availabilityRouter
   .route('/manage-individual-slot')
   .post(verifyJWTCounselor, managingIndividualSlot);
 availabilityRouter.route('/manage-day-slots').post(verifyJWTCounselor, managingSlotsOfADay);
+availabilityRouter.route('/add-custom-slot').post(verifyJWTCounselor, addCustomSlot);
 
 export { availabilityRouter };

@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  Plus, // NEW: Added for Add Custom Slot button
 } from 'lucide-react';
 import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
 import dayjs from 'dayjs';
@@ -20,7 +21,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { TIMEZONE } from '../../../constants/constants';
+import { TIMEZONE ,SLOT_DURATION_MINUTES } from '../../../constants/constants';
 import { toast } from 'sonner';
 
 // shadcn/ui imports
@@ -30,6 +31,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label'; // NEW: Added for form labels
+import { Input } from '@/components/ui/input'; // NEW: Added for form inputs
 import {
   Select,
   SelectContent,
@@ -55,6 +58,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+// NEW: Added Dialog imports for Add Custom Slot
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -90,6 +102,16 @@ const CounselorDashboardSlotsManager = () => {
     description: '',
     action: null,
     variant: 'default',
+  });
+
+  // NEW: Add Custom Slot state
+  const [showAddSlotDialog, setShowAddSlotDialog] = useState(false);
+  const [addSlotLoading, setAddSlotLoading] = useState(false);
+  const [newSlotData, setNewSlotData] = useState({
+    date: dayjs().format('YYYY-MM-DD'),
+    startTime: '9:00 AM',
+    endTime: '9:45 AM',
+    price: '',
   });
 
   useEffect(() => {
@@ -149,7 +171,6 @@ const CounselorDashboardSlotsManager = () => {
 
   const manageDaySlots = async (date, status) => {
     try {
-      
       setActionLoading(true);
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_DAY}`, {
         method: 'POST',
@@ -158,7 +179,7 @@ const CounselorDashboardSlotsManager = () => {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         credentials: 'include',
-        body: JSON.stringify({ date: dayjs(date).format("YYYY-MM-DD"), status }),
+        body: JSON.stringify({ date: dayjs(date).format('YYYY-MM-DD'), status }),
       });
 
       const data = await response.json();
@@ -178,15 +199,18 @@ const CounselorDashboardSlotsManager = () => {
   const manageIndividualSlot = async (slotId, status) => {
     try {
       setActionLoading(true);
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_INDIVIDUAL}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ slotId, status }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_INDIVIDUAL}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          credentials: 'include',
+          body: JSON.stringify({ slotId, status }),
+        }
+      );
 
       const data = await response.json();
       if (response.ok) {
@@ -202,6 +226,95 @@ const CounselorDashboardSlotsManager = () => {
     }
   };
 
+  // NEW: Add Custom Slot Handlers
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let minute = 0; minute < 60; minute += 30) {
+      times.push(`12:${minute.toString().padStart(2, '0')} AM`);
+    }
+    for (let hour = 1; hour <= 11; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        times.push(`${hour}:${minute.toString().padStart(2, '0')} AM`);
+      }
+    }
+    for (let minute = 0; minute < 60; minute += 30) {
+      times.push(`12:${minute.toString().padStart(2, '0')} PM`);
+    }
+    for (let hour = 1; hour <= 11; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        times.push(`${hour}:${minute.toString().padStart(2, '0')} PM`);
+      }
+    }
+    return times;
+  };
+
+  const timeOptions = generateTimeOptions();
+
+  const handleAddCustomSlot = async () => {
+    if (!newSlotData.date || !newSlotData.startTime || !newSlotData.endTime || !newSlotData.price) {
+      toast.error('Please fill all fields');
+      return;
+    }
+
+    if (Number(newSlotData.price) <= 0) {
+      toast.error('Price must be greater than 0');
+      return;
+    }
+
+    setAddSlotLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_ADD_CUSTOM}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          date: newSlotData.date,
+          startTime: newSlotData.startTime,
+          endTime: newSlotData.endTime,
+          price: Number(newSlotData.price),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || 'Slot added successfully!');
+        setShowAddSlotDialog(false);
+        setNewSlotData({
+          date: dayjs().format('YYYY-MM-DD'),
+          startTime: '9:00 AM',
+          endTime: '9:45 AM', // Updated
+          price: '',
+        });
+        await fetchSlots();
+
+        const addedSlotDate = dayjs(newSlotData.date);
+        setSelectedDate(addedSlotDate);
+      } else {
+        toast.error(data.message || 'Failed to add slot');
+      }
+    } catch (error) {
+      console.error('Error adding slot:', error);
+      toast.error('Failed to add slot. Please try again');
+    } finally {
+      setAddSlotLoading(false);
+    }
+  };
+
+  const handleCloseAddSlotDialog = () => {
+    setShowAddSlotDialog(false);
+    setNewSlotData({
+      date: dayjs().format('YYYY-MM-DD'),
+      startTime: '9:00 AM',
+      endTime: '9:45 AM', // Updated to match +45 minutes
+      price: '',
+    });
+  };
+
   const getSlotsForDate = (date) => {
     const targetDateString = dayjs(date).format('YYYY-MM-DD');
     return slots.filter((slot) => {
@@ -213,8 +326,8 @@ const CounselorDashboardSlotsManager = () => {
   const getFilteredSlots = (daySlots) => {
     if (filterStatus === 'all') return daySlots;
     const statusMap = {
-      available: daySlots.filter((s) => s.status === "available"),
-      booked: daySlots.filter((s) => s.status === "booked"),
+      available: daySlots.filter((s) => s.status === 'available'),
+      booked: daySlots.filter((s) => s.status === 'booked'),
       unavailable: daySlots.filter((s) => s.status === 'unavailable'),
     };
     return statusMap[filterStatus] || daySlots;
@@ -247,17 +360,56 @@ const CounselorDashboardSlotsManager = () => {
     });
     return Array.from(uniqueDates);
   };
+  // NEW: Helper function to calculate end time (start time + slotDuration minutes ( for now it is 45 minutes))
+  const calculateEndTime = (startTime) => {
+    // Parse the start time
+    const [time, period] = startTime.split(' ');
+    const [hours, minutes] = time.split(':').map(Number);
+
+    // Convert to 24-hour format
+    let hours24 = hours;
+    if (period === 'PM' && hours !== 12) {
+      hours24 = hours + 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours24 = 0;
+    }
+
+    // Add Slot Duration
+    let totalMinutes = hours24 * 60 + minutes + SLOT_DURATION_MINUTES;
+
+    // Convert back to hours and minute
+    let newHours = Math.floor(totalMinutes / 60) % 24;
+    let newMinutes = totalMinutes % 60;
+
+    // Convert back to 12-hour format
+    const newPeriod = newHours >= 12 ? 'PM' : 'AM';
+    if (newHours > 12) {
+      newHours = newHours - 12;
+    } else if (newHours === 0) {
+      newHours = 12;
+    }
+
+    // Format the result
+    return `${newHours}:${newMinutes.toString().padStart(2, '0')} ${newPeriod}`;
+  };
 
   const selectedDateSlots = getFilteredSlots(getSlotsForDate(selectedDate));
 
   if (loading) {
     return (
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30 py-16">
-        <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="max-w-4xl mx-auto p-4">
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="max-w-4xl mx-auto p-4"
+        >
           <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 shadow-lg">
             <CardContent className="py-12 flex flex-col items-center gap-3">
               <Loader2 className="w-7 h-7 animate-spin text-primary-600" />
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading your slots...</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Loading your slots...
+              </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -276,7 +428,10 @@ const CounselorDashboardSlotsManager = () => {
       >
         {/* Header */}
         <motion.div className="text-center mb-12 space-y-4" variants={containerVariants}>
-          <motion.h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.1] tracking-tight" variants={fadeInUp}>
+          <motion.h2
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.1] tracking-tight"
+            variants={fadeInUp}
+          >
             <span className="text-neutral-900 dark:text-white">My Available</span>
             <br />
             <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-400 dark:via-primary-300 dark:to-secondary-400 bg-clip-text text-transparent">
@@ -284,9 +439,21 @@ const CounselorDashboardSlotsManager = () => {
             </span>
           </motion.h2>
 
-          <motion.p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed" variants={fadeInUp}>
-            View and manage your counseling session slots. Dates with available slots are highlighted.
+          <motion.p
+            className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed"
+            variants={fadeInUp}
+          >
+            View and manage your counseling session slots. Dates with available slots are
+            highlighted.
           </motion.p>
+        </motion.div>
+
+        {/* NEW: Add Custom Slot Button */}
+        <motion.div variants={fadeInUp} className="mb-6 flex justify-center">
+          <Button onClick={() => setShowAddSlotDialog(true)} size="lg" className="shadow-md">
+            <Plus className="w-5 h-5 mr-2" />
+            Add Custom Slot
+          </Button>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -300,7 +467,9 @@ const CounselorDashboardSlotsManager = () => {
                     <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                       <CircleCheck className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     </div>
-                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Available</span>
+                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                      Available
+                    </span>
                   </div>
                   <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">
                     {slots.filter((s) => s.status === 'available').length}
@@ -314,9 +483,13 @@ const CounselorDashboardSlotsManager = () => {
                     <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                       <CalendarDays className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     </div>
-                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Booked</span>
+                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                      Booked
+                    </span>
                   </div>
-                  <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">{slots.filter((s) => s.status === 'booked').length}</p>
+                  <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">
+                    {slots.filter((s) => s.status === 'booked').length}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -326,9 +499,13 @@ const CounselorDashboardSlotsManager = () => {
                     <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                       <CircleAlert className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     </div>
-                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Unavailable</span>
+                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                      Unavailable
+                    </span>
                   </div>
-                  <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">{slots.filter((s) => s.status === 'unavailable').length}</p>
+                  <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">
+                    {slots.filter((s) => s.status === 'unavailable').length}
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -345,7 +522,9 @@ const CounselorDashboardSlotsManager = () => {
                     </div>
                     <div>
                       <CardTitle className="text-lg font-bold">Select Date</CardTitle>
-                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">Highlighted dates have slots</p>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+                        Highlighted dates have slots
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -361,8 +540,8 @@ const CounselorDashboardSlotsManager = () => {
                         <SelectItem value="unavailable">Unavailable</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => setSelectedDate(dayjs().tz(TIMEZONE))}
                       className="bg-primary-600 hover:bg-primary-700 text-white"
                     >
@@ -397,41 +576,58 @@ const CounselorDashboardSlotsManager = () => {
                       <CalendarDays className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-base font-bold">{selectedDate.format('dddd')}</CardTitle>
-                      <p className="text-xs text-neutral-600 dark:text-neutral-400">{selectedDate.format('MMMM D, YYYY')}</p>
+                      <CardTitle className="text-base font-bold">
+                        {selectedDate.format('dddd')}
+                      </CardTitle>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                        {selectedDate.format('MMMM D, YYYY')}
+                      </p>
                     </div>
                   </div>
                   {selectedDateSlots.length > 0 && !dayHasBookedSlots(selectedDate) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 gap-2 border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-2 border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                        >
                           <Settings className="w-3.5 h-3.5 text-primary-600" />
                           Manage Day
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                        <DropdownMenuLabel className="text-primary-700 dark:text-primary-400">Day Actions</DropdownMenuLabel>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-56 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                      >
+                        <DropdownMenuLabel className="text-primary-700 dark:text-primary-400">
+                          Day Actions
+                        </DropdownMenuLabel>
                         <DropdownMenuSeparator className="bg-neutral-200 dark:bg-neutral-800" />
-                        <DropdownMenuItem 
-                          onClick={() => showConfirmDialog(
-                            'Set All Available',
-                            `Are you sure you want to set all slots on ${selectedDate.format('MMMM D, YYYY')} as available?`,
-                            () => manageDaySlots(selectedDate, 'available'),
-                            'default'
-                          )}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            showConfirmDialog(
+                              'Set All Available',
+                              `Are you sure you want to set all slots on ${selectedDate.format('MMMM D, YYYY')} as available?`,
+                              () => manageDaySlots(selectedDate, 'available'),
+                              'default'
+                            )
+                          }
                           disabled={actionLoading}
                           className="cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20"
                         >
                           <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
                           <span>Set All Available</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => showConfirmDialog(
-                            'Set All Unavailable',
-                            `Are you sure you want to set all slots on ${selectedDate.format('MMMM D, YYYY')} as unavailable?`,
-                            () => manageDaySlots(selectedDate, 'unavailable'),
-                            'default'
-                          )}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            showConfirmDialog(
+                              'Set All Unavailable',
+                              `Are you sure you want to set all slots on ${selectedDate.format('MMMM D, YYYY')} as unavailable?`,
+                              () => manageDaySlots(selectedDate, 'unavailable'),
+                              'default'
+                            )
+                          }
                           disabled={actionLoading}
                           className="cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20"
                         >
@@ -439,13 +635,15 @@ const CounselorDashboardSlotsManager = () => {
                           <span>Set All Unavailable</span>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-neutral-200 dark:bg-neutral-800" />
-                        <DropdownMenuItem 
-                          onClick={() => showConfirmDialog(
-                            'Delete All Slots',
-                            `Are you sure you want to delete all slots on ${selectedDate.format('MMMM D, YYYY')}? This action cannot be undone.`,
-                            () => manageDaySlots(selectedDate, 'delete'),
-                            'destructive'
-                          )}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            showConfirmDialog(
+                              'Delete All Slots',
+                              `Are you sure you want to delete all slots on ${selectedDate.format('MMMM D, YYYY')}? This action cannot be undone.`,
+                              () => manageDaySlots(selectedDate, 'delete'),
+                              'destructive'
+                            )
+                          }
                           disabled={actionLoading}
                           className="cursor-pointer text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
@@ -462,7 +660,12 @@ const CounselorDashboardSlotsManager = () => {
                 <ScrollArea className="h-[500px] pr-3">
                   <AnimatePresence mode="wait">
                     {selectedDateSlots.length > 0 ? (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-3"
+                      >
                         {selectedDateSlots.map((slot) => {
                           const config = getStatusConfig(getSlotStatus(slot));
                           const Icon = config.icon;
@@ -484,49 +687,68 @@ const CounselorDashboardSlotsManager = () => {
                                     <div className="flex items-center gap-2 mb-2">
                                       <Clock className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
                                       <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                                        {dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')} - {dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')}
+                                        {dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')} -{' '}
+                                        {dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')}
                                       </span>
                                     </div>
-                                    <Badge variant="secondary" className="bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 text-xs">
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 text-xs"
+                                    >
                                       {config.label}
                                     </Badge>
                                     {slot.basePrice && (
-                                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-2">Price: ₹{slot.basePrice}</p>
+                                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-2">
+                                        Price: ₹{slot.basePrice}
+                                      </p>
                                     )}
                                   </div>
                                 </div>
                               </div>
-                              {slot.status !== "booked" && (
+                              {slot.status !== 'booked' && (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="w-full h-8 gap-2 border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-full h-8 gap-2 border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                                    >
                                       <Settings className="w-3.5 h-3.5 text-primary-600" />
                                       Manage Slot
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-52 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                    <DropdownMenuLabel className="text-primary-700 dark:text-primary-400">Slot Actions</DropdownMenuLabel>
+                                  <DropdownMenuContent
+                                    align="end"
+                                    className="w-52 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                                  >
+                                    <DropdownMenuLabel className="text-primary-700 dark:text-primary-400">
+                                      Slot Actions
+                                    </DropdownMenuLabel>
                                     <DropdownMenuSeparator className="bg-neutral-200 dark:bg-neutral-800" />
-                                    <DropdownMenuItem 
-                                      onClick={() => showConfirmDialog(
-                                        'Set Slot Available',
-                                        `Set this slot (${dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')} - ${dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')}) as available?`,
-                                        () => manageIndividualSlot(slot._id, 'available'),
-                                        'default'
-                                      )}
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        showConfirmDialog(
+                                          'Set Slot Available',
+                                          `Set this slot (${dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')} - ${dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')}) as available?`,
+                                          () => manageIndividualSlot(slot._id, 'available'),
+                                          'default'
+                                        )
+                                      }
                                       disabled={actionLoading}
                                       className="cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20"
                                     >
                                       <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-green-600" />
                                       <span>Set Available</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={() => showConfirmDialog(
-                                        'Set Slot Unavailable',
-                                        `Set this slot (${dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')} - ${dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')}) as unavailable?`,
-                                        () => manageIndividualSlot(slot._id, 'unavailable'),
-                                        'default'
-                                      )}
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        showConfirmDialog(
+                                          'Set Slot Unavailable',
+                                          `Set this slot (${dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')} - ${dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')}) as unavailable?`,
+                                          () => manageIndividualSlot(slot._id, 'unavailable'),
+                                          'default'
+                                        )
+                                      }
                                       disabled={actionLoading}
                                       className="cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20"
                                     >
@@ -534,13 +756,15 @@ const CounselorDashboardSlotsManager = () => {
                                       <span>Set Unavailable</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="bg-neutral-200 dark:bg-neutral-800" />
-                                    <DropdownMenuItem 
-                                      onClick={() => showConfirmDialog(
-                                        'Delete Slot',
-                                        `Are you sure you want to delete this slot (${dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')} - ${dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')})? This action cannot be undone.`,
-                                        () => manageIndividualSlot(slot._id, 'delete'),
-                                        'destructive'
-                                      )}
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        showConfirmDialog(
+                                          'Delete Slot',
+                                          `Are you sure you want to delete this slot (${dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')} - ${dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')})? This action cannot be undone.`,
+                                          () => manageIndividualSlot(slot._id, 'delete'),
+                                          'destructive'
+                                        )
+                                      }
                                       disabled={actionLoading}
                                       className="cursor-pointer text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                                     >
@@ -555,12 +779,20 @@ const CounselorDashboardSlotsManager = () => {
                         })}
                       </motion.div>
                     ) : (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center py-16"
+                      >
                         <div className="w-16 h-16 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mx-auto mb-4">
                           <Clock className="w-8 h-8 text-primary-600 dark:text-primary-400" />
                         </div>
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">No slots for this date</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Select a different date to view available slots</p>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">
+                          No slots for this date
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Select a different date to view available slots
+                        </p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -572,7 +804,10 @@ const CounselorDashboardSlotsManager = () => {
       </motion.div>
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog({ ...confirmDialog, open: false })}>
+      <AlertDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => !open && setConfirmDialog({ ...confirmDialog, open: false })}
+      >
         <AlertDialogContent className="bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-primary-800 dark:text-primary-200">
@@ -588,7 +823,7 @@ const CounselorDashboardSlotsManager = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel 
+            <AlertDialogCancel
               className="border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               disabled={actionLoading}
             >
@@ -615,6 +850,135 @@ const CounselorDashboardSlotsManager = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* NEW: Add Custom Slot Dialog */}
+      <Dialog open={showAddSlotDialog} onOpenChange={setShowAddSlotDialog}>
+        <DialogContent className="sm:max-w-md bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                <Plus className="w-5 h-5 text-primary-600 dark:text-primary-500" />
+              </div>
+              <DialogTitle className="text-lg">Add Custom Slot</DialogTitle>
+            </div>
+            <DialogDescription className="text-sm">
+              Create a one-time slot for a specific date and time without modifying your recurring
+              availability.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Date Input */}
+            <div className="space-y-2">
+              <Label htmlFor="slot-date" className="text-sm font-medium">
+                Date
+              </Label>
+              <Input
+                id="slot-date"
+                type="date"
+                min={dayjs().format('YYYY-MM-DD')}
+                value={newSlotData.date}
+                onChange={(e) => setNewSlotData({ ...newSlotData, date: e.target.value })}
+                className="w-full"
+              />
+            </div>
+
+            {/* Time Range */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="start-time" className="text-sm font-medium">
+                  Start Time
+                </Label>
+                <Select
+                  value={newSlotData.startTime}
+                  onValueChange={(val) => {
+                    const calculatedEndTime = calculateEndTime(val);
+                    setNewSlotData({
+                      ...newSlotData,
+                      startTime: val,
+                      endTime: calculatedEndTime,
+                    });
+                  }}
+                >
+                  <SelectTrigger id="start-time">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <ScrollArea className="h-48">
+                      {timeOptions.map((time) => (
+                        <SelectItem key={time} value={time} className="text-sm">
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </ScrollArea>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="end-time" className="text-sm font-medium text-neutral-500">
+                  End Time
+                  <span className="text-xs ml-1.5 text-neutral-400">(Auto-calculated)</span>
+                </Label>
+                <Select value={newSlotData.endTime} disabled>
+                  <SelectTrigger
+                    id="end-time"
+                    className="bg-neutral-50 dark:bg-neutral-800/50 cursor-not-allowed opacity-75"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                </Select>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Duration: {
+                    SLOT_DURATION_MINUTES
+                  }minutes
+                </p>
+              </div>
+            </div>
+
+            {/* Price Input */}
+            <div className="space-y-2">
+              <Label htmlFor="slot-price" className="text-sm font-medium">
+                Price (₹)
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-medium">
+                  ₹
+                </span>
+                <Input
+                  id="slot-price"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Enter price"
+                  value={newSlotData.price}
+                  onChange={(e) => setNewSlotData({ ...newSlotData, price: e.target.value })}
+                  className="pl-6"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={handleCloseAddSlotDialog} disabled={addSlotLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddCustomSlot} disabled={addSlotLoading}>
+              {addSlotLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Add Slot
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

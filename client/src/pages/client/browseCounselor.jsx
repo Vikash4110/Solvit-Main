@@ -151,7 +151,7 @@ const FilterSection = React.memo(
               id="filter-search-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Name or specialty..."
+              placeholder="Search by Name"
               className="pl-10"
               autoComplete="off"
             />
@@ -336,6 +336,7 @@ const BrowseCounselor = () => {
       });
       const j = await r.json();
       setCounselors(j.counselors || []);
+      console.log(j.counselors);
     } catch (e) {
       toast.error('Failed to load counselors. Please try again later.');
     } finally {
@@ -369,12 +370,12 @@ const BrowseCounselor = () => {
   const visible = useMemo(() => {
     return counselors
       .filter((c) => {
-        const bySearch =
-          c.fullName.toLowerCase().includes(search.toLowerCase()) ||
-          c.specialization.toLowerCase().includes(search.toLowerCase());
+        const bySearch = c.fullName.toLowerCase().includes(search.toLowerCase());
+        // c.specialization.toLowerCase().includes(search.toLowerCase());
 
-        const bySpec = spec === 'all' || c.specialization === spec;
+        const bySpec = spec === 'all' || c.specialization?.includes(spec);
         const byGender = gender === 'all' || c.gender === gender;
+        console.log(language);
         const byLanguage = language === 'all' || c.application?.languages?.includes(language);
         const byPrice =
           !c.availableSlots[0].totalPriceAfterPlatformFee ||
@@ -905,12 +906,16 @@ const BrowseCounselor = () => {
                                     <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
                                       Expertise:
                                     </span>
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-0"
-                                    >
-                                      {counselor.specialization}
-                                    </Badge>
+                                    {counselor.specialization?.map((spec) => {
+                                      return (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-0"
+                                        >
+                                          {spec}
+                                        </Badge>
+                                      );
+                                    })}
                                   </div>
 
                                   {/* Session Details Badges */}
@@ -996,7 +1001,7 @@ const BrowseCounselor = () => {
                                     onClick={() => bookCounselor(counselor._id)}
                                   >
                                     <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
-                                    <span className="text-xs font-semibold">Book Now</span>
+                                    <span className="text-xs font-semibold">View Profile & Book Now</span>
                                   </Button>
                                 </div>
                               </div>

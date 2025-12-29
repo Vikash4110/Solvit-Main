@@ -25,6 +25,11 @@ import {
   Wallet,
   Building2,
   ArrowUpRight,
+  RefreshCw,
+  AlertTriangle,
+  XCircle,
+  Clock,
+  FileWarning,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,11 +43,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import PaymentDetailModal from './PaymentDetailModal';
 import PaymentAnalytics from './PaymentAnalytics';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
 const TIMEZONE = 'Asia/Kolkata';
 
 const AdminPaymentsManagement = () => {
@@ -56,7 +65,13 @@ const AdminPaymentsManagement = () => {
     netRevenue: 0,
     todayRevenue: 0,
     razorpayFees: 0,
+    totalRefunded: 0,
+    refundCount: 0,
+    partialRefunds: 0,
+    fullRefunds: 0,
     methodBreakdown: [],
+    statusBreakdown: [],
+    bookingStatusBreakdown: [],
   });
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -71,24 +86,42 @@ const AdminPaymentsManagement = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateFilter, setDateFilter] = useState('all');
-  const [methodFilter, setMethodFilter] = useState('all_methods'); // ✅ Changed from
+  const [methodFilter, setMethodFilter] = useState('all_methods');
+  const [statusFilter, setStatusFilter] = useState('all_statuses');
+  const [refundFilter, setRefundFilter] = useState('all_refunds');
+  const [bookingStatusFilter, setBookingStatusFilter] = useState('all_booking_statuses');
 
   useEffect(() => {
     fetchPayments();
-  }, [currentPage, dateFilter, methodFilter]);
+  }, [currentPage, dateFilter, methodFilter, statusFilter, refundFilter, bookingStatusFilter]);
 
   const fetchPayments = async () => {
-    setLoading(true);
-    const result = await getAllPayments(currentPage, 20, searchTerm, dateFilter, methodFilter);
+    try {
+      setLoading(true);
+      const result = await getAllPayments(
+        currentPage,
+        20,
+        searchTerm,
+        dateFilter,
+        methodFilter,
+        statusFilter,
+        refundFilter,
+        bookingStatusFilter
+      );
 
-    if (result.success) {
-      setPayments(result.data.payments);
-      setStats(result.data.stats);
-      setPagination(result.data.pagination);
-    } else {
-      toast.error(result.error);
+      if (result.success) {
+        setPayments(result.data.payments);
+        setStats(result.data.stats);
+        setPagination(result.data.pagination);
+      } else {
+        toast.error(result.error || 'Failed to fetch payments');
+      }
+    } catch (error) {
+      console.error('Fetch payments error:', error);
+      toast.error('Network error while fetching payments');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSearch = () => {
@@ -107,12 +140,13 @@ const AdminPaymentsManagement = () => {
   };
 
   const formatCurrency = (amount) => {
+    if (amount === null || amount === undefined) return '₹0.00';
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      minimumFractionDigits: 2, // ✅ Changed from 0 to 2
-      maximumFractionDigits: 2, // ✅ Show exact decimals
-    }).format(amount || 0);
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
   };
 
   const getMethodIcon = (method) => {
@@ -126,464 +160,452 @@ const AdminPaymentsManagement = () => {
       case 'netbanking':
         return <Building2 className="w-4 h-4" />;
       default:
-        return <CreditCard className="w-4 h-4" />;
+        return <DollarSign className="w-4 h-4" />;
     }
   };
 
-  const getMethodColor = (method) => {
-    switch (method) {
-      case 'card':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'upi':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'wallet':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'netbanking':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+  const getPaymentStatusBadge = (payment) => {
+    const { status, bookingStatus, refund_status } = payment;
+
+    // Priority 1: Refund Status
+    if (refund_status === 'full') {
+      return (
+        <Badge className="bg-red-100 text-red-800 border-red-300">
+          <RefreshCw className="w-3 h-3 mr-1" />
+          Fully Refunded
+        </Badge>
+      );
     }
+    if (refund_status === 'partial') {
+      return (
+        <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+          <AlertTriangle className="w-3 h-3 mr-1" />
+          Partially Refunded
+        </Badge>
+      );
+    }
+
+    // Priority 2: Payment Status
+    if (status === 'captured_unlinked') {
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+          <FileWarning className="w-3 h-3 mr-1" />
+          Unlinked
+        </Badge>
+      );
+    }
+    if (status === 'failed') {
+      return (
+        <Badge className="bg-red-100 text-red-800 border-red-300">
+          <XCircle className="w-3 h-3 mr-1" />
+          Failed
+        </Badge>
+      );
+    }
+
+    // Priority 3: Booking Status
+    if (bookingStatus === 'completed') {
+      return (
+        <Badge className="bg-green-100 text-green-800 border-green-300">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          Completed
+        </Badge>
+      );
+    }
+    if (bookingStatus === 'pending') {
+      return (
+        <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+          <Clock className="w-3 h-3 mr-1" />
+          Pending
+        </Badge>
+      );
+    }
+    if (bookingStatus === 'payment_captured') {
+      return (
+        <Badge className="bg-purple-100 text-purple-800 border-purple-300">
+          <DollarSign className="w-3 h-3 mr-1" />
+          Captured
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge className="bg-gray-100 text-gray-800 border-gray-300">{status || 'Unknown'}</Badge>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Payment Management</h1>
-            <p className="text-slate-600 mt-1">Track and manage all client payments</p>
-          </div>
-          <Button variant="outline" className="gap-2">
-            <Download className="w-4 h-4" />
-            Export Report
-          </Button>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Payment Management</h1>
+          <p className="text-muted-foreground mt-1">
+            Track and manage all client payments with refund insights
+          </p>
         </div>
+        <Button onClick={fetchPayments} disabled={loading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="overview">Overview & Payments</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              {/* Total Payments */}
-              <Card className="border-t-4 border-t-blue-500 hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-600">
-                    Total Payments
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <p className="text-3xl font-bold text-slate-900">{stats.totalPayments}</p>
-                    <CreditCard className="w-8 h-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              {/* Total Revenue */}
-              <Card className="border-t-4 border-t-green-500 hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-600">
-                    Total Revenue
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(stats.totalRevenue)}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        ₹{stats.totalRevenue?.toFixed(2)}
-                      </p>
-                    </div>
-                    
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Platform Revenue */}
-              <Card className="border-t-4 border-t-purple-500 hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-600">
-                    Platform Revenue
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <p className="text-2xl font-bold text-purple-600">
-                      {formatCurrency(stats.platformRevenue)}
-                    </p>
-                    <TrendingUp className="w-8 h-8 text-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Net Revenue */}
-              <Card className="border-t-4 border-t-indigo-500 hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-600">Net Revenue</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <p className="text-2xl font-bold text-indigo-600">
-                      {formatCurrency(stats.netRevenue)}
-                    </p>
-                    <CheckCircle className="w-8 h-8 text-indigo-500" />
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">After Removing Razorpay fees</p>
-                </CardContent>
-              </Card>
-
-              {/* Today's Revenue */}
-              <Card className="border-t-4 border-t-orange-500 hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-600">
-                    Today's Revenue
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <p className="text-2xl font-bold text-orange-600">
-                      {formatCurrency(stats.todayRevenue)}
-                    </p>
-                    <Calendar className="w-8 h-8 text-orange-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Razorpay Fees - UPDATED */}
-              <Card className="border-t-4 border-t-red-500 hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-600">
-                    Razorpay Fees
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold text-red-600">
-                        {formatCurrency(stats.razorpayFees)}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        ₹{stats.razorpayFees?.toFixed(2)} (incl. GST)
-                      </p>
-                    </div>
-                    <ArrowUpRight className="w-8 h-8 text-red-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Payment Method Breakdown */}
-            {stats.methodBreakdown && stats.methodBreakdown.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-blue-600" />
-                    Payment Method Breakdown
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {stats.methodBreakdown.map((method) => (
-                      <div
-                        key={method._id}
-                        className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          {getMethodIcon(method._id)}
-                          <p className="text-sm font-semibold text-slate-700 capitalize">
-                            {method._id || 'Unknown'}
-                          </p>
-                        </div>
-                        <p className="text-2xl font-bold text-slate-900">
-                          {formatCurrency(method.totalAmount)}
-                        </p>
-                        <p className="text-xs text-slate-600 mt-1">{method.count} transactions</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Filters */}
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* Total Revenue */}
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                      <Input
-                        type="text"
-                        placeholder="Search by client name, payment ID, or order ID..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                        className="pl-10"
-                      />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stats.totalPayments} transactions
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Platform Revenue */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Platform Revenue</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(stats.platformRevenue)}</div>
+                <p className="text-xs text-muted-foreground mt-1">Commission earned</p>
+              </CardContent>
+            </Card>
+
+            {/* Net Revenue */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Net Revenue</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(stats.netRevenue)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  After Razorpay fees ({formatCurrency(stats.razorpayFees)})
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Refunds */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Refunded</CardTitle>
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(stats.totalRefunded)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stats.refundCount} refunds ({stats.partialRefunds} partial, {stats.fullRefunds}{' '}
+                  full)
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Method Breakdown */}
+          {stats.methodBreakdown?.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Methods</CardTitle>
+                <CardDescription>Revenue distribution by payment method</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-4">
+                  {stats.methodBreakdown.map((method) => (
+                    <div key={method._id} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        {getMethodIcon(method._id)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium capitalize">{method._id || 'Unknown'}</p>
+                        <p className="text-lg font-bold">{formatCurrency(method.totalAmount)}</p>
+                        <p className="text-xs text-muted-foreground">{method.count} txns</p>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Date Filter - FIXED */}
-                  <Select value={dateFilter} onValueChange={(value) => setDateFilter(value)}>
-                    <SelectTrigger className="w-full md:w-[180px]">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Date filter" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">This Week</SelectItem>
-                      <SelectItem value="month">This Month</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {/* Payment Method Filter - FIXED */}
-                  <Select value={methodFilter} onValueChange={(value) => setMethodFilter(value)}>
-                    <SelectTrigger className="w-full md:w-[180px]">
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all_methods">All Methods</SelectItem>
-                      <SelectItem value="card">Card</SelectItem>
-                      <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="netbanking">Net Banking</SelectItem>
-                      <SelectItem value="wallet">Wallet</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
-                    <Search className="w-4 h-4 mr-2" />
-                    Search
-                  </Button>
+                  ))}
                 </div>
               </CardContent>
             </Card>
+          )}
 
-            {/* Payments Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>All Payments</CardTitle>
-                <CardDescription>
-                  Showing {payments.length} of {pagination.totalPayments} payments
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  </div>
-                ) : payments.length === 0 ? (
-                  <div className="text-center py-12">
-                    <CreditCard className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-600 font-medium">No payments found</p>
-                    <p className="text-slate-500 text-sm mt-1">Try adjusting your filters</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-slate-50 border-b">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                              Payment ID
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                              Client
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                              Counselor
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                              Amount
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                              Method
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                              Fees
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                              Date
-                            </th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {payments.map((payment) => (
-                            <tr key={payment._id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-4">
-                                <div className="space-y-1">
-                                  <code className="text-xs bg-slate-100 px-2 py-1 rounded block font-mono">
-                                    {payment.razorpay_payment_id?.slice(-12)}
-                                  </code>
-                                  <code className="text-xs text-slate-500 font-mono">
-                                    {payment.razorpay_order_id?.slice(-12)}
-                                  </code>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="flex items-center gap-3">
-                                  {payment.clientId?.profilePicture ? (
-                                    <img
-                                      src={payment.clientId.profilePicture}
-                                      alt={payment.clientId.fullName}
-                                      className="w-10 h-10 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                      <Users className="w-5 h-5 text-blue-600" />
-                                    </div>
-                                  )}
-                                  <div>
-                                    <p className="font-medium text-slate-900">
-                                      {payment.clientId?.fullName}
-                                    </p>
-                                    <p className="text-xs text-slate-500">
-                                      {payment.email || payment.clientId?.email}
-                                    </p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="flex items-center gap-2">
-                                  {payment.slotId?.counselorId?.profilePicture ? (
-                                    <img
-                                      src={payment.slotId.counselorId.profilePicture}
-                                      alt={payment.slotId.counselorId.fullName}
-                                      className="w-8 h-8 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                                      <Users className="w-4 h-4 text-purple-600" />
-                                    </div>
-                                  )}
-                                  <div>
-                                    <p className="text-sm font-medium text-slate-900">
-                                      {payment.slotId?.counselorId?.fullName}
-                                    </p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="space-y-1">
-                                  <p className="text-lg font-bold text-green-700">
-                                    {formatCurrency(payment.amount)}
-                                  </p>
-                                  <p className="text-xs text-slate-500">
-                                    Counselor: {formatCurrency(payment.slotId?.basePrice || 0)}
-                                  </p>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <Badge
-                                  variant="outline"
-                                  className={`${getMethodColor(payment.method)} capitalize`}
-                                >
-                                  {getMethodIcon(payment.method)}
-                                  <span className="ml-1">{payment.method}</span>
-                                </Badge>
-                                {payment.bank && (
-                                  <p className="text-xs text-slate-500 mt-1">{payment.bank}</p>
-                                )}
-                                {payment.wallet && (
-                                  <p className="text-xs text-slate-500 mt-1 capitalize">
-                                    {payment.wallet}
-                                  </p>
-                                )}
-                                {payment.vpa && (
-                                  <p className="text-xs text-slate-500 mt-1 truncate max-w-[150px]">
-                                    {payment.vpa}
-                                  </p>
-                                )}
-                              </td>
-                              <td className="px-4 py-4">
-                                <Badge variant="secondary" className="font-mono text-xs">
-                                  {formatCurrency((payment.fee || 0) + (payment.tax || 0))}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="flex items-center gap-2 text-sm text-slate-600">
-                                  <Calendar className="w-4 h-4" />
-                                  <span className="text-xs">{formatDate(payment.createdAt)}</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 text-center">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleViewDetails(payment)}
-                                  className="hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  View
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Search & Filter</CardTitle>
+              <CardDescription>Find specific payment transactions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-6">
+                {/* Search */}
+                <div className="md:col-span-2">
+                  <Input
+                    placeholder="Search payment ID, email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                </div>
 
-                    {/* Pagination */}
-                    {pagination.totalPages > 1 && (
-                      <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                        <p className="text-sm text-slate-600">
-                          Page {pagination.currentPage} of {pagination.totalPages}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                            Previous
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))
-                            }
-                            disabled={currentPage === pagination.totalPages}
-                          >
-                            Next
-                            <ChevronRight className="w-4 h-4 ml-1" />
-                          </Button>
+                {/* Date Filter */}
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Date" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="yesterday">Yesterday</SelectItem>
+                    <SelectItem value="last_7_days">Last 7 Days</SelectItem>
+                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                    <SelectItem value="this_month">This Month</SelectItem>
+                    <SelectItem value="last_month">Last Month</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Method Filter */}
+                <Select value={methodFilter} onValueChange={setMethodFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all_methods">All Methods</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="wallet">Wallet</SelectItem>
+                    <SelectItem value="netbanking">Netbanking</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all_statuses">All Statuses</SelectItem>
+                    <SelectItem value="captured">Captured</SelectItem>
+                    <SelectItem value="captured_unlinked">Unlinked</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Refund Filter */}
+                <Select value={refundFilter} onValueChange={setRefundFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Refunds" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all_refunds">All Refunds</SelectItem>
+                    <SelectItem value="no_refund">No Refund</SelectItem>
+                    <SelectItem value="refunded">Any Refund</SelectItem>
+                    <SelectItem value="partial">Partial Refund</SelectItem>
+                    <SelectItem value="full">Full Refund</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <Button onClick={handleSearch} disabled={loading}>
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setDateFilter('all');
+                    setMethodFilter('all_methods');
+                    setStatusFilter('all_statuses');
+                    setRefundFilter('all_refunds');
+                    setBookingStatusFilter('all_booking_statuses');
+                    setCurrentPage(1);
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payments Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Transactions</CardTitle>
+              <CardDescription>
+                Showing {pagination.totalPayments} payments with refund status
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : payments.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No payments found</p>
+                  <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {payments.map((payment) => (
+                    <Card key={payment._id} className="overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-12 gap-4 items-center">
+                          {/* Payment IDs */}
+                          <div className="col-span-2">
+                            <div className="space-y-1">
+                              <code className="text-xs bg-muted px-2 py-1 rounded">
+                                {payment.razorpay_payment_id?.slice(-12)}
+                              </code>
+                              <code className="text-xs bg-muted px-2 py-1 rounded block">
+                                {payment.razorpay_order_id?.slice(-12)}
+                              </code>
+                            </div>
+                          </div>
+
+                          {/* Client */}
+                          <div className="col-span-2 flex items-center gap-2">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={payment.clientId?.profilePicture} />
+                              <AvatarFallback>
+                                {payment.clientId?.fullName?.charAt(0) || 'C'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {payment.clientId?.fullName || 'Unknown'}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {payment.email || payment.clientId?.email}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Counselor */}
+                          <div className="col-span-2 flex items-center gap-2">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={payment.slotId?.counselorId?.profilePicture} />
+                              <AvatarFallback>
+                                {payment.slotId?.counselorId?.fullName?.charAt(0) || 'C'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {payment.slotId?.counselorId?.fullName || 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Amount */}
+                          <div className="col-span-2">
+                            <p className="text-lg font-bold">{formatCurrency(payment.amount)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Counselor: {formatCurrency(payment.slotId?.basePrice || 0)}
+                            </p>
+                            {payment.refunds?.length > 0 && (
+                              <p className="text-xs text-red-600 font-medium mt-1">
+                                Refunded: {formatCurrency(payment.amount_refunded || 0)}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Method & Fee */}
+                          <div className="col-span-2">
+                            <div className="flex items-center gap-1 mb-1">
+                              {getMethodIcon(payment.method)}
+                              <span className="text-sm capitalize">{payment.method}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Fee: {formatCurrency(payment.fee || 0)}
+                            </p>
+                          </div>
+
+                          {/* Status & Date */}
+                          <div className="col-span-1">
+                            {getPaymentStatusBadge(payment)}
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {formatDate(payment.createdAt)}
+                            </p>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="col-span-1 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDetails(payment)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
 
-          {/* Analytics Tab */}
-          <TabsContent value="analytics">
-            <PaymentAnalytics />
-          </TabsContent>
-        </Tabs>
-      </div>
+              {/* Pagination */}
+              {!loading && pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <p className="text-sm text-muted-foreground">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.min(pagination.totalPages, p + 1))}
+                      disabled={currentPage === pagination.totalPages}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics">
+          <PaymentAnalytics />
+        </TabsContent>
+      </Tabs>
 
       {/* Payment Detail Modal */}
-      {showDetailModal && selectedPayment && (
+      {selectedPayment && (
         <PaymentDetailModal
           paymentId={selectedPayment._id}
           isOpen={showDetailModal}
-          onClose={() => setShowDetailModal(false)}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedPayment(null);
+          }}
         />
       )}
     </div>

@@ -12,9 +12,7 @@ import {
   validateCounselorProfileCompleteness,
   submitCounselorApplication,
   getCounselorApplicationStatus,
-  getCounselorUpcomingSessions,
-  joinSession,
-  getCounselorSessionDetails,
+  getCounselorBookings,
 } from '../controllers/counselor-dashboard-controller.js';
 
 const counselorDashboardRouter = express.Router();
@@ -40,9 +38,7 @@ counselorDashboardRouter.get('/profile/completeness', validateCounselorProfileCo
 counselorDashboardRouter.post('/application/submit', submitCounselorApplication);
 counselorDashboardRouter.get('/application/status', getCounselorApplicationStatus);
 
-//upcomming session routes
-counselorDashboardRouter.get('/sessions/upcoming', getCounselorUpcomingSessions);
-counselorDashboardRouter.get('/sessions/:sessionId', getCounselorSessionDetails);
-counselorDashboardRouter.post('/sessions/:sessionId/join', joinSession);
+//Get the counselor Bookings
+counselorDashboardRouter.get('/bookings', getCounselorBookings);
 
 export { counselorDashboardRouter };

@@ -13,10 +13,6 @@ const bookingSchema = new mongoose.Schema(
       ref: 'GeneratedSlot',
       required: true,
     },
-    sessionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Session',
-    },
     status: {
       type: String,
       enum: ['confirmed', 'dispute_window_open', 'disputed', 'completed', 'cancelled'],
@@ -27,6 +23,9 @@ const bookingSchema = new mongoose.Schema(
       disputeWindowOpenAt: Date,
       autoCompleteAt: Date,
       completedAt: Date,
+    },
+    videoSDKRoomId: {
+      type: String,
     },
 
     dispute: {
@@ -143,5 +142,14 @@ bookingSchema.index({ 'dispute.status': 1 });
 bookingSchema.index({ 'dispute.isDisputed': 1 });
 bookingSchema.index({ counselorId: 1, 'dispute.isDisputed': 1 });
 bookingSchema.index({ clientId: 1, status: 1 });
-
+bookingSchema.index(
+  { slotId: 1, status: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ['confirmed', 'pending'] },
+    },
+    name: 'unique_active_booking_per_slot',
+  }
+);
 export const Booking = mongoose.model('Booking', bookingSchema);

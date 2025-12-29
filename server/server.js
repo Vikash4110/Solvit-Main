@@ -16,7 +16,8 @@ import { disputeRouter } from './routes/dispute.route.js';
 import { adminRouter } from './routes/admin-routes.js';
 import { videoCallRouter } from './routes/videoCall.routes.js';
 import { counselorDashboardRouter } from './routes/counselor-dashboard-routes.js';
-
+import { oauthRouter } from './routes/oauth.routes.js';
+import { GeneratedSlot } from './models/generatedSlots-model.js';
 //brevo initailizationa and verification on stratup
 import { initializeBrevo, verifyBrevoConnection } from './services/emailService.js';
 import errorHandler from './middlewares/brevo.errorHandler.middleware.js';
@@ -27,31 +28,12 @@ import morgan from 'morgan';
 
 import { logger } from './utils/logger.js';
 import Razorpay from 'razorpay';
-// ============ BullMQ Imports ============
-import { closeQueues } from './queue/queue.js';
-import { initializeScheduledJobs } from './queue/jobManager.js';
-import { closeAllConnections } from './config/redis.js';
-// ========================================
-import { ExpressAdapter } from '@bull-board/express';
-import { createBullBoard } from '@bull-board/api';
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import { schedulerQueue, immediateQueue } from './queue/queue.js';
+
+//cron
+import { healthCheck } from './cron/health/healthCheck.js';
 dotenv.config();
 
 const app = express();
-
-// ============ NEW: Bull Board Setup (BEFORE other middleware) ============
-// const serverAdapter = new ExpressAdapter();
-// serverAdapter.setBasePath('/admin/queues');
-
-// createBullBoard({
-//   queues: [new BullMQAdapter(schedulerQueue), new BullMQAdapter(immediateQueue)],
-//   serverAdapter: serverAdapter,
-// });
-
-// // // Mount Bull Board BEFORE other routes to avoid conflicts
-// app.use('/admin/queues', serverAdapter.getRouter());
-// ==========================================================================
 
 // CORS Configuration
 
@@ -75,7 +57,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Idempotency-Key'],
   optionsSuccessStatus: 204, // correct response for preflight
 };
 
@@ -117,6 +99,22 @@ export const instance = new Razorpay({
   key_secret: process.env.RAZORPAY_API_SECRET,
 });
 
+//cron error handlers
+// Add this route (before error handlers)
+app.get('/api/health/cron', async (req, res) => {
+  try {
+    const health = await healthCheck();
+    const statusCode = health.status === 'healthy' ? 200 : 503;
+    res.status(statusCode).json(health);
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 // In your main server file, add this before other middleware:
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -144,7 +142,7 @@ app.use('/api/v1/contact', contactRouter);
 app.use('/api/v1/price', priceRouter);
 app.use('/api/v1/counselor/dashboard', counselorDashboardRouter);
 app.use('/api/v1/meeting', videoCallRouter);
-
+app.use('/api/v1/oauth', oauthRouter);
 // VideoSDK Webhook
 app.post('/api/webhooks/videosdk', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
@@ -218,6 +216,7 @@ connectDb()
           console.warn('⚠️  Server starting without email service');
         }
         // await initializeScheduledJobs();
+        
         logger.info('✓ BullMQ scheduled jobs initialized successfully');
         logger.info('⚠️  Remember to start the worker process: npm run worker');
       } catch (error) {
@@ -229,31 +228,5 @@ connectDb()
     console.error('Failed to connect to database:', error);
     process.exit(1);
   });
-// =======================================================================
-
-// ============ NEW: Graceful Shutdown ============
-
-// const gracefulShutdown = async (signal) => {
-//   logger.info(`\n${signal} received. Shutting down gracefully...`);
-
-//   try {
-//     // 1. Close queues first
-//     await closeQueues();
-//     logger.info('BullMQ queues closed');
-
-//     // 2. Close shared Redis connections
-//     await closeAllConnections();
-//     logger.info('Redis connections closed');
-
-//     process.exit(0);
-//   } catch (error) {
-//     logger.error(`Error during shutdown: ${error.message}`);
-//     process.exit(1);
-//   }
-// };
-
-// process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-// process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-// ====================================================
 
 export default app;
