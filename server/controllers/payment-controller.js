@@ -862,7 +862,7 @@ const verifyPaymentAuthenticity = async (
     // Payment exists but no booking → continue to Phase 2
     return {
       alreadyProcessed: false,
-      payment,
+      payment: existingPayment,
       razorpayPayment: null, // Not needed, already have payment
     };
   }
