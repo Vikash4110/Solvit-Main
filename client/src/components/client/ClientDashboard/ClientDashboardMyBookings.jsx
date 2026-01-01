@@ -48,7 +48,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
-
+import PreSessionGuidelines from '../ClientDashboard/ClientDashboardPreSessionGuidelines'
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
@@ -76,13 +76,13 @@ const ClientDashboardMyBookings = () => {
   });
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
-
+  const [showGuidelines, setShowGuidelines] = useState(false);
+  const [sessionVideoLink, setSessionVideoLink] = useState('');
   const tabs = [
     { key: 'upcoming', label: 'Upcoming', icon: Clock },
     { key: 'raiseIssue', label: 'Raise Issue', icon: AlertTriangle },
     { key: 'issuesRaised', label: 'Issues Raised', icon: MessageSquare },
     { key: 'completed', label: 'Completed', icon: CheckCircle2 },
-     
   ];
 
   useEffect(() => {
@@ -115,7 +115,7 @@ const ClientDashboardMyBookings = () => {
 
       if (data.success) {
         setBookings(data.data.bookings);
-        console.log(data.data.bookings)
+        console.log(data.data.bookings);
         setPagination(data.data.pagination);
       } else {
         toast.error(data.message || 'Failed to load bookings');
@@ -126,6 +126,15 @@ const ClientDashboardMyBookings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleJoinSession = () => {
+    setShowGuidelines(true);  
+  };
+  const handleProceedToSession = (bookingId, videoSDKRoomId) => {
+    setShowGuidelines(false);
+    // Navigate to video call or open video SDK
+    window.open(`/meeting/${bookingId}/${videoSDKRoomId}`, '_blank');
   };
 
   const handleCancelBooking = async () => {
@@ -391,11 +400,10 @@ const ClientDashboardMyBookings = () => {
                   <IndianRupee className="h-4 w-4 text-neutral-700 dark:text-neutral-200" />
                 </div>
                 <div>
-               
                   <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                     ₹{booking.price}
                   </p>
-                   <p className="text-xs text-neutral-600 dark:text-neutral-400">Amount</p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400">Amount</p>
                 </div>
               </div>
 
@@ -424,11 +432,18 @@ const ClientDashboardMyBookings = () => {
                       'shadow-lg shadow-primary-500/20 hover:shadow-primary-500/30 transition-all'
                     }
                     disabled={!booking.canJoin}
-                    onClick={() => navigate(`/meeting/${booking.bookingId}/${booking.videoSDKRoomId}`)}
+                    onClick={handleJoinSession}
                   >
                     <Video className="h-4 w-4 mr-2" />
-                    {booking.canJoin ? 'Join session' : 'Join available soon'}
+                    {booking.canJoin ? 'Join Session' : 'Join available soon'}
                   </Button>
+                  {/* Pre Session Guidelines modal */}
+                  <PreSessionGuidelines
+                    isOpen={showGuidelines}
+                    onClose={() => setShowGuidelines(false)}
+                    onProceed={()=>{handleProceedToSession(booking.bookingId , booking.videoSDKRoomId)}}
+              
+                  />
 
                   {/* {booking.canCancel && (
                     <Button
@@ -446,8 +461,9 @@ const ClientDashboardMyBookings = () => {
               {booking.status === 'dispute_window_open' && booking.canRaiseIssue && (
                 <Button
                   className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-white font-semibold"
-                  onClick={() => navigate(`/client/raise-issue/${booking.bookingId}`)}
+                  onClick={() => navigate(`/client/dashboard/bookings/raiseIssue/${booking.bookingId}`)}
                 >
+          
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Raise issue
                 </Button>

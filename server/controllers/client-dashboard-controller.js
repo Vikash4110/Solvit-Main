@@ -170,8 +170,6 @@ export const updateClientProfile = wrapper(async (req, res) => {
  */
 export const updateProfilePicture = wrapper(async (req, res) => {
   const clientId = req.verifiedClientId._id;
-  console.log('heloooooooooooooooooooooooo');
-
   logger.info(`Updating profile picture for client: ${clientId}`);
 
   // Check if file is uploaded
@@ -400,6 +398,7 @@ const canJoinSession = (booking) => {
   // Can join 10 minutes before to 90 minutes afte
   // return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
   return true;
+  // return true;
 };
 
 //helper function to determine if user can raise issue
@@ -471,18 +470,6 @@ export const getBookings = wrapper(async (req, res) => {
     },
     {
       $lookup: {
-        from: 'sessions',
-        localField: 'sessionId',
-        foreignField: '_id',
-        as: 'sessionData',
-      },
-    },
-
-    {
-      $unwind: '$sessionData',
-    },
-    {
-      $lookup: {
         from: 'generatedslots',
         localField: 'slotId',
         foreignField: '_id',
@@ -504,7 +491,6 @@ export const getBookings = wrapper(async (req, res) => {
     {
       $addFields: {
         slotInfo: '$slotData',
-        sessionInfo: '$sessionData',
         counselorInfo: { $arrayElemAt: ['$counselorData', 0] },
         paymentInfo: { $arrayElemAt: ['$paymentData', 0] },
       },
@@ -518,7 +504,7 @@ export const getBookings = wrapper(async (req, res) => {
         startTime: '$slotInfo.startTime',
         endTime: '$slotInfo.endTime',
         price: '$slotInfo.totalPriceAfterPlatformFee',
-        videoSDKRoomId: '$sessionInfo.videoSDKRoomId',
+        videoSDKRoomId: 1,
         status: 1,
         invoice: '$paymentInfo.invoice',
       },

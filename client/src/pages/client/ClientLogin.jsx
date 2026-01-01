@@ -396,7 +396,7 @@ const ClientLogin = () => {
                             </>
                           )}
                         </Button>
-                        <Button
+                        {/* <Button
                           onClick={handleGoogleLogin}
                           variant="outline"
                           className="w-full h-11 sm:h-12 border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark>:hover:bg-neutral-800 transition-all duration-200"
@@ -411,7 +411,7 @@ const ClientLogin = () => {
                               Sign in with Google
                             </span>
                           </div>
-                        </Button>
+                        </Button> */}
 
                         <div className="relative">
                           <div className="absolute inset-0 flex items-center">

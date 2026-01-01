@@ -441,7 +441,8 @@ const canJoinSessionForCounselor = (booking) => {
   const minutesDiffEnd = endTime.diff(now, 'minute');
 
   // Same semantics as client: join from earlyJoinMinutesForSession before start until session end
-  return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
+  // return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
+  return true;
 };
 
 /**
@@ -527,14 +528,6 @@ export const getCounselorBookings = wrapper(async (req, res) => {
     },
     {
       $lookup: {
-        from: 'sessions',
-        localField: 'sessionId',
-        foreignField: '_id',
-        as: 'sessionData',
-      },
-    },
-    {
-      $lookup: {
         from: 'payments',
         localField: 'paymentId',
         foreignField: '_id',
@@ -544,7 +537,6 @@ export const getCounselorBookings = wrapper(async (req, res) => {
     {
       $addFields: {
         slotInfo: '$slotData',
-        sessionInfo: { $arrayElemAt: ['$sessionData', 0] },
         clientInfo: { $arrayElemAt: ['$clientData', 0] },
         paymentInfo: { $arrayElemAt: ['$paymentData', 0] },
       },
@@ -564,7 +556,7 @@ export const getCounselorBookings = wrapper(async (req, res) => {
         endTime: '$slotInfo.endTime',
         earnings: '$slotInfo.basePrice', // counselor earning (pre-payout)
         totalPrice: '$slotInfo.totalPriceAfterPlatformFee',
-        videoSDKRoomId: '$sessionInfo.videoSDKRoomId',
+        videoSDKRoomId: 1,
         // Dispute info (optional)
         dispute: 1,
       },

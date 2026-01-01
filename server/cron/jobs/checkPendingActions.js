@@ -41,8 +41,7 @@ async function processRoomDeletions(jobLogger) {
       'completion.disputeWindowOpenAt': { $lte: now },
       status: 'confirmed',
     })
-      .select('_id sessionId slotId status')
-      .populate('sessionId')
+      .select('_id slotId status videoSDKRoomId')
       .sort({ 'completion.disputeWindowOpenAt': 1 })
       .limit(batchSize)
       .lean();
@@ -60,9 +59,9 @@ async function processRoomDeletions(jobLogger) {
         try {
           // Delete room with retry
           await CronErrorHandler.withRetry(
-            async () => VideoSDKService.deleteRoom(booking.sessionId?.videoSDKRoomId),
+            async () => VideoSDKService.deleteRoom(booking.videoSDKRoomId),
             {
-              operationName: `DeleteRoom-${booking.sessionId?.videoSDKRoomId}`,
+              operationName: `DeleteRoom-${booking.videoSDKRoomId}`,
             }
           );
 
@@ -76,7 +75,7 @@ async function processRoomDeletions(jobLogger) {
           await FailedAction.create({
             type: 'room_deletion',
             bookingId: booking._id,
-            roomId: booking.sessionId?.videoSDKRoomId,
+            roomId: booking.videoSDKRoomId,
             error: error.message,
             errorStack: error.stack,
           });
@@ -129,7 +128,8 @@ async function processAutoCompletions(jobLogger) {
       status: 'dispute_window_open',
       'dispute.isDisputed': false,
     })
-      .select('_id slotId sessionId status')
+      .select('_id slotId status')
+      .populate('slotId', 'basePrice')
       .sort({ 'completion.autoCompleteAt': 1 })
       .limit(batchSize)
       .lean();
@@ -156,18 +156,32 @@ async function processAutoCompletions(jobLogger) {
 
       // Update payout amounts individually (can't bulk update with different values easily)
       for (const booking of bookingsToComplete) {
+        const basePrice = booking.slotId?.basePrice || booking.slotData?.basePrice;
+
+        // ✅ VALIDATION: Prevent NaN
+        if (!basePrice || isNaN(Number(basePrice))) {
+          jobLogger.incrementFailed(new Error(`Missing basePrice for booking ${booking._id}`));
+          await FailedAction.create({
+            type: 'auto_completion',
+            bookingId: booking._id,
+            error: `Missing or invalid basePrice. slotId: ${booking.slotId}`,
+          });
+          continue; // Skip this booking
+        }
+
         await Booking.updateOne(
           { _id: booking._id },
           {
             $set: {
-              'payout.amountToPayToCounselor': Number(booking.slotData?.basePrice),
+              'payout.amountToPayToCounselor': Number(basePrice),
             },
           }
         );
+
+        jobLogger.incrementSucceeded();
       }
 
       jobLogger.incrementProcessed(bookingsToComplete.length);
-      jobLogger.incrementSucceeded(bookingsToComplete.length);
     } catch (error) {
       jobLogger.incrementFailed(error);
     }

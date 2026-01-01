@@ -24,7 +24,6 @@ const getSessionDetails = wrapper(async (req, res) => {
 
   const booking = await Booking.findById(bookingId)
     .populate('clientId', '-password')
-    .populate('sessionId')
     .populate({
       path: 'slotId',
       populate: {
@@ -55,12 +54,22 @@ const getSessionDetails = wrapper(async (req, res) => {
 // Generate meeting token for joining session
 const getTokenForJoiningSession = wrapper(async (req, res) => {
   const { sessionData, participantId } = req.body;
+  console.log('*************************');
+  console.log('*************************');
+  console.log('*************************');
+  console.log('*************************');
+  console.log(sessionData);
+  console.log(participantId);
 
+  console.log('*************************');
+  console.log('*************************');
+  console.log('*************************');
+  console.log('*************************');
   // Check session timing
-  const slotData = sessionData.booking.slotId;
-  const sessionStartTime = dayjs(slotData.startTime).tz(timeZone);
-  const sessionEndTime = dayjs(slotData.endTime).tz(timeZone);
-  const now = dayjs().tz(timeZone);
+  // const slotData = sessionData.booking.slotId;
+  // const sessionStartTime = dayjs(slotData.startTime).tz(timeZone);
+  // const sessionEndTime = dayjs(slotData.endTime).tz(timeZone);
+  // const now = dayjs().tz(timeZone);
 
   // if (now.isBefore(sessionStartTime.clone().subtract(earlyJoinMinutesForSession, 'minute'))) {
   //   throw new ApiError(
@@ -75,10 +84,10 @@ const getTokenForJoiningSession = wrapper(async (req, res) => {
 
   // Generate VideoSDK meeting token
   const token = await videoSDKService.generateTokenForJoiningSession(
-    sessionData.booking.sessionId.videoSDKroomId,
+    sessionData.booking.videoSDKroomId,
     participantId
   );
-  console.log(token)
+  console.log(token);
 
   return res.status(200).json(
     new ApiResponse(

@@ -269,7 +269,7 @@ const AdminDisputeManagement = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                   <Input
                     type="text"
-                    placeholder="Search by client name or email..."
+                    placeholder="Search by booking Id, client name or email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}

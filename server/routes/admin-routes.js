@@ -20,6 +20,9 @@ import {
   getPaymentDetails,
   getAllPayments,
   getPaymentAnalytics,
+  getAllBookings,
+  getBookingDetails,
+  getBookingAnalytics,
 } from '../controllers/admin-controller.js';
 import { verifyJWTAdmin } from '../middlewares/admin-auth-middleware.js';
 
@@ -71,6 +74,11 @@ adminRouter.route('/counselors/:counselorId/block').patch(verifyJWTAdmin, toggle
 adminRouter.route('/payments').get(verifyJWTAdmin, getAllPayments);
 adminRouter.route('/payments/analytics').get(verifyJWTAdmin, getPaymentAnalytics);
 adminRouter.route('/payments/:paymentId').get(verifyJWTAdmin, getPaymentDetails);
+
+// Bookings routes
+adminRouter.route('/bookings').get(verifyJWTAdmin, getAllBookings);
+adminRouter.route('/bookings/:bookingId').get(verifyJWTAdmin, getBookingDetails);
+adminRouter.route('/bookings/analytics').get(verifyJWTAdmin, getBookingAnalytics);
 
 // Test route
 adminRouter.get('/test', (req, res) => {

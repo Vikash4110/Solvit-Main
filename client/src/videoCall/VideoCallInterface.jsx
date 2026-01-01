@@ -80,7 +80,7 @@ function VideoCallInterface() {
         );
 
         // setting meeting id
-        setMeetingId(detailsData.data.booking.sessionId.videoSDKRoomId);
+        setMeetingId(detailsData.data.booking.videoSDKRoomId);
       } catch (err) {
         console.error('Session initialization error:', err);
         setError(err.message);

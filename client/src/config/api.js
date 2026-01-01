@@ -116,6 +116,7 @@ export const API_ENDPOINTS = {
   ADMINCOUNSELORBLOCK: (counselorId) => `/admin/counselors/${counselorId}/block`,
   // Payment endpoints
   ADMINPAYMENTS: '/admin/payments',
-  ADMINPAYMENTDETAILS: (paymentId) => `/admin/payments/${paymentId}`,
-  ADMINPAYMENTANALYTICS: '/admin/payments/analytics',
+
+  // ✅ ADD BOOKING ENDPOINTS
+  ADMIN_BOOKINGS: '/admin/bookings',
 };

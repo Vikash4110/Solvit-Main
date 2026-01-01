@@ -1,5 +1,4 @@
 // components/admin/DisputeDetailModal.jsx
-
 import { useState, useEffect } from 'react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { toast } from 'sonner';
@@ -223,7 +222,7 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
 
   const counselor = dispute?.slotId?.counselorId;
   const client = dispute?.clientId;
-  const session = dispute?.sessionId;
+  const videoSDKRoomId = dispute?.videoSDKRoomId;
   const slot = dispute?.slotId;
   const payment = dispute?.paymentId;
 
@@ -261,11 +260,12 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
               {/* Quick Summary Card */}
               <Card className="border-blue-200 bg-blue-50/50">
                 <CardContent className="pt-6">
+                
                   <div className="grid grid-cols-5 gap-4 text-center">
                     <div>
                       <p className="text-sm text-slate-600">Booking ID</p>
                       <code className="text-xs bg-white px-2 py-1 rounded mt-1 inline-block">
-                        {dispute._id.slice(-8)}
+                        {dispute._id}
                       </code>
                     </div>
                     <div>
@@ -334,20 +334,7 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
                       </div>
                     </div>
 
-                    <Separator />
-
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                        <span className="text-slate-700">{client?.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                        <span className="text-slate-700">{client?.phone}</span>
-                      </div>
-                    </div>
-
-                    <Separator />
+                   
                   </CardContent>
                 </Card>
 
@@ -381,87 +368,15 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
                       </div>
                     </div>
 
-                    <Separator />
-
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                        <span className="text-slate-700">{counselor?.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                        <span className="text-slate-700">{counselor?.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Award className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                        <span className="text-slate-700">
-                          {counselor?.experienceYears} years experience
-                        </span>
-                      </div>
-                    </div>
+                   
                   </CardContent>
                 </Card>
               </div>
 
               {/* Session & Slot Details */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1">
                 {/* Session Details */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Video className="w-5 h-5 text-green-600" />
-                      Session Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label className="text-xs text-slate-600">Session ID</Label>
-                        <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1">
-                          {session?._id || 'N/A'}
-                        </code>
-                      </div>
-                      <div></div>
-                    </div>
-
-                    <Separator />
-
-                    {session && (
-                      <>
-                        <div>
-                          <Label className="text-xs text-slate-600">Scheduled Time</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Calendar className="w-4 h-4 text-slate-500" />
-                            <p className="text-sm text-slate-700">
-                              {formatDate(session.scheduledStartTime)}
-                            </p>
-                            <p>to</p>
-                            <p className="text-sm text-slate-700">
-                              {formatDate(session.scheduledEndTime)}
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-slate-600">Duration</Label>
-                          <p className="text-sm text-slate-700 mt-1">
-                            {calculateDuration(
-                              session.scheduledStartTime,
-                              session.scheduledEndTime
-                            )}
-                          </p>
-                        </div>
-                        {session.videoSDKRoomId && (
-                          <div>
-                            <Label className="text-xs text-slate-600">VideoSDK Room ID</Label>
-                            <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1">
-                              {session.videoSDKRoomId}
-                            </code>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                
 
                 {/* Slot Details */}
                 <Card>
@@ -477,6 +392,12 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
                         <Label className="text-xs text-slate-600">Slot ID</Label>
                         <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1">
                           {slot?._id || 'N/A'}
+                        </code>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-600">Video SDK Room ID</Label>
+                        <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1">
+                          {videoSDKRoomId || 'N/A'}
                         </code>
                       </div>
                     </div>

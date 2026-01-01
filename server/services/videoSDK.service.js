@@ -65,6 +65,11 @@ class VideoSDKService {
 
   // Generate meeting token for participants
   generateTokenForJoiningSession(roomId, participantId, permissions = ['allow_join']) {
+    console.log('*********************');
+    console.log('*********************');
+    console.log('*********************');
+    console.log('*********************');
+    console.log(roomId, participantId);
     try {
       const options = {
         algorithm: 'HS256',

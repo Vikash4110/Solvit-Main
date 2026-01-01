@@ -447,6 +447,98 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ ==================== BOOKING MANAGEMENT FUNCTIONS ====================
+
+  /**
+   * Get all bookings with filters
+   * @param {number} page - Page number
+   * @param {number} limit - Items per page
+   * @param {string} status - Filter by status
+   * @param {string} search - Search term
+   * @param {string} dateFilter - Date filter
+   * @param {string} disputeFilter - Dispute filter
+   * @param {string} payoutFilter - Payout filter
+   * @param {string} paymentMethod - Payment method filter
+   */
+  const getAllBookings = async (
+    page = 1,
+    limit = 20,
+    status = 'all',
+    search = '',
+    dateFilter = 'all',
+    disputeFilter = 'all',
+    payoutFilter = 'all',
+    paymentMethod = 'all'
+  ) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        status,
+        search,
+        dateFilter,
+        disputeFilter,
+        payoutFilter,
+        paymentMethod,
+      });
+
+      const response = await axiosInstance.get(`${API_ENDPOINTS.ADMIN_BOOKINGS}?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return {
+        success: true,
+        bookings: response.data.bookings,
+        stats: response.data.stats,
+        pagination: response.data.pagination,
+      };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch bookings');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Get single booking details with complete information
+   * @param {string} bookingId - Booking ID
+   */
+  const getBookingDetails = async (bookingId) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.get(`${API_ENDPOINTS.ADMIN_BOOKINGS}/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch booking details');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Get booking analytics
+   * @param {string} period - Time period (7days, 30days, 90days, year)
+   */
+  const getBookingAnalytics = async (period = '30days') => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axiosInstance.get(
+        `${API_ENDPOINTS.ADMIN_BOOKINGS}/analytics?period=${period}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return { success: true, data: response.data.analytics };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch booking analytics');
+      return { success: false, error: message };
+    }
+  };
+
   const value = {
     admin,
     adminLoading,
@@ -468,6 +560,9 @@ export const AdminAuthProvider = ({ children }) => {
     getAllPayments,
     getPaymentDetails,
     getPaymentAnalytics,
+    getAllBookings,
+    getBookingDetails,
+    getBookingAnalytics,
   };
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

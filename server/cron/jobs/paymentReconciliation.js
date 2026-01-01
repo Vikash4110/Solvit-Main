@@ -114,13 +114,13 @@ async function processOrphanedPayments(jobLogger) {
 }
 
 /**
- * Process stuck payments (pending_resources for > 10 minutes)
+ * Process stuck payments (pending_resources for > 30 minutes) ( needs checking )
  */
 async function processMismatchedBookings(jobLogger) {
   try {
     const stuckPayments = await Payment.find({
       bookingStatus: 'pending_resources',
-      createdAt: { $lt: dayjs().utc().subtract(10, 'minutes').toDate() },
+      createdAt: { $lt: dayjs().utc().subtract(30, 'minutes').toDate() },
     })
       .select('_id bookingId createdAt')
       .limit(50)

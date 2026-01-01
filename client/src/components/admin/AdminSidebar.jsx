@@ -88,9 +88,9 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
           badge: null,
         },
         {
-          name: 'Sessions',
+          name: 'Bookings',
           icon: Calendar,
-          path: '/admin/sessions',
+          path: '/admin/bookings',
           badge: null,
         },
       ],
@@ -99,13 +99,13 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       section: 'Finance',
       items: [
         {
-          name: 'Payments',
+          name: 'Payments Recieved',
           icon: CreditCard,
           path: '/admin/payments',
           badge: null,
         },
         {
-          name: 'Payouts',
+          name: 'Counselors Payouts',
           icon: CreditCard,
           path: '/admin/payouts',
           badge: null,

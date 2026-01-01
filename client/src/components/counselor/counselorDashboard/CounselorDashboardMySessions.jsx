@@ -30,7 +30,7 @@ import { TIMEZONE } from '../../../constants/constants';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
-
+import PreSessionGuidelines from './CounselorDashboardPreSessonGuidelines';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -50,6 +50,7 @@ const CounselorDashboardMySessions = () => {
     totalPages: 1,
     totalCount: 0,
   });
+  const [showGuidelines, setShowGuidelines] = useState(false);
 
   const tabs = [
     { key: 'upcoming', label: 'Upcoming', icon: Clock },
@@ -230,7 +231,14 @@ const CounselorDashboardMySessions = () => {
     }
 
     setJoiningId(booking.bookingId);
-    navigate(`/counselor/session/${booking.bookingId}`);
+    setShowGuidelines(true);
+    // navigate(`/counselor/session/${booking.bookingId}`);
+  };
+  const handleProceedToSession = (bookingId, videoSDKRoomId) => {
+    setShowGuidelines(false);
+    // Navigate to video call or open video SDK
+    // window.open(`/meeting/${bookingId}/${videoSDKRoomId}`, '_blank');
+    navigate(`/meeting/${bookingId}/${videoSDKRoomId}`)
   };
 
   const changePage = (nextPage) => {
@@ -360,24 +368,28 @@ const CounselorDashboardMySessions = () => {
             <Separator className="bg-neutral-200 dark:bg-neutral-800" />
 
             {booking.canJoin ? (
-              <Button
-                onClick={() => handleJoinSession(booking)}
-                className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-md hover:shadow-lg transition-all"
-                size="lg"
-                disabled={isJoining}
-              >
-                {isJoining ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Joining...
-                  </>
-                ) : (
+              <>
+                <Button
+                  onClick={() => handleJoinSession(booking)}
+                  className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-md hover:shadow-lg transition-all"
+                  size="lg"
+                  disabled={isJoining}
+                >
                   <>
                     <Video className="w-4 h-4 mr-2" />
                     Join Session
                   </>
-                )}
-              </Button>
+                  
+                </Button>
+                {/* Pre Session Guidelines modal */}
+                <PreSessionGuidelines
+                  isOpen={showGuidelines}
+                  onClose={() => setShowGuidelines(false)}
+                  onProceed={() => {
+                    handleProceedToSession(booking.bookingId, booking.videoSDKRoomId);
+                  }}
+                />
+              </>
             ) : booking.status === 'confirmed' && s ? (
               <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
                 You can join {s.minutesToStart > 0 ? `in ${s.minutesToStart} minutes` : 'soon'}

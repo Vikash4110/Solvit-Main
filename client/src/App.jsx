@@ -41,7 +41,7 @@ import ApplicationsPage from './components/admin/ApplicationsPage';
 import AdminClientsManagement from './components/admin/AdminClientsManagement';
 import AdminCounselorsManagement from './components/admin/AdminCounselorsManagement';
 import AdminPaymentsManagement from './components/admin/AdminPaymentsManagement';
-
+import AdminBookingsManagement from './components/admin/AdminBookingsManagement';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 
 function App() {
@@ -149,6 +149,7 @@ function App() {
                 <Route path="clients" element={<AdminClientsManagement />} />
                 <Route path="counselors" element={<AdminCounselorsManagement />} />
                 <Route path="payments" element={<AdminPaymentsManagement />} />
+                <Route path="bookings" element={<AdminBookingsManagement />} />
 
                 {/* <Route path="counselors" element={<CounselorsPage />} />
                 <Route path="sessions" element={<SessionsPage />} />
