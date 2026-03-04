@@ -259,7 +259,7 @@ const Navbar = () => {
                 About
               </Button>
 
-              {client && (
+              
                 <Button
                   variant="ghost"
                   onClick={() => navigate('/browse-counselors')}
@@ -275,7 +275,7 @@ const Navbar = () => {
                   <Users className="h-4 w-4" />
                   Counselors
                 </Button>
-              )}
+            
 
               {/* <Button
                 variant="ghost"

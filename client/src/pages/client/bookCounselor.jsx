@@ -223,7 +223,7 @@ const BookCounselorCalendar = () => {
       toast.error('Payment service failed to load. Please refresh the page.');
     };
     document.body.appendChild(script);
-    
+
     return () => {
       try {
         document.body.removeChild(script);
@@ -332,6 +332,15 @@ const BookCounselorCalendar = () => {
   // ✅ OPEN BOOKING MODAL (WITH VALIDATION + IDEMPOTENCY)
   // ==========================================
   const openBookingModal = (slot) => {
+    const accessToken = localStorage.getItem('clientAccessToken');
+
+    if (!accessToken) {
+      toast.error('Please log in to book a session.');
+      navigate('/login', {
+        state: { redirectTo: `/book-counselor/${counselorId}` },
+      });
+      return;
+    }
     // Validate booking window
     const now = dayjs().tz(TIMEZONE);
     const slotStart = dayjs(slot.startTime).tz(TIMEZONE);
@@ -400,8 +409,14 @@ const BookCounselorCalendar = () => {
       setBookingLoading(true);
 
       const clientData = getClientData();
-      if (!clientData || !localStorage.getItem('clientAccessToken')) {
-        toast.error('Please log in again to proceed.');
+      const accessToken = localStorage.getItem('clientAccessToken');
+
+      if (!clientData || !accessToken) {
+        toast.error('Please log in to proceed.');
+        // optional: pass redirect back to this counselor after login
+        navigate('/login', {
+          state: { redirectTo: `/book-counselor/${counselorId}` },
+        });
         setBookingLoading(false);
         return;
       }
@@ -958,7 +973,10 @@ const ProfileCard = ({ counselor, imgError, setImgError }) => (
     <Card className="group relative overflow-hidden bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500">
       <CardContent className="pt-6 relative pb-6">
         <div className="flex flex-col items-center text-center space-y-4 flex-wrap">
-          <Avatar className="ring-4 ring-background shadow-2xl group-hover:scale-110 transition-transform duration-300" size="2xl">
+          <Avatar
+            className="ring-4 ring-background shadow-2xl group-hover:scale-110 transition-transform duration-300"
+            size="2xl"
+          >
             <AvatarImage
               src={!imgError ? counselor.profilePicture : undefined}
               alt={counselor.fullName}
@@ -1393,9 +1411,7 @@ const BookingModal = ({
                 ₹{getSlotPrice(selectedSlot)}
               </span>
             </div>
-            <p className="text-xs text-neutral-600 dark:text-neutral-400">
-              Inclusive of all taxes
-            </p>
+            <p className="text-xs text-neutral-600 dark:text-neutral-400">Inclusive of all taxes</p>
           </div>
 
           {/* Info Alert */}
@@ -1409,11 +1425,7 @@ const BookingModal = ({
       )}
 
       <DialogFooter className="gap-2">
-        <Button
-          variant="outline"
-          onClick={onClose}
-          disabled={bookingLoading || isRazorpayOpen}
-        >
+        <Button variant="outline" onClick={onClose} disabled={bookingLoading || isRazorpayOpen}>
           Cancel
         </Button>
         <Button

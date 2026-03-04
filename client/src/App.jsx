@@ -90,18 +90,16 @@ function App() {
               />
               <Route
                 path="/browse-counselors"
-                element={
-                  <ProtectedRoute>
+                element={                  
                     <BrowseCounselor />
-                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/book-counselor/:counselorId"
                 element={
-                  <ProtectedRoute>
+                 
                     <BookCounselorCalendar />
-                  </ProtectedRoute>
+                  
                 }
               />
 

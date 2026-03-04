@@ -12,9 +12,9 @@ import { verifyJWTClient } from '../middlewares/clientAuth-middleware.js';
 const bookingRouter = Router();
 
 //secure routes
-bookingRouter.route('/available-counselors').get(verifyJWTClient, getAvailableCounselors);
+bookingRouter.route('/available-counselors').get(getAvailableCounselors);
 // bookingRouter.route("/book-slot").post(verifyJWTClient, bookSlot);
-bookingRouter.route('/counselor/:counselorId/slots').get(verifyJWTClient, getCounselorSlots);
+bookingRouter.route('/counselor/:counselorId/slots').get(getCounselorSlots);
 bookingRouter.route('/cancel-booking').get(verifyJWTClient, cancelBooking);
 bookingRouter.route('/my-bookings').get(verifyJWTClient, getClientBookings);
 
