@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -48,14 +48,32 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
-import PreSessionGuidelines from '../ClientDashboard/ClientDashboardPreSessionGuidelines'
+import PreSessionGuidelines from '../ClientDashboard/ClientDashboardPreSessionGuidelines';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
 
+const EARLY_JOIN_MINUTES = 10; // must match earlyJoinMinutesForSession constant on the server
+
 const fadeInUp = {
   hidden: { opacity: 0, y: 14 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+};
+
+// ─── Pure helper — recompute canJoin from the booking's slot times ────────────
+// This is evaluated both on fetch AND every 30 s via a timer so the button
+// locks/unlocks in real time without a page reload.
+const computeCanJoin = (booking) => {
+  if (!booking.videoSDKRoomId || !booking.startTime || !booking.endTime) return false;
+  if (booking.status !== 'confirmed') return false;
+
+  const now = dayjs().utc();
+  const start = dayjs.utc(booking.startTime);
+  const end = dayjs.utc(booking.endTime);
+
+  // Mirror server logic: join window = [start − EARLY_JOIN_MINUTES, end]
+  return now.isSameOrAfter(start.subtract(EARLY_JOIN_MINUTES, 'minute')) && now.isBefore(end);
 };
 
 const ClientDashboardMyBookings = () => {
@@ -70,14 +88,15 @@ const ClientDashboardMyBookings = () => {
     totalCount: 0,
   });
 
-  const [cancelModal, setCancelModal] = useState({
-    show: false,
-    booking: null,
-  });
+  const [cancelModal, setCancelModal] = useState({ show: false, booking: null });
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
-  const [showGuidelines, setShowGuidelines] = useState(false);
-  const [sessionVideoLink, setSessionVideoLink] = useState('');
+
+  // Guidelines modal: store the booking to join so the closure captures it correctly
+  const [guidelinesState, setGuidelinesState] = useState({ show: false, booking: null });
+
+  const timerRef = useRef(null);
+
   const tabs = [
     { key: 'upcoming', label: 'Upcoming', icon: Clock },
     { key: 'raiseIssue', label: 'Raise Issue', icon: AlertTriangle },
@@ -85,58 +104,91 @@ const ClientDashboardMyBookings = () => {
     { key: 'completed', label: 'Completed', icon: CheckCircle2 },
   ];
 
+  // ── Fetch ────────────────────────────────────────────────────────────────────
+  const fetchBookings = useCallback(
+    async (page = 1) => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('clientAccessToken');
+
+        const queryParams = new URLSearchParams({
+          filter: activeTab,
+          page: page.toString(),
+          perPage: '10',
+        });
+
+        const response = await fetch(
+          `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKINGS}?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Recompute canJoin client-side on every fetch
+          const enriched = (data.data.bookings || []).map((b) => ({
+            ...b,
+            canJoin: computeCanJoin(b),
+          }));
+          setBookings(enriched);
+          setPagination(data.data.pagination);
+        } else {
+          toast.error(data.message || 'Failed to load bookings');
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        toast.error('Failed to load bookings');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeTab]
+  );
+
   useEffect(() => {
     fetchBookings();
+  }, [fetchBookings]);
+
+  // ── Live timer: recompute canJoin every 30 s for the 'upcoming' tab ──────────
+  // This ensures the Join button enables/disables at the right moment without
+  // requiring a manual refresh, and also locks out users once the session ends.
+  useEffect(() => {
+    if (activeTab !== 'upcoming') return;
+
+    timerRef.current = setInterval(() => {
+      setBookings((prev) =>
+        prev.map((b) => ({
+          ...b,
+          canJoin: computeCanJoin(b),
+        }))
+      );
+    }, 30_000); // every 30 seconds
+
+    return () => clearInterval(timerRef.current);
   }, [activeTab]);
 
-  const fetchBookings = async (page = 1) => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('clientAccessToken');
-
-      const queryParams = new URLSearchParams({
-        filter: activeTab,
-        page: page.toString(),
-        perPage: '10',
-      });
-
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKINGS}?${queryParams}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        setBookings(data.data.bookings);
-        console.log(data.data.bookings);
-        setPagination(data.data.pagination);
-      } else {
-        toast.error(data.message || 'Failed to load bookings');
-      }
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      toast.error('Failed to load bookings');
-    } finally {
-      setLoading(false);
+  // ── Join handlers ────────────────────────────────────────────────────────────
+  const handleJoinSession = (booking) => {
+    // Double-check locally before even showing guidelines
+    if (!computeCanJoin(booking)) {
+      toast.error('The join window for this session is not open.');
+      return;
     }
+    setGuidelinesState({ show: true, booking });
   };
 
-  const handleJoinSession = () => {
-    setShowGuidelines(true);  
-  };
   const handleProceedToSession = (bookingId, videoSDKRoomId) => {
-    setShowGuidelines(false);
-    // Navigate to video call or open video SDK
+    setGuidelinesState({ show: false, booking: null });
     window.open(`/meeting/${bookingId}/${videoSDKRoomId}`, '_blank');
   };
 
+  // ── Cancel ───────────────────────────────────────────────────────────────────
   const handleCancelBooking = async () => {
     if (!cancelModal.booking || !cancelReason.trim()) {
       toast.error('Please provide a cancellation reason');
@@ -177,6 +229,7 @@ const ClientDashboardMyBookings = () => {
     }
   };
 
+  // ── UI helpers ───────────────────────────────────────────────────────────────
   const getStatusUI = (booking) => {
     const base = 'border text-xs font-medium px-3 py-1 rounded-full shadow-sm';
 
@@ -264,6 +317,7 @@ const ClientDashboardMyBookings = () => {
     }
   };
 
+  // ── BookingCard ──────────────────────────────────────────────────────────────
   const BookingCard = ({ booking }) => {
     const s = formatSession(booking.startTime, booking.endTime);
     const statusUI = getStatusUI(booking);
@@ -422,7 +476,6 @@ const ClientDashboardMyBookings = () => {
 
             {/* Actions */}
             <div className="mt-4 flex flex-col sm:flex-row gap-2">
-              {/* Keep your existing join routing here */}
               {booking.status === 'confirmed' && (
                 <>
                   <Button
@@ -432,82 +485,31 @@ const ClientDashboardMyBookings = () => {
                       'shadow-lg shadow-primary-500/20 hover:shadow-primary-500/30 transition-all'
                     }
                     disabled={!booking.canJoin}
-                    onClick={handleJoinSession}
+                    onClick={() => handleJoinSession(booking)}
                   >
                     <Video className="h-4 w-4 mr-2" />
                     {booking.canJoin ? 'Join Session' : 'Join available soon'}
                   </Button>
-                  {/* Pre Session Guidelines modal */}
-                  <PreSessionGuidelines
-                    isOpen={showGuidelines}
-                    onClose={() => setShowGuidelines(false)}
-                    onProceed={()=>{handleProceedToSession(booking.bookingId , booking.videoSDKRoomId)}}
-              
-                  />
-
-                  {/* {booking.canCancel && (
-                    <Button
-                      variant="outline"
-                      className="w-full sm:w-auto rounded-xl border-neutral-200 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-900"
-                      onClick={() => setCancelModal({ show: true, booking })}
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                  )} */}
                 </>
               )}
 
               {booking.status === 'dispute_window_open' && booking.canRaiseIssue && (
                 <Button
                   className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-white font-semibold"
-                  onClick={() => navigate(`/client/dashboard/bookings/raiseIssue/${booking.bookingId}`)}
+                  onClick={() =>
+                    navigate(`/client/dashboard/bookings/raiseIssue/${booking.bookingId}`)
+                  }
                 >
-          
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Raise issue
                 </Button>
               )}
-
-              {booking.status === 'disputed' && (
-                <Button
-                  variant="outline"
-                  className="w-full rounded-xl border-fuchsia-200 text-fuchsia-700 hover:bg-fuchsia-50 dark:border-fuchsia-900/60 dark:text-fuchsia-300 dark:hover:bg-fuchsia-950/20"
-                  onClick={() => navigate(`/client/issue-status/${booking.bookingId}`)}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  View issue status
-                </Button>
-              )}
-
-              {booking.status === 'completed' && (
-                <>
-                  <Button
-                    variant="outline"
-                    className="w-full sm:flex-1 rounded-xl border-primary-200 text-primary-700 hover:bg-primary-50 dark:border-primary-900/60 dark:text-primary-300 dark:hover:bg-primary-950/20"
-                    onClick={() => navigate(`/client/session-feedback/${booking.bookingId}`)}
-                  >
-                    <Star className="h-4 w-4 mr-2" />
-                    Leave feedback
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full sm:flex-1 rounded-xl border-neutral-200 text-neutral-700 hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-900"
-                    onClick={() => navigate('/browse-counselors')}
-                  >
-                    Book again
-                  </Button>
-                </>
-              )}
             </div>
 
-            <Separator className="my-4" />
-
-            {/* Footer: support + booking id */}
-            <div className="flex items-center justify-between gap-3 text-xs text-neutral-600 dark:text-neutral-400">
+            {/* Footer */}
+            <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/60 flex items-center justify-between gap-2 text-xs text-neutral-500 dark:text-neutral-400">
               <button
-                className="inline-flex items-center gap-2 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                className="inline-flex items-center gap-1.5 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                 onClick={() => navigate('/contact')}
               >
                 <HelpCircle className="h-4 w-4" />
@@ -533,17 +535,14 @@ const ClientDashboardMyBookings = () => {
     );
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[radial-gradient(1200px_circle_at_20%_10%,rgba(14,165,233,0.10),transparent_55%),radial-gradient(900px_circle_at_80%_30%,rgba(99,102,241,0.08),transparent_45%)] dark:bg-[radial-gradient(1200px_circle_at_20%_10%,rgba(14,165,233,0.12),transparent_55%),radial-gradient(900px_circle_at_80%_30%,rgba(99,102,241,0.10),transparent_45%)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        {/* Page header */}
         <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary-700 to-primary-900 bg-clip-text text-transparent">
             My bookings
           </h1>
-          {/* <p className="mt-2 text-sm sm:text-base text-neutral-600 dark:text-neutral-400">
-            Quick clarity on who, when, status, and what you can do next.
-          </p> */}
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -653,6 +652,20 @@ const ClientDashboardMyBookings = () => {
           ))}
         </Tabs>
       </div>
+
+      {/* Pre-session guidelines — opened with specific booking context */}
+      <PreSessionGuidelines
+        isOpen={guidelinesState.show}
+        onClose={() => setGuidelinesState({ show: false, booking: null })}
+        onProceed={() => {
+          if (guidelinesState.booking) {
+            handleProceedToSession(
+              guidelinesState.booking.bookingId,
+              guidelinesState.booking.videoSDKRoomId
+            );
+          }
+        }}
+      />
 
       {/* Cancel modal */}
       <Dialog

@@ -24,9 +24,26 @@ const bookingSchema = new mongoose.Schema(
       autoCompleteAt: Date,
       completedAt: Date,
     },
+
     videoSDKRoomId: {
       type: String,
     },
+
+    /**
+     * FIX: Tracks who currently holds an active session token.
+     *
+     * When getTokenForJoiningSession issues a token it stamps
+     *   activeParticipants.client  = { participantId, issuedAt }
+     *   activeParticipants.counselor = { participantId, issuedAt }
+     *
+     * When that participant leaves (trackSessionEvent → participant-left webhook,
+     * or the markLeft endpoint) the entry is $unset.
+     *
+     * This prevents the same role from joining twice simultaneously.
+     * Using a plain Object (Mixed) instead of a strict schema so we can use
+     * dynamic $set / $unset on "activeParticipants.client" / ".counselor".
+     */
+    
 
     dispute: {
       isDisputed: {
@@ -109,6 +126,7 @@ const bookingSchema = new mongoose.Schema(
         },
       ],
     },
+
     payout: {
       amountToPayToCounselor: Number,
       amountToRefundToClient: Number,
@@ -120,7 +138,6 @@ const bookingSchema = new mongoose.Schema(
       refundedAt: Date,
     },
 
-    //payment done by the client for the booking
     paymentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Payment',
@@ -152,4 +169,5 @@ bookingSchema.index(
     name: 'unique_active_booking_per_slot',
   }
 );
+
 export const Booking = mongoose.model('Booking', bookingSchema);

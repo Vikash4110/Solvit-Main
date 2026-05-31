@@ -226,7 +226,7 @@ async function sendCounselorRegistrationOTP(email, otp, userName, expiryMinutes)
                                 </a>
                               </td>
                               <td style="padding: 0 6px;">
-                                <a href="https://www.instagram.com/solvitcounselling" style="text-decoration: none;">
+                                <a href="https://www.instagram.com/solvit.care?igsh=NzNoanhzd2N5M3ky" style="text-decoration: none;">
                                   <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
                                 </a>
                               </td>
@@ -1613,7 +1613,7 @@ async function sendBookingConfirmationToClient(
                                 </a>
                               </td>
                               <td style="padding: 0 6px;">
-                                <a href="https://www.instagram.com/solvitcounselling" style="text-decoration: none;">
+                                <a href="https://www.instagram.com/solvit.care?igsh=NzNoanhzd2N5M3ky" style="text-decoration: none;">
                                   <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
                                 </a>
                               </td>
@@ -1871,7 +1871,7 @@ async function sendBookingNotificationToCounselor(
                                 </a>
                               </td>
                               <td style="padding: 0 6px;">
-                                <a href="https://www.instagram.com/solvitcounselling" style="text-decoration: none;">
+                                <a href="https://www.instagram.com/solvit.care?igsh=NzNoanhzd2N5M3ky" style="text-decoration: none;">
                                   <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 28px; height: 28px; display: block; opacity: 0.8;" />
                                 </a>
                               </td>
@@ -2169,7 +2169,7 @@ async function sendRefundNotificationToClient(
                           </a>
                         </td>
                         <td style="padding: 0 6px;">
-                          <a href="https://www.instagram.com/solvitcounselling" style="text-decoration: none;">
+                          <a href="https://www.instagram.com/solvit.care?igsh=NzNoanhzd2N5M3ky" style="text-decoration: none;">
                             <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 28px; height: 28px; display: block; opacity: 0.8;">
                           </a>
                         </td>

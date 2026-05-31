@@ -64,7 +64,7 @@ dayjs.extend(isSameOrAfter);
 // ==========================================
 // ✅ CONFIGURATION CONSTANTS
 // ==========================================
-const MINIMUM_BOOKING_WINDOW_MINUTES = 30;
+const MINIMUM_BOOKING_WINDOW_MINUTES = 0;
 const STALE_ATTEMPT_THRESHOLD_MS = 15 * 60 * 1000;
 const UNMOUNT_CLEANUP_THRESHOLD_MS = 5 * 60 * 1000;
 

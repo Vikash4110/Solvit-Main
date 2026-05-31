@@ -10,6 +10,7 @@ import DropDown from '../DropDown';
 import useMediaStream from '../../hooks/useMediaStream';
 import useIsMobile from '../../hooks/useIsMobile';
 import { useMeetingAppContext } from '../../MeetingAppContextDef';
+import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +66,7 @@ export function JoiningScreen({
   const [dlgMuted, setDlgMuted] = useState(false);
   const [dlgDevices, setDlgDevices] = useState(false);
   const [didDeviceChange, setDidDeviceChange] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
 
   const videoPlayerRef = useRef();
   const videoTrackRef = useRef();
@@ -571,11 +573,33 @@ export function JoiningScreen({
                 <div className="flex flex-1 flex-col items-center justify-center md:absolute md:inset-0 md:mt-0 mt-6 lg:mt-14 xl:mt-20 xl:m-16 lg:m-6">
                   <MeetingDetailsScreen
                     sessionData={sessionData}
+                    isJoining={isJoining}
                     handleOnClickJoin={async () => {
-                      console.log(participantId);
-                      const token = await getTokenForJoiningSession(sessionData, participantId);
-                      setToken(token);
-                      updateStartMeeting();
+                      if (isJoining) return;
+                      setIsJoining(true);
+                      const joiningToast = toast.loading('Connecting to session...');
+                      try {
+                        const token = await getTokenForJoiningSession(sessionData, participantId);
+                        setToken(token);
+                        toast.update(joiningToast, {
+                          render: 'Joined successfully! Starting session...',
+                          type: 'success',
+                          isLoading: false,
+                          autoClose: 2000,
+                        });
+                        updateStartMeeting();
+                      } catch (err) {
+                        const message =
+                          err?.message || 'Failed to join session. Please try again.';
+                        toast.update(joiningToast, {
+                          render: message,
+                          type: 'error',
+                          isLoading: false,
+                          autoClose: 5000,
+                        });
+                      } finally {
+                        setIsJoining(false);
+                      }
                     }}
                     handleClickGoBack={handleClickGoBack}
                   />

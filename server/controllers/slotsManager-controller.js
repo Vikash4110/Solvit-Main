@@ -18,14 +18,33 @@ dayjs.extend(isSameOrBefore);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// ─────────────────────────────────────────────
+// Helper: parse a time string against a date,
+// rolling end time to the next day if it crosses
+// midnight (i.e. endTime <= startTime).
+// ─────────────────────────────────────────────
+const parseSlotTime = (dateStr, timeStr, tz) => {
+  return dayjs.tz(`${dateStr} ${timeStr}`, 'YYYY-MM-DD hh:mm A', tz);
+};
+
+const resolveEndTime = (startTime, endTime) => {
+  // If end is not after start it must have crossed midnight — push it one day forward
+  if (!endTime.isAfter(startTime)) {
+    return endTime.add(1, 'day');
+  }
+  return endTime;
+};
+
+// ─────────────────────────────────────────────
+// Setting Recurring Availability
+// ─────────────────────────────────────────────
 const settingRecurringAvailability = wrapper(async (req, res) => {
   const counselorId = req.verifiedCounselorId._id;
   const { weeklyAvailability } = req.body;
-  console.log(weeklyAvailability);
 
   const counselorData = await Counselor.findById(counselorId).select('-password');
   if (!counselorData) {
-    throw new ApiError(400, 'No counselor found . Plz login again');
+    throw new ApiError(400, 'No counselor found. Please login again');
   }
 
   const priceData = await Price.findOne({
@@ -38,17 +57,17 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
   const { minPrice, maxPrice } = priceData;
 
   if (!minPrice || !maxPrice) {
-    throw new ApiError(400, 'Error : No minPrice or maxPrice is found');
+    throw new ApiError(400, 'Error: No minPrice or maxPrice found');
   }
 
   if (!weeklyAvailability || weeklyAvailability.length !== 7) {
     return res.status(400).json({
       status: 400,
-      message: 'Set availability for all days of the week',
+      message: 'Set availability for all 7 days of the week',
     });
   }
 
-  // Validate all days first before DB operations
+  // ── Validate all days before touching the DB ──
   for (let day of weeklyAvailability) {
     if (!day.dayOfWeek) {
       return res.status(400).json({
@@ -60,7 +79,7 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
     if (day.isAvailable && (!day.timeRanges || day.timeRanges.length === 0)) {
       return res.status(400).json({
         status: 400,
-        message: `Please provide at least one time slot for ${day.dayOfWeek}`,
+        message: `Please provide at least one time range for ${day.dayOfWeek}`,
       });
     }
 
@@ -71,72 +90,73 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
       });
     }
 
-    if ((day.isAvailable && day.price < minPrice) || day.price > maxPrice) {
+    // FIX #5: parentheses were wrong — only enforce range when the day is available
+    if (day.isAvailable && (day.price < minPrice || day.price > maxPrice)) {
       throw new ApiError(400, `Price should be in the range ${minPrice} - ${maxPrice}`);
     }
 
-    //checking that to same timeranges for the same day should not be there
+    if (!day.isAvailable) continue; // no time-range checks for unavailable days
 
     for (let i = 0; i < day.timeRanges.length; i++) {
-      const timeStartTime = dayjs(
-        `2000-01-01 ${day.timeRanges[i].startTime}`,
-        'YYYY-MM-DD hh:mm A'
-      ); //dummy date
-      const timeEndTime = dayjs(`2000-01-01 ${day.timeRanges[i].endTime}`, 'YYYY-MM-DD hh:mm A');
-      if (!timeStartTime.isBefore(timeEndTime)) {
+      const rangeI = day.timeRanges[i];
+
+      const startI = parseSlotTime('2000-01-01', rangeI.startTime, 'UTC');
+      // FIX #2: resolve midnight crossing on the dummy date
+      let endI = parseSlotTime('2000-01-01', rangeI.endTime, 'UTC');
+      endI = resolveEndTime(startI, endI);
+
+      if (!startI.isBefore(endI)) {
         return res.status(400).json({
           status: 400,
-          message: `Invalid time range : ${timeStartTime.format(
-            'hh:mm A'
-          )} - ${timeEndTime.format('hh:mm A')} for ${day.dayOfWeek}`,
+          message: `Invalid time range: ${rangeI.startTime} - ${rangeI.endTime} for ${day.dayOfWeek}`,
         });
       }
 
       for (let j = 0; j < day.timeRanges.length; j++) {
-        if (i === j) {
-          continue;
-        }
-        const time1StartTime = dayjs(
-          `2000-01-01 ${day.timeRanges[j].startTime}`,
-          'YYYY-MM-DD hh:mm A'
-        );
-        const time1EndTime = dayjs(`2000-01-01 ${day.timeRanges[j].endTime}`, 'YYYY-MM-DD hh:mm A');
-        if (timeStartTime.isSame(time1StartTime) && timeEndTime.isSame(time1EndTime)) {
+        if (i === j) continue;
+
+        const rangeJ = day.timeRanges[j];
+        const startJ = parseSlotTime('2000-01-01', rangeJ.startTime, 'UTC');
+        let endJ = parseSlotTime('2000-01-01', rangeJ.endTime, 'UTC');
+        endJ = resolveEndTime(startJ, endJ);
+
+        // Exact duplicate
+        if (startI.isSame(startJ) && endI.isSame(endJ)) {
           return res.status(400).json({
             status: 400,
-            message: `Duplicate time range : ${day.timeRanges[i].startTime} - ${day.timeRanges[i].endTime} for ${day.dayOfWeek}`,
+            message: `Duplicate time range: ${rangeI.startTime} - ${rangeI.endTime} for ${day.dayOfWeek}`,
           });
         }
+
+        // Range i is contained within / contains range j
         if (
-          (timeStartTime.isSame(time1StartTime) && timeEndTime.isAfter(time1EndTime)) ||
-          (timeStartTime.isBefore(time1StartTime) && timeEndTime.isSame(time1EndTime)) ||
-          (timeStartTime.isBefore(time1StartTime) && timeEndTime.isAfter(time1EndTime))
+          (startI.isSame(startJ) && endI.isAfter(endJ)) ||
+          (startI.isBefore(startJ) && endI.isSame(endJ)) ||
+          (startI.isBefore(startJ) && endI.isAfter(endJ))
         ) {
           return res.status(400).json({
             status: 400,
-            message: `The time range : ${day.timeRanges[j].startTime} - ${day.timeRanges[j].endTime} already covers in time range : ${day.timeRanges[i].startTime} - ${day.timeRanges[i].endTime} for ${day.dayOfWeek}`,
+            message: `Time range ${rangeJ.startTime} - ${rangeJ.endTime} is already covered by ${rangeI.startTime} - ${rangeI.endTime} for ${day.dayOfWeek}`,
           });
         }
+
+        // Partial overlap
         if (
-          (timeStartTime.isBefore(time1StartTime) &&
-            timeEndTime.isBefore(time1EndTime) &&
-            time1StartTime.isBefore(timeEndTime)) ||
-          (timeStartTime.isAfter(time1StartTime) &&
-            timeEndTime.isAfter(time1EndTime) &&
-            timeStartTime.isBefore(time1EndTime))
+          (startI.isBefore(startJ) && endI.isAfter(startJ) && endI.isBefore(endJ)) ||
+          (startI.isAfter(startJ) && startI.isBefore(endJ) && endI.isAfter(endJ))
         ) {
           return res.status(400).json({
             status: 400,
-            message: `The time ranges : ${day.timeRanges[j].startTime} - ${day.timeRanges[j].endTime} and ${day.timeRanges[i].startTime} - ${day.timeRanges[i].endTime} are overlapping for ${day.dayOfWeek}`,
+            message: `Time ranges ${rangeJ.startTime} - ${rangeJ.endTime} and ${rangeI.startTime} - ${rangeI.endTime} are overlapping for ${day.dayOfWeek}`,
           });
         }
       }
     }
   }
-  //Clean previous availability to avoid duplication
+
+  // ── Persist ──
   await RecurringAvailability.deleteMany({ counselorId });
 
-  // Save new availability
   for (let day of weeklyAvailability) {
     await RecurringAvailability.create({
       counselorId,
@@ -153,29 +173,41 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
   });
 });
 
+// ─────────────────────────────────────────────
+// Get My Recurring Availability
+// ─────────────────────────────────────────────
 const getMyRecurringAvailability = wrapper(async (req, res) => {
   const counselorId = req.verifiedCounselorId._id;
   const availability = await RecurringAvailability.find({ counselorId });
-  if (!availability) {
+
+  // FIX #6: find() returns [], never null
+  if (!availability || availability.length === 0) {
     return res.status(404).json({
       status: 404,
-      message: 'Availability has been not set',
+      message: 'Availability has not been set',
     });
   }
+
   res.status(200).json({
     status: 200,
     availability,
   });
 });
 
+// ─────────────────────────────────────────────
+// Generate Actual Slots From Recurring Availability
+// ─────────────────────────────────────────────
 const generatingActualSlotsFromRecurringAvailability = wrapper(async (req, res) => {
   const startDate = dayjs().tz(`${timeZone}`).startOf('day');
   const endDate = startDate.add(30, 'day').endOf('day');
 
   const counselorId = req.verifiedCounselorId._id;
 
-  //deleting all prior slots
-  await GeneratedSlot.deleteMany({ counselorId, status: 'booked' });
+  // FIX #4: preserve booked slots — only delete available/unavailable ones
+  await GeneratedSlot.deleteMany({
+    counselorId,
+    status: { $in: ['available', 'unavailable'] },
+  });
 
   let totalSlotsGenerated = 0;
   const weeklyAvailability = await RecurringAvailability.find({
@@ -183,75 +215,54 @@ const generatingActualSlotsFromRecurringAvailability = wrapper(async (req, res) 
     isAvailable: true,
   });
 
-  console.log(weeklyAvailability);
-
   if (!weeklyAvailability.length) {
-    console.log('No Weekly Availabliy of the counselor is found');
     return res.status(404).json({
       status: 404,
-      message: 'No Weekly Availabliy ofthe counselor is found',
+      message: 'No weekly availability found for this counselor',
     });
   }
 
   for (let date = startDate.clone(); date.isBefore(endDate); date = date.add(1, 'day')) {
     const dayOfWeek = date.format('dddd');
-
     const availability = weeklyAvailability.find((entry) => entry.dayOfWeek === dayOfWeek);
-
     if (!availability) continue;
 
     for (const range of availability.timeRanges) {
       const { startTime, endTime } = range;
 
-      if (!endTime || !startTime) throw new ApiError(400, 'No StartTime or EndTime is found');
+      if (!startTime || !endTime) throw new ApiError(400, 'No startTime or endTime found');
 
-      let slotStart;
-      let slotEnd;
+      const dateStr = date.format('YYYY-MM-DD');
 
-      if (date.isSame(startDate)) {
+      let slotStart = parseSlotTime(dateStr, startTime, timeZone);
+      // FIX #3: resolve midnight crossing for recurring ranges
+      let slotEnd = parseSlotTime(dateStr, endTime, timeZone);
+      slotEnd = resolveEndTime(slotStart, slotEnd);
+
+      // ── Today-specific buffering logic ──
+      if (date.isSame(startDate, 'day')) {
         const currentTime = dayjs().tz(`${timeZone}`);
-        slotStart = dayjs.tz(
-          `${date.format('YYYY-MM-DD')} ${startTime}`,
-          'YYYY-MM-DD hh:mm A',
-          `${timeZone}`
-        );
-        slotEnd = dayjs.tz(
-          `${date.format('YYYY-MM-DD')} ${endTime}`,
-          'YYYY-MM-DD hh:mm A',
-          `${timeZone}`
-        );
+
         if (currentTime.isAfter(slotEnd) || currentTime.isSame(slotEnd)) {
           continue;
-        } else if (currentTime.isBefore(slotEnd) && currentTime.isAfter(slotStart)) {
-          const currentTimeWithBuffer = currentTime.clone().add(timeBufferGenerateSlots, 'minute');
-          if (slotEnd.diff(currentTimeWithBuffer, 'minute') >= slotDuration) {
-            slotStart = currentTimeWithBuffer.clone();
+        } else if (currentTime.isAfter(slotStart) && currentTime.isBefore(slotEnd)) {
+          const buffered = currentTime.add(timeBufferGenerateSlots, 'minute');
+          if (slotEnd.diff(buffered, 'minute') >= slotDuration) {
+            slotStart = buffered;
           } else {
             continue;
           }
         } else if (currentTime.isSame(slotStart)) {
-          const nextPossible = currentTime.clone().add(timeBufferGenerateSlots, 'minute');
-          if (slotEnd.diff(nextPossible, 'minute') >= slotDuration) {
-            slotStart = nextPossible;
+          const buffered = currentTime.add(timeBufferGenerateSlots, 'minute');
+          if (slotEnd.diff(buffered, 'minute') >= slotDuration) {
+            slotStart = buffered;
           } else {
             continue;
           }
         } else if (slotStart.diff(currentTime, 'minute') < timeBufferGenerateSlots) {
-          slotStart = slotStart
-            .clone()
-            .add(timeBufferGenerateSlots - slotStart.clone().diff(currentTime, 'minute'), 'minute');
+          const gap = timeBufferGenerateSlots - slotStart.diff(currentTime, 'minute');
+          slotStart = slotStart.add(gap, 'minute');
         }
-      } else {
-        slotStart = dayjs.tz(
-          `${date.format('YYYY-MM-DD')} ${startTime}`,
-          'YYYY-MM-DD hh:mm A',
-          `${timeZone}`
-        );
-        slotEnd = dayjs.tz(
-          `${date.format('YYYY-MM-DD')} ${endTime}`,
-          'YYYY-MM-DD hh:mm A',
-          `${timeZone}`
-        );
       }
 
       let slotTime = slotStart.clone();
@@ -265,18 +276,18 @@ const generatingActualSlotsFromRecurringAvailability = wrapper(async (req, res) 
 
         const exists = await GeneratedSlot.exists({
           counselorId: new mongoose.Types.ObjectId(counselorId),
-          startTime: slotStartStr,
-          endTime: slotEndStr,
+          startTime: slotStartStr.toDate(),
+          endTime: slotEndStr.toDate(),
         });
 
-        const platformFee = availability.price * paltformFeePercentage;
-        const totalPriceAfterPlatformFee = availability.price + platformFee;
-
         if (!exists) {
+          const platformFee = availability.price * paltformFeePercentage;
+          const totalPriceAfterPlatformFee = availability.price + platformFee;
+
           await GeneratedSlot.create({
             counselorId,
-            startTime: slotStartStr.utc(),
-            endTime: slotEndStr.utc(),
+            startTime: slotStartStr.utc().toDate(),
+            endTime: slotEndStr.utc().toDate(),
             basePrice: availability.price,
             totalPriceAfterPlatformFee,
           });
@@ -295,27 +306,31 @@ const generatingActualSlotsFromRecurringAvailability = wrapper(async (req, res) 
   });
 });
 
-//fetching the genrated slots
+// ─────────────────────────────────────────────
+// Get All Generated Slots
+// ─────────────────────────────────────────────
 const getAllgeneratedSlots = wrapper(async (req, res) => {
   const counselorId = req.verifiedCounselorId._id;
   const slots = await GeneratedSlot.find({ counselorId });
-  if (!slots) {
+
+  // FIX #6: find() returns [], never null
+  if (!slots || slots.length === 0) {
     return res.status(404).json({
       status: 404,
-      message: 'no record found',
+      message: 'No slots found',
     });
   }
-  console.log(slots);
+
   return res.status(200).json({
     status: 200,
-    message: 'Slots fetched Successfully',
+    message: 'Slots fetched successfully',
     slots,
   });
 });
 
-//below it pricing logic has not been implemented
-
-//Managing the genereted slots (status) for a particular day
+// ─────────────────────────────────────────────
+// Manage Slots of a Whole Day
+// ─────────────────────────────────────────────
 const managingSlotsOfADay = wrapper(async (req, res) => {
   const counselorId = req.verifiedCounselorId._id;
   const { date, status } = req.body;
@@ -334,7 +349,7 @@ const managingSlotsOfADay = wrapper(async (req, res) => {
       message: 'Invalid status passed',
     });
   }
-  // const slotDate = dayjs(date)
+
   const startOfDay = dayjs.tz(date, timeZone).startOf('day').utc().toDate();
   const endOfDay = dayjs.tz(date, timeZone).endOf('day').utc().toDate();
 
@@ -346,14 +361,15 @@ const managingSlotsOfADay = wrapper(async (req, res) => {
   if (!requiredslots || requiredslots.length === 0) {
     return res.status(404).json({
       status: 404,
-      message: `No slots found for the Date: ${date}`,
+      message: `No slots found for date: ${date}`,
     });
   }
+
   for (let slot of requiredslots) {
     if (slot.status === 'booked') {
       return res.status(400).json({
         status: 400,
-        message: "Can't perform the operation as there are already booked slots also",
+        message: "Cannot perform this operation — some slots on this day are already booked",
       });
     }
   }
@@ -372,19 +388,24 @@ const managingSlotsOfADay = wrapper(async (req, res) => {
 
   res.status(200).json({
     status: 200,
-    message: `Updation Successfull!!`,
+    message: 'Update successful',
   });
 });
 
-//managing individual slot
+// ─────────────────────────────────────────────
+// Manage an Individual Slot
+// ─────────────────────────────────────────────
 const managingIndividualSlot = wrapper(async (req, res) => {
+  const counselorId = req.verifiedCounselorId._id;
   const { slotId, status } = req.body;
+
   if (!slotId || !status) {
     return res.status(400).json({
       status: 400,
       message: 'SlotId and status are required',
     });
   }
+
   const possibleStatus = ['available', 'delete', 'unavailable'];
   if (!possibleStatus.includes(status)) {
     return res.status(400).json({
@@ -395,17 +416,27 @@ const managingIndividualSlot = wrapper(async (req, res) => {
 
   const requiredSlot = await GeneratedSlot.findById(slotId);
   if (!requiredSlot) {
-    return res.status(400).json({
-      status: 400,
-      message: 'No slot found for passed ID',
+    return res.status(404).json({
+      status: 404,
+      message: 'No slot found for the given ID',
     });
   }
+
+  // FIX #7: ownership check — counselor can only manage their own slots
+  if (requiredSlot.counselorId.toString() !== counselorId.toString()) {
+    return res.status(403).json({
+      status: 403,
+      message: 'You are not authorised to manage this slot',
+    });
+  }
+
   if (requiredSlot.status === 'booked') {
     return res.status(400).json({
       status: 400,
-      message: "Can't change status as it is booked",
+      message: "Cannot change status — this slot is already booked",
     });
   }
+
   if (status === 'delete') {
     await GeneratedSlot.deleteOne({ _id: slotId });
   } else {
@@ -415,17 +446,18 @@ const managingIndividualSlot = wrapper(async (req, res) => {
 
   res.status(200).json({
     status: 200,
-    message: `Updation Successfull!!`,
+    message: 'Update successful',
   });
 });
 
-//// Add this new controller function to slotsManager-controller.js
-
+// ─────────────────────────────────────────────
+// Add a Custom Slot
+// ─────────────────────────────────────────────
 const addCustomSlot = wrapper(async (req, res) => {
   const counselorId = req.verifiedCounselorId._id;
   const { date, startTime, endTime, price } = req.body;
 
-  // ============ Input Validation ============
+  // ── Input validation ──
   if (!date || !startTime || !endTime || !price) {
     return res.status(400).json({
       status: 400,
@@ -433,7 +465,6 @@ const addCustomSlot = wrapper(async (req, res) => {
     });
   }
 
-  // Validate price is a number
   const priceNum = Number(price);
   if (isNaN(priceNum) || priceNum <= 0) {
     return res.status(400).json({
@@ -442,7 +473,7 @@ const addCustomSlot = wrapper(async (req, res) => {
     });
   }
 
-  // ============ Get Counselor & Price Constraints ============
+  // ── Counselor & price constraints ──
   const counselorData = await Counselor.findById(counselorId).select('-password');
   if (!counselorData) {
     throw new ApiError(401, 'Counselor not found. Please login again');
@@ -451,14 +482,12 @@ const addCustomSlot = wrapper(async (req, res) => {
   const priceData = await Price.findOne({
     experienceLevel: `${counselorData.experienceLevel}`,
   });
-
   if (!priceData) {
     throw new ApiError(500, 'Price configuration not found');
   }
 
   const { minPrice, maxPrice } = priceData;
 
-  // Validate price is within allowed range
   if (priceNum < minPrice || priceNum > maxPrice) {
     return res.status(400).json({
       status: 400,
@@ -466,12 +495,10 @@ const addCustomSlot = wrapper(async (req, res) => {
     });
   }
 
-  // ============ Parse and Validate Date/Time ============
+  // ── Parse & validate date/time ──
   try {
-    // Parse the date and times
     const slotDate = dayjs.tz(date, timeZone);
 
-    // Validate date is valid
     if (!slotDate.isValid()) {
       return res.status(400).json({
         status: 400,
@@ -479,7 +506,6 @@ const addCustomSlot = wrapper(async (req, res) => {
       });
     }
 
-    // Check if date is in the past
     const today = dayjs().tz(timeZone).startOf('day');
     if (slotDate.isBefore(today)) {
       return res.status(400).json({
@@ -488,36 +514,20 @@ const addCustomSlot = wrapper(async (req, res) => {
       });
     }
 
-    // Parse start and end times with the selected date
-    const slotStartTime = dayjs.tz(
-      `${slotDate.format('YYYY-MM-DD')} ${startTime}`,
-      'YYYY-MM-DD hh:mm A',
-      timeZone
-    );
+    const dateStr = slotDate.format('YYYY-MM-DD');
+    const slotStartTime = parseSlotTime(dateStr, startTime, timeZone);
+    let slotEndTime = parseSlotTime(dateStr, endTime, timeZone);
 
-    const slotEndTime = dayjs.tz(
-      `${slotDate.format('YYYY-MM-DD')} ${endTime}`,
-      'YYYY-MM-DD hh:mm A',
-      timeZone
-    );
-
-    // Validate parsed times
     if (!slotStartTime.isValid() || !slotEndTime.isValid()) {
       return res.status(400).json({
         status: 400,
-        message: 'Invalid time format. Use format like "9:00 AM" or "2:30 PM"',
+        message: 'Invalid time format. Use a format like "9:00 AM" or "11:30 PM"',
       });
     }
 
-    // Validate end time is after start time
-    if (!slotEndTime.isAfter(slotStartTime)) {
-      return res.status(400).json({
-        status: 400,
-        message: 'End time must be after start time',
-      });
-    }
+    // FIX #1: resolve midnight crossing — e.g. 11:30 PM → 12:15 AM next day
+    slotEndTime = resolveEndTime(slotStartTime, slotEndTime);
 
-    // Validate slot duration meets minimum requirement (from your constants)
     const durationMinutes = slotEndTime.diff(slotStartTime, 'minute');
     if (durationMinutes !== slotDuration) {
       return res.status(400).json({
@@ -526,11 +536,10 @@ const addCustomSlot = wrapper(async (req, res) => {
       });
     }
 
-    // ============ Check for Past Time on Current Day ============
+    // ── Buffer check for today ──
     const currentTime = dayjs().tz(timeZone);
     if (slotDate.isSame(today, 'day')) {
       const minimumStartTime = currentTime.add(timeBufferGenerateSlots, 'minute');
-
       if (slotStartTime.isBefore(minimumStartTime)) {
         return res.status(400).json({
           status: 400,
@@ -539,7 +548,7 @@ const addCustomSlot = wrapper(async (req, res) => {
       }
     }
 
-    // ============ Check for Duplicate Slots ============
+    // ── Duplicate check ──
     const existingSlot = await GeneratedSlot.findOne({
       counselorId: new mongoose.Types.ObjectId(counselorId),
       startTime: slotStartTime.utc().toDate(),
@@ -553,16 +562,14 @@ const addCustomSlot = wrapper(async (req, res) => {
       });
     }
 
-    // ============ Check for Overlapping Slots ============
+    // ── Overlap check ──
     const overlappingSlots = await GeneratedSlot.find({
       counselorId: new mongoose.Types.ObjectId(counselorId),
       $or: [
-        // New slot starts during an existing slot
         {
           startTime: { $lt: slotEndTime.utc().toDate() },
           endTime: { $gt: slotStartTime.utc().toDate() },
         },
-        // New slot completely contains an existing slot
         {
           startTime: { $gte: slotStartTime.utc().toDate() },
           endTime: { $lte: slotEndTime.utc().toDate() },
@@ -574,18 +581,16 @@ const addCustomSlot = wrapper(async (req, res) => {
       const overlappingSlot = overlappingSlots[0];
       const overlapStart = dayjs(overlappingSlot.startTime).tz(timeZone).format('hh:mm A');
       const overlapEnd = dayjs(overlappingSlot.endTime).tz(timeZone).format('hh:mm A');
-
       return res.status(409).json({
         status: 409,
         message: `This slot overlaps with an existing slot: ${overlapStart} - ${overlapEnd}`,
       });
     }
 
-    // ============ Calculate Platform Fee ============
+    // ── Create slot ──
     const platformFee = priceNum * paltformFeePercentage;
     const totalPriceAfterPlatformFee = priceNum + platformFee;
 
-    // ============ Create the Slot ============
     const newSlot = await GeneratedSlot.create({
       counselorId,
       startTime: slotStartTime.utc().toDate(),
@@ -595,7 +600,6 @@ const addCustomSlot = wrapper(async (req, res) => {
       status: 'available',
     });
 
-    // ============ Return Success Response ============
     return res.status(201).json({
       status: 201,
       message: 'Slot created successfully',
@@ -611,7 +615,6 @@ const addCustomSlot = wrapper(async (req, res) => {
   } catch (error) {
     console.error('Error in addCustomSlot:', error);
 
-    // Handle specific MongoDB errors
     if (error.code === 11000) {
       return res.status(409).json({
         status: 409,

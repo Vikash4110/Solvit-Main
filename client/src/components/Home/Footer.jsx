@@ -10,7 +10,7 @@ import logo from '../../assets/logo.png';
 const socialLinks = [
   { Icon: Twitter, url: 'https://x.com/solvitforyou?s=21' },
   { Icon: Facebook, url: 'https://www.facebook.com/share/12HYipkeXG9/?mibextid=wwXIfr' },
-  { Icon: Instagram, url: 'https://www.instagram.com/solvitcounselling?igsh=MWhuaWNsdHl3Nm4wZA==' },
+  { Icon: Instagram, url: 'https://www.instagram.com/solvit.care?igsh=NzNoanhzd2N5M3ky' },
   { Icon: Linkedin, url: 'https://www.linkedin.com/company/solvitcounselling/' },
 ];
 

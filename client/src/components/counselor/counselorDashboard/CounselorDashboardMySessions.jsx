@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -30,13 +30,32 @@ import { TIMEZONE } from '../../../constants/constants';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter.js';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
 import PreSessionGuidelines from './CounselorDashboardPreSessonGuidelines';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+
+const EARLY_JOIN_MINUTES = 10; // must match earlyJoinMinutesForSession on the server
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 14 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+};
+
+// ─── Pure helper — mirror of server's canJoinSessionForCounselor ──────────────
+const computeCanJoin = (booking) => {
+  if (!booking.videoSDKRoomId || !booking.startTime || !booking.endTime) return false;
+  if (booking.status !== 'confirmed') return false;
+
+  const now = dayjs().utc();
+  const start = dayjs.utc(booking.startTime);
+  const end = dayjs.utc(booking.endTime);
+
+  return now.isSameOrAfter(start.subtract(EARLY_JOIN_MINUTES, 'minute')) && now.isBefore(end);
 };
 
 const CounselorDashboardMySessions = () => {
@@ -44,89 +63,149 @@ const CounselorDashboardMySessions = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [joiningId, setJoiningId] = useState(null);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalCount: 0,
   });
-  const [showGuidelines, setShowGuidelines] = useState(false);
+
+  // Guidelines modal: store the specific booking so the closure captures it
+  const [guidelinesState, setGuidelinesState] = useState({ show: false, booking: null });
+
+  const timerRef = useRef(null);
 
   const tabs = [
     { key: 'upcoming', label: 'Upcoming', icon: Clock },
     { key: 'completed', label: 'Completed', icon: CheckCircle2 },
   ];
 
-  useEffect(() => {
-    fetchSessions(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-
-  const handleAuthError = () => {
+  // ── Auth error ───────────────────────────────────────────────────────────────
+  const handleAuthError = useCallback(() => {
     localStorage.removeItem('counselorAccessToken');
     toast.error('Session expired. Please login again.');
     navigate('/counselor/login');
-  };
+  }, [navigate]);
 
-  const fetchSessions = async (page = 1) => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('counselorAccessToken');
-      if (!token) {
-        handleAuthError();
-        return;
-      }
-
-      const queryParams = new URLSearchParams({
-        filter: activeTab,
-        page: page.toString(),
-        perPage: '10',
-      });
-
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.COUNSELOR_BOOKINGS}?${queryParams}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
+  // ── Fetch ────────────────────────────────────────────────────────────────────
+  const fetchSessions = useCallback(
+    async (page = 1) => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('counselorAccessToken');
+        if (!token) {
+          handleAuthError();
+          return;
         }
-      );
 
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
+        const queryParams = new URLSearchParams({
+          filter: activeTab,
+          page: page.toString(),
+          perPage: '10',
+        });
 
-      const data = await response.json().catch(() => null);
-
-      if (!data || typeof data !== 'object') {
-        toast.error('Unexpected response from server');
-        return;
-      }
-
-      if (data.success && data.data && Array.isArray(data.data.bookings)) {
-        setBookings(data.data.bookings);
-        setPagination(
-          data.data.pagination || {
-            currentPage: page,
-            totalPages: 1,
-            totalCount: data.data.bookings.length,
+        const response = await fetch(
+          `${API_BASE_URL}${API_ENDPOINTS.COUNSELOR_BOOKINGS}?${queryParams}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
           }
         );
-      } else {
-        toast.error(data.message || 'Failed to load sessions');
+
+        if (response.status === 401 || response.status === 403) {
+          handleAuthError();
+          return;
+        }
+
+        const data = await response.json().catch(() => null);
+
+        if (!data || typeof data !== 'object') {
+          toast.error('Unexpected response from server');
+          return;
+        }
+
+        if (data.success && data.data && Array.isArray(data.data.bookings)) {
+          // Recompute canJoin client-side on every fetch
+          const enriched = data.data.bookings.map((b) => ({
+            ...b,
+            canJoin: computeCanJoin(b),
+          }));
+          setBookings(enriched);
+          setPagination(
+            data.data.pagination || {
+              currentPage: page,
+              totalPages: 1,
+              totalCount: enriched.length,
+            }
+          );
+        } else {
+          toast.error(data.message || 'Failed to load sessions');
+        }
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+        toast.error('Network error while loading sessions');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching sessions:', error);
-      toast.error('Network error while loading sessions');
-    } finally {
-      setLoading(false);
-      setJoiningId(null);
+    },
+    [activeTab, handleAuthError]
+  );
+
+  useEffect(() => {
+    fetchSessions(1);
+  }, [fetchSessions]);
+
+  // ── Live timer: recompute canJoin every 30 s for the 'upcoming' tab ──────────
+  useEffect(() => {
+    if (activeTab !== 'upcoming') return;
+
+    timerRef.current = setInterval(() => {
+      setBookings((prev) =>
+        prev.map((b) => ({
+          ...b,
+          canJoin: computeCanJoin(b),
+        }))
+      );
+    }, 30_000);
+
+    return () => clearInterval(timerRef.current);
+  }, [activeTab]);
+
+  // ── Join handlers ────────────────────────────────────────────────────────────
+  const handleJoinSession = (booking) => {
+    if (!booking?.bookingId) {
+      toast.error('Invalid session data');
+      return;
     }
+
+    // Re-evaluate canJoin at click time (30 s timer may be behind by a few seconds)
+    if (!computeCanJoin(booking)) {
+      toast.error('Session not ready to join yet');
+      return;
+    }
+
+    if (!booking.videoSDKRoomId) {
+      toast.error('Meeting room not available');
+      return;
+    }
+
+    setGuidelinesState({ show: true, booking });
   };
 
+  const handleProceedToSession = (bookingId, videoSDKRoomId) => {
+    setGuidelinesState({ show: false, booking: null });
+    navigate(`/meeting/${bookingId}/${videoSDKRoomId}`);
+  };
+
+  const changePage = (nextPage) => {
+    if (loading) return;
+    if (nextPage < 1 || nextPage > pagination.totalPages) return;
+    fetchSessions(nextPage);
+  };
+
+  // ── UI helpers ───────────────────────────────────────────────────────────────
   const getStatusUI = (booking) => {
     const base = 'border text-xs font-medium px-3 py-1 rounded-full shadow-sm';
     const map = {
@@ -214,39 +293,7 @@ const CounselorDashboardMySessions = () => {
     }
   };
 
-  const handleJoinSession = (booking) => {
-    if (!booking?.bookingId) {
-      toast.error('Invalid session data');
-      return;
-    }
-
-    if (!booking.canJoin) {
-      toast.error('Session not ready to join yet');
-      return;
-    }
-
-    if (!booking.videoSDKRoomId) {
-      toast.error('Meeting room not available');
-      return;
-    }
-
-    setJoiningId(booking.bookingId);
-    setShowGuidelines(true);
-    // navigate(`/counselor/session/${booking.bookingId}`);
-  };
-  const handleProceedToSession = (bookingId, videoSDKRoomId) => {
-    setShowGuidelines(false);
-    // Navigate to video call or open video SDK
-    // window.open(`/meeting/${bookingId}/${videoSDKRoomId}`, '_blank');
-    navigate(`/meeting/${bookingId}/${videoSDKRoomId}`)
-  };
-
-  const changePage = (nextPage) => {
-    if (loading) return;
-    if (nextPage < 1 || nextPage > pagination.totalPages) return;
-    fetchSessions(nextPage);
-  };
-
+  // ── SessionCard ──────────────────────────────────────────────────────────────
   const SessionCard = ({ booking }) => {
     const s =
       booking.startTime && booking.endTime
@@ -264,8 +311,6 @@ const CounselorDashboardMySessions = () => {
         .slice(0, 2)
         .map((w) => w[0]?.toUpperCase())
         .join('') || 'CL';
-
-    const isJoining = joiningId === String(booking.bookingId);
 
     return (
       <motion.div variants={fadeInUp} initial="hidden" animate="visible">
@@ -368,31 +413,19 @@ const CounselorDashboardMySessions = () => {
             <Separator className="bg-neutral-200 dark:bg-neutral-800" />
 
             {booking.canJoin ? (
-              <>
-                <Button
-                  onClick={() => handleJoinSession(booking)}
-                  className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-md hover:shadow-lg transition-all"
-                  size="lg"
-                  disabled={isJoining}
-                >
-                  <>
-                    <Video className="w-4 h-4 mr-2" />
-                    Join Session
-                  </>
-                  
-                </Button>
-                {/* Pre Session Guidelines modal */}
-                <PreSessionGuidelines
-                  isOpen={showGuidelines}
-                  onClose={() => setShowGuidelines(false)}
-                  onProceed={() => {
-                    handleProceedToSession(booking.bookingId, booking.videoSDKRoomId);
-                  }}
-                />
-              </>
+              <Button
+                onClick={() => handleJoinSession(booking)}
+                className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-md hover:shadow-lg transition-all"
+                size="lg"
+              >
+                <Video className="w-4 h-4 mr-2" />
+                Join Session
+              </Button>
             ) : booking.status === 'confirmed' && s ? (
               <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
-                You can join {s.minutesToStart > 0 ? `in ${s.minutesToStart} minutes` : 'soon'}
+                {s.minutesToStart > 0
+                  ? `Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}` : `in ${s.minutesToStart} min`}`
+                  : 'Session window has closed'}
               </p>
             ) : null}
           </CardContent>
@@ -401,6 +434,7 @@ const CounselorDashboardMySessions = () => {
     );
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30 py-12 px-4">
       <motion.div
@@ -440,7 +474,6 @@ const CounselorDashboardMySessions = () => {
 
           {tabs.map((tab) => (
             <TabsContent key={tab.key} value={tab.key} className="space-y-6">
-              {/* ✅ PROFESSIONAL NOTE - Only shown in Completed tab */}
               {tab.key === 'completed' && (
                 <motion.div variants={fadeInUp}>
                   <Alert className="border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 shadow-sm">
@@ -450,7 +483,7 @@ const CounselorDashboardMySessions = () => {
                     </AlertTitle>
                     <AlertDescription className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                       After each session, there is a
-                      <span className="font-semibold">24-hour review window</span> during which
+                      <span className="font-semibold"> 24-hour review window</span> during which
                       clients can share any concerns. If no issues are raised within this period,
                       the session is marked as completed and your earnings are released.
                     </AlertDescription>
@@ -533,6 +566,20 @@ const CounselorDashboardMySessions = () => {
           ))}
         </Tabs>
       </motion.div>
+
+      {/* Pre-session guidelines — opened with specific booking context */}
+      <PreSessionGuidelines
+        isOpen={guidelinesState.show}
+        onClose={() => setGuidelinesState({ show: false, booking: null })}
+        onProceed={() => {
+          if (guidelinesState.booking) {
+            handleProceedToSession(
+              guidelinesState.booking.bookingId,
+              guidelinesState.booking.videoSDKRoomId
+            );
+          }
+        }}
+      />
     </section>
   );
 };

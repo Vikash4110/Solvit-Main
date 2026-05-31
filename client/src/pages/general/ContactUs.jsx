@@ -238,7 +238,7 @@ const ContactUs = () => {
     { icon: FaFacebook, url: 'https://www.facebook.com/share/12HYipkeXG9/?mibextid=wwXIfr', color: 'text-blue-600 hover:text-blue-700' },
     { icon: FaTwitter, url: 'https://x.com/solvitforyou?s=21', color: 'text-sky-500 hover:text-sky-600' },
     { icon: FaLinkedin, url: 'https://www.linkedin.com/company/solvitcounselling/', color: 'text-blue-700 hover:text-blue-800' },
-    { icon: FaInstagram, url: 'https://www.instagram.com/solvitcounselling?igsh=MWhuaWNsdHl3Nm4wZA==', color: 'text-pink-600 hover:text-pink-700' },
+    { icon: FaInstagram, url: 'https://www.instagram.com/solvit.care?igsh=NzNoanhzd2N5M3ky', color: 'text-pink-600 hover:text-pink-700' },
   ];
 
   return (

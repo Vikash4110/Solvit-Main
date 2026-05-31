@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Video, ArrowLeft, Clock, Calendar, User, Sparkles, Shield } from 'lucide-react';
+import { Video, ArrowLeft, Clock, Calendar, User, Sparkles, Shield, Loader2 } from 'lucide-react';
 
-export function MeetingDetailsScreen({ sessionData, handleOnClickJoin, handleClickGoBack }) {
+export function MeetingDetailsScreen({ sessionData, handleOnClickJoin, handleClickGoBack, isJoining = false }) {
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
     visible: {
@@ -44,11 +44,16 @@ export function MeetingDetailsScreen({ sessionData, handleOnClickJoin, handleCli
         <div className="space-y-3">
           <Button
             onClick={handleOnClickJoin}
+            disabled={isJoining}
             className="group relative overflow-hidden w-full h-12 bg-gradient-to-br from-primary-900 to-primary-800 hover:from-primary-800 hover:to-primary-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/30 transition-all duration-300 hover:scale-[1.02] dark:from-primary-600 dark:to-primary-700 dark:hover:from-primary-700 dark:hover:to-primary-600"
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
-              <Video className="h-5 w-5" />
-              Join Session Now
+              {isJoining ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Video className="h-5 w-5" />
+              )}
+              {isJoining ? 'Connecting...' : 'Join Session Now'}
             </span>
             {/* Shimmer effect on hover */}
             <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent" />

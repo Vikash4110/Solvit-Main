@@ -441,8 +441,8 @@ const canJoinSessionForCounselor = (booking) => {
   const minutesDiffEnd = endTime.diff(now, 'minute');
 
   // Same semantics as client: join from earlyJoinMinutesForSession before start until session end
-  // return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
-  return true;
+  return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
+  // return true;
 };
 
 /**

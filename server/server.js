@@ -216,7 +216,7 @@ connectDb()
           console.warn('⚠️  Server starting without email service');
         }
         // await initializeScheduledJobs();
-        
+
         logger.info('✓ BullMQ scheduled jobs initialized successfully');
         logger.info('⚠️  Remember to start the worker process: npm run worker');
       } catch (error) {

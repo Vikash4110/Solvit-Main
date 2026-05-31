@@ -1,12 +1,11 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { MeetingProvider } from '@videosdk.live/react-sdk';
-import { useEffect } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MeetingAppProvider } from './MeetingAppContextDef';
 import { MeetingContainer } from './meeting/MeetingContainer';
 import { LeaveScreen } from './components/screens/LeaveScreen';
 import { JoiningScreen } from './components/screens/JoiningScreen';
-import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 function VideoCallInterface() {
   const navigate = useNavigate();
   const [token, setToken] = useState('');
@@ -73,18 +72,24 @@ function VideoCallInterface() {
         );
 
         console.log(participantId);
+        // Name is set as "fullName_mongoId" — unique per person, used by VideoSDK for display.
+        // The primary duplicate-join check uses participantId embedded in the JWT,
+        // but a unique name also prevents any name-based collisions in VideoSDK's participant list.
+        const _client     = detailsData.data.booking.clientId;
+        const _counselor  = detailsData.data.booking.slotId.counselorId;
         setParticipantName(
           detailsData.data.userType === 'client'
-            ? detailsData.data.booking.clientId.fullName
-            : detailsData.data.booking.slotId.counselorId.fullName
+            ? `${_client.fullName}_${_client._id}`
+            : `${_counselor.fullName}_${_counselor._id}`
         );
 
         // setting meeting id
         setMeetingId(detailsData.data.booking.videoSDKRoomId);
       } catch (err) {
         console.error('Session initialization error:', err);
-        setError(err.message);
-        toast.error(err.message);
+        const errMsg = err?.message || 'Failed to load session details.';
+        setError(errMsg);
+        toast.error(errMsg, { autoClose: 5000 });
       } finally {
         // setLoading(false);
       }
