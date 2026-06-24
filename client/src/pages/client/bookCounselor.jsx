@@ -413,7 +413,6 @@ const BookCounselorCalendar = () => {
 
       if (!clientData || !accessToken) {
         toast.error('Please log in to proceed.');
-        // optional: pass redirect back to this counselor after login
         navigate('/login', {
           state: { redirectTo: `/book-counselor/${counselorId}` },
         });
@@ -1317,6 +1316,9 @@ const CalendarCard = ({
 
 // ==========================================
 // COMPONENT: BOOKING MODAL
+// ✅ FIX: modal={!isRazorpayOpen} disables Radix focus trap when Razorpay is open.
+//         pointerEvents:'none' on DialogContent ensures the dialog overlay doesn't
+//         swallow clicks that should reach the Razorpay iframe/window.
 // ==========================================
 const BookingModal = ({
   show,
@@ -1331,8 +1333,11 @@ const BookingModal = ({
   razorpayLoaded,
   isOnline,
 }) => (
-  <Dialog open={show} onOpenChange={onClose}>
-    <DialogContent className={clsx('max-w-md', isRazorpayOpen && 'z-[2147483646]')}>
+  <Dialog open={show} onOpenChange={onClose} modal={!isRazorpayOpen}>
+    <DialogContent
+      className="max-w-md"
+      style={isRazorpayOpen ? { pointerEvents: 'none' } : undefined}
+    >
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-xl">
           <CheckCircle className="w-6 h-6 text-primary-600" />

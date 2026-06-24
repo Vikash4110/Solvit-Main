@@ -215,11 +215,11 @@ const FilterSection = React.memo(
         <Separator />
 
         {/* Language Dropdown */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
             Language
-          </Label>
-          <DropdownMenu open={langOpen} onOpenChange={setLangOpen} modal={false}>
+          </Label> */}
+          {/* <DropdownMenu open={langOpen} onOpenChange={setLangOpen} modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full justify-between">
                 <span className="truncate">{language === 'all' ? 'All Languages' : language}</span>
@@ -243,8 +243,8 @@ const FilterSection = React.memo(
                 ))}
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+          </DropdownMenu> */}
+        {/* </div> */}
 
         <Separator />
 
@@ -732,12 +732,12 @@ const BrowseCounselor = () => {
                       </SheetContent>
                     </Sheet>
 
-                    <DropdownMenu open={sortOpen} onOpenChange={setSortOpen} modal={false}>
+                    {/* <DropdownMenu open={sortOpen} onOpenChange={setSortOpen} modal={false}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="w-full sm:w-44 justify-between">
                           <span>
-                            {sortBy === 'rating' && 'Highest Rated'}
-                            {sortBy === 'experience' && 'Most Experience'}
+                            {/* {sortBy === 'rating' && 'Highest Rated'} */}
+                            {/* {sortBy === 'experience' && 'Most Experience'}
                             {sortBy === 'price' && 'Lowest Price'}
                           </span>
                           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -749,18 +749,18 @@ const BrowseCounselor = () => {
                           onValueChange={(value) => {
                             setSortBy(value);
                             setSortOpen(false);
-                          }}
-                        >
-                          <DropdownMenuRadioItem value="rating">
+                          }} */}
+                        {/* > */} 
+                          {/* <DropdownMenuRadioItem value="rating">
                             Highest Rated
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="experience">
+                          </DropdownMenuRadioItem> */}
+                          {/* <DropdownMenuRadioItem value="experience">
                             Most Experience
                           </DropdownMenuRadioItem>
                           <DropdownMenuRadioItem value="price">Lowest Price</DropdownMenuRadioItem>
                         </DropdownMenuRadioGroup>
                       </DropdownMenuContent>
-                    </DropdownMenu>
+                    </DropdownMenu> */}
                   </div>
                 </div>
 

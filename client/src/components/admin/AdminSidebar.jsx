@@ -104,48 +104,48 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
           path: '/admin/payments',
           badge: null,
         },
-        {
-          name: 'Counselors Payouts',
-          icon: CreditCard,
-          path: '/admin/payouts',
-          badge: null,
-        },
+        // {
+        //   name: 'Counselors Payouts',
+        //   icon: CreditCard,
+        //   path: '/admin/payouts',
+        //   badge: null,
+        // },
       ],
     },
-    {
-      section: 'Support',
-      items: [
-        {
-          name: 'Messages',
-          icon: MessageSquare,
-          path: '/admin/messages',
-          badge: null,
-        },
-        {
-          name: 'Notifications',
-          icon: Bell,
-          path: '/admin/notifications',
-          badge: null,
-        },
-      ],
-    },
-    {
-      section: 'System',
-      items: [
-        {
-          name: 'Settings',
-          icon: Settings,
-          path: '/admin/settings',
-          badge: null,
-        },
-        {
-          name: 'Security',
-          icon: Shield,
-          path: '/admin/security',
-          badge: null,
-        },
-      ],
-    },
+    // {
+    //   section: 'Support',
+    //   items: [
+    //     {
+    //       name: 'Messages',
+    //       icon: MessageSquare,
+    //       path: '/admin/messages',
+    //       badge: null,
+    //     },
+    //     {
+    //       name: 'Notifications',
+    //       icon: Bell,
+    //       path: '/admin/notifications',
+    //       badge: null,
+    //     },
+    //   ],
+    // },
+    // {
+    //   section: 'System',
+    //   items: [
+    //     {
+    //       name: 'Settings',
+    //       icon: Settings,
+    //       path: '/admin/settings',
+    //       badge: null,
+    //     },
+    //     {
+    //       name: 'Security',
+    //       icon: Shield,
+    //       path: '/admin/security',
+    //       badge: null,
+    //     },
+    //   ],
+    // },
   ];
 
   const isActive = (path) => location.pathname === path;
