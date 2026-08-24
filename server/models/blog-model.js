@@ -174,7 +174,6 @@ blogSchema.pre('save', function (next) {
 // ✅ ENHANCED: Better indexes for performance
 blogSchema.index({ title: 'text', content: 'text', excerpt: 'text' });
 blogSchema.index({ category: 1, status: 1, publishedAt: -1 });
-blogSchema.index({ slug: 1 }, { unique: true }); // Ensure unique index
 blogSchema.index({ author: 1, status: 1 }); // For counselor's own blogs
 blogSchema.index({ featured: 1, status: 1 }); // For featured blogs
 
