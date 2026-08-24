@@ -158,7 +158,6 @@ bookingSchema.index({ 'completion.autoConfirmAt': 1 });
 bookingSchema.index({ 'dispute.status': 1 });
 bookingSchema.index({ 'dispute.isDisputed': 1 });
 bookingSchema.index({ counselorId: 1, 'dispute.isDisputed': 1 });
-bookingSchema.index({ clientId: 1, status: 1 });
 bookingSchema.index(
   { slotId: 1, status: 1 },
   {
