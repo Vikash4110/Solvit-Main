@@ -72,6 +72,26 @@ app.use((req, res, next) => {
   }
 });
 
+// Helmet Security
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'", process.env.FRONTEND_URL],
+        connectSrc: [
+          "'self'",
+          process.env.FRONTEND_URL,
+          'https://api.videosdk.live',
+          'wss://*.videosdk.live',
+          'https://*.videosdk.live',
+        ],
+        mediaSrc: ["'self'", 'https://*.videosdk.live'],
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://sdk.videosdk.live'],
+      },
+    },
+  })
+);
+
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static('public'));
@@ -135,26 +155,6 @@ app.post('/api/webhooks/videosdk', express.raw({ type: 'application/json' }), as
     res.status(500).send('Error processing webhook');
   }
 });
-
-// Helmet Security
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'", process.env.FRONTEND_URL],
-        connectSrc: [
-          "'self'",
-          process.env.FRONTEND_URL,
-          'https://api.videosdk.live',
-          'wss://*.videosdk.live',
-          'https://*.videosdk.live',
-        ],
-        mediaSrc: ["'self'", 'https://*.videosdk.live'],
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://sdk.videosdk.live'],
-      },
-    },
-  })
-);
 
 // Health check
 app.get('/health', (req, res) => {
