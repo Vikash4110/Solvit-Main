@@ -25,9 +25,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
+import { API_ENDPOINTS } from '../../../config/api';
+import api from '@/lib/axios';
 import { TIMEZONE } from '../../../constants/constants';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
@@ -94,8 +94,6 @@ const CounselorDashboardMySessions = () => {
     async (page = 1) => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('counselorAccessToken');
-        if (!token) { handleAuthError(); return; }
 
         // Resolve the correct filter key for the active tab
         const currentTab = TABS.find((t) => t.key === activeTab) || TABS[0];
@@ -106,20 +104,11 @@ const CounselorDashboardMySessions = () => {
           perPage: '10',
         });
 
-        const response = await fetch(
-          `${API_BASE_URL}${API_ENDPOINTS.COUNSELOR_BOOKINGS}?${queryParams}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          }
+        const response = await api.get(
+          `${API_ENDPOINTS.COUNSELOR_BOOKINGS}?${queryParams}`
         );
 
-        if (response.status === 401 || response.status === 403) { handleAuthError(); return; }
-
-        const data = await response.json().catch(() => null);
+        const data = response.data;
         if (!data || typeof data !== 'object') {
           toast.error('Unexpected response from server');
           return;

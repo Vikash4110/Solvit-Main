@@ -51,7 +51,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
-import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api.js';
+import { API_ENDPOINTS } from '../../../config/api.js';
+import api from '@/lib/axios';
 
 // ✅ CONSTANTS
 const ISSUE_TYPES = [
@@ -260,59 +261,51 @@ const RaiseIssueForm = () => {
         });
       }, 300);
 
-      const response = await fetch(`${API_BASE_URL}/client/bookings/dispute/raise`, {
-        method: 'POST',
+      const response = await api.post('/client/bookings/dispute/raise', formDataToSend, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
-        credentials: 'include',
-        body: formDataToSend 
       });
 
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok && data.success) {
+      if (data.success) {
         setSubmitSuccess(true);
         toast.success(data.message || 'Complaint submitted successfully!');
 
         setTimeout(() => {
           navigate('/client/dashboard/bookings');
         }, 3000);
-      } else {
-        if (response.status === 400) {
-          if (data.errors && Array.isArray(data.errors)) {
-            data.errors.forEach((error) => {
-              toast.error(error.message || error.field + ': ' + error.message || error);
-            });
-          } else {
-            toast.error(data.message || 'Validation failed');
-          }
-        } else if (response.status === 401) {
-          toast.error('Session expired. Please login again.');
-          navigate('/login');
-        } else if (response.status === 403) {
-          toast.error('You are not authorized to raise a dispute for this booking');
-        } else if (response.status === 404) {
-          toast.error('Booking not found');
-        } else if (response.status === 429) {
-          toast.error('Too many requests. Please try again later.');
-        } else {
-          toast.error(data.message || 'Failed to submit complaint');
-        }
-
-        setIsSubmitting(false);
-        setUploadProgress(0);
       }
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Submit error:', error);
 
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        toast.error('Network error. Please check your connection.');
+      const status = error.response?.status;
+      const data = error.response?.data || {};
+
+      if (status === 400) {
+        if (data.errors && Array.isArray(data.errors)) {
+          data.errors.forEach((err) => {
+            toast.error(err.message || err.field + ': ' + err.message || err);
+          });
+        } else {
+          toast.error(data.message || 'Validation failed');
+        }
+      } else if (status === 403) {
+        toast.error('You are not authorized to raise a dispute for this booking');
+      } else if (status === 404) {
+        toast.error('Booking not found');
+      } else if (status === 429) {
+        toast.error('Too many requests. Please try again later.');
+      } else if (status === 401) {
+        // Handled by interceptor, but display message if needed
+        toast.error('Session expired. Please login again.');
       } else {
-        toast.error('An unexpected error occurred. Please try again.');
+        toast.error(data.message || 'Failed to submit complaint');
       }
 
       setIsSubmitting(false);

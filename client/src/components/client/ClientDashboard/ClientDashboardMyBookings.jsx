@@ -41,7 +41,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
+import { API_ENDPOINTS } from '../../../config/api';
+import api from '@/lib/axios';
 import { TIMEZONE } from '../../../constants/constants';
 
 import dayjs from 'dayjs';
@@ -109,7 +110,6 @@ const ClientDashboardMyBookings = () => {
     async (page = 1) => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('clientAccessToken');
 
         const queryParams = new URLSearchParams({
           filter: activeTab,
@@ -117,18 +117,11 @@ const ClientDashboardMyBookings = () => {
           perPage: '10',
         });
 
-        const response = await fetch(
-          `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKINGS}?${queryParams}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          }
+        const response = await api.get(
+          `${API_ENDPOINTS.CLIENT_BOOKINGS}?${queryParams}`
         );
 
-        const data = await response.json();
+        const data = response.data;
 
         if (data.success) {
           // Recompute canJoin client-side on every fetch
@@ -197,22 +190,13 @@ const ClientDashboardMyBookings = () => {
 
     try {
       setCancelLoading(true);
-      const token = localStorage.getItem('clientAccessToken');
 
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.CLIENT_BOOKING_CANCEL}/${cancelModal.booking.bookingId}/cancel`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({ reason: cancelReason }),
-        }
+      const response = await api.post(
+        `${API_ENDPOINTS.CLIENT_BOOKING_CANCEL}/${cancelModal.booking.bookingId}/cancel`,
+        { reason: cancelReason }
       );
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         toast.success(data.message || 'Booking cancelled successfully');
         setCancelModal({ show: false, booking: null });
@@ -223,7 +207,7 @@ const ClientDashboardMyBookings = () => {
       }
     } catch (error) {
       console.error('Cancel error:', error);
-      toast.error('Failed to cancel booking');
+      toast.error(error.response?.data?.message || 'Failed to cancel booking');
     } finally {
       setCancelLoading(false);
     }

@@ -16,7 +16,8 @@ import {
   FaArrowLeft,
 } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
+import { API_ENDPOINTS } from '../../../config/api';
+import api from '@/lib/axios';
 
 const BlogManagement = () => {
   const [currentView, setCurrentView] = useState('list');
@@ -46,7 +47,6 @@ const BlogManagement = () => {
   const fetchCounselorBlogs = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('counselorAccessToken');
 
       const params = new URLSearchParams({
         page: '1',
@@ -61,18 +61,11 @@ const BlogManagement = () => {
         params.append('search', searchTerm);
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.BLOGS_COUNSELOR_MY_BLOGS}?${params}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
+      const response = await api.get(
+        `${API_ENDPOINTS.BLOGS_COUNSELOR_MY_BLOGS}?${params}`
       );
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setBlogs(data.data.docs || data.data);
       } else {
@@ -92,19 +85,10 @@ const BlogManagement = () => {
 
     try {
       setFormLoading(true);
-      const token = localStorage.getItem('counselorAccessToken');
 
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BLOGS_CREATE}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(blogData),
-      });
+      const response = await api.post(API_ENDPOINTS.BLOGS_CREATE, blogData);
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         toast.success('Blog created successfully!');
         fetchCounselorBlogs();
@@ -127,22 +111,13 @@ const BlogManagement = () => {
 
     try {
       setFormLoading(true);
-      const token = localStorage.getItem('counselorAccessToken');
 
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.BLOGS_UPDATE}/${selectedBlog._id}`,
-        {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(blogData),
-        }
+      const response = await api.put(
+        `${API_ENDPOINTS.BLOGS_UPDATE}/${selectedBlog._id}`,
+        blogData
       );
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         toast.success('Blog updated successfully!');
         fetchCounselorBlogs();
@@ -163,18 +138,9 @@ const BlogManagement = () => {
     if (!window.confirm('Are you sure you want to delete this blog?')) return;
 
     try {
-      const token = localStorage.getItem('counselorAccessToken');
+      const response = await api.delete(`${API_ENDPOINTS.BLOGS_DELETE}/${blogId}`);
 
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BLOGS_DELETE}/${blogId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         toast.success('Blog deleted successfully!');
         fetchCounselorBlogs();
@@ -186,7 +152,7 @@ const BlogManagement = () => {
       }
     } catch (error) {
       console.error('Error deleting blog:', error);
-      toast.error('Failed to delete blog');
+      toast.error(error.response?.data?.message || 'Failed to delete blog');
     }
   };
 

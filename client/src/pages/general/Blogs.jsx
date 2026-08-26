@@ -14,7 +14,8 @@ import {
   FaChevronRight,
 } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import { API_BASE_URL, API_ENDPOINTS } from '../../config/api';
+import { API_ENDPOINTS } from '../../config/api';
+import api from '../../lib/axios';
 
 const Blogs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,14 +54,9 @@ const Blogs = () => {
       if (searchTerm) params.append('search', searchTerm);
 
       // ✅ Public endpoint - no authentication required
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BLOGS_GET_ALL}?${params}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // ✅ Removed credentials and authorization
-      });
+      const response = await api.get(`${API_ENDPOINTS.BLOGS_GET_ALL}?${params}`);
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setBlogs(data.data.docs);
         setPagination({
@@ -84,15 +80,9 @@ const Blogs = () => {
   // ✅ UPDATED: Fetch categories without authentication (public endpoint)
   const fetchCategories = async () => {
     try {
-      // ✅ Public endpoint - no authentication required
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BLOGS_GET_CATEGORIES}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // ✅ Removed authentication headers
-      });
+      const response = await api.get(API_ENDPOINTS.BLOGS_GET_CATEGORIES);
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setCategories(data.data);
       } else {

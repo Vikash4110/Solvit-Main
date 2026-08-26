@@ -1,12 +1,7 @@
-import axios from 'axios';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS } from '../config/api';
 import { toast } from 'sonner';
-
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-});
+import api from '../lib/axios';
 
 const CounselorAuthContext = createContext();
 
@@ -30,11 +25,8 @@ export const CounselorAuthProvider = ({ children }) => {
       if (token && storedCounselor) {
         try {
           // Verify token is still valid
-          const response = await axiosInstance.get(API_ENDPOINTS.COUNSELOR_PROFILE_GET, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const response = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_GET);
           const counselorData = response.data.data;
-          console.log(counselorData);
           setCounselor(counselorData);
           localStorage.setItem('counselor', JSON.stringify(counselorData));
         } catch (error) {
@@ -53,16 +45,10 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const counselorLogin = async (email, password) => {
     try {
-      const response = await axiosInstance.post(
-      API_ENDPOINTS.COUNSELOR_LOGIN,
-      {
+      const response = await api.post(API_ENDPOINTS.COUNSELOR_LOGIN, {
         email,
         password,
-      },
-      {
-        withCredentials: true,   // <-- correct placement
-      }
-    );
+      });
 
       const { loggedInCounselor, accessToken } = response.data.data;
       localStorage.setItem('counselorAccessToken', accessToken);
@@ -87,7 +73,7 @@ export const CounselorAuthProvider = ({ children }) => {
         }
       });
 
-      const response = await axiosInstance.post(API_ENDPOINTS.COUNSELOR_REGISTER, formData, {
+      const response = await api.post(API_ENDPOINTS.COUNSELOR_REGISTER, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -109,7 +95,7 @@ export const CounselorAuthProvider = ({ children }) => {
         purpose === 'reset'
           ? API_ENDPOINTS.COUNSELOR_FORGOT_PASSWORD
           : API_ENDPOINTS.COUNSELOR_SEND_OTP;
-      await axiosInstance.post(endpoint, { email });
+      await api.post(endpoint, { email });
       return { success: true };
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to send OTP');
@@ -119,7 +105,7 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const verifyOtp = async (email, otp) => {
     try {
-      await axiosInstance.post(API_ENDPOINTS.COUNSELOR_VERIFY_OTP, {
+      await api.post(API_ENDPOINTS.COUNSELOR_VERIFY_OTP, {
         email,
         otp,
       });
@@ -134,7 +120,7 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const resetPassword = async (email, otp, newPassword) => {
     try {
-      await axiosInstance.post(API_ENDPOINTS.COUNSELOR_RESET_PASSWORD, {
+      await api.post(API_ENDPOINTS.COUNSELOR_RESET_PASSWORD, {
         email,
         otp,
         newPassword,
@@ -148,20 +134,13 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const submitApplication = async (applicationData) => {
     try {
-      const token = localStorage.getItem('counselorAccessToken');
-      if (!token) {
-        throw new Error('No authentication token found. Please log in again.');
-      }
-
-      const response = await axiosInstance.post(
+      await api.post(
         API_ENDPOINTS.COUNSELOR_APPLICATION,
         applicationData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
           },
-          withCredentials: true,
         }
       );
 
@@ -188,7 +167,7 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const counselorLogout = async () => {
     try {
-      await axiosInstance.post(API_ENDPOINTS.COUNSELOR_LOGOUT);
+      await api.post(API_ENDPOINTS.COUNSELOR_LOGOUT);
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {

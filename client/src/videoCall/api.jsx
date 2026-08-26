@@ -1,22 +1,14 @@
+import api from '../lib/axios';
+
 const API_BASE_URL = 'https://api.videosdk.live';
 
 export const getTokenForJoiningSession = async (sessionData, participantId) => {
-  const tokenResponse = await fetch(`${import.meta.env.VITE_API_URL}/meeting/meeting-join-token`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('clientAccessToken')}`,
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ sessionData, participantId }), // send argument here
+  const tokenResponse = await api.post('/meeting/meeting-join-token', {
+    sessionData,
+    participantId,
   });
 
-  if (!tokenResponse.ok) {
-    throw new Error('Failed to get session token');
-  }
-
-  const tokenData = await tokenResponse.json();
-  return tokenData.data.token;
+  return tokenResponse.data.data.token;
 };
 
 export const createMeeting = async ({ token }) => {

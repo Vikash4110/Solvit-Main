@@ -1,14 +1,8 @@
 // ClientAuthContext.js
-import axios from 'axios';
 import { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
-
-// Create axios instance
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-});
+import api from '../lib/axios';
+import { API_ENDPOINTS } from '../config/api';
 
 // Create context
 const ClientAuthContext = createContext();
@@ -55,7 +49,7 @@ export const ClientAuthProvider = ({ children }) => {
 
   const clientLogin = async (email, password) => {
     try {
-      const response = await axiosInstance.post(API_ENDPOINTS.CLIENT_LOGIN, {
+      const response = await api.post(API_ENDPOINTS.CLIENT_LOGIN, {
         email,
         password,
       });
@@ -87,7 +81,7 @@ export const ClientAuthProvider = ({ children }) => {
         }
       });
 
-      await axiosInstance.post(API_ENDPOINTS.CLIENT_REGISTER, formData, {
+      await api.post(API_ENDPOINTS.CLIENT_REGISTER, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -106,7 +100,7 @@ export const ClientAuthProvider = ({ children }) => {
       const endpoint =
         purpose === 'reset' ? API_ENDPOINTS.CLIENT_FORGOT_PASSWORD : API_ENDPOINTS.CLIENT_SEND_OTP;
 
-      await axiosInstance.post(endpoint, { email });
+      await api.post(endpoint, { email });
       toast.success('OTP sent to your email!');
       return { success: true };
     } catch (error) {
@@ -118,7 +112,7 @@ export const ClientAuthProvider = ({ children }) => {
 
   const verifyOtp = async (email, otp) => {
     try {
-      await axiosInstance.post(API_ENDPOINTS.CLIENT_VERIFY_OTP, { email, otp });
+      await api.post(API_ENDPOINTS.CLIENT_VERIFY_OTP, { email, otp });
       toast.success('OTP verified successfully!');
       return { success: true };
     } catch (error) {
@@ -132,7 +126,7 @@ export const ClientAuthProvider = ({ children }) => {
 
   const resetPassword = async (email, otp, newPassword) => {
     try {
-      await axiosInstance.post(API_ENDPOINTS.CLIENT_RESET_PASSWORD, {
+      await api.post(API_ENDPOINTS.CLIENT_RESET_PASSWORD, {
         email,
         otp,
         newPassword,
@@ -148,7 +142,7 @@ export const ClientAuthProvider = ({ children }) => {
 
   const clientLogout = async () => {
     try {
-      await axiosInstance.post(API_ENDPOINTS.CLIENT_LOGOUT);
+      await api.post(API_ENDPOINTS.CLIENT_LOGOUT);
       toast.success('Logged out successfully!');
     } catch (error) {
       toast.error('Logout failed. Clearing local data.');

@@ -20,7 +20,7 @@ import {
   FaLock,
 } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import { API_BASE_URL } from '../../config/api';
+import api from '../../lib/axios';
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -142,22 +142,16 @@ const ContactUs = () => {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_BASE_URL}/contact/send-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          submittedAt: new Date().toISOString(),
-          prefilledFromProfile,
-          authenticatedUser: isAuthenticated,
-        }),
+      const response = await api.post('/contact/send-email', {
+        ...formData,
+        submittedAt: new Date().toISOString(),
+        prefilledFromProfile,
+        authenticatedUser: isAuthenticated,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (data.success || response.ok) {
+      if (data.success || response.status === 200) {
         setSubmitted(true);
         toast.success("Message sent successfully! We'll get back to you soon.", {
           duration: 4000,

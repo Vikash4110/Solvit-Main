@@ -14,7 +14,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
+import { API_ENDPOINTS } from '../../../config/api';
+import api from '@/lib/axios';
 
 // shadcn/ui imports
 import { Button } from '@/components/ui/button';
@@ -88,18 +89,9 @@ const RecurringAvailabilityComponent = () => {
 
   const fetchPriceConstraints = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PRICE_CONSTRAINTS}`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const result = await response.json();
-        const { minPrice, maxPrice, experienceLevel } = result.data;
-        setPriceConstraints({ minPrice, maxPrice, experienceLevel });
-      } else {
-        setPriceConstraints({ minPrice: 500, maxPrice: 5000, experienceLevel: '' });
-      }
+      const response = await api.get(API_ENDPOINTS.PRICE_CONSTRAINTS);
+      const { minPrice, maxPrice, experienceLevel } = response.data.data;
+      setPriceConstraints({ minPrice, maxPrice, experienceLevel });
     } catch (error) {
       setPriceConstraints({ minPrice: 500, maxPrice: 5000, experienceLevel: '' });
     }
@@ -108,14 +100,9 @@ const RecurringAvailabilityComponent = () => {
   const fetchExistingAvailability = async () => {
     try {
       setInitialLoading(true);
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MY_RECURRING}`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.availability && data.availability.length > 0) {
+      const response = await api.get(API_ENDPOINTS.SLOT_MANAGEMENT_MY_RECURRING);
+      const data = response.data;
+      if (data.availability && data.availability.length > 0) {
           const availabilityMap = {};
           let existingPrice = '';
 
@@ -135,8 +122,7 @@ const RecurringAvailabilityComponent = () => {
             isAvailable: availabilityMap[day.dayOfWeek]?.isAvailable || false,
             timeRanges: availabilityMap[day.dayOfWeek]?.timeRanges || [],
           }));
-          setWeeklyAvailability(updatedAvailability);
-        }
+        setWeeklyAvailability(updatedAvailability);
       }
     } catch (error) {
       toast.error('Failed to load availability data');
@@ -276,39 +262,20 @@ const RecurringAvailabilityComponent = () => {
         price: day.isAvailable ? Number(globalPrice) : 0,
       }));
 
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_SET_RECURRING}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ weeklyAvailability: weeklyAvailabilityWithPrice }),
+      await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_SET_RECURRING, {
+        weeklyAvailability: weeklyAvailabilityWithPrice,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        try {
-          await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_GENERATE_SLOTS}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-            credentials: 'include',
-          });
-          toast.success('Availability updated successfully!', {
-            description: 'Your weekly schedule is now active and slots have been generated.',
-          });
-        } catch (error) {
-          toast.success('Availability updated successfully!');
-        }
-      } else {
-        toast.error(data.message || 'Failed to update availability');
+      try {
+        await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_GENERATE_SLOTS);
+        toast.success('Availability updated successfully!', {
+          description: 'Your weekly schedule is now active and slots have been generated.',
+        });
+      } catch (error) {
+        toast.success('Availability updated successfully!');
       }
     } catch (error) {
-      toast.error('Failed to update availability');
+      toast.error(error.response?.data?.message || 'Failed to update availability');
     } finally {
       setLoading(false);
     }
