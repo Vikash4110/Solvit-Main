@@ -36,6 +36,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust reverse proxy (AWS, Nginx, Render, Cloudflare) for accurate client IP rate limiting
+app.set('trust proxy', 1);
+
 // CORS Configuration
 const allowedOrigins = [
   process.env.CORS_ORIGIN1,
@@ -100,14 +103,42 @@ app.use(express.static('public'));
 app.use(cookieParser());
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting configuration
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  message: 'Too many requests from this IP',
+  max: 10,                  // 10 attempts per IP per 15 minutes
+  standardHeaders: true,    // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false,     // Disable `X-RateLimit-*` headers
+  message: {
+    success: false,
+    message: 'Too many attempts from this IP. Please try again after 15 minutes.',
+  },
 });
 
-// app.use(limiter);
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,                 // 300 requests per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many requests. Please slow down and try again in a few minutes.',
+  },
+});
+
+// Strict protection for sensitive Auth & OTP endpoints
+app.use('/api/v1/clients/send-otp-register-email', authLimiter);
+app.use('/api/v1/clients/verify-otp-register-email', authLimiter);
+app.use('/api/v1/clients/forgot-password', authLimiter);
+app.use('/api/v1/clients/login-client', authLimiter);
+
+app.use('/api/v1/counselors/send-otp-register-email', authLimiter);
+app.use('/api/v1/counselors/verify-otp-register-email', authLimiter);
+app.use('/api/v1/counselors/forgot-password', authLimiter);
+app.use('/api/v1/counselors/login-counselor', authLimiter);
+
+// General protection for all API endpoints
+app.use('/api/v1', apiLimiter);
 
 // Razorpay Instance
 export const instance = new Razorpay({
