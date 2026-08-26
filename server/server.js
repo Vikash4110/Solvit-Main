@@ -36,7 +36,6 @@ dotenv.config();
 const app = express();
 
 // CORS Configuration
-
 const allowedOrigins = [
   process.env.CORS_ORIGIN1,
   process.env.CORS_ORIGIN2,
@@ -71,11 +70,6 @@ app.use((req, res, next) => {
   } else {
     next();
   }
-});
-
-app.use((req, res, next) => {
-  console.log('Request Origin:', req.headers.origin);
-  next();
 });
 
 app.use(express.json({ limit: '50mb' }));
@@ -115,21 +109,7 @@ app.get('/api/health/cron', async (req, res) => {
   }
 });
 
-// In your main server file, add this before other middleware:
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
-// Also add specific admin route logging
-app.use(
-  '/api/v1/admin',
-  (req, res, next) => {
-    console.log('Admin route accessed:', req.method, req.path);
-    next();
-  },
-  adminRouter
-);
+app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/clients', clientRouter);
 app.use('/api/v1/counselors', counselorRouter);
 app.use('/api/v1/slotManagement', availabilityRouter);
