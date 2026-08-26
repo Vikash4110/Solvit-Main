@@ -41,6 +41,9 @@ const getAvailableCounselors = wrapper(async (req, res) => {
             {
               $sort: { startTime: 1 },
             },
+            {
+              $limit: 3, // Only fetch the top 3 nearest upcoming slots per counselor
+            },
           ],
         },
       },
