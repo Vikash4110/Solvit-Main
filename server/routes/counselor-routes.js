@@ -12,22 +12,8 @@ import {
 } from '../controllers/counselor-controller.js';
 import { verifyJWTCounselor } from '../middlewares/counselorAuth-middleware.js';
 import { upload, uploadProfilePicture } from '../middlewares/multer.middleware.js'; // Updated import
-import rateLimit from 'express-rate-limit';
 
 const counselorRouter = Router();
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Too many requests from this IP',
-});
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  skipSuccessfulRequests: true,
-});
 
 counselorRouter.route('/send-otp-register-email').post(sendOtpRegisterEmail);
 counselorRouter.route('/verify-otp-register-email').post(verifyOtpRegisterEmail);
@@ -39,7 +25,7 @@ counselorRouter
   .route('/register-counselor')
   .post(uploadProfilePicture.single('profilePicture'), registerCounselor);
 
-counselorRouter.route('/login-counselor').post(authLimiter, loginCounselor);
+counselorRouter.route('/login-counselor').post(loginCounselor);
 
 // Use upload for application documents (PDFs only)
 counselorRouter.route('/submit-application').post(
