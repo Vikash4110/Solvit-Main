@@ -79,7 +79,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { TIMEZONE } from '../../../constants/constants';
-import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
+import { API_ENDPOINTS } from '@/config/api';
+import api from '@/lib/axios';
 
 // Configure Day.js plugins
 dayjs.extend(utc);
@@ -215,20 +216,22 @@ const CounselorDashboardPersonalInfo = () => {
             accountNo: data.application?.bankDetails?.accountNo || '',
             ifscCode: data.application?.bankDetails?.ifscCode || '',
             branchName: data.application?.bankDetails?.branchName || '',
+            accountType: data.application?.bankDetails?.accountType || 'Savings',
           },
           applicationStatus: data.application?.applicationStatus || 'not_submitted',
           applicationSubmittedAt: data.application?.applicationSubmittedAt || null,
         },
-        lastLogin: data.lastLogin,
-        createdAt: data.createdAt,
-        isBlocked: data.isBlocked || false,
       };
-      console.log(transformedData);
+
       setCounselorData(transformedData);
       setFormData(transformedData);
+      setProfileCompleteness((prev) => ({
+        ...prev,
+        isCompleted: true,
+      }));
     } catch (err) {
       console.error('Error fetching counselor data:', err);
-      setError(err.message || 'Failed to load profile data');
+      setError(err.response?.data?.message || err.message || 'Failed to load profile data');
       toast.error('Failed to Load Profile', {
         description: 'Unable to fetch your profile data. Please try again.',
       });
@@ -239,22 +242,9 @@ const CounselorDashboardPersonalInfo = () => {
 
   const fetchProfileCompleteness = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.COUNSELOR_PROFILE_COMPLETENESS}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          credentials: 'include',
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        setProfileCompleteness(result.data || result);
-      }
+      const response = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_COMPLETENESS);
+      const result = response.data;
+      setProfileCompleteness(result.data || result);
     } catch (err) {
       console.error('Error fetching profile completeness:', err);
     }
@@ -313,22 +303,8 @@ const CounselorDashboardPersonalInfo = () => {
       const changedData ={"username" : formData.username  , "phone":formData.phone ,"gender" : formData.gender,"specialization": formData.specialization, "experienceYears"  :formData.experienceYears, "professionalSummary" :formData.application.professionalSummary ,"languages": formData.application.languages}
       console.log(changedData)  
  
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.COUNSELOR_PROFILE_UPDATE}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify(changedData),
-      });
+      await api.put(API_ENDPOINTS.COUNSELOR_PROFILE_UPDATE, changedData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
-      }
-
-      const result = await response.json();
       setCounselorData(formData);
       setIsEditDialogOpen(false);
       fetchProfileCompleteness();
@@ -339,7 +315,7 @@ const CounselorDashboardPersonalInfo = () => {
     } catch (err) {
       console.error('Error updating profile:', err);
       toast.error('Update Failed', {
-        description: err.message || 'Failed to update profile. Please try again.',
+        description: err.response?.data?.message || err.message || 'Failed to update profile. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -477,23 +453,17 @@ const CounselorDashboardPersonalInfo = () => {
       const formData = new FormData();
       formData.append('profilePicture', file);
 
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.COUNSELOR_PROFILE_PICTURE_UPDATE}`,
+      const response = await api.put(
+        API_ENDPOINTS.COUNSELOR_PROFILE_PICTURE_UPDATE,
+        formData,
         {
-          method: 'PUT',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'multipart/form-data',
           },
-          credentials: 'include',
-          body: formData,
         }
       );
 
-      if (!response.ok) {
-        throw new Error('Failed to upload photo');
-      }
-
-      const result = await response.json();
+      const result = response.data;
       const data = result.data || result;
       const newProfilePicture = data.profilePicture;
 

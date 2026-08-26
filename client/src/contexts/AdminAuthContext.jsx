@@ -1,13 +1,8 @@
 // contexts/AdminAuthContext.jsx
-import axios from 'axios';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS } from '../config/api';
 import { toast } from 'sonner';
-
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-});
+import api from '../lib/axios';
 
 const AdminAuthContext = createContext();
 
@@ -30,9 +25,7 @@ export const AdminAuthProvider = ({ children }) => {
 
       if (token && storedAdmin) {
         try {
-          const response = await axiosInstance.get(API_ENDPOINTS.ADMIN_PROFILE, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const response = await api.get(API_ENDPOINTS.ADMIN_PROFILE);
           const adminData = response.data.data;
           setAdmin(adminData);
           localStorage.setItem('admin', JSON.stringify(adminData));
@@ -55,14 +48,10 @@ export const AdminAuthProvider = ({ children }) => {
   // In AdminAuthContext.jsx - improve error handling
   const adminLogin = async (email, password) => {
     try {
-      console.log('🔄 Attempting admin login with:', { email });
-
-      const response = await axiosInstance.post(API_ENDPOINTS.ADMIN_LOGIN, {
+      const response = await api.post(API_ENDPOINTS.ADMIN_LOGIN, {
         email,
         password,
       });
-
-      console.log('✅ Login response:', response.data);
 
       const { loggedInAdmin, accessToken } = response.data.data;
       localStorage.setItem('adminAccessToken', accessToken);
@@ -79,7 +68,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const adminLogout = async () => {
     try {
-      await axiosInstance.post(API_ENDPOINTS.ADMIN_LOGOUT);
+      await api.post(API_ENDPOINTS.ADMIN_LOGOUT);
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
@@ -91,13 +80,9 @@ export const AdminAuthProvider = ({ children }) => {
 
   const updateApplicationStatus = async (counselorId, status, rejectionReason = '') => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.put(
+      const response = await api.put(
         `${API_ENDPOINTS.ADMIN_UPDATE_APPLICATION_STATUS}/${counselorId}`,
-        { status, rejectionReason },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { status, rejectionReason }
       );
 
       return { success: true, data: response.data.data };
@@ -109,15 +94,11 @@ export const AdminAuthProvider = ({ children }) => {
 
   const getAllCounselorApplications = async (status = '') => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
       const url = status
         ? `${API_ENDPOINTS.ADMIN_COUNSELOR_APPLICATIONS}?status=${status}`
         : API_ENDPOINTS.ADMIN_COUNSELOR_APPLICATIONS;
 
-      const response = await axiosInstance.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const response = await api.get(url);
       return { success: true, data: response.data.data };
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to fetch applications');
@@ -127,12 +108,8 @@ export const AdminAuthProvider = ({ children }) => {
 
   const getCounselorApplication = async (counselorId) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.get(
-        `${API_ENDPOINTS.ADMIN_COUNSELOR_APPLICATION}/${counselorId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await api.get(
+        `${API_ENDPOINTS.ADMIN_COUNSELOR_APPLICATION}/${counselorId}`
       );
 
       return { success: true, data: response.data.data };
@@ -142,7 +119,7 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ ==================== NEW DISPUTE MANAGEMENT FUNCTIONS ====================
+  // ✅ ==================== DISPUTE MANAGEMENT FUNCTIONS ====================
 
   /**
    * Get all disputes with filters
@@ -153,15 +130,11 @@ export const AdminAuthProvider = ({ children }) => {
    */
   const getAllDisputes = async (status = '', page = 1, limit = 20, search = '') => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-
-      let url = `${API_BASE_URL}/admin/disputes?page=${page}&limit=${limit}`;
+      let url = `/admin/disputes?page=${page}&limit=${limit}`;
       if (status) url += `&status=${status}`;
       if (search) url += `&search=${encodeURIComponent(search)}`;
 
-      const response = await axiosInstance.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(url);
 
       return {
         success: true,
@@ -181,10 +154,7 @@ export const AdminAuthProvider = ({ children }) => {
    */
   const getDisputeDetail = async (bookingId) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.get(`${API_BASE_URL}/admin/disputes/${bookingId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(`/admin/disputes/${bookingId}`);
       return { success: true, data: response.data.data };
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to fetch dispute details');
@@ -208,13 +178,9 @@ export const AdminAuthProvider = ({ children }) => {
     payoutAmount = 0
   ) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.put(
-        `${API_BASE_URL}/admin/disputes/${bookingId}/status`,
-        { status, resolution, refundAmount, payoutAmount },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await api.put(
+        `/admin/disputes/${bookingId}/status`,
+        { status, resolution, refundAmount, payoutAmount }
       );
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -230,13 +196,9 @@ export const AdminAuthProvider = ({ children }) => {
    */
   const addDisputeNote = async (bookingId, note) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.post(
-        `${API_BASE_URL}/admin/disputes/${bookingId}/note`,
-        { note },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await api.post(
+        `/admin/disputes/${bookingId}/note`,
+        { note }
       );
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -245,19 +207,16 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ ==================== NEW CLIENT MANAGEMENT FUNCTIONS ====================
+  // ✅ ==================== CLIENT MANAGEMENT FUNCTIONS ====================
 
   const getAllClients = async (page = 1, limit = 20, searchTerm = '', status = '') => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      let url = `${API_BASE_URL}${API_ENDPOINTS.ADMINCLIENTS}?page=${page}&limit=${limit}`;
+      let url = `${API_ENDPOINTS.ADMINCLIENTS}?page=${page}&limit=${limit}`;
 
       if (searchTerm) url += `&search=${searchTerm}`;
       if (status) url += `&status=${status}`;
 
-      const response = await axiosInstance.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(url);
 
       return { success: true, data: response.data };
     } catch (error) {
@@ -268,12 +227,8 @@ export const AdminAuthProvider = ({ children }) => {
 
   const getClientDetails = async (clientId) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.get(
-        `${API_BASE_URL}${API_ENDPOINTS.ADMINCLIENTS}/${clientId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await api.get(
+        `${API_ENDPOINTS.ADMINCLIENTS}/${clientId}`
       );
 
       return { success: true, data: response.data.data };
@@ -285,11 +240,9 @@ export const AdminAuthProvider = ({ children }) => {
 
   const toggleClientBlock = async (clientId, block) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.patch(
-        `${API_BASE_URL}${API_ENDPOINTS.ADMINCLIENTS}/${clientId}/block`,
-        { block },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.patch(
+        `${API_ENDPOINTS.ADMINCLIENTS}/${clientId}/block`,
+        { block }
       );
 
       return { success: true, data: response.data.data };
@@ -301,15 +254,12 @@ export const AdminAuthProvider = ({ children }) => {
 
   const getAllCounselors = async (page = 1, limit = 20, searchTerm = '', status = '') => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      let url = `${API_BASE_URL}${API_ENDPOINTS.ADMINCOUNSELORS}?page=${page}&limit=${limit}`;
+      let url = `${API_ENDPOINTS.ADMINCOUNSELORS}?page=${page}&limit=${limit}`;
 
       if (searchTerm) url += `&search=${searchTerm}`;
       if (status) url += `&status=${status}`;
 
-      const response = await axiosInstance.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(url);
 
       return { success: true, data: response.data };
     } catch (error) {
@@ -320,12 +270,8 @@ export const AdminAuthProvider = ({ children }) => {
 
   const getCounselorDetails = async (counselorId) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.get(
-        `${API_BASE_URL}${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await api.get(
+        `${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}`
       );
 
       return { success: true, data: response.data.data };
@@ -337,11 +283,9 @@ export const AdminAuthProvider = ({ children }) => {
 
   const toggleCounselorBlock = async (counselorId, block) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.patch(
-        `${API_BASE_URL}${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}/block`,
-        { block },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.patch(
+        `${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}/block`,
+        { block }
       );
 
       return { success: true, data: response.data.data };
@@ -351,7 +295,7 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ ==================== NEW CLIENT MANAGEMENT FUNCTIONS ====================
+  // ✅ ==================== PAYMENT MANAGEMENT FUNCTIONS ====================
   const getAllPayments = async (
     page = 1,
     limit = 20,
@@ -363,7 +307,7 @@ export const AdminAuthProvider = ({ children }) => {
     bookingStatusFilter = 'all_booking_statuses'
   ) => {
     try {
-      const params = new URLSearchParams({
+      const params = {
         page: page.toString(),
         limit: limit.toString(),
         search,
@@ -372,78 +316,35 @@ export const AdminAuthProvider = ({ children }) => {
         statusFilter,
         refundFilter,
         bookingStatusFilter,
-      });
+      };
 
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('adminAccessToken')}`,
-        },
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch payments');
-      }
-
-      return { success: true, data };
+      const response = await api.get(API_ENDPOINTS.ADMINPAYMENTS, { params });
+      return { success: true, data: response.data };
     } catch (error) {
       console.error('Get all payments error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error, 'Failed to fetch payments') };
     }
   };
 
   const getPaymentDetails = async (paymentId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}/${paymentId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('adminAccessToken')}`,
-        },
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch payment details');
-      }
-
-      return { success: true, data: data.data };
+      const response = await api.get(`${API_ENDPOINTS.ADMINPAYMENTS}/${paymentId}`);
+      return { success: true, data: response.data.data };
     } catch (error) {
       console.error('Get payment details error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error, 'Failed to fetch payment details') };
     }
   };
 
   const getPaymentAnalytics = async (period = '30days') => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.ADMINPAYMENTS}/analytics?period=${period}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('adminAccessToken')}`,
-          },
-          credentials: 'include',
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch payment analytics');
-      }
-
-      return { success: true, data: data.analytics };
+      const response = await api.get(`${API_ENDPOINTS.ADMINPAYMENTS}/analytics`, {
+        params: { period },
+      });
+      return { success: true, data: response.data.analytics };
     } catch (error) {
       console.error('Get payment analytics error:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: getErrorMessage(error, 'Failed to fetch payment analytics') };
     }
   };
 
@@ -471,9 +372,7 @@ export const AdminAuthProvider = ({ children }) => {
     paymentMethod = 'all'
   ) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-
-      const params = new URLSearchParams({
+      const params = {
         page: page.toString(),
         limit: limit.toString(),
         status,
@@ -482,11 +381,9 @@ export const AdminAuthProvider = ({ children }) => {
         disputeFilter,
         payoutFilter,
         paymentMethod,
-      });
+      };
 
-      const response = await axiosInstance.get(`${API_ENDPOINTS.ADMIN_BOOKINGS}?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(API_ENDPOINTS.ADMIN_BOOKINGS, { params });
 
       return {
         success: true,
@@ -506,11 +403,7 @@ export const AdminAuthProvider = ({ children }) => {
    */
   const getBookingDetails = async (bookingId) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.get(`${API_ENDPOINTS.ADMIN_BOOKINGS}/${bookingId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const response = await api.get(`${API_ENDPOINTS.ADMIN_BOOKINGS}/${bookingId}`);
       return { success: true, data: response.data.data };
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to fetch booking details');
@@ -524,13 +417,9 @@ export const AdminAuthProvider = ({ children }) => {
    */
   const getBookingAnalytics = async (period = '30days') => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      const response = await axiosInstance.get(
-        `${API_ENDPOINTS.ADMIN_BOOKINGS}/analytics?period=${period}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await api.get(`${API_ENDPOINTS.ADMIN_BOOKINGS}/analytics`, {
+        params: { period },
+      });
 
       return { success: true, data: response.data.analytics };
     } catch (error) {
@@ -551,11 +440,11 @@ export const AdminAuthProvider = ({ children }) => {
     getDisputeDetail,
     updateDisputeStatus,
     addDisputeNote,
-    getAllClients, // ✅ ADD
-    getClientDetails, // ✅ ADD
+    getAllClients,
+    getClientDetails,
     toggleClientBlock,
-    getAllCounselors, // ✅ ADD
-    getCounselorDetails, // ✅ ADD
+    getAllCounselors,
+    getCounselorDetails,
     toggleCounselorBlock,
     getAllPayments,
     getPaymentDetails,

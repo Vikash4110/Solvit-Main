@@ -26,7 +26,8 @@ import {
   CalendarIcon,
   X,
 } from 'lucide-react';
-import { API_BASE_URL, API_ENDPOINTS } from '../../config/api';
+import { API_ENDPOINTS } from '../../config/api';
+import api from '../../lib/axios';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -330,13 +331,8 @@ const BrowseCounselor = () => {
 
   const fetchCounselors = useCallback(async () => {
     try {
-      const r = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKING_AVAILABLE_COUNSELORS}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('clientAccessToken')}` },
-        credentials: 'include',
-      });
-      const j = await r.json();
-      setCounselors(j.counselors || []);
-      console.log(j.counselors);
+      const response = await api.get(API_ENDPOINTS.BOOKING_AVAILABLE_COUNSELORS);
+      setCounselors(response.data.counselors || []);
     } catch (e) {
       toast.error('Failed to load counselors. Please try again later.');
     } finally {

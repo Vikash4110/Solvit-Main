@@ -14,7 +14,8 @@ import {
   XCircle,
   AlertTriangle,
 } from 'lucide-react';
-import { API_BASE_URL, API_ENDPOINTS } from '../../../config/api';
+import { API_ENDPOINTS } from '../../../config/api';
+import api from '@/lib/axios';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -111,18 +112,8 @@ const CounselorSlots = () => {
   const fetchSlots = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_GET_ALL}`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSlots(data.slots || []);
-      } else {
-        toast.error('Failed to fetch slots');
-      }
+      const response = await api.get(API_ENDPOINTS.SLOT_MANAGEMENT_GET_ALL);
+      setSlots(response.data.slots || []);
     } catch (error) {
       toast.error('Failed to fetch slots');
     } finally {
@@ -149,27 +140,17 @@ const CounselorSlots = () => {
 
   const manageDaySlots = async (date, status) => {
     try {
-      
       setActionLoading(true);
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_DAY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ date: dayjs(date).format("YYYY-MM-DD"), status }),
+      const response = await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_DAY, {
+        date: dayjs(date).format('YYYY-MM-DD'),
+        status,
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        toast.success(data.message || 'Day slots updated successfully!');
-        await fetchSlots();
-      } else {
-        toast.error(data.message || 'Failed to update day slots');
-      }
+      const data = response.data;
+      toast.success(data.message || 'Day slots updated successfully!');
+      await fetchSlots();
     } catch (error) {
-      toast.error('Failed to update day slots');
+      toast.error(error.response?.data?.message || 'Failed to update day slots');
     } finally {
       setActionLoading(false);
     }
@@ -178,25 +159,16 @@ const CounselorSlots = () => {
   const manageIndividualSlot = async (slotId, status) => {
     try {
       setActionLoading(true);
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_INDIVIDUAL}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ slotId, status }),
+      const response = await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_INDIVIDUAL, {
+        slotId,
+        status,
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        toast.success(data.message || 'Slot updated successfully!');
-        await fetchSlots();
-      } else {
-        toast.error(data.message || 'Failed to update slot');
-      }
+      const data = response.data;
+      toast.success(data.message || 'Slot updated successfully!');
+      await fetchSlots();
     } catch (error) {
-      toast.error('Failed to update slot');
+      toast.error(error.response?.data?.message || 'Failed to update slot');
     } finally {
       setActionLoading(false);
     }

@@ -13,7 +13,8 @@ import {
   FaLock,
 } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import { API_BASE_URL, API_ENDPOINTS } from '../../config/api';
+import { API_ENDPOINTS } from '../../config/api';
+import api from '../../lib/axios';
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -48,14 +49,8 @@ const BlogPost = () => {
     try {
       setLoading(true);
 
-      // ✅ Public endpoint - no authentication required for viewing
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BLOGS_GET_BY_SLUG}/${slug}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
+      const response = await api.get(`${API_ENDPOINTS.BLOGS_GET_BY_SLUG}/${slug}`);
+      const data = response.data;
       if (data.success) {
         setBlog(data.data.blog);
         setRelatedBlogs(data.data.relatedBlogs);
@@ -68,21 +63,18 @@ const BlogPost = () => {
               ? JSON.parse(localStorage.getItem('client') || '{}')._id
               : JSON.parse(localStorage.getItem('counselor') || '{}')._id;
           console.log(userId);
-          const hasLiked = data.data.blog.likes?.some(
-            (like) =>
-              like.user === userId &&
-              like.userType === (userType === 'client' ? 'Client' : 'Counselor')
-          );
-          setLiked(hasLiked);
+          const userLiked = data.data.blog.likes?.some((like) => {
+            const likeUserId = typeof like === 'object' ? like._id : like;
+            return likeUserId === userId;
+          });
+          setLiked(!!userLiked);
         }
       } else {
-        toast.error(data.message || 'Blog not found');
-        navigate('/blogs');
+        toast.error(data.message || 'Failed to load blog');
       }
     } catch (error) {
       console.error('Error fetching blog:', error);
       toast.error('Failed to load blog');
-      navigate('/blogs');
     } finally {
       setLoading(false);
     }
@@ -106,25 +98,8 @@ const BlogPost = () => {
     }
 
     try {
-      const token =
-        localStorage.getItem('clientAccessToken') || localStorage.getItem('counselorAccessToken');
-
-      // ✅ SIMPLIFIED: Use unified endpoint for both user types
-      const endpoint =
-        userType === 'counselor'
-          ? `${API_BASE_URL}${API_ENDPOINTS.BLOGS_LIKE}/${blog._id}/like`
-          : `${API_BASE_URL}${API_ENDPOINTS.BLOGS_LIKE}/${blog._id}/like`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      const data = await response.json();
+      const response = await api.post(`${API_ENDPOINTS.BLOGS_LIKE}/${blog._id}/like`);
+      const data = response.data;
       if (data.success) {
         setLiked(data.data.liked);
         setLikesCount(data.data.likesCount);
@@ -161,26 +136,12 @@ const BlogPost = () => {
 
     try {
       setSubmittingComment(true);
-      const token =
-        localStorage.getItem('clientAccessToken') || localStorage.getItem('counselorAccessToken');
 
-      // ✅ SIMPLIFIED: Use unified endpoint for both user types
-      const endpoint =
-        userType === 'counselor'
-          ? `${API_BASE_URL}${API_ENDPOINTS.BLOGS_COMMENT}/${blog._id}/comments`
-          : `${API_BASE_URL}${API_ENDPOINTS.BLOGS_COMMENT}/${blog._id}/comments`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ content: commentText.trim() }),
+      const response = await api.post(`${API_ENDPOINTS.BLOGS_COMMENT}/${blog._id}/comments`, {
+        content: commentText.trim(),
       });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         // ✅ IMPROVED: Better comment state management
         setBlog((prev) => ({

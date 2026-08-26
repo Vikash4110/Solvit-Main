@@ -45,7 +45,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
-import { API_BASE_URL, API_ENDPOINTS } from '../../config/api';
+import { API_ENDPOINTS } from '../../config/api';
+import api from '../../lib/axios';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -260,24 +261,16 @@ const BookCounselorCalendar = () => {
         setLoading(true);
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.BOOKING_COUNSELOR_SLOTS}/${counselorId}/slots`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('clientAccessToken')}` },
-          credentials: 'include',
-        }
+      const response = await api.get(
+        `${API_ENDPOINTS.BOOKING_COUNSELOR_SLOTS}/${counselorId}/slots`
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setCounselor(data.counselor);
+      const data = response.data;
+      setCounselor(data.counselor);
 
-        // ✅ Don't update slots if payment is in progress
-        if (!bookingLoading && !isRazorpayOpen) {
-          setSlots(data.slots || []);
-        }
-      } else {
-        toast.error('Unable to retrieve counselor information');
+      // ✅ Don't update slots if payment is in progress
+      if (!bookingLoading && !isRazorpayOpen) {
+        setSlots(data.slots || []);
       }
     } catch (error) {
       console.error('Fetch error:', error);
@@ -450,54 +443,40 @@ const BookCounselorCalendar = () => {
       }
 
       // Get Razorpay key
-      const keyResponse = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PAYMENT_GET_KEY}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('clientAccessToken')}`,
-        },
-        credentials: 'include',
-      });
-
-      if (!keyResponse.ok) throw new Error('Failed to retrieve payment key');
-      const keyData = await keyResponse.json();
+      const keyResponse = await api.get(API_ENDPOINTS.PAYMENT_GET_KEY);
+      const keyData = keyResponse.data;
 
       // ✅ Create order with idempotency key
-      const orderResponse = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PAYMENT_CHECKOUT}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('clientAccessToken')}`,
-          'Idempotency-Key': idempotencyKey, // ✅ CRITICAL
-        },
-        credentials: 'include',
-        body: JSON.stringify({ amount, clientId: clientData._id, slotId: selectedSlot._id }),
-      });
+      let orderData;
+      try {
+        const orderResponse = await api.post(
+          API_ENDPOINTS.PAYMENT_CHECKOUT,
+          { amount, clientId: clientData._id, slotId: selectedSlot._id },
+          { headers: { 'Idempotency-Key': idempotencyKey } }
+        );
+        orderData = orderResponse.data;
+      } catch (err) {
+        const status = err.response?.status;
+        const errData = err.response?.data || {};
 
-      const orderData = await orderResponse.json();
-
-      // ✅ Handle specific error cases
-      if (!orderResponse.ok) {
-        // 409 Conflict - Request already processing
-        if (orderResponse.status === 409) {
-          toast.info(orderData.message || 'Your request is being processed. Please wait...', {
+        if (status === 409) {
+          toast.info(errData.message || 'Your request is being processed. Please wait...', {
             duration: 3000,
           });
           setBookingLoading(false);
           return;
         }
 
-        // 503 Service Unavailable - Gateway timeout (retryable)
-        if (orderResponse.status === 503 && orderData.data?.retryable) {
-          toast.error(orderData.message);
+        if (status === 503 && errData.data?.retryable) {
+          toast.error(errData.message);
           toast.info('Retrying automatically...', { duration: 2000 });
           setTimeout(() => {
-            initiatePayment(true); // Retry with same idempotency key
-          }, orderData.data.retryAfter || 5000);
+            initiatePayment(true);
+          }, errData.data.retryAfter || 5000);
           return;
         }
 
-        // Other errors
-        toast.error(orderData.message || 'Unable to create payment order');
+        toast.error(errData.message || 'Unable to create payment order');
         setBookingLoading(false);
         return;
       }
@@ -606,21 +585,70 @@ const BookCounselorCalendar = () => {
         }
       }
 
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PAYMENT_VERIFICATION}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('clientAccessToken')}`,
-          'Idempotency-Key': idempotencyKey, // ✅ CRITICAL
-        },
-        credentials: 'include',
-        body: JSON.stringify(paymentData),
-      });
+      let data;
+      try {
+        const response = await api.post(
+          API_ENDPOINTS.PAYMENT_VERIFICATION,
+          paymentData,
+          {
+            headers: {
+              'Idempotency-Key': idempotencyKey,
+            },
+          }
+        );
+        data = response.data;
+      } catch (err) {
+        const status = err.response?.status;
+        const errData = err.response?.data || {};
 
-      const data = await response.json();
+        // ✅ Handle 400 Bad Request (Invalid signature)
+        if (status === 400) {
+          toast.error(errData.message || 'Payment verification failed. Please try again.', {
+            duration: 6000,
+          });
+          setCurrentIdempotencyKey(null);
+          sessionStorage.removeItem('current_booking_attempt');
+          setShowBookingModal(false);
+          setBookingLoading(false);
+          return;
+        }
+
+        // ✅ 409 Conflict - Request already processing
+        if (status === 409) {
+          toast.info(errData.message || 'Verification in progress. Please wait...', {
+            duration: 3000,
+          });
+          setTimeout(() => {
+            checkBookingStatus(paymentData.slotId);
+          }, 3000);
+          return;
+        }
+
+        const errorMessage = errData.message || 'Payment verification unsuccessful';
+        if (errData.data?.refundInfo?.refunded) {
+          toast.error(errorMessage, {
+            duration: 8000,
+            description: 'Your payment has been refunded automatically.',
+          });
+        } else if (errData.data?.refundInfo?.pending) {
+          toast.error(errorMessage, {
+            duration: 8000,
+            description: 'Refund will be processed within 24-48 hours.',
+          });
+        } else {
+          toast.error(errorMessage, { duration: 6000 });
+        }
+
+        setCurrentIdempotencyKey(null);
+        sessionStorage.removeItem('current_booking_attempt');
+        fetchCounselorData();
+        setShowBookingModal(false);
+        setSelectedSlot(null);
+        return;
+      }
 
       // ✅ Success cases
-      if (response.ok && data.success) {
+      if (data && data.success) {
         const booking = data.data.booking;
 
         // Clear idempotency key - booking successful
@@ -653,61 +681,6 @@ const BookCounselorCalendar = () => {
         }, 1500);
         return;
       }
-
-      // ✅ Handle 400 Bad Request (Invalid signature)
-      if (response.status === 400) {
-        toast.error(data.message || 'Payment verification failed. Please try again.', {
-          duration: 6000,
-        });
-
-        // Clear this attempt - it's invalid
-        setCurrentIdempotencyKey(null);
-        sessionStorage.removeItem('current_booking_attempt');
-        setShowBookingModal(false);
-        setBookingLoading(false);
-        return;
-      }
-
-      // ✅ 409 Conflict - Request already processing
-      if (response.status === 409) {
-        toast.info(data.message || 'Verification in progress. Please wait...', {
-          duration: 3000,
-        });
-
-        // Check status after a delay
-        setTimeout(() => {
-          checkBookingStatus(paymentData.slotId);
-        }, 3000);
-        return;
-      }
-
-      // ✅ Payment verification failed with refund info
-      const errorMessage = data.message || 'Payment verification unsuccessful';
-
-      if (data.data?.refundInfo?.refunded) {
-        toast.error(errorMessage, {
-          duration: 8000,
-          description: 'Your payment has been refunded automatically.',
-        });
-      } else if (data.data?.refundInfo?.pending) {
-        toast.error(errorMessage, {
-          duration: 8000,
-          description: 'Refund will be processed within 24-48 hours.',
-        });
-      } else {
-        toast.error(errorMessage, { duration: 6000 });
-      }
-
-      // Clear this booking attempt
-      setCurrentIdempotencyKey(null);
-      sessionStorage.removeItem('current_booking_attempt');
-
-      // Refresh slots
-      fetchCounselorData();
-
-      // Close modal
-      setShowBookingModal(false);
-      setSelectedSlot(null);
     } catch (error) {
       console.error('Payment verification error:', error);
       toast.error(
@@ -728,15 +701,8 @@ const BookCounselorCalendar = () => {
   // ==========================================
   const checkBookingStatus = async (slotId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.PAYMENT_CHECK_RECENT}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('clientAccessToken')}`,
-        },
-        credentials: 'include',
-      });
-
-      const data = await response.json();
+      const response = await api.get(API_ENDPOINTS.PAYMENT_CHECK_RECENT);
+      const data = response.data;
 
       if (data.success && data.data.recentBooking) {
         toast.success('Your booking was successful!');
