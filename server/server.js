@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import connectDb from './database/connection.js';
+import compression from 'compression';
 import { clientRouter } from './routes/client-routes.js';
 import { counselorRouter } from './routes/counselor-routes.js';
 import { availabilityRouter } from './routes/slotManager-routes.js';
@@ -92,6 +93,7 @@ app.use(
   })
 );
 
+app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static('public'));
