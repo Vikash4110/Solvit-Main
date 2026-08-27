@@ -166,6 +166,7 @@ clientSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this.id,
+      role: 'client',
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
