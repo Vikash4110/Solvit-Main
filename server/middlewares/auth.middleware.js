@@ -33,13 +33,22 @@ export const auth = async (req, res, next) => {
       return next(new ApiError(401, 'Invalid token structure'));
     }
 
-    // Check if user is client or counselor
-    let user = await Client.findById(decodedToken._id).select('-password');
-    let userType = 'client';
+    const { _id, role } = decodedToken;
+    let user = null;
+    let userType = role || 'client';
 
-    if (!user) {
-      user = await Counselor.findById(decodedToken._id).select('-password');
-      userType = 'counselor';
+    // Direct single-query lookup based on embedded JWT role
+    if (role === 'counselor') {
+      user = await Counselor.findById(_id).select('-password');
+    } else if (role === 'client') {
+      user = await Client.findById(_id).select('-password');
+    } else {
+      // Backward compatibility fallback for legacy tokens without role claim
+      user = await Client.findById(_id).select('-password');
+      if (!user) {
+        user = await Counselor.findById(_id).select('-password');
+        userType = 'counselor';
+      }
     }
 
     if (!user) {
@@ -49,9 +58,9 @@ export const auth = async (req, res, next) => {
     // Add user and userType to request
     req.user = user;
     req.userType = userType;
+    req.verifiedUser = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
     return next(new ApiError(401, 'Authentication failed'));
   }
 };

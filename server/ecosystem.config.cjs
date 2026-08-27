@@ -1,52 +1,58 @@
 /**
- * PM2 ECOSYSTEM CONFIGURATION
- * Manages both Express server (Cluster) and Cron service (Fork)
+ * PM2 ECOSYSTEM CONFIGURATION - PRODUCTION DEPLOYMENT
+ * Enables Multi-Core CPU Clustering for Express and Standalone Worker for Cron
  */
 
 module.exports = {
   apps: [
     // ════════════════════════════════════════════════════════════════
-    // Main Express Server (Multi-Core Cluster)
+    // 1. Main Express HTTP API (Cluster Mode - Multi-Core)
     // ════════════════════════════════════════════════════════════════
     {
       name: 'solvit-server',
-      script: '../server.js',
-      instances: 'max',
-      exec_mode: 'cluster',
+      script: './server.js',
+      instances: 'max', // Automatically spawns 1 worker per CPU core
+      exec_mode: 'cluster', // Enables Node.js cluster load balancing
       watch: false,
-      env: {
-        NODE_ENV: 'production',
-      },
-      error_file: '../logs/server-error.log',
-      out_file: '../logs/server-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      time: true,
       max_memory_restart: '500M',
       autorestart: true,
       restart_delay: 3000,
+      env: {
+        NODE_ENV: 'development',
+      },
+      env_production: {
+        NODE_ENV: 'production',
+      },
+      error_file: './logs/server-error.log',
+      out_file: './logs/server-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      time: true,
     },
 
     // ════════════════════════════════════════════════════════════════
-    // Cron Service (Single-Process Fork)
+    // 2. Background Scheduled Cron Service (Fork Mode - Single Worker)
     // ════════════════════════════════════════════════════════════════
     {
       name: 'solvit-cron',
-      script: './cronService.js',
-      instances: 1,
+      script: './cron/cronService.js',
+      instances: 1, // Must be 1 to prevent duplicate job executions
       exec_mode: 'fork',
       watch: false,
-      env: {
-        NODE_ENV: 'production',
-      },
-      error_file: '../logs/cron-error.log',
-      out_file: '../logs/cron-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      time: true,
       max_memory_restart: '300M',
       autorestart: true,
       restart_delay: 5000,
-      max_restarts: 10,
       min_uptime: '10s',
+      max_restarts: 10,
+      env: {
+        NODE_ENV: 'development',
+      },
+      env_production: {
+        NODE_ENV: 'production',
+      },
+      error_file: './logs/cron-error.log',
+      out_file: './logs/cron-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      time: true,
     },
   ],
 };

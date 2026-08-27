@@ -166,6 +166,7 @@ clientSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this.id,
+      role: 'client',
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -173,5 +174,11 @@ clientSchema.methods.generateAccessToken = function () {
     }
   );
 };
+
+// ==========================================
+// INDEXES FOR HIGH-CONCURRENCY PERFORMANCE
+// ==========================================
+clientSchema.index({ isBlocked: 1, createdAt: -1 });
+clientSchema.index({ createdAt: -1 });
 
 export const Client = mongoose.model('Client', clientSchema);

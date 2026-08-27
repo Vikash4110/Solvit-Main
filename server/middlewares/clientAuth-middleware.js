@@ -19,7 +19,6 @@ export const verifyJWTClient = wrapper(async (req, res, next) => {
     if (!verifiedClient) {
       return next(new ApiError(401, 'Invalid access token'));
     }
-    console.log('yoyoy');
 
     req.verifiedClientId = verifiedClient;
 
