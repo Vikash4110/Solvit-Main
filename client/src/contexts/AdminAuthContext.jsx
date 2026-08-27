@@ -1,5 +1,4 @@
-// contexts/AdminAuthContext.jsx
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { API_ENDPOINTS } from '../config/api';
 import { toast } from 'sonner';
 import api from '../lib/axios';
@@ -428,31 +427,34 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
-  const value = {
-    admin,
-    adminLoading,
-    adminLogin,
-    adminLogout,
-    updateApplicationStatus,
-    getAllCounselorApplications,
-    getCounselorApplication,
-    getAllDisputes,
-    getDisputeDetail,
-    updateDisputeStatus,
-    addDisputeNote,
-    getAllClients,
-    getClientDetails,
-    toggleClientBlock,
-    getAllCounselors,
-    getCounselorDetails,
-    toggleCounselorBlock,
-    getAllPayments,
-    getPaymentDetails,
-    getPaymentAnalytics,
-    getAllBookings,
-    getBookingDetails,
-    getBookingAnalytics,
-  };
+  const value = useMemo(
+    () => ({
+      admin,
+      adminLoading,
+      adminLogin,
+      adminLogout,
+      updateApplicationStatus,
+      getAllCounselorApplications,
+      getCounselorApplication,
+      getAllDisputes,
+      getDisputeDetail,
+      updateDisputeStatus,
+      addDisputeNote,
+      getAllClients,
+      getClientDetails,
+      toggleClientBlock,
+      getAllCounselors,
+      getCounselorDetails,
+      toggleCounselorBlock,
+      getAllPayments,
+      getPaymentDetails,
+      getPaymentAnalytics,
+      getAllBookings,
+      getBookingDetails,
+      getBookingAnalytics,
+    }),
+    [admin, adminLoading]
+  );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
 };

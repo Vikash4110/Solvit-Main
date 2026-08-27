@@ -10,6 +10,7 @@ import CounselorProtectedRoute from './components/counselor/CounselorProtectedRo
 import AdminProtectedRoute from './pages/admin/AdminProtectedRoute';
 import AdminLayout from './components/admin/AdminLayout';
 import PageLoader from './components/common/PageLoader';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 import { ClientAuthProvider } from './contexts/ClientAuthContext';
 import { CounselorAuthProvider } from './contexts/CounselorAuthContext';
@@ -66,97 +67,99 @@ function App() {
           <div className="min-h-screen bg-gray-100">
             <Navbar />
             <ScrollToTop />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* PUBLIC ROUTES */}
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<ContactUs />} />
+            <ErrorBoundary>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  {/* PUBLIC ROUTES */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<ContactUs />} />
 
-                {/* BLOG ROUTES */}
-                <Route path="/blogs" element={<Blogs />} />
-                <Route path="/blogs/:slug" element={<BlogPost />} />
+                  {/* BLOG ROUTES */}
+                  <Route path="/blogs" element={<Blogs />} />
+                  <Route path="/blogs/:slug" element={<BlogPost />} />
 
-                {/* CLIENT AUTHENTICATION ROUTES */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/forgot-password" element={<ClientForgotPassword />} />
-                <Route path="/reset-password" element={<ClientResetPassword />} />
+                  {/* CLIENT AUTHENTICATION ROUTES */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ClientForgotPassword />} />
+                  <Route path="/reset-password" element={<ClientResetPassword />} />
 
-                {/* VIDEO CALL ROUTES */}
-                <Route path="/meeting/:bookingId/:meetingId" element={<VideoCallInterface />} />
+                  {/* VIDEO CALL ROUTES */}
+                  <Route path="/meeting/:bookingId/:meetingId" element={<VideoCallInterface />} />
 
-                {/* CLIENT PROTECTED ROUTES */}
-                <Route
-                  path="/client/dashboard/*"
-                  element={
-                    <ProtectedRoute>
-                      <ClientDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/client/dashboard/bookings/raiseIssue/:bookingId"
-                  element={
-                    <ProtectedRoute>
-                      <ClientDashboardDisputeForm />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/browse-counselors" element={<BrowseCounselor />} />
-                <Route path="/book-counselor/:counselorId" element={<BookCounselorCalendar />} />
+                  {/* CLIENT PROTECTED ROUTES */}
+                  <Route
+                    path="/client/dashboard/*"
+                    element={
+                      <ProtectedRoute>
+                        <ClientDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/client/dashboard/bookings/raiseIssue/:bookingId"
+                    element={
+                      <ProtectedRoute>
+                        <ClientDashboardDisputeForm />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="/browse-counselors" element={<BrowseCounselor />} />
+                  <Route path="/book-counselor/:counselorId" element={<BookCounselorCalendar />} />
 
-                {/* COUNSELOR AUTHENTICATION ROUTES */}
-                <Route path="/counselor/login" element={<CounselorLogin />} />
-                <Route path="/counselor/register" element={<CounselorRegister />} />
-                <Route path="/counselor/forgot-password" element={<CounselorForgotPassword />} />
-                <Route path="/counselor/reset-password" element={<CounselorResetPassword />} />
+                  {/* COUNSELOR AUTHENTICATION ROUTES */}
+                  <Route path="/counselor/login" element={<CounselorLogin />} />
+                  <Route path="/counselor/register" element={<CounselorRegister />} />
+                  <Route path="/counselor/forgot-password" element={<CounselorForgotPassword />} />
+                  <Route path="/counselor/reset-password" element={<CounselorResetPassword />} />
 
-                {/* COUNSELOR PROTECTED ROUTES */}
-                <Route
-                  path="/counselor/dashboard/*"
-                  element={
-                    <CounselorProtectedRoute>
-                      <CounselorDashboard />
-                    </CounselorProtectedRoute>
-                  }
-                />
-                <Route path="/counselor/application" element={<CounselorApplication />} />
-                <Route path="/counselor/application-status" element={<ApplicationStatus />} />
+                  {/* COUNSELOR PROTECTED ROUTES */}
+                  <Route
+                    path="/counselor/dashboard/*"
+                    element={
+                      <CounselorProtectedRoute>
+                        <CounselorDashboard />
+                      </CounselorProtectedRoute>
+                    }
+                  />
+                  <Route path="/counselor/application" element={<CounselorApplication />} />
+                  <Route path="/counselor/application-status" element={<ApplicationStatus />} />
 
-                {/* SERVICE ROUTES */}
-                <Route path="/services/:serviceId" element={<ServicePage />} />
+                  {/* SERVICE ROUTES */}
+                  <Route path="/services/:serviceId" element={<ServicePage />} />
 
-                {/* LEGAL ROUTES */}
-                <Route path="/term-condition" element={<TermCondition />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  {/* LEGAL ROUTES */}
+                  <Route path="/term-condition" element={<TermCondition />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-                {/* ADMIN ROUTES */}
-                <Route path="/admin/login" element={<AdminLogin />} />
-                {/* Admin Routes (With sidebar) */}
-                <Route
-                  path="/admin"
-                  element={
-                    <AdminProtectedRoute>
-                      <AdminLayout />
-                    </AdminProtectedRoute>
-                  }
-                >
-                  <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                  <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="disputes" element={<AdminDisputeManagement />} />
-                  <Route path="applications" element={<ApplicationsPage />} />
-                  <Route path="application/:counselorId" element={<ApplicationDetail />} />
-                  <Route path="clients" element={<AdminClientsManagement />} />
-                  <Route path="counselors" element={<AdminCounselorsManagement />} />
-                  <Route path="payments" element={<AdminPaymentsManagement />} />
-                  <Route path="bookings" element={<AdminBookingsManagement />} />
-                </Route>
+                  {/* ADMIN ROUTES */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  {/* Admin Routes (With sidebar) */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminLayout />
+                      </AdminProtectedRoute>
+                    }
+                  >
+                    <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="disputes" element={<AdminDisputeManagement />} />
+                    <Route path="applications" element={<ApplicationsPage />} />
+                    <Route path="application/:counselorId" element={<ApplicationDetail />} />
+                    <Route path="clients" element={<AdminClientsManagement />} />
+                    <Route path="counselors" element={<AdminCounselorsManagement />} />
+                    <Route path="payments" element={<AdminPaymentsManagement />} />
+                    <Route path="bookings" element={<AdminBookingsManagement />} />
+                  </Route>
 
-                {/* 404 FALLBACK */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
+                  {/* 404 FALLBACK */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
 
             <Toaster position="top-right" closeButton richColors expand={false} duration={4000} />
           </div>
