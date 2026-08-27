@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { API_ENDPOINTS } from '../config/api';
 import { toast } from 'sonner';
 import api from '../lib/axios';
@@ -177,18 +177,21 @@ export const CounselorAuthProvider = ({ children }) => {
     }
   };
 
-  const value = {
-    counselor,
-    counselorLoading,
-    counselorLogin,
-    counselorRegister,
-    sendOtp,
-    verifyOtp,
-    forgotPassword,
-    resetPassword,
-    submitApplication,
-    counselorLogout,
-  };
+  const value = useMemo(
+    () => ({
+      counselor,
+      counselorLoading,
+      counselorLogin,
+      counselorRegister,
+      sendOtp,
+      verifyOtp,
+      forgotPassword,
+      resetPassword,
+      submitApplication,
+      counselorLogout,
+    }),
+    [counselor, counselorLoading]
+  );
 
   return <CounselorAuthContext.Provider value={value}>{children}</CounselorAuthContext.Provider>;
 };

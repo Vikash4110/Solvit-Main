@@ -1,5 +1,4 @@
-// ClientAuthContext.js
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import api from '../lib/axios';
 import { API_ENDPOINTS } from '../config/api';
@@ -153,17 +152,20 @@ export const ClientAuthProvider = ({ children }) => {
     }
   };
 
-  const value = {
-    client,
-    clientLoading,
-    clientLogin,
-    clientRegister,
-    sendOtp,
-    verifyOtp,
-    forgotPassword,
-    resetPassword,
-    clientLogout,
-  };
+  const value = useMemo(
+    () => ({
+      client,
+      clientLoading,
+      clientLogin,
+      clientRegister,
+      sendOtp,
+      verifyOtp,
+      forgotPassword,
+      resetPassword,
+      clientLogout,
+    }),
+    [client, clientLoading]
+  );
 
   return <ClientAuthContext.Provider value={value}>{children}</ClientAuthContext.Provider>;
 };
