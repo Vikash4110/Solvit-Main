@@ -161,4 +161,11 @@ counselorSchema.methods.generateAccessToken = function () {
   );
 };
 
+// ==========================================
+// INDEXES FOR HIGH-CONCURRENCY PERFORMANCE
+// ==========================================
+counselorSchema.index({ 'application.applicationStatus': 1, isBlocked: 1 });
+counselorSchema.index({ specialization: 1, isBlocked: 1 });
+counselorSchema.index({ isBlocked: 1, createdAt: -1 });
+
 export const Counselor = mongoose.model('Counselor', counselorSchema);

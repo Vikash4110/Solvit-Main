@@ -201,6 +201,9 @@ paymentSchema.index({ createdAt: -1 });
 paymentSchema.index({ status: 1, createdAt: -1 });
 paymentSchema.index({ method: 1 });
 paymentSchema.index({ clientId: 1, createdAt: -1 });
+paymentSchema.index({ clientId: 1, bookingStatus: 1, createdAt: -1 });
+paymentSchema.index({ slotId: 1 });
+paymentSchema.index({ bookingId: 1 });
 
 // ==========================================
 // VIRTUAL FOR PLATFORM FEE CALCULATION

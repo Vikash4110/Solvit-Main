@@ -174,4 +174,10 @@ clientSchema.methods.generateAccessToken = function () {
   );
 };
 
+// ==========================================
+// INDEXES FOR HIGH-CONCURRENCY PERFORMANCE
+// ==========================================
+clientSchema.index({ isBlocked: 1, createdAt: -1 });
+clientSchema.index({ createdAt: -1 });
+
 export const Client = mongoose.model('Client', clientSchema);
