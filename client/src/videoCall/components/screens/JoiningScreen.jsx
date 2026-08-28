@@ -139,7 +139,11 @@ export function JoiningScreen({
 
   useEffect(() => {
     checkMediaPermission();
-    return () => {};
+    return () => {
+      if (audioAnalyserIntervalRef.current) {
+        clearInterval(audioAnalyserIntervalRef.current);
+      }
+    };
   }, []);
 
   const _toggleWebcam = () => {
