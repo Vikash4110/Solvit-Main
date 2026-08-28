@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -47,6 +47,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
+import useSmartRefresh from '../../hooks/useSmartRefresh';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -235,54 +236,48 @@ const BookCounselorCalendar = () => {
   }, []);
 
   // ==========================================
-  // FETCH COUNSELOR DATA WITH AUTO-REFRESH
-  // ==========================================
-  useEffect(() => {
-    let intervalId;
-    const alignAndStart = () => {
-      fetchCounselorData();
-      const temp = dayjs().tz(TIMEZONE).second();
-      const delay = (60 - temp) * 1000;
-      setTimeout(() => {
-        fetchCounselorData(true); // ✅ Skip loading on auto-refresh
-        intervalId = setInterval(() => fetchCounselorData(true), 60000);
-      }, delay);
-    };
-    alignAndStart();
-    return () => clearInterval(intervalId);
-  }, [counselorId]);
-
-  // ==========================================
   // ✅ FETCH COUNSELOR DATA (RACE CONDITION FIX)
   // ==========================================
-  const fetchCounselorData = async (skipLoading = false) => {
-    try {
-      if (!skipLoading) {
-        setLoading(true);
-      }
+  const fetchCounselorData = useCallback(
+    async (skipLoading = false) => {
+      try {
+        if (!skipLoading) {
+          setLoading(true);
+        }
 
-      const response = await api.get(
-        `${API_ENDPOINTS.BOOKING_COUNSELOR_SLOTS}/${counselorId}/slots`
-      );
+        const response = await api.get(
+          `${API_ENDPOINTS.BOOKING_COUNSELOR_SLOTS}/${counselorId}/slots`
+        );
 
-      const data = response.data;
-      setCounselor(data.counselor);
+        const data = response.data;
+        setCounselor(data.counselor);
 
-      // ✅ Don't update slots if payment is in progress
-      if (!bookingLoading && !isRazorpayOpen) {
-        setSlots(data.slots || []);
+        // ✅ Don't update slots if payment is in progress
+        if (!bookingLoading && !isRazorpayOpen) {
+          setSlots(data.slots || []);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+        if (!skipLoading) {
+          toast.error('Unable to retrieve counselor information');
+        }
+      } finally {
+        if (!skipLoading) {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error('Fetch error:', error);
-      if (!skipLoading) {
-        toast.error('Unable to retrieve counselor information');
-      }
-    } finally {
-      if (!skipLoading) {
-        setLoading(false);
-      }
-    }
-  };
+    },
+    [counselorId, bookingLoading, isRazorpayOpen]
+  );
+
+  // ==========================================
+  // SMART AUTO-REFRESH (FOCUS & TAB AWARE)
+  // ==========================================
+  useSmartRefresh(fetchCounselorData, {
+    intervalMs: 120000, // 2-min active foreground refresh
+    staleTimeMs: 30000,  // Refetch when returning to tab after 30s
+    deps: [counselorId],
+  });
 
   // ==========================================
   // HELPER FUNCTIONS
