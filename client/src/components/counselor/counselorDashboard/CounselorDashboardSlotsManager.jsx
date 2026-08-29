@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar as CalendarIcon,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../../config/api';
 import api from '@/lib/axios';
+import useSmartRefresh from '@/hooks/useSmartRefresh';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -115,33 +116,28 @@ const CounselorDashboardSlotsManager = () => {
     price: '',
   });
 
-  useEffect(() => {
-    const alignAndStart = () => {
-      fetchSlots();
-      const temp = dayjs().tz(TIMEZONE).second();
-      const delay = (60 - temp) * 1000;
-
-      setTimeout(() => {
-        fetchSlots();
-        const intervalId = setInterval(fetchSlots, 60000);
-        return () => clearInterval(intervalId);
-      }, delay);
-    };
-
-    alignAndStart();
-  }, []);
-
-  const fetchSlots = async () => {
+  const fetchSlots = useCallback(async (isAutoRefresh = false) => {
     try {
-      setLoading(true);
+      if (!isAutoRefresh) {
+        setLoading(true);
+      }
       const response = await api.get(API_ENDPOINTS.SLOT_MANAGEMENT_GET_ALL);
       setSlots(response.data.slots || []);
     } catch (error) {
-      toast.error('Failed to fetch slots');
+      if (!isAutoRefresh) {
+        toast.error('Failed to fetch slots');
+      }
     } finally {
-      setLoading(false);
+      if (!isAutoRefresh) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
+
+  useSmartRefresh(fetchSlots, {
+    intervalMs: 120000,
+    staleTimeMs: 30000,
+  });
 
   const showConfirmDialog = (title, description, action, variant = 'default') => {
     setConfirmDialog({

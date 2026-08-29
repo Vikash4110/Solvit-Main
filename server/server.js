@@ -198,10 +198,18 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Error handling
+import mongoose from 'mongoose';
+
+// Brevo error handler middleware
+app.use(errorHandler);
+
+// Generic Error handling catch-all
 app.use((err, req, res, next) => {
   logger.error('Unhandled error:', err);
-  res.status(err.statusCode || 500).json({
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.statusCode || err.status || 500).json({
     success: false,
     message: err.message || 'Internal server error',
   });
@@ -209,31 +217,25 @@ app.use((err, req, res, next) => {
 
 const Port = process.env.PORT || 8000;
 
-//Brevo error handler middleware
-app.use(errorHandler);
+// ============ Database Connection & Server Start ============
+let server;
 
-// ============ MODIFIED: Database Connection & Server Start ============
 connectDb()
   .then(async () => {
-    app.listen(Port, async () => {
+    server = app.listen(Port, async () => {
       console.log(`Server is running on port ${Port}`);
       logger.info(`Bull Board Dashboard: http://localhost:${Port}/admin/queues`);
 
       try {
-        //Brevo initialization and verification
         const brevoInitialized = initializeBrevo();
-
         if (brevoInitialized) {
           console.log('Server starting with email service');
         } else {
           console.warn('⚠️  Server starting without email service');
         }
-        // await initializeScheduledJobs();
-
         logger.info('✓ BullMQ scheduled jobs initialized successfully');
-        logger.info('⚠️  Remember to start the worker process: npm run worker');
       } catch (error) {
-        logger.error('Failed to initialize BullMQ jobs:', error);
+        logger.error('Failed to initialize background services:', error);
       }
     });
   })
@@ -241,5 +243,28 @@ connectDb()
     console.error('Failed to connect to database:', error);
     process.exit(1);
   });
+
+// Graceful shutdown handling for zero-downtime reloads and process termination
+const handleGracefulShutdown = async (signal) => {
+  logger.info(`${signal} signal received: closing HTTP server and database connections.`);
+  if (server) {
+    server.close(async () => {
+      logger.info('HTTP server closed.');
+      try {
+        await mongoose.connection.close(false);
+        logger.info('MongoDB connection closed cleanly.');
+        process.exit(0);
+      } catch (err) {
+        logger.error('Error closing MongoDB connection:', err);
+        process.exit(1);
+      }
+    });
+  } else {
+    process.exit(0);
+  }
+};
+
+process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
 
 export default app;

@@ -6,6 +6,26 @@ import { MeetingContainer } from './meeting/MeetingContainer';
 import { LeaveScreen } from './components/screens/LeaveScreen';
 import { JoiningScreen } from './components/screens/JoiningScreen';
 import { toast } from 'react-toastify';
+
+// Helper to safely terminate media tracks and streams
+const stopMediaStreamOrTrack = (streamOrTrack) => {
+  if (!streamOrTrack) return;
+  try {
+    if (typeof streamOrTrack.stop === 'function') {
+      streamOrTrack.stop();
+    }
+    if (typeof streamOrTrack.getTracks === 'function') {
+      streamOrTrack.getTracks().forEach((track) => {
+        if (track && typeof track.stop === 'function') {
+          track.stop();
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Error stopping media track:', err);
+  }
+};
+
 function VideoCallInterface() {
   const navigate = useNavigate();
   const [token, setToken] = useState('');
@@ -25,6 +45,23 @@ function VideoCallInterface() {
   const [isMeetingLeft, setIsMeetingLeft] = useState(false);
 
   const isMobile = window.matchMedia('only screen and (max-width: 768px)').matches;
+
+  // Release camera and mic hardware handles on unmount, refresh, or tab close
+  useEffect(() => {
+    const handleTeardown = () => {
+      stopMediaStreamOrTrack(customAudioStream);
+      stopMediaStreamOrTrack(customVideoStream);
+    };
+
+    window.addEventListener('beforeunload', handleTeardown);
+    window.addEventListener('pagehide', handleTeardown);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleTeardown);
+      window.removeEventListener('pagehide', handleTeardown);
+      handleTeardown();
+    };
+  }, [customAudioStream, customVideoStream]);
 
   useEffect(() => {
     if (isMobile) {
@@ -121,6 +158,10 @@ function VideoCallInterface() {
           >
             <MeetingContainer
               onMeetingLeave={() => {
+                stopMediaStreamOrTrack(customAudioStream);
+                stopMediaStreamOrTrack(customVideoStream);
+                setCustomAudioStream(null);
+                setCustomVideoStream(null);
                 setToken('');
                 setMeetingId('');
                 setParticipantName('');

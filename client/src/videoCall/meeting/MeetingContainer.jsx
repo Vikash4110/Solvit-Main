@@ -241,6 +241,35 @@ export function MeetingContainer({ onMeetingLeave, setIsMeetingLeft }) {
     mMeetingRef.current = mMeeting;
   }, [mMeeting]);
 
+  // Deterministic teardown of local hardware tracks and meeting session on unmount
+  useEffect(() => {
+    return () => {
+      const currentMeeting = mMeetingRef.current;
+      if (currentMeeting) {
+        try {
+          const localPart = currentMeeting.localParticipant;
+          if (localPart?.webcamStream?.track && typeof localPart.webcamStream.track.stop === 'function') {
+            localPart.webcamStream.track.stop();
+          }
+          if (localPart?.micStream?.track && typeof localPart.micStream.track.stop === 'function') {
+            localPart.micStream.track.stop();
+          }
+          if (typeof currentMeeting.disableWebcam === 'function') {
+            currentMeeting.disableWebcam();
+          }
+          if (typeof currentMeeting.disableMic === 'function') {
+            currentMeeting.disableMic();
+          }
+          if (typeof currentMeeting.leave === 'function') {
+            currentMeeting.leave();
+          }
+        } catch (err) {
+          console.error('Error during meeting container teardown:', err);
+        }
+      }
+    };
+  }, []);
+
   // Raised hand participants hook
   const { participantRaisedHand } = useRaisedHandParticipants();
 

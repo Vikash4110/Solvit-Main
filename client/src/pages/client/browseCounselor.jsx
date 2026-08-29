@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import HeroImage from '../../assets/browseCounselors/heroImage.png';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
+import useSmartRefresh from '../../hooks/useSmartRefresh';
 import Footer from '../../components/Home/Footer.jsx';
 
 // Shadcn UI imports
@@ -329,22 +330,25 @@ const BrowseCounselor = () => {
 
   const LANGUAGES = useMemo(() => ['English', 'Hindi'], []);
 
-  const fetchCounselors = useCallback(async () => {
+  const fetchCounselors = useCallback(async (isAutoRefresh = false) => {
     try {
+      if (!isAutoRefresh) {
+        setLoading(true);
+      }
       const response = await api.get(API_ENDPOINTS.BOOKING_AVAILABLE_COUNSELORS);
       setCounselors(response.data.counselors || []);
     } catch (e) {
-      toast.error('Failed to load counselors. Please try again later.');
+      if (!isAutoRefresh) {
+        toast.error('Failed to load counselors. Please try again later.');
+      }
     } finally {
-      setLoading(false);
+      if (!isAutoRefresh) {
+        setLoading(false);
+      }
     }
   }, []);
 
-  useEffect(() => {
-    fetchCounselors();
-    const intervalId = setInterval(fetchCounselors, 60000);
-    return () => clearInterval(intervalId);
-  }, [fetchCounselors]);
+  useSmartRefresh(fetchCounselors, { staleTimeMs: 45000 });
 
   const bookCounselor = useCallback(
     (counselorId) => {
