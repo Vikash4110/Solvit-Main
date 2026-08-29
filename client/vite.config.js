@@ -48,30 +48,22 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('@mui') || id.includes('@emotion')) {
               return 'vendor-mui';
             }
-            if (id.includes('@radix-ui') || id.includes('cmdk') || id.includes('vaul')) {
-              return 'vendor-radix';
-            }
-            if (id.includes('framer-motion') || id.includes('lottie-react') || id.includes('lottie-web')) {
-              return 'vendor-animation';
-            }
             if (id.includes('recharts') || id.includes('d3-')) {
               return 'vendor-charts';
             }
+            // Keep react and its core ecosystem together to prevent circular dependency execution order issues
             if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('scheduler') ||
+              id.includes('framer-motion') ||
+              id.includes('lottie-') ||
+              id.includes('@radix-ui') ||
+              id.includes('cmdk') ||
+              id.includes('vaul') ||
               id.includes('lucide-react') ||
-              id.includes('react-icons') ||
-              id.includes('@fortawesome') ||
-              id.includes('@heroicons')
+              id.includes('@remix-run')
             ) {
-              return 'vendor-icons';
-            }
-            if (id.includes('date-fns') || id.includes('dayjs') || id.includes('react-day-picker')) {
-              return 'vendor-dates';
-            }
-            if (id.includes('react-router-dom') || id.includes('react-router') || id.includes('@remix-run')) {
-              return 'vendor-router';
-            }
-            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
               return 'vendor-react';
             }
           }
