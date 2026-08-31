@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { ApiError } from '../utils/ApiError.js';
 import { logger } from '../utils/logger.js';
 import dotenv from 'dotenv';
-dotenv.config({ path: '../.env' });
+dotenv.config();
 
 class VideoSDKService {
   constructor() {
