@@ -160,22 +160,8 @@ const CounselorDashboardPersonalInfo = () => {
     setIsFetching(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.COUNSELOR_PROFILE_GET}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch counselor data');
-      }
-
-      const result = await response.json();
-      console.log(result);
-      const data = result.data || result;
+      const response = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_GET);
+      const data = response.data?.data || response.data;
 
       const transformedData = {
         fullName: data.fullName || '',
