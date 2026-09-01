@@ -125,7 +125,9 @@ const RecurringAvailabilityComponent = () => {
         setWeeklyAvailability(updatedAvailability);
       }
     } catch (error) {
-      toast.error('Failed to load availability data');
+      if (error.response?.status !== 404) {
+        toast.error('Failed to load availability data');
+      }
     } finally {
       setInitialLoading(false);
     }

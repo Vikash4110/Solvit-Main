@@ -124,7 +124,9 @@ const CounselorDashboardSlotsManager = () => {
       const response = await api.get(API_ENDPOINTS.SLOT_MANAGEMENT_GET_ALL);
       setSlots(response.data.slots || []);
     } catch (error) {
-      if (!isAutoRefresh) {
+      if (error.response?.status === 404) {
+        setSlots([]);
+      } else if (!isAutoRefresh) {
         toast.error('Failed to fetch slots');
       }
     } finally {
