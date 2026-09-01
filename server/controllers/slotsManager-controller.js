@@ -180,17 +180,9 @@ const getMyRecurringAvailability = wrapper(async (req, res) => {
   const counselorId = req.verifiedCounselorId._id;
   const availability = await RecurringAvailability.find({ counselorId });
 
-  // FIX #6: find() returns [], never null
-  if (!availability || availability.length === 0) {
-    return res.status(404).json({
-      status: 404,
-      message: 'Availability has not been set',
-    });
-  }
-
   res.status(200).json({
     status: 200,
-    availability,
+    availability: availability || [],
   });
 });
 
@@ -313,18 +305,10 @@ const getAllgeneratedSlots = wrapper(async (req, res) => {
   const counselorId = req.verifiedCounselorId._id;
   const slots = await GeneratedSlot.find({ counselorId });
 
-  // FIX #6: find() returns [], never null
-  if (!slots || slots.length === 0) {
-    return res.status(404).json({
-      status: 404,
-      message: 'No slots found',
-    });
-  }
-
   return res.status(200).json({
     status: 200,
     message: 'Slots fetched successfully',
-    slots,
+    slots: slots || [],
   });
 });
 
