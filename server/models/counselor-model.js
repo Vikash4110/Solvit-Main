@@ -91,12 +91,10 @@ const counselorSchema = new mongoose.Schema(
         type: String,
         maxlength: [1000, 'Professional Summary must not exceed 1000 characters'],
       },
-      languages: [
-        {
-          type: [String],
-          enum: ['English', 'Hindi'],
-        },
-      ],
+      languages: {
+        type: [String],
+        default: ['English', 'Hindi'],
+      },
       license: {
         licenseNo: { type: String },
         issuingAuthority: { type: String },

@@ -39,6 +39,19 @@ export const getCounselorProfile = wrapper(async (req, res) => {
     throw new ApiError(404, 'Counselor profile not found');
   }
 
+  // Normalize languages array if nested or containing comma-separated strings
+  if (counselor.application && counselor.application.languages) {
+    counselor.application.languages = Array.from(
+      new Set(
+        [counselor.application.languages]
+          .flat(Infinity)
+          .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+          .map((s) => s.trim())
+          .filter(Boolean)
+      )
+    );
+  }
+
   logger.info(`Profile retrieved successfully for counselor: ${counselorId}`);
   return res
     .status(200)
@@ -102,35 +115,44 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
   if (phone?.trim()) updateData.phone = phone.trim();
   if (gender) updateData.gender = gender;
   if (specialization) updateData.specialization = specialization;
-  if (experienceYears !== undefined) updateData.experienceYears = parseInt(experienceYears);
+  if (experienceYears !== undefined) updateData.experienceYears = parseInt(experienceYears, 10);
 
   // Application nested fields
-  if (languages || professionalSummary) {
-    // Application nested fields
-    if (professionalSummary !== undefined) {
-      updateData['application.professionalSummary'] = professionalSummary;
-    }
-
-    if (Array.isArray(languages)) {
-      updateData['application.languages'] = languages;
-    }
+  if (professionalSummary !== undefined) {
+    updateData['application.professionalSummary'] = professionalSummary;
   }
-  console.log(updateData);
+
+  if (languages !== undefined) {
+    const rawLangs = Array.isArray(languages) ? languages : [languages];
+    const cleanLanguages = Array.from(
+      new Set(
+        rawLangs
+          .flat(Infinity)
+          .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+          .map((s) => s.trim())
+          .filter(Boolean)
+      )
+    );
+    updateData['application.languages'] = cleanLanguages;
+  }
 
   // Update counselor profile
   const counselor = await Counselor.findById(counselorId).select('-password -refreshToken -__v');
-  console.log(counselor);
   if (!counselor) {
     throw new ApiError(404, 'Counselor not found');
   }
 
-  counselor.username = updateData.username;
-  counselor.gender = updateData.gender;
-  counselor.phone = updateData.phone;
-  counselor.specialization = updateData.specialization;
-  counselor.experienceYears = updateData.experienceYears;
-  counselor.application.professionalSummary = updateData['application.professionalSummary'];
-  counselor.application.languages = updateData['application.languages'];
+  if (updateData.username !== undefined) counselor.username = updateData.username;
+  if (updateData.gender !== undefined) counselor.gender = updateData.gender;
+  if (updateData.phone !== undefined) counselor.phone = updateData.phone;
+  if (updateData.specialization !== undefined) counselor.specialization = updateData.specialization;
+  if (updateData.experienceYears !== undefined) counselor.experienceYears = updateData.experienceYears;
+  if (updateData['application.professionalSummary'] !== undefined) {
+    counselor.application.professionalSummary = updateData['application.professionalSummary'];
+  }
+  if (updateData['application.languages'] !== undefined) {
+    counselor.application.languages = updateData['application.languages'];
+  }
   await counselor.save();
   logger.info(`Profile updated successfully for counselor: ${counselorId}`);
   return res.status(200).json(new ApiResponse(200, counselor, 'Profile updated successfully'));

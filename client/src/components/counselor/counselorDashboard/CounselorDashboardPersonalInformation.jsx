@@ -116,6 +116,41 @@ const LANGUAGES = [
   'Punjabi',
 ];
 
+// Helper to normalize and deduplicate language arrays/strings
+const normalizeLanguages = (raw) => {
+  if (!raw) return [];
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return normalizeLanguages(parsed);
+    } catch {
+      return raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+  if (!Array.isArray(raw)) return [];
+
+  const result = [];
+  const flatten = (arr) => {
+    arr.forEach((item) => {
+      if (Array.isArray(item)) {
+        flatten(item);
+      } else if (typeof item === 'string') {
+        item.split(',').forEach((s) => {
+          const trimmed = s.trim();
+          if (trimmed && !result.includes(trimmed)) {
+            result.push(trimmed);
+          }
+        });
+      }
+    });
+  };
+  flatten(raw);
+  return result;
+};
+
 // Experience levels
 const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Experienced', 'Specialist'];
 
@@ -185,7 +220,6 @@ const CounselorDashboardPersonalInfo = () => {
         phone: data.phone || '',
         gender: data.gender || '',
         profilePicture: data.profilePicture || '',
-        // specialization: data.specialization || '',
         specialization: Array.isArray(data.specialization)
           ? data.specialization
           : data.specialization
@@ -208,7 +242,7 @@ const CounselorDashboardPersonalInfo = () => {
             },
           },
           professionalSummary: data.application?.professionalSummary || '',
-          languages: data.application?.languages || [],
+          languages: normalizeLanguages(data.application?.languages),
           license: {
             licenseNo: data.application?.license?.licenseNo || '',
             issuingAuthority: data.application?.license?.issuingAuthority || '',
@@ -261,9 +295,7 @@ const CounselorDashboardPersonalInfo = () => {
             : [],
         application: {
           ...counselorData.application,
-          languages: Array.isArray(counselorData.application?.languages)
-            ? [...counselorData.application.languages]
-            : [],
+          languages: normalizeLanguages(counselorData.application?.languages),
           professionalSummary: counselorData.application?.professionalSummary || '',
         },
       });
@@ -289,7 +321,7 @@ const CounselorDashboardPersonalInfo = () => {
   };
 
   const handleLanguageToggle = (lang) => {
-    const currentLangs = formData?.application?.languages || [];
+    const currentLangs = normalizeLanguages(formData?.application?.languages);
     const newLangs = currentLangs.includes(lang)
       ? currentLangs.filter((l) => l !== lang)
       : [...currentLangs, lang];
@@ -377,7 +409,7 @@ const CounselorDashboardPersonalInfo = () => {
         specialization: formData.specialization,
         experienceYears: parseInt(formData.experienceYears, 10) || 0,
         professionalSummary: formData.application?.professionalSummary || '',
-        languages: formData.application?.languages || [],
+        languages: normalizeLanguages(formData?.application?.languages),
       };
 
       await api.put(API_ENDPOINTS.COUNSELOR_PROFILE_UPDATE, changedData);
@@ -874,7 +906,11 @@ const CounselorDashboardPersonalInfo = () => {
               <InfoRow
                 icon={Languages}
                 label="Languages"
-                value={counselorData.application.languages.join(', ') || 'Not specified'}
+                value={
+                  normalizeLanguages(counselorData.application.languages).length > 0
+                    ? normalizeLanguages(counselorData.application.languages).join(', ')
+                    : 'Not specified'
+                }
               />
             </CardContent>
           </Card>
@@ -1290,7 +1326,7 @@ const CounselorDashboardPersonalInfo = () => {
                       Languages Spoken
                     </Label>
                     <span className="text-[11px] text-neutral-500 font-medium">
-                      {(formData?.application?.languages || []).length} selected
+                      {normalizeLanguages(formData?.application?.languages).length} selected
                     </span>
                   </div>
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
@@ -1298,15 +1334,16 @@ const CounselorDashboardPersonalInfo = () => {
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
                     {LANGUAGES.map((lang) => {
-                      const isChecked = (formData?.application?.languages || []).includes(lang);
+                      const selectedLangs = normalizeLanguages(formData?.application?.languages);
+                      const isChecked = selectedLangs.includes(lang);
                       return (
                         <button
                           key={lang}
                           type="button"
                           onClick={() => handleLanguageToggle(lang)}
-                          className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left ${
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left cursor-pointer ${
                             isChecked
-                              ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-200 shadow-sm'
+                              ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-200 shadow-sm ring-1 ring-primary-600/30'
                               : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/60 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
                           }`}
                         >
