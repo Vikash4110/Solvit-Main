@@ -373,8 +373,10 @@ export const validateProfileCompleteness = wrapper(async (req, res) => {
 
 // Helper function to determine if booking can be canceled
 const canCancelBooking = (booking) => {
+  if (!booking?.startTime) return false;
   const now = dayjs().utc();
   const startTime = dayjs.utc(booking.startTime);
+  if (!startTime.isValid()) return false;
   const hoursDiff = startTime.diff(now, 'hour');
 
   // Can cancel if more than 24 hours before session
@@ -383,28 +385,26 @@ const canCancelBooking = (booking) => {
 
 // Helper function to determine if user can join
 const canJoinSession = (booking) => {
-  if (!booking.videoSDKRoomId) return false;
+  if (!booking?.videoSDKRoomId || !booking?.startTime || !booking?.endTime) return false;
 
   const now = dayjs().utc();
   const startTime = dayjs.utc(booking.startTime);
   const endTime = dayjs.utc(booking.endTime);
+  if (!startTime.isValid() || !endTime.isValid()) return false;
 
-  //can join 10 minutes earlier from start time
+  // can join 10 minutes earlier from start time
   const minutesDiffStart = startTime.diff(now, 'minute');
 
-  //can join until  session ends
+  // can join until session ends
   const minutesDiffEnd = endTime.diff(now, 'minute');
 
-  // Can join 10 minutes before to 90 minutes afte
+  // Can join 10 minutes before to until session end
   return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
-  // return true;
-  // return true;
 };
 
-//helper function to determine if user can raise issue
-
+// Helper function to determine if user can raise issue
 const canRaiseIssueOnBooking = (booking) => {
-  return booking.status === 'dispute_window_open';
+  return booking?.status === 'dispute_window_open';
 };
 
 // Get bookings with filters and pagination
