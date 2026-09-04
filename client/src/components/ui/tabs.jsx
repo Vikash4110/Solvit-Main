@@ -144,7 +144,7 @@ const tabsTriggerVariants = cva(
 
 // ---------- Tabs Trigger ----------
 const TabsTrigger = React.forwardRef(
-  ({ className, variant, size, icon, badge, ...props }, ref) => (
+  ({ className, variant, size, icon, badge, children, ...props }, ref) => (
     <TabsPrimitive.Trigger
       ref={ref}
       data-slot="tabs-trigger"
@@ -152,7 +152,7 @@ const TabsTrigger = React.forwardRef(
       {...props}
     >
       {icon && <span className="flex-shrink-0">{icon}</span>}
-      <span className="flex-1">{props.children}</span>
+      {children}
       {badge && (
         <span className="ml-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 data-[state=active]:bg-primary-200 dark:data-[state=active]:bg-primary-800">
           {badge}
