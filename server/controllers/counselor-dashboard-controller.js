@@ -431,18 +431,18 @@ export const getCounselorApplicationStatus = wrapper(async (req, res) => {
 
 // Reuse the same logic style as client dashboard
 const canJoinSessionForCounselor = (booking) => {
-  if (!booking.videoSDKRoomId || !booking.startTime || !booking.endTime) return false;
+  if (!booking?.videoSDKRoomId || !booking?.startTime || !booking?.endTime) return false;
 
   const now = dayjs().utc();
   const startTime = dayjs.utc(booking.startTime);
   const endTime = dayjs.utc(booking.endTime);
+  if (!startTime.isValid() || !endTime.isValid()) return false;
 
   const minutesDiffStart = startTime.diff(now, 'minute');
   const minutesDiffEnd = endTime.diff(now, 'minute');
 
   // Same semantics as client: join from earlyJoinMinutesForSession before start until session end
   return minutesDiffStart <= earlyJoinMinutesForSession && minutesDiffEnd > 0;
-  // return true;
 };
 
 /**
@@ -511,10 +511,15 @@ export const getCounselorBookings = wrapper(async (req, res) => {
         as: 'slotData',
       },
     },
-    { $unwind: '$slotData' },
+    {
+      $unwind: {
+        path: '$slotData',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
     {
       $match: {
-        'slotData.counselorId': new mongoose.Types.ObjectId(counselorId),
+        'slotData.counselorId': new mongoose.Types.ObjectId(String(counselorId)),
         ...statusFilter,
       },
     },
