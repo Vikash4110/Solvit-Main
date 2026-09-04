@@ -100,21 +100,21 @@ const ClientDetailModal = ({ clientId, isOpen, onClose, onClientUpdated }) => {
             {client && (
               <Badge
                 variant="outline"
-                className={`ml-auto ${
+                className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border shadow-xs ${
                   client.isBlocked
-                    ? 'bg-red-100 text-red-800 border-red-200'
-                    : 'bg-green-100 text-green-800 border-green-200'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
                 }`}
               >
                 {client.isBlocked ? (
                   <>
-                    <UserX className="w-3 h-3 mr-1" />
-                    Blocked
+                    <UserX className="w-3.5 h-3.5 shrink-0" />
+                    <span>Blocked</span>
                   </>
                 ) : (
                   <>
-                    <UserCheck className="w-3 h-3 mr-1" />
-                    Active
+                    <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                    <span>Active</span>
                   </>
                 )}
               </Badge>

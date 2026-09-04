@@ -70,7 +70,6 @@ const selectTriggerVariants = cva(
   }
 );
 
-// ---------- Select Trigger ----------
 const SelectTrigger = React.forwardRef(
   (
     {
@@ -90,13 +89,14 @@ const SelectTrigger = React.forwardRef(
       data-slot="select-trigger"
       className={cn(
         selectTriggerVariants({ variant, size, state }),
-        leftIcon && "pl-10",
+        "relative flex items-center justify-between gap-2 shadow-xs transition-colors",
+        leftIcon ? "pl-9" : "pl-3",
         className
       )}
       {...props}
     >
       {leftIcon && (
-        <span className="absolute left-3 text-neutral-600 dark:text-neutral-400">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-slate-500 dark:text-neutral-400">
           {leftIcon}
         </span>
       )}
@@ -105,9 +105,9 @@ const SelectTrigger = React.forwardRef(
       </div>
       <SelectPrimitive.Icon asChild>
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin text-neutral-500" />
+          <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-neutral-500" />
+          <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 opacity-80" />
         )}
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
@@ -213,12 +213,14 @@ const SelectItem = React.forwardRef(
       data-slot="select-item"
       className={cn(
         "relative flex w-full cursor-pointer select-none items-center gap-2.5",
-        "rounded-md py-2 pl-3 pr-8 text-sm outline-none",
+        "rounded-lg py-2 pl-3 pr-8 text-sm outline-none",
         "transition-colors duration-150",
         "motion-reduce:transition-none",
-        "text-neutral-700 dark:text-neutral-300",
-        "focus:bg-primary-100 dark:focus:bg-primary-900/30",
-        "focus:text-primary-900 dark:focus:text-primary-100",
+        "text-slate-700 dark:text-neutral-300",
+        "hover:bg-slate-100 dark:hover:bg-neutral-800",
+        "focus:bg-blue-50 dark:focus:bg-blue-950/40",
+        "focus:text-blue-900 dark:focus:text-blue-100",
+        "data-[state=checked]:bg-blue-50/70 data-[state=checked]:text-blue-700 data-[state=checked]:font-medium",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0",
         "[&_svg:not([class*='size-'])]:h-4 [&_svg:not([class*='size-'])]:w-4",
@@ -227,7 +229,7 @@ const SelectItem = React.forwardRef(
       {...props}
     >
       {icon && (
-        <span className="flex-shrink-0 text-neutral-600 dark:text-neutral-400">
+        <span className="flex-shrink-0 text-slate-500 dark:text-neutral-400">
           {icon}
         </span>
       )}
@@ -236,7 +238,7 @@ const SelectItem = React.forwardRef(
       </SelectPrimitive.ItemText>
       <span className="absolute right-2.5 flex h-4 w-4 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Check className="h-4 w-4 text-primary-700 dark:text-primary-400" strokeWidth={2.5} />
+          <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" strokeWidth={2.5} />
         </SelectPrimitive.ItemIndicator>
       </span>
     </SelectPrimitive.Item>

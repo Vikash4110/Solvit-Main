@@ -13,10 +13,27 @@ const api = axios.create({
 // 1. Request Interceptor: Automatically attaches the active JWT token
 api.interceptors.request.use(
   (config) => {
-    const token =
-      localStorage.getItem('clientAccessToken') ||
-      localStorage.getItem('counselorAccessToken') ||
-      localStorage.getItem('adminAccessToken');
+    let token = null;
+    const pathname = window.location.pathname;
+    const url = config.url || '';
+
+    // Prioritize token based on URL endpoint or current page route
+    if (pathname.startsWith('/admin') || url.includes('/admin')) {
+      token =
+        localStorage.getItem('adminAccessToken') ||
+        localStorage.getItem('counselorAccessToken') ||
+        localStorage.getItem('clientAccessToken');
+    } else if (pathname.startsWith('/counselor') || url.includes('/counselor')) {
+      token =
+        localStorage.getItem('counselorAccessToken') ||
+        localStorage.getItem('clientAccessToken') ||
+        localStorage.getItem('adminAccessToken');
+    } else {
+      token =
+        localStorage.getItem('clientAccessToken') ||
+        localStorage.getItem('counselorAccessToken') ||
+        localStorage.getItem('adminAccessToken');
+    }
 
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;

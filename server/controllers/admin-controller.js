@@ -25,8 +25,8 @@ const loginAdmin = wrapper(async (req, res) => {
   }
 
   try {
-    const admin = await Admin.findOne({ email: email.trim(), status: 'active' });
-    if (!admin) {
+    const admin = await Admin.findOne({ email: email.trim().toLowerCase() });
+    if (!admin || admin.isActive === false) {
       return res.status(404).json({
         success: false,
         message: 'Admin not found or inactive',
@@ -45,14 +45,15 @@ const loginAdmin = wrapper(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'None',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
       maxAge: 24 * 60 * 60 * 1000,
     };
 
     admin.lastLogin = new Date();
     await admin.save({ validateBeforeSave: false });
 
-    const loggedInAdmin = await Admin.findOne({ email: email.trim() }).select('-password');
+    const loggedInAdmin = admin.toObject();
+    delete loggedInAdmin.password;
 
     return res.status(200).cookie('accessToken', accessToken, options).json({
       success: true,
@@ -75,7 +76,7 @@ const logoutAdmin = wrapper(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'None',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
   };
 
   return res.status(200).clearCookie('accessToken', options).json({

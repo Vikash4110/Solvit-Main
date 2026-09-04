@@ -38,6 +38,7 @@ import {
   AlertCircle,
   Clock,
   Crown,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -72,6 +73,8 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetBody,
+  SheetFooter,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -99,7 +102,54 @@ const specializationOptions = [
 ];
 
 // Languages from model
-const LANGUAGES = ['English', 'Hindi'];
+const LANGUAGES = [
+  'English',
+  'Hindi',
+  'Bengali',
+  'Marathi',
+  'Telugu',
+  'Tamil',
+  'Gujarati',
+  'Urdu',
+  'Kannada',
+  'Malayalam',
+  'Punjabi',
+];
+
+// Helper to normalize and deduplicate language arrays/strings
+const normalizeLanguages = (raw) => {
+  if (!raw) return [];
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return normalizeLanguages(parsed);
+    } catch {
+      return raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+  if (!Array.isArray(raw)) return [];
+
+  const result = [];
+  const flatten = (arr) => {
+    arr.forEach((item) => {
+      if (Array.isArray(item)) {
+        flatten(item);
+      } else if (typeof item === 'string') {
+        item.split(',').forEach((s) => {
+          const trimmed = s.trim();
+          if (trimmed && !result.includes(trimmed)) {
+            result.push(trimmed);
+          }
+        });
+      }
+    });
+  };
+  flatten(raw);
+  return result;
+};
 
 // Experience levels
 const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Experienced', 'Specialist'];
@@ -170,7 +220,6 @@ const CounselorDashboardPersonalInfo = () => {
         phone: data.phone || '',
         gender: data.gender || '',
         profilePicture: data.profilePicture || '',
-        // specialization: data.specialization || '',
         specialization: Array.isArray(data.specialization)
           ? data.specialization
           : data.specialization
@@ -193,7 +242,7 @@ const CounselorDashboardPersonalInfo = () => {
             },
           },
           professionalSummary: data.application?.professionalSummary || '',
-          languages: data.application?.languages || [],
+          languages: normalizeLanguages(data.application?.languages),
           license: {
             licenseNo: data.application?.license?.licenseNo || '',
             issuingAuthority: data.application?.license?.issuingAuthority || '',
@@ -235,11 +284,31 @@ const CounselorDashboardPersonalInfo = () => {
       console.error('Error fetching profile completeness:', err);
     }
   };
+  const handleOpenEditModal = () => {
+    if (counselorData) {
+      setFormData({
+        ...counselorData,
+        specialization: Array.isArray(counselorData.specialization)
+          ? [...counselorData.specialization]
+          : counselorData.specialization
+            ? [counselorData.specialization]
+            : [],
+        application: {
+          ...counselorData.application,
+          languages: normalizeLanguages(counselorData.application?.languages),
+          professionalSummary: counselorData.application?.professionalSummary || '',
+        },
+      });
+    }
+    setActiveTab('basic');
+    setIsEditDialogOpen(true);
+  };
+
   const handleSpecializationSelect = (value) => {
-    if (!formData.specialization.includes(value)) {
+    if (!formData?.specialization?.includes(value)) {
       setFormData((prev) => ({
         ...prev,
-        specialization: [...prev.specialization, value],
+        specialization: [...(prev?.specialization || []), value],
       }));
     }
   };
@@ -247,8 +316,16 @@ const CounselorDashboardPersonalInfo = () => {
   const removeSpecialization = (specialization) => {
     setFormData((prev) => ({
       ...prev,
-      specialization: prev.specialization.filter((spec) => spec !== specialization),
+      specialization: (prev?.specialization || []).filter((spec) => spec !== specialization),
     }));
+  };
+
+  const handleLanguageToggle = (lang) => {
+    const currentLangs = normalizeLanguages(formData?.application?.languages);
+    const newLangs = currentLangs.includes(lang)
+      ? currentLangs.filter((l) => l !== lang)
+      : [...currentLangs, lang];
+    handleNestedInputChange('application', 'languages', newLangs);
   };
 
   const handleInputChange = (field, value) => {
@@ -282,21 +359,67 @@ const CounselorDashboardPersonalInfo = () => {
   };
 
   const handleSaveChanges = async () => {
+    if (!formData?.username?.trim()) {
+      toast.error('Validation Error', {
+        description: 'Please enter a valid username.',
+      });
+      setActiveTab('basic');
+      return;
+    }
+
+    if (!formData?.phone?.trim()) {
+      toast.error('Validation Error', {
+        description: 'Please enter a valid phone number.',
+      });
+      setActiveTab('basic');
+      return;
+    }
+
+    if (!formData?.gender) {
+      toast.error('Validation Error', {
+        description: 'Please select your gender.',
+      });
+      setActiveTab('basic');
+      return;
+    }
+
+    if (!formData?.specialization || formData.specialization.length === 0) {
+      toast.error('Validation Error', {
+        description: 'Please select at least one area of specialization.',
+      });
+      setActiveTab('professional');
+      return;
+    }
+
+    if (formData.experienceYears === undefined || formData.experienceYears === '' || isNaN(Number(formData.experienceYears)) || Number(formData.experienceYears) < 0) {
+      toast.error('Validation Error', {
+        description: 'Please enter a valid number for years of experience.',
+      });
+      setActiveTab('professional');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
+      const changedData = {
+        username: formData.username.trim(),
+        phone: formData.phone.trim(),
+        gender: formData.gender,
+        specialization: formData.specialization,
+        experienceYears: parseInt(formData.experienceYears, 10) || 0,
+        professionalSummary: formData.application?.professionalSummary || '',
+        languages: normalizeLanguages(formData?.application?.languages),
+      };
 
-      const changedData ={"username" : formData.username  , "phone":formData.phone ,"gender" : formData.gender,"specialization": formData.specialization, "experienceYears"  :formData.experienceYears, "professionalSummary" :formData.application.professionalSummary ,"languages": formData.application.languages}
-      console.log(changedData)  
- 
       await api.put(API_ENDPOINTS.COUNSELOR_PROFILE_UPDATE, changedData);
 
-      setCounselorData(formData);
+      await fetchCounselorData();
+      await fetchProfileCompleteness();
       setIsEditDialogOpen(false);
-      fetchProfileCompleteness();
 
       toast.success('Profile Updated Successfully', {
-        description: 'Your professional information has been saved.',
+        description: 'Your professional profile details have been saved.',
       });
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -453,9 +576,18 @@ const CounselorDashboardPersonalInfo = () => {
       const data = result.data || result;
       const newProfilePicture = data.profilePicture;
 
-      const storedCounselorData = JSON.parse(localStorage.getItem('counselor'));
-      storedCounselorData.profilePicture = newProfilePicture;
-      localStorage.setItem('counselor', JSON.stringify(storedCounselorData));
+      try {
+        const rawData = localStorage.getItem('counselor');
+        if (rawData) {
+          const storedCounselorData = JSON.parse(rawData);
+          if (storedCounselorData && typeof storedCounselorData === 'object') {
+            storedCounselorData.profilePicture = newProfilePicture;
+            localStorage.setItem('counselor', JSON.stringify(storedCounselorData));
+          }
+        }
+      } catch (storageErr) {
+        console.warn('Could not sync profile picture to localStorage:', storageErr);
+      }
 
       setCounselorData((prev) => ({
         ...prev,
@@ -710,7 +842,7 @@ const CounselorDashboardPersonalInfo = () => {
 
               {/* Edit Button */}
               <Button
-                onClick={() => setIsEditDialogOpen(true)}
+                onClick={handleOpenEditModal}
                 size="lg"
                 className="gap-2 mt-4 md:mt-0"
               >
@@ -723,432 +855,582 @@ const CounselorDashboardPersonalInfo = () => {
       </motion.div>
 
       {/* Information Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Basic Information */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5 text-primary-600" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow icon={User} label="Full Name" value={counselorData.fullName} />
-              <InfoRow icon={Mail} label="Email" value={counselorData.email} />
-              <InfoRow icon={Phone} label="Phone" value={counselorData.phone} />
-              <InfoRow icon={User} label="Gender" value={counselorData.gender} />
-            </CardContent>
-          </Card>
-        </motion.div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Left Column */}
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary-600" />
+                  Basic Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow icon={User} label="Full Name" value={counselorData.fullName} />
+                <InfoRow icon={Mail} label="Email" value={counselorData.email} />
+                <InfoRow icon={Phone} label="Phone" value={counselorData.phone} />
+                <InfoRow icon={User} label="Gender" value={counselorData.gender} />
+              </CardContent>
+            </Card>
+          </motion.div>
 
-        {/* Professional Details */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary-600" />
-                Professional Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow
-                icon={Briefcase}
-                label="Specialization"
-                value={(Array.isArray(counselorData.specialization)
-                  ? counselorData.specialization
-                  : counselorData.specialization
-                    ? [counselorData.specialization]
-                    : []
-                ).map((specialization) => (
-                  <Badge key={specialization} variant="outline" className="m-1">
-                    {specialization}
-                  </Badge>
-                ))}
-              />
-              <InfoRow
-                icon={Award}
-                label="Experience"
-                value={`${counselorData.experienceYears} years (${counselorData.experienceLevel})`}
-              />
-              <InfoRow
-                icon={Languages}
-                label="Languages"
-                value={counselorData.application.languages.join(', ') || 'Not specified'}
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Education */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-primary-600" />
-                Education
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Graduation */}
-              <div>
-                <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
-                  Graduation
-                </Label>
-                <div className="mt-2 space-y-2">
-                  <InfoRow
-                    icon={Building}
-                    label="University"
-                    value={
-                      counselorData.application.education.graduation.university || 'Not specified'
-                    }
-                    compact
-                  />
-                  <InfoRow
-                    icon={GraduationCap}
-                    label="Degree"
-                    value={counselorData.application.education.graduation.degree || 'Not specified'}
-                    compact
-                  />
-                  <InfoRow
-                    icon={Calendar}
-                    label="Year"
-                    value={counselorData.application.education.graduation.year || 'Not specified'}
-                    compact
-                  />
-                </div>
-              </div>
-
-              {/* Post Graduation */}
-              {(counselorData.application.education.postGraduation.university ||
-                counselorData.application.education.postGraduation.degree) && (
-                <>
-                  <Separator />
-                  <div>
-                    <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
-                      Post Graduation
-                    </Label>
-                    <div className="mt-2 space-y-2">
-                      <InfoRow
-                        icon={Building}
-                        label="University"
-                        value={
-                          counselorData.application.education.postGraduation.university ||
-                          'Not specified'
-                        }
-                        compact
-                      />
-                      <InfoRow
-                        icon={GraduationCap}
-                        label="Degree"
-                        value={
-                          counselorData.application.education.postGraduation.degree ||
-                          'Not specified'
-                        }
-                        compact
-                      />
-                      <InfoRow
-                        icon={Calendar}
-                        label="Year"
-                        value={
-                          counselorData.application.education.postGraduation.year || 'Not specified'
-                        }
-                        compact
-                      />
-                    </div>
+          {/* Education */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary-600" />
+                  Education
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Graduation */}
+                <div>
+                  <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
+                    Graduation
+                  </Label>
+                  <div className="mt-2 space-y-2">
+                    <InfoRow
+                      icon={Building}
+                      label="University"
+                      value={
+                        counselorData.application.education.graduation.university || 'Not specified'
+                      }
+                      compact
+                    />
+                    <InfoRow
+                      icon={GraduationCap}
+                      label="Degree"
+                      value={counselorData.application.education.graduation.degree || 'Not specified'}
+                      compact
+                    />
+                    <InfoRow
+                      icon={Calendar}
+                      label="Year"
+                      value={counselorData.application.education.graduation.year || 'Not specified'}
+                      compact
+                    />
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                </div>
 
-        {/* License Information */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BadgeCheck className="h-5 w-5 text-primary-600" />
-                License Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow
-                icon={FileText}
-                label="License Number"
-                value={counselorData.application.license.licenseNo || 'Not specified'}
-              />
-              <InfoRow
-                icon={Building}
-                label="Issuing Authority"
-                value={counselorData.application.license.issuingAuthority || 'Not specified'}
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
+                {/* Post Graduation */}
+                {(counselorData.application.education.postGraduation.university ||
+                  counselorData.application.education.postGraduation.degree) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
+                        Post Graduation
+                      </Label>
+                      <div className="mt-2 space-y-2">
+                        <InfoRow
+                          icon={Building}
+                          label="University"
+                          value={
+                            counselorData.application.education.postGraduation.university ||
+                            'Not specified'
+                          }
+                          compact
+                        />
+                        <InfoRow
+                          icon={GraduationCap}
+                          label="Degree"
+                          value={
+                            counselorData.application.education.postGraduation.degree ||
+                            'Not specified'
+                          }
+                          compact
+                        />
+                        <InfoRow
+                          icon={Calendar}
+                          label="Year"
+                          value={
+                            counselorData.application.education.postGraduation.year || 'Not specified'
+                          }
+                          compact
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
-        {/* Bank Details */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary-600" />
-                Bank Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow
-                icon={CreditCard}
-                label="Account Number"
-                value={
-                  counselorData.application.bankDetails.accountNo
-                    ? `${counselorData.application.bankDetails.accountNo}`
-                    : 'Not specified'
-                }
-              />
-              <InfoRow
-                icon={FileText}
-                label="IFSC Code"
-                value={counselorData.application.bankDetails.ifscCode || 'Not specified'}
-              />
-              <InfoRow
-                icon={Building}
-                label="Branch"
-                value={counselorData.application.bankDetails.branchName || 'Not specified'}
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Account Status */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary-600" />
-                Account Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow
-                icon={Calendar}
-                label="Member Since"
-                value={formatDate(counselorData.createdAt)}
-              />
-              <InfoRow
-                icon={Clock}
-                label="Last Login"
-                value={formatSmartDate(counselorData.lastLogin)}
-                tooltip={formatDateTime(counselorData.lastLogin)}
-              />
-              {counselorData.application.applicationSubmittedAt && (
+          {/* Bank Details */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary-600" />
+                  Bank Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <InfoRow
-                  icon={CheckCircle}
-                  label="Application Submitted"
-                  value={formatDate(counselorData.application.applicationSubmittedAt)}
+                  icon={CreditCard}
+                  label="Account Number"
+                  value={
+                    counselorData.application.bankDetails.accountNo
+                      ? `${counselorData.application.bankDetails.accountNo}`
+                      : 'Not specified'
+                  }
                 />
-              )}
-              <InfoRow
-                icon={Shield}
-                label="Account Status"
-                value={
-                  <Badge variant={counselorData.isBlocked ? 'destructive' : 'outline'}>
-                    {counselorData.isBlocked ? 'Blocked' : 'Active'}
-                  </Badge>
-                }
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
+                <InfoRow
+                  icon={FileText}
+                  label="IFSC Code"
+                  value={counselorData.application.bankDetails.ifscCode || 'Not specified'}
+                />
+                <InfoRow
+                  icon={Building}
+                  label="Branch"
+                  value={counselorData.application.bankDetails.branchName || 'Not specified'}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Professional Details */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-primary-600" />
+                  Professional Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow
+                  icon={Briefcase}
+                  label="Specialization"
+                  value={(Array.isArray(counselorData.specialization)
+                    ? counselorData.specialization
+                    : counselorData.specialization
+                      ? [counselorData.specialization]
+                      : []
+                  ).map((specialization) => (
+                    <Badge key={specialization} variant="outline" className="m-1">
+                      {specialization}
+                    </Badge>
+                  ))}
+                />
+                <InfoRow
+                  icon={Award}
+                  label="Experience"
+                  value={`${counselorData.experienceYears} years (${counselorData.experienceLevel})`}
+                />
+                <InfoRow
+                  icon={Languages}
+                  label="Languages"
+                  value={
+                    normalizeLanguages(counselorData.application.languages).length > 0
+                      ? normalizeLanguages(counselorData.application.languages).join(', ')
+                      : 'Not specified'
+                  }
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* License Information */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BadgeCheck className="h-5 w-5 text-primary-600" />
+                  License Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow
+                  icon={FileText}
+                  label="License Number"
+                  value={counselorData.application.license.licenseNo || 'Not specified'}
+                />
+                <InfoRow
+                  icon={Building}
+                  label="Issuing Authority"
+                  value={counselorData.application.license.issuingAuthority || 'Not specified'}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Account Status */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary-600" />
+                  Account Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow
+                  icon={Calendar}
+                  label="Member Since"
+                  value={formatDate(counselorData.createdAt)}
+                />
+                <InfoRow
+                  icon={Clock}
+                  label="Last Login"
+                  value={formatSmartDate(counselorData.lastLogin)}
+                  tooltip={formatDateTime(counselorData.lastLogin)}
+                />
+                {counselorData.application.applicationSubmittedAt && (
+                  <InfoRow
+                    icon={CheckCircle}
+                    label="Application Submitted"
+                    value={formatDate(counselorData.application.applicationSubmittedAt)}
+                  />
+                )}
+                <InfoRow
+                  icon={Shield}
+                  label="Account Status"
+                  value={
+                    <Badge variant={counselorData.isBlocked ? 'destructive' : 'outline'}>
+                      {counselorData.isBlocked ? 'Blocked' : 'Active'}
+                    </Badge>
+                  }
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </div>
 
       {/* Edit Profile Dialog */}
       <Sheet open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5" />
-              Edit Professional Profile
-            </SheetTitle>
-            <SheetDescription>
-              Update your professional information 
-            </SheetDescription>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-white dark:bg-neutral-900 shadow-2xl border-l border-neutral-200 dark:border-neutral-800 focus:outline-none"
+        >
+          <SheetHeader className="p-5 sm:p-6 pb-4 border-b border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/70 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary-100 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 shadow-sm">
+                <Edit className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <SheetTitle className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                  Edit Professional Profile
+                </SheetTitle>
+                <SheetDescription className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+                  Update your personal details and counselling practice information
+                </SheetDescription>
+              </div>
+            </div>
           </SheetHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">Basic</TabsTrigger>
-              <TabsTrigger value="professional">Professional</TabsTrigger>
-              {/* <TabsTrigger value="credentials">Credentials</TabsTrigger> */}
-            </TabsList>
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="flex flex-col flex-1 min-h-0"
+          >
+            <div className="px-5 sm:px-6 pt-4 pb-2 shrink-0 bg-white dark:bg-neutral-900">
+              <TabsList className="grid w-full grid-cols-2 p-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-xl h-12 border border-neutral-200/80 dark:border-neutral-700">
+                <TabsTrigger
+                  value="basic"
+                  className="flex items-center justify-center gap-2 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
+                >
+                  <User className="h-4 w-4 shrink-0" />
+                  <span>Basic Details</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="professional"
+                  className="flex items-center justify-center gap-2 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
+                >
+                  <Briefcase className="h-4 w-4 shrink-0" />
+                  <span>Professional Info</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-4 mt-6">
-              <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="username">Username *</Label>
-                  <Input
-                    id="username"
-                    value={formData?.username || ''}
-                    onChange={(e) => handleInputChange('username', e.target.value)}
-                    placeholder="Enter username"
-                  />
+            <SheetBody className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-6">
+              {/* Basic Info Tab */}
+              <TabsContent value="basic" className="mt-0 space-y-5 focus-visible:outline-none">
+                {/* Read-only Account Info notice */}
+                <div className="rounded-xl p-4 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/60">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      Account Credentials
+                    </span>
+                    <Badge variant="outline" className="text-[10px] gap-1 py-0.5 text-neutral-600 dark:text-neutral-400 border-neutral-300 dark:border-neutral-700">
+                      <Lock className="h-3 w-3" />
+                      Verified
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">Full Name</span>
+                      <p className="font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                        {formData?.fullName || counselorData?.fullName || 'Not provided'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">Email Address</span>
+                      <p className="font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                        {formData?.email || counselorData?.email || 'Not provided'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="phone">Phone *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData?.phone || ''}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="+91 1234567890"
-                  />
-                </div>
+                {/* Editable fields */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="username" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <User className="h-3.5 w-3.5 text-neutral-500" />
+                      Username <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="username"
+                      value={formData?.username || ''}
+                      onChange={(e) => handleInputChange('username', e.target.value)}
+                      placeholder="e.g. javed_counselor"
+                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 focus-visible:ring-primary-500 text-sm"
+                    />
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Your unique counselor username on the platform.
+                    </p>
+                  </div>
 
-                <div>
-                  <Label htmlFor="gender">Gender *</Label>
-                  <Select
-                    value={formData?.gender || ''}
-                    onValueChange={(value) => handleInputChange('gender', value)}
-                  >
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </TabsContent>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <Phone className="h-3.5 w-3.5 text-neutral-500" />
+                      Phone Number <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData?.phone || ''}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="+91 9876543210"
+                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 focus-visible:ring-primary-500 text-sm"
+                    />
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Used for critical alerts, slot confirmations, and notifications.
+                    </p>
+                  </div>
 
-            {/* Professional Info Tab */}
-            <TabsContent value="professional" className="space-y-4 mt-6">
-              <div className="grid gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="specialization" className="font-medium text-xs sm:text-sm">
-                    Specialization *
-                  </Label>
-                  <Select onValueChange={handleSpecializationSelect}>
-                    <SelectTrigger className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm sm:text-base">
-                      <span className="text-[#8b7355] text-xs sm:text-sm">Add Specialization</span>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="gender" className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                      Gender <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData?.gender || ''}
+                      onValueChange={(value) => handleInputChange('gender', value)}
+                    >
+                      <SelectTrigger id="gender" className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm">
+                        <SelectValue placeholder="Select your gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Professional Info Tab */}
+              <TabsContent value="professional" className="mt-0 space-y-5 focus-visible:outline-none">
+                {/* Specialization Selection */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="specialization" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <Award className="h-3.5 w-3.5 text-neutral-500" />
+                      Areas of Specialization <span className="text-red-500">*</span>
+                    </Label>
+                    <span className="text-[11px] text-neutral-500 font-medium">
+                      {formData?.specialization?.length || 0} selected
+                    </span>
+                  </div>
+
+                  <Select onValueChange={handleSpecializationSelect} value="">
+                    <SelectTrigger className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm">
+                      <span className="text-neutral-500">Choose a specialization to add...</span>
                     </SelectTrigger>
                     <SelectContent>
                       {specializationOptions.map((spec) => (
-                        <SelectItem key={spec} value={spec} className="text-xs sm:text-sm">
-                          {spec}
+                        <SelectItem
+                          key={spec}
+                          value={spec}
+                          disabled={formData?.specialization?.includes(spec)}
+                          className="text-sm"
+                        >
+                          {spec} {formData?.specialization?.includes(spec) ? '(Added)' : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                {formData.specialization.length > 0 && (
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] sm:text-xs font-medium">
-                      Selected Specializations ({formData.specialization.length})
-                    </Label>
-                    <div className="flex gap-1.5 flex-wrap">
+
+                  {/* Selected Specialization Badges */}
+                  {formData?.specialization?.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 pt-1">
                       {formData.specialization.map((spec) => (
                         <Badge
                           key={spec}
                           variant="secondary"
-                          className="px-4 bg-primary-50 dark:bg-primary-950/30 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 text-[10px] sm:text-xs font-medium"
+                          className="px-3 py-1.5 bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-200 border border-primary-200 dark:border-primary-800/60 text-xs font-medium rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
                         >
-                          {spec}
+                          <span>{spec}</span>
                           <button
                             type="button"
                             onClick={() => removeSpecialization(spec)}
-                            className="ml-1.5 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            className="p-0.5 rounded-full hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
+                            aria-label={`Remove ${spec}`}
                           >
-                            <X className="h-2.5 w-2.5" aria-hidden="true" />
+                            <X className="h-3 w-3" />
                           </button>
                         </Badge>
                       ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
+                      Please add at least one specialization for client discovery.
+                    </p>
+                  )}
+                </div>
 
-                <div>
-                  <Label htmlFor="experienceYears">Years of Experience *</Label>
+                {/* Experience Years */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="experienceYears" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Briefcase className="h-3.5 w-3.5 text-neutral-500" />
+                    Years of Experience <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="experienceYears"
                     type="number"
                     min="0"
-                    value={formData?.experienceYears || ''}
-                    onChange={(e) => handleInputChange('experienceYears', parseInt(e.target.value))}
-                    placeholder="Enter years of experience"
+                    max="60"
+                    value={formData?.experienceYears ?? ''}
+                    onChange={(e) =>
+                      handleInputChange(
+                        'experienceYears',
+                        e.target.value === '' ? '' : parseInt(e.target.value, 10)
+                      )
+                    }
+                    placeholder="e.g. 5"
+                    className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 focus-visible:ring-primary-500 text-sm"
                   />
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Total years of verified practice in counselling or mental wellness.
+                  </p>
                 </div>
 
-                <div>
-                  <Label htmlFor="professionalSummary">Professional Summary</Label>
+                {/* Languages */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <Globe className="h-3.5 w-3.5 text-neutral-500" />
+                      Languages Spoken
+                    </Label>
+                    <span className="text-[11px] text-neutral-500 font-medium">
+                      {normalizeLanguages(formData?.application?.languages).length} selected
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Select languages in which you can fluently conduct counselling sessions:
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                    {LANGUAGES.map((lang) => {
+                      const selectedLangs = normalizeLanguages(formData?.application?.languages);
+                      const isChecked = selectedLangs.includes(lang);
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => handleLanguageToggle(lang)}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left cursor-pointer ${
+                            isChecked
+                              ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-200 shadow-sm ring-1 ring-primary-600/30'
+                              : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/60 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
+                          }`}
+                        >
+                          <span className="truncate">{lang}</span>
+                          {isChecked ? (
+                            <Check className="h-3.5 w-3.5 text-primary-600 dark:text-primary-400 shrink-0 ml-1.5" />
+                          ) : (
+                            <span className="h-3.5 w-3.5 rounded-full border border-neutral-300 dark:border-neutral-600 shrink-0 ml-1.5" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Professional Summary */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="professionalSummary" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <FileText className="h-3.5 w-3.5 text-neutral-500" />
+                      Professional Summary
+                    </Label>
+                    <span
+                      className={`text-[11px] ${
+                        (formData?.application?.professionalSummary?.length || 0) > 900
+                          ? 'text-amber-600 font-medium'
+                          : 'text-neutral-400'
+                      }`}
+                    >
+                      {formData?.application?.professionalSummary?.length || 0}/1000
+                    </span>
+                  </div>
                   <Textarea
                     id="professionalSummary"
                     value={formData?.application?.professionalSummary || ''}
                     onChange={(e) =>
                       handleNestedInputChange('application', 'professionalSummary', e.target.value)
                     }
-                    placeholder="Brief summary of your professional background..."
+                    placeholder="Describe your expertise, therapeutic approach, areas of focus, and background..."
                     rows={4}
                     maxLength={1000}
+                    className="bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 focus-visible:ring-primary-500 text-sm resize-y leading-relaxed"
                   />
-                  <p className="text-xs text-neutral-500 mt-1">
-                    {formData?.application?.professionalSummary?.length || 0}/1000 characters
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Brief summary visible to clients exploring your counsellor profile.
                   </p>
                 </div>
+              </TabsContent>
+            </SheetBody>
 
-                <div>
-                  <Label>Languages</Label>
-                  <div className="flex flex-wrap gap-3 mt-2">
-                    {LANGUAGES.map((lang) => (
-                      <div key={lang} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`lang-${lang}`}
-                          checked={formData?.application?.languages?.[0].includes(lang) || false}
-                          onCheckedChange={(checked) => {
-                            const currentLangs = formData?.application?.languages || [];
-                            const newLangs = checked
-                              ? [...currentLangs, lang]
-                              : currentLangs.filter((l) => l !== lang);
-                            handleNestedInputChange('application', 'languages', newLangs);
-                          }}
-                        />
-                        <Label htmlFor={`lang-${lang}`} className="cursor-pointer">
-                          {lang}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Credentials Tab */}
-            
-
-
-
+            {/* Sticky Footer */}
+            <SheetFooter className="p-4 sm:p-5 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shrink-0 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                className="w-full sm:w-auto text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border-neutral-300 dark:border-neutral-700"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSaveChanges}
+                className="w-full sm:w-auto gap-2 bg-primary-600 hover:bg-primary-700 text-white shadow-md font-medium"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Saving Changes...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>Save Changes</span>
+                  </>
+                )}
+              </Button>
+            </SheetFooter>
           </Tabs>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-6 pt-6 border-t">
-            <Button onClick={handleSaveChanges} className="flex-1" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </div>
         </SheetContent>
       </Sheet>
 
