@@ -817,7 +817,7 @@ const BookCounselorCalendar = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 pb-24 lg:pb-16">
         {/* Mobile Tabs */}
         <div className="lg:hidden mb-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

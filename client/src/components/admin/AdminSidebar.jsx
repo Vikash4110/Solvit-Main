@@ -32,7 +32,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-const AdminSidebar = ({ collapsed, setCollapsed }) => {
+const AdminSidebar = ({ collapsed, setCollapsed, onItemClick }) => {
   const { adminLogout, admin } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -201,6 +201,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
                   const linkContent = (
                     <NavLink
                       to={item.path}
+                      onClick={onItemClick}
                       className={`
                         flex items-center gap-3 px-3 py-2 rounded-lg transition-all
                         ${

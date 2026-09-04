@@ -138,7 +138,7 @@ const FilterSection = React.memo(
     const [langOpen, setLangOpen] = useState(false);
 
     return (
-      <div className="space-y-6 pr-2 pb-4">
+      <div className="space-y-6 px-2 py-2">
         {/* Search Input */}
         <div className="space-y-2">
           <Label
@@ -707,12 +707,12 @@ const BrowseCounselor = () => {
                           Filters
                         </Button>
                       </SheetTrigger>
-                      <SheetContent side="left" className="w-80">
-                        <SheetHeader>
-                          <SheetTitle>Filters</SheetTitle>
+                      <SheetContent side="left" className="w-[85vw] max-w-sm sm:w-96 p-6 flex flex-col">
+                        <SheetHeader className="text-left px-1">
+                          <SheetTitle className="text-lg font-bold text-neutral-900 dark:text-white">Filters</SheetTitle>
                           <SheetDescription>Refine your search</SheetDescription>
                         </SheetHeader>
-                        <ScrollArea className="h-[calc(100vh-120px)] mt-6">
+                        <ScrollArea className="h-[calc(100vh-120px)] mt-4 px-1">
                           <FilterSection
                             search={search}
                             setSearch={setSearch}
@@ -985,22 +985,13 @@ const BrowseCounselor = () => {
                                 </div>
 
                                 {/* Right: Action Buttons */}
-                                <div className="flex sm:flex-col gap-2 justify-end sm:justify-start sm:min-w-[130px] sm:pt-2">
-                                  {/* <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex-1 sm:flex-none h-9 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-neutral-300 dark:border-neutral-700"
-                                    onClick={() => bookCounselor(counselor._id)}
-                                  >
-                                    <User className="w-3.5 h-3.5 mr-1.5" />
-                                    <span className="text-xs font-semibold">Profile</span>
-                                  </Button> */}
+                                <div className="flex flex-col sm:flex-col gap-2 w-full sm:w-auto sm:min-w-[150px] sm:pt-2">
                                   <Button
                                     size="sm"
-                                    className="flex-1 sm:flex-none h-9 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-md"
+                                    className="w-full sm:w-auto h-auto min-h-9 py-2 px-3 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-md whitespace-normal text-center"
                                     onClick={() => bookCounselor(counselor._id)}
                                   >
-                                    <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
+                                    <CalendarIcon className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                                     <span className="text-xs font-semibold">View Profile & Book Now</span>
                                   </Button>
                                 </div>

@@ -184,10 +184,10 @@ const ClientLogin = () => {
   ];
 
   return (
-    <section className="relative h-screen pt-[80px] flex items-center overflow-hidden justify-center">
+    <section className="relative min-h-screen pt-[80px] py-6 sm:py-10 flex items-center justify-center overflow-x-hidden">
       {/* Background Image */}
       <div
-        className="absolute inset-0 bg-contain bg-left bg-no-repeat"
+        className="absolute inset-0 bg-contain bg-left bg-no-repeat hidden md:block"
         style={{
           backgroundImage: `url(${BackgroundImage})`,
         }}
@@ -200,7 +200,7 @@ const ClientLogin = () => {
         exit="exit"
         variants={pageVariants}
         transition={{ duration: 0.8 }}
-        className="relative z-10 w-full h-screen flex items-center justify-end px-2 sm:px-6 md:px-10 lg:px-16 xl:px-24"
+        className="relative z-10 w-full min-h-[calc(100vh-80px)] flex items-center justify-center lg:justify-end px-3 sm:px-6 md:px-10 lg:px-16 xl:px-24 py-4 sm:py-6"
       >
         {/* Login Form Card - Positioned in the white/light area */}
         <motion.div
@@ -209,7 +209,7 @@ const ClientLogin = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="w-full max-w-md sm:max-w-md md:max-w-lg xl:max-w-xl relative"
         >
-          <div className="bg-gradient-to-br from-[#f5f7fa]/98 to-white/98 dark:bg-neutral-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#c5cbd4]/30 dark:border-neutral-800/50 p-3 sm:p-6 lg:p-8 h-[calc(100vh-100px)] flex flex-col">
+          <div className="bg-gradient-to-br from-[#f5f7fa]/98 to-white/98 dark:bg-neutral-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#c5cbd4]/30 dark:border-neutral-800/50 p-4 sm:p-6 lg:p-8 w-full flex flex-col my-auto">
             {/* Header - Fixed at top */}
             <div className="flex-shrink-0">
               <div className="flex mb-2 justify-between">

@@ -82,10 +82,10 @@ const ApplicationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-3 sm:p-6">
       {/* Stats */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <div className="flex items-center">
@@ -211,27 +211,27 @@ const ApplicationsPage = () => {
               {filteredApplications.map((application) => (
                 <li key={application._id}>
                   <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start sm:items-center">
                         <div className="flex-shrink-0">
                           <img
-                            className="h-12 w-12 rounded-full"
+                            className="h-12 w-12 rounded-full object-cover"
                             src={application.profilePicture || '/default-avatar.png'}
                             alt={application.fullName}
                           />
                         </div>
-                        <div className="ml-4">
-                          <div className="flex items-center">
+                        <div className="ml-3 sm:ml-4 min-w-0">
+                          <div className="flex items-center flex-wrap gap-2">
                             <h4 className="text-sm font-semibold text-gray-900">
                               {application.fullName}
                             </h4>
                             <span
-                              className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(application.application?.applicationStatus)}`}
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(application.application?.applicationStatus)}`}
                             >
                               {application.application?.applicationStatus || 'not_submitted'}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-500">{application.email}</p>
+                          <p className="text-sm text-gray-500 truncate">{application.email}</p>
                           <p className="text-sm text-gray-500">
                             {application.specialization
                               .map((specialization) => specialization)
@@ -239,7 +239,7 @@ const ApplicationsPage = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center flex-wrap gap-2 pt-2 sm:pt-0">
                         {application.application?.applicationStatus === 'pending' && (
                           <>
                             <button
@@ -265,7 +265,7 @@ const ApplicationsPage = () => {
                         )}
                         <button
                           onClick={() =>
-                            window.open(`/admin/application/${application._id}`, '_blank')
+                            navigate(`/admin/application/${application._id}`)
                           }
                           className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >

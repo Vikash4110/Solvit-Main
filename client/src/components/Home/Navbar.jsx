@@ -227,16 +227,15 @@ const Navbar = () => {
             <Link to="/" className="flex items-center group" aria-label="Solvit Home">
               <motion.div
                 className="relative"
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
                 <img
                   src={logo}
-                  className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 scale-[3]  lg:scale-[3.5]  ml-4 lg:ml-0"
+                  className="h-8 w-8 sm:h-9 sm:w-9 lg:h-11 lg:w-11 scale-[2.2] sm:scale-[2.6] lg:scale-[3.2] ml-2 sm:ml-3 lg:ml-0 object-contain"
                   alt="Solvit"
                 />
-                {/* <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
               </motion.div>
             </Link>
             {/* Desktop Navigation */}
@@ -474,7 +473,7 @@ const Navbar = () => {
                           "
               >
                 {/* Fixed Header - Won't Scroll */}
-                <div className="px-6 pt-6 pb-4 border-b border-neutral-200 dark:border-neutral-800 mx-[40%]">
+                <div className="px-6 pt-6 pb-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                   <SheetTitle className="text-primary-800 dark:text-primary-200 text-lg font-semibold">
                     Menu
                   </SheetTitle>
@@ -636,21 +635,19 @@ const Navbar = () => {
                       </div>
 
                       {/* Counselors Link */}
-                      {client && (
-                        <div className="px-4">
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              navigate('/browse-counselors');
-                              setIsOpen(false);
-                            }}
-                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
-                          >
-                            <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                            <span className="font-medium">Counselors</span>
-                          </Button>
-                        </div>
-                      )}
+                      <div className="px-4">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/browse-counselors');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                        >
+                          <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                          <span className="font-medium">Counselors</span>
+                        </Button>
+                      </div>
 
                       {/* Blogs Link */}
                       <div className="px-4">

@@ -232,23 +232,23 @@ const BlogPost = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 pt-24 pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 pt-24 sm:pt-28 pb-16">
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-12 w-72 h-72 bg-gradient-to-br from-blue-400/15 to-indigo-400/15 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-24 right-10 w-96 h-96 bg-gradient-to-tr from-purple-400/10 to-blue-500/10 rounded-full blur-3xl animate-pulse delay-500" />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
           <Link
             to="/blogs"
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
+            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 transition-colors text-sm font-medium"
           >
             <FaArrowLeft className="mr-2" />
             Back to Blogs
@@ -262,7 +262,7 @@ const BlogPost = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 text-center"
           >
-            <div className="flex items-center justify-center space-x-2 text-blue-700">
+            <div className="flex items-center justify-center space-x-2 text-blue-700 text-sm sm:text-base">
               <FaLock className="w-4 h-4" />
               <span className="font-medium">
                 <Link to="/login" className="text-blue-600 hover:text-blue-800 underline">
@@ -282,7 +282,7 @@ const BlogPost = () => {
         >
           {/* Featured Image */}
           {blog.featuredImage && (
-            <div className="relative h-64 md:h-96 overflow-hidden">
+            <div className="relative h-52 sm:h-72 md:h-96 overflow-hidden">
               <img
                 src={blog.featuredImage}
                 alt={blog.title}
@@ -295,20 +295,20 @@ const BlogPost = () => {
             </div>
           )}
 
-          <div className="p-8">
+          <div className="p-4 sm:p-8">
             {/* Category and Meta */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-4">
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-blue-600 text-white text-sm font-medium">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
+              <div className="flex items-center space-x-3">
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-blue-600 text-white text-xs sm:text-sm font-medium">
                   {blog.category.replace('-', ' ').toUpperCase()}
                 </span>
                 {blog.featured && (
-                  <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold">
+                  <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">
                     FEATURED
                   </span>
                 )}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500">
                 {new Date(blog.publishedAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -318,7 +318,7 @@ const BlogPost = () => {
             </div>
 
             {/* Title */}
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
               {blog.title}
             </h1>
 
@@ -411,30 +411,38 @@ const BlogPost = () => {
 
               {/* Add Comment Form */}
               {isAuthenticated ? (
-                <form onSubmit={handleComment} className="mb-8">
-                  <div className="flex space-x-4">
+                <form onSubmit={handleComment} className="mb-8 space-y-3">
+                  <div className="w-full">
                     <textarea
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       placeholder="Share your thoughts..."
-                      className="flex-1 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                      rows="3"
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all text-sm sm:text-base"
+                      rows="4"
                       maxLength="500"
                     />
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
+                    <span className="text-xs sm:text-sm text-gray-500">
+                      {commentText.length}/500 characters
+                    </span>
                     <button
                       type="submit"
                       disabled={submittingComment || !commentText.trim()}
-                      className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                      className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-medium shadow-sm hover:shadow-md"
                     >
                       {submittingComment ? (
-                        <FaSpinner className="animate-spin" />
+                        <>
+                          <FaSpinner className="animate-spin" />
+                          <span>Posting...</span>
+                        </>
                       ) : (
-                        <FaPaperPlane />
+                        <>
+                          <span>Post Comment</span>
+                          <FaPaperPlane className="text-xs" />
+                        </>
                       )}
                     </button>
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {commentText.length}/500 characters
                   </div>
                 </form>
               ) : (

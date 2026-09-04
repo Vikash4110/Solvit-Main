@@ -128,20 +128,20 @@ const OurMission = () => {
               </Card>
             </div>
 
-            <Link to="/client-register">
+            <Link to="/register">
               <Button
                 size="lg"
-                className="group mt-8 bg-gradient-to-br from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-base font-semibold rounded-xl px-8 py-6 shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 hover:scale-105"
+                className="group mt-8 bg-gradient-to-br from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-sm sm:text-base font-semibold rounded-xl px-7 py-5 sm:px-8 sm:py-6 shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 hover:scale-105"
               >
                 Get Started Today
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </motion.div>
 
           {/* Right Content */}
           <motion.div
-            className="lg:w-1/2"
+            className="lg:w-1/2 w-full"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
@@ -149,7 +149,7 @@ const OurMission = () => {
           >
             {/* Mission Points Grid */}
             <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"
               variants={containerVariants}
             >
               {missionPoints.map((point, index) => {
@@ -188,7 +188,7 @@ const OurMission = () => {
                 <img
                   src={supportImg}
                   alt="Support and counseling"
-                  className="w-full h-[400px] lg:h-[500px] object-cover"
+                  className="w-full h-64 sm:h-80 md:h-[380px] lg:h-[460px] object-cover"
                 />
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-primary-900/60 via-primary-900/20 to-transparent" />

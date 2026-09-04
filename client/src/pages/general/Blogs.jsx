@@ -16,6 +16,13 @@ import {
 import { toast } from 'react-hot-toast';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const Blogs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -163,18 +170,18 @@ const Blogs = () => {
   }, [searchTerm]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 pt-24 pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 pt-24 sm:pt-28 pb-16">
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-12 w-72 h-72 bg-gradient-to-br from-blue-400/15 to-indigo-400/15 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-24 right-10 w-96 h-96 bg-gradient-to-tr from-purple-400/10 to-blue-500/10 rounded-full blur-3xl animate-pulse delay-500" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8 sm:mb-12">
           <motion.h1
-            className="text-5xl font-bold leading-tight tracking-tight mb-6"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-4 sm:mb-6"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -186,7 +193,7 @@ const Blogs = () => {
             </span>
           </motion.h1>
           <motion.p
-            className="text-xl text-gray-600 max-w-3xl mx-auto"
+            className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -198,26 +205,26 @@ const Blogs = () => {
 
         {/* Search and Filters */}
         <motion.div
-          className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-6 mb-12"
+          className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 sm:p-6 mb-8 sm:mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <div className="flex flex-col lg:flex-row gap-6 items-center">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-center">
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-lg">
+            <form onSubmit={handleSearch} className="flex-1 w-full max-w-none sm:max-w-lg">
               <div className="relative">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search blogs..."
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-10 sm:pl-12 pr-20 sm:pr-24 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
-                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <FaSearch className="absolute left-3.5 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
                 <button
                   type="submit"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="absolute right-1.5 sm:right-2 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-medium"
                 >
                   Search
                 </button>
@@ -225,22 +232,23 @@ const Blogs = () => {
             </form>
 
             {/* Sort and Filter Toggles */}
-            <div className="flex gap-4 items-center">
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="latest">Latest</option>
-                <option value="popular">Most Popular</option>
-                <option value="alphabetical">A-Z</option>
-              </select>
+            <div className="flex flex-wrap gap-2.5 sm:gap-4 items-center justify-between sm:justify-start">
+              <Select value={sortBy} onValueChange={(val) => handleSortChange(val)}>
+                <SelectTrigger className="w-auto min-w-[130px] sm:w-[150px] h-10 px-3 sm:px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent align="start">
+                  <SelectItem value="latest">Latest</SelectItem>
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                  <SelectItem value="alphabetical">A-Z</SelectItem>
+                </SelectContent>
+              </Select>
 
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-center h-10 px-3 sm:px-4 py-2 text-sm rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors bg-white"
               >
-                <FaFilter className="mr-2" />
+                <FaFilter className="mr-2 text-xs" />
                 Filters
               </button>
             </div>
