@@ -136,7 +136,9 @@ const ClientDashboardMyBookings = () => {
         }
       } catch (error) {
         console.error('Error fetching bookings:', error);
-        toast.error('Failed to load bookings');
+        if (error.response?.status !== 401) {
+          toast.error(error.response?.data?.message || 'Failed to load bookings');
+        }
       } finally {
         setLoading(false);
       }
