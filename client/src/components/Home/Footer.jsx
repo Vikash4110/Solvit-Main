@@ -64,18 +64,14 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-12 relative z-10 mb-6">
         {/* Branding Section */}
         <motion.div className="space-y-6" variants={sectionVariants}>
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <Badge variant="default" className="w-6 h-6" />
-              <Badge variant="secondary" className="w-4 h-4" />
-            </div>
+          <div className="flex items-center">
             <img
               src={logo}
               alt="Solvit Logo"
-              className="h-28 w-28 rounded-full object-cover bg-white"
+              className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover bg-white shadow-md p-1"
             />
           </div>
-          <p className="text-base leading-relaxed text-white">
+          <p className="text-base leading-relaxed text-white/90 max-w-sm">
             Your trusted partner in personal growth—connecting you with expert counselors across
             India.
           </p>
