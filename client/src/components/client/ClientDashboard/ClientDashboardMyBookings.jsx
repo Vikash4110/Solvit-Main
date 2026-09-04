@@ -340,13 +340,13 @@ const ClientDashboardMyBookings = () => {
         >
           {/* top accent */}
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500/70 via-sky-500/60 to-primary-700/70" />
-          <CardContent className="p-5 sm:p-6">
+          <CardContent className="p-6 sm:p-7 space-y-5">
             {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 min-w-0">
-                <Avatar className="h-12 w-12 sm:h-14 sm:w-14 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60">
+            <div className="flex items-start justify-between gap-4 pb-1">
+              <div className="flex items-start gap-3.5 min-w-0">
+                <Avatar className="h-12 w-12 sm:h-14 sm:w-14 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
                   <AvatarImage src={booking.counselorPhoto} alt={name} />
-                  <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold">
+                  <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold text-sm sm:text-base">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -356,17 +356,17 @@ const ClientDashboardMyBookings = () => {
                     <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-50 truncate">
                       {name}
                     </h3>
-                    <BadgeCheck className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                    <BadgeCheck className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
                   </div>
 
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
                     {specialization?.[0] && (
-                      <span className="truncate max-w-[220px] sm:max-w-none">
+                      <span className="truncate max-w-[220px] sm:max-w-none font-medium">
                         {specialization[0]}
                       </span>
                     )}
                     {specialization.length > 1 && (
-                      <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
+                      <Badge variant="secondary" className="px-2 py-0.5 text-[10px] font-medium">
                         +{specialization.length - 1}
                       </Badge>
                     )}
@@ -375,59 +375,79 @@ const ClientDashboardMyBookings = () => {
               </div>
 
               <div className="flex-shrink-0">
-                <span className={statusUI.className}>{statusUI.label}</span>
+                <span className={`px-3 py-1 text-xs font-semibold rounded-lg shadow-sm shrink-0 inline-block ${statusUI.className}`}>
+                  {statusUI.label}
+                </span>
               </div>
             </div>
 
-            <Separator className="my-4" />
+            <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
-            {/* Session Meta */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="flex items-start gap-2.5">
-                <div className="mt-0.5 h-8 w-8 rounded-xl bg-primary-50 dark:bg-primary-950/35 border border-primary-100 dark:border-primary-900/40 flex items-center justify-center">
-                  <Calendar className="h-4 w-4 text-primary-700 dark:text-primary-300" />
+            {/* Session Meta in structured tiles with generous breathing room */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 pt-1">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                  <span className="font-medium">Date</span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    {s.date}
-                  </p>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400">Date</p>
-                </div>
+                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  {s.date}
+                </p>
               </div>
 
-              <div className="flex items-start gap-2.5">
-                <div className="mt-0.5 h-8 w-8 rounded-xl bg-primary-50 dark:bg-primary-950/35 border border-primary-100 dark:border-primary-900/40 flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-primary-700 dark:text-primary-300" />
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <Clock className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                  <span className="font-medium">Time</span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    {s.time}
-                  </p>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                    {s.duration} •{' '}
-                    <span className="inline-flex items-center gap-1">
-                      <Globe className="h-3 w-3" /> {s.tz}
-                    </span>
-                  </p>
-                </div>
+                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  {s.time}
+                </p>
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
+                  {s.duration} • <Globe className="h-3 w-3 inline text-primary-500" /> {s.tz}
+                </p>
               </div>
 
-              <div className="flex items-start gap-2.5 sm:col-span-2">
-                <div className="mt-0.5 h-8 w-8 rounded-xl bg-primary-50 dark:bg-primary-950/35 border border-primary-100 dark:border-primary-900/40 flex items-center justify-center">
-                  <Video className="h-4 w-4 text-primary-700 dark:text-primary-300" />
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <Video className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                  <span className="font-medium">Session Mode</span>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    Video session
+                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  Video Session
+                </p>
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
+                  Live 1-on-1 counseling
+                </p>
+              </div>
+
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 flex items-center justify-between gap-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-medium">Total Paid</span>
+                  </div>
+                  <p className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                    ₹{booking.price}
                   </p>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400">Session mode</p>
                 </div>
+                {!!booking.invoice && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-lg text-xs font-medium border-primary-200 text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300"
+                    onClick={() => window.open(booking.invoice, '_blank')}
+                  >
+                    <Receipt className="h-3.5 w-3.5 mr-1" />
+                    Invoice
+                  </Button>
+                )}
               </div>
             </div>
 
             {/* Alert strip */}
             {alert.show && (
-              <div className="mt-4">
+              <div className="mt-3.5">
                 <Alert className={`py-2.5 ${alert.className}`}>
                   <alert.icon className="h-4 w-4" />
                   <AlertDescription className="text-xs font-medium">
@@ -437,42 +457,16 @@ const ClientDashboardMyBookings = () => {
               </div>
             )}
 
-            {/* Payment */}
-            <div className="mt-4 rounded-xl border border-neutral-200/70 dark:border-neutral-800/70 bg-gradient-to-r from-white to-primary-50/40 dark:from-neutral-900/40 dark:to-primary-950/10 p-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center">
-                  <IndianRupee className="h-4 w-4 text-neutral-700 dark:text-neutral-200" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    ₹{booking.price}
-                  </p>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400">Amount</p>
-                </div>
-              </div>
-
-              {!!booking.invoice && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl border-primary-200/70 text-primary-700 hover:bg-primary-50 dark:border-primary-800/60 dark:text-primary-300 dark:hover:bg-primary-950/20"
-                  onClick={() => window.open(booking.invoice, '_blank')}
-                >
-                  <Receipt className="h-4 w-4 mr-2" />
-                  Invoice
-                </Button>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+            {/* Actions with clean breathing room */}
+            <div className="pt-1 flex flex-col sm:flex-row gap-2">
               {booking.status === 'confirmed' && (
                 <>
                   <Button
                     className={
-                      'w-full sm:flex-1 rounded-xl text-white font-semibold ' +
+                      'w-full sm:flex-1 rounded-xl text-white font-semibold py-3 ' +
                       'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 ' +
-                      'shadow-lg shadow-primary-500/20 hover:shadow-primary-500/30 transition-all'
+                      'shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all ' +
+                      (!booking.canJoin ? 'opacity-70 cursor-not-allowed' : '')
                     }
                     disabled={!booking.canJoin}
                     onClick={() => handleJoinSession(booking)}
@@ -485,7 +479,7 @@ const ClientDashboardMyBookings = () => {
 
               {booking.status === 'dispute_window_open' && booking.canRaiseIssue && (
                 <Button
-                  className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-white font-semibold"
+                  className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-white font-semibold py-3 shadow-md shadow-violet-500/20 transition-all"
                   onClick={() =>
                     navigate(`/client/dashboard/bookings/raiseIssue/${booking.bookingId}`)
                   }
@@ -497,7 +491,7 @@ const ClientDashboardMyBookings = () => {
             </div>
 
             {/* Footer */}
-            <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/60 flex items-center justify-between gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+            <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800/60 flex items-center justify-between gap-2 text-xs text-neutral-500 dark:text-neutral-400">
               <button
                 className="inline-flex items-center gap-1.5 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                 onClick={() => navigate('/contact')}
@@ -507,15 +501,16 @@ const ClientDashboardMyBookings = () => {
               </button>
 
               <div className="flex items-center gap-2">
-                <span className="hidden sm:inline">Booking:</span>
-                <code className="px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-[11px] font-mono text-neutral-800 dark:text-neutral-200">
+                <span className="hidden sm:inline text-neutral-400">Booking:</span>
+                <code className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-[11px] font-mono text-neutral-700 dark:text-neutral-300">
                   {String(booking.bookingId || '').slice(-8)}
                 </code>
                 <button
-                  className="inline-flex items-center gap-1 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                  className="inline-flex items-center p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                   onClick={() => copyBookingId(booking.bookingId)}
+                  title="Copy booking ID"
                 >
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -536,8 +531,8 @@ const ClientDashboardMyBookings = () => {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="sticky top-0 z-10 -mx-4 px-4 sm:mx-0 sm:px-0 py-3 bg-transparent">
-            <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex h-auto p-1 rounded-2xl bg-neutral-100/70 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60">
+          <div className="pb-1">
+            <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex h-auto p-1.5 rounded-2xl bg-neutral-100/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 shadow-sm">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
