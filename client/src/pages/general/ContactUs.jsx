@@ -21,6 +21,13 @@ import {
 } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import api from '../../lib/axios';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -236,18 +243,18 @@ const ContactUs = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 pt-24 pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 pt-24 sm:pt-28 pb-16">
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-12 w-72 h-72 bg-gradient-to-br from-blue-400/15 to-indigo-400/15 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-24 right-10 w-96 h-96 bg-gradient-to-tr from-purple-400/10 to-blue-500/10 rounded-full blur-3xl animate-pulse delay-500" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-12 sm:mb-16">
           <motion.h1
-            className="text-5xl font-bold leading-tight tracking-tight mb-6"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-4 sm:mb-6"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -259,7 +266,7 @@ const ContactUs = () => {
             </span>
           </motion.h1>
           <motion.p
-            className="text-xl text-gray-600 max-w-3xl mx-auto"
+            className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -271,7 +278,7 @@ const ContactUs = () => {
 
         {/* Contact Information Cards */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 sm:mb-16"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
@@ -287,22 +294,22 @@ const ContactUs = () => {
                 <info.icon className={`h-8 w-8 ${info.color}`} />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">{info.title}</h3>
-              <p className="text-gray-700 font-medium mb-1">{info.details}</p>
+              <p className="text-gray-700 font-medium mb-1 break-words">{info.details}</p>
               <p className="text-sm text-gray-500">{info.subtext}</p>
             </div>
           ))}
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Contact Form */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-8">
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-5 sm:p-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-gray-900">Send us a Message</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Send us a Message</h2>
               </div>
 
               {submitted ? (
@@ -389,27 +396,29 @@ const ContactUs = () => {
                     </div>
                   </div>
 
-                  {/* User Type and Subject */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject
-                      </label>
-                      <select
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleChange}
-                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                      >
-                        <option value="general">General Inquiry</option>
-                        <option value="booking">Booking Support</option>
-                        <option value="technical">Technical Issue</option>
-                        <option value="counselor-application">Counselor Application</option>
-                        <option value="billing">Billing Question</option>
-                        <option value="feedback">Feedback</option>
-                      </select>
-                    </div>
+                  {/* Subject */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subject
+                    </label>
+                    <Select
+                      value={formData.subject}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, subject: value }))
+                      }
+                    >
+                      <SelectTrigger className="w-full p-4 h-auto rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base">
+                        <SelectValue placeholder="Select a subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General Inquiry</SelectItem>
+                        <SelectItem value="booking">Booking Support</SelectItem>
+                        <SelectItem value="technical">Technical Issue</SelectItem>
+                        <SelectItem value="counselor-application">Counselor Application</SelectItem>
+                        <SelectItem value="billing">Billing Question</SelectItem>
+                        <SelectItem value="feedback">Feedback</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Message */}

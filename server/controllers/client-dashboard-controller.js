@@ -410,8 +410,11 @@ const canRaiseIssueOnBooking = (booking) => {
 // Get bookings with filters and pagination
 export const getBookings = wrapper(async (req, res) => {
   const { filter = 'upcoming', page = 1, perPage = 20 } = req.query;
-  const clientId = req.verifiedClientId._id;
-  console.log(filter);
+  const clientId = req.verifiedClientId?._id || req.verifiedClientId;
+
+  if (!clientId) {
+    throw new ApiError(401, 'Client authentication required');
+  }
 
   // Build query based on filter
   let statusFilter = {};
@@ -447,16 +450,15 @@ export const getBookings = wrapper(async (req, res) => {
       statusFilter = {};
   }
 
-  const skip = (parseInt(page) - 1) * parseInt(perPage);
-
-  console.log(perPage);
-  console.log(skip);
+  const parsedPage = Math.max(1, parseInt(page, 10) || 1);
+  const parsedPerPage = Math.min(50, Math.max(1, parseInt(perPage, 10) || 20));
+  const skip = (parsedPage - 1) * parsedPerPage;
 
   // Aggregation pipeline for joining data
   const pipeline = [
     {
       $match: {
-        clientId: new mongoose.Types.ObjectId(clientId),
+        clientId: new mongoose.Types.ObjectId(String(clientId)),
         ...statusFilter,
       },
     },
@@ -476,9 +478,11 @@ export const getBookings = wrapper(async (req, res) => {
         as: 'slotData',
       },
     },
-
     {
-      $unwind: '$slotData',
+      $unwind: {
+        path: '$slotData',
+        preserveNullAndEmptyArrays: true,
+      },
     },
     {
       $lookup: {
@@ -513,11 +517,21 @@ export const getBookings = wrapper(async (req, res) => {
       $skip: skip,
     },
     {
-      $limit: parseInt(perPage),
+      $limit: parsedPerPage,
     },
   ];
 
-  const bookings = await Booking.aggregate(pipeline);
+  let bookings;
+  try {
+    bookings = await Booking.aggregate(pipeline);
+  } catch (error) {
+    logger.error('Error in client getBookings aggregation', {
+      error: error.message,
+      clientId: String(clientId),
+      filter,
+    });
+    throw new ApiError(500, 'Failed to fetch bookings');
+  }
 
   filter === 'upcoming'
     ? bookings.sort((a, b) => {
@@ -537,7 +551,7 @@ export const getBookings = wrapper(async (req, res) => {
 
   // Get total count for pagination
   const totalCount = await Booking.countDocuments({
-    clientId: clientId,
+    clientId: new mongoose.Types.ObjectId(String(clientId)),
     ...statusFilter,
   });
 
@@ -562,17 +576,16 @@ export const getBookings = wrapper(async (req, res) => {
         : null,
     };
   });
-  console.log(enrichedBookings);
 
   res.json({
     success: true,
     data: {
       bookings: enrichedBookings,
       pagination: {
-        currentPage: parseInt(page),
-        perPage: parseInt(perPage),
+        currentPage: parsedPage,
+        perPage: parsedPerPage,
         totalCount,
-        totalPages: Math.ceil(totalCount / parseInt(perPage)),
+        totalPages: Math.ceil(totalCount / parsedPerPage) || 1,
       },
     },
   });

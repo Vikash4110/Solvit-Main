@@ -265,11 +265,15 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
     @apply border-border;
   }
 
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
   }
 
   /* Reduced motion support */
@@ -291,6 +295,14 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family-sans);
+    overflow-x: hidden;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
   }
 
   /* Typography base styles */
@@ -484,6 +496,17 @@
   /* Container utilities */
   .container-custom {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Responsive table wrapper */
+  .table-responsive {
+    @apply w-full overflow-x-auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Minimum touch target for mobile */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
   }
 }
 

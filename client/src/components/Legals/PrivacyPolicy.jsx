@@ -114,7 +114,7 @@ const PrivacyPolicy = () => {
 
   return (
     <motion.section
-      className="py-16 md:py-24 bg-white"
+      className="pt-24 sm:pt-28 pb-16 md:pb-24 bg-white"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}

@@ -180,10 +180,10 @@ const AboutUs = () => {
           aria-hidden="true"
         />
 
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12 py-20 lg:py-28">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-10 lg:px-12 pt-24 pb-16 sm:py-24 lg:py-28">
           <div className="max-w-2xl lg:max-w-3xl mx-auto lg:mx-0">
             <motion.div
-              className="space-y-5 lg:space-y-7 text-center lg:text-left"
+              className="space-y-4 sm:space-y-6 lg:space-y-7 text-center lg:text-left"
               variants={staggerContainer}
               initial="initial"
               animate="animate"
@@ -191,7 +191,7 @@ const AboutUs = () => {
               <motion.div variants={fadeInUp} className="flex justify-center lg:justify-start">
                 <Badge
                   variant="outline"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-white/10 backdrop-blur-md text-white border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-white/10 backdrop-blur-md text-white border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all"
                 >
                   <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Trusted Mental Health Platform</span>
@@ -200,7 +200,7 @@ const AboutUs = () => {
 
               <motion.h1
                 id="hero-heading"
-                className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-lg"
+                className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-[1.15] tracking-tight text-white drop-shadow-lg"
                 variants={fadeInUp}
               >
                 Your Partner in
@@ -218,13 +218,13 @@ const AboutUs = () => {
               </motion.p>
 
               <motion.div variants={fadeInUp} className="flex justify-center lg:justify-start">
-                <Link to="/client-register">
+                <Link to="/register">
                   <Button
                     size="lg"
-                    className="group relative overflow-hidden bg-white hover:bg-white/90 text-primary-900 font-semibold rounded-xl px-8 py-6 shadow-2xl hover:shadow-white/20 transition-all duration-300 hover:scale-105"
+                    className="group relative overflow-hidden bg-white hover:bg-white/90 text-primary-900 font-semibold rounded-xl px-7 py-5 sm:px-8 sm:py-6 text-sm sm:text-base shadow-2xl hover:shadow-white/20 transition-all duration-300 hover:scale-105"
                   >
                     Find Your Expert
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
               </motion.div>
