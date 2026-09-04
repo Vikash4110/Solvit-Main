@@ -155,31 +155,41 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
   const getStatusColor = (status) => {
     switch (status) {
       case 'under_review':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-amber-50 text-amber-700 border-amber-200/80 shadow-xs';
       case 'resolved_valid':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200/80 shadow-xs';
       case 'resolved_invalid':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-rose-50 text-rose-700 border-rose-200/80 shadow-xs';
       case 'closed':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200 shadow-xs';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'under_review':
-        return <Clock className="w-4 h-4" />;
+        return <Clock className="w-3.5 h-3.5 shrink-0" />;
       case 'resolved_valid':
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle className="w-3.5 h-3.5 shrink-0" />;
       case 'resolved_invalid':
-        return <XCircle className="w-4 h-4" />;
+        return <XCircle className="w-3.5 h-3.5 shrink-0" />;
       case 'closed':
-        return <FileText className="w-4 h-4" />;
+        return <FileText className="w-3.5 h-3.5 shrink-0" />;
       default:
-        return <AlertTriangle className="w-4 h-4" />;
+        return <AlertTriangle className="w-3.5 h-3.5 shrink-0" />;
     }
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      under_review: 'Under Review',
+      resolved_valid: 'Resolved (Valid)',
+      resolved_invalid: 'Resolved (Invalid)',
+      closed: 'Closed',
+    };
+    return labels[status] || (status ? status.replace(/_/g, ' ') : 'N/A');
   };
 
   const getIssueTypeLabel = (issueType) => {
@@ -237,10 +247,12 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
             {dispute && (
               <Badge
                 variant="outline"
-                className={`ml-auto ${getStatusColor(dispute.dispute?.status)}`}
+                className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border ${getStatusColor(
+                  dispute.dispute?.status
+                )}`}
               >
                 {getStatusIcon(dispute.dispute?.status)}
-                <span className="ml-1 capitalize">{dispute.dispute?.status.replace('_', ' ')}</span>
+                <span>{getStatusLabel(dispute.dispute?.status)}</span>
               </Badge>
             )}
           </DialogTitle>
@@ -264,13 +276,21 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
                   <div className="grid grid-cols-5 gap-4 text-center">
                     <div>
                       <p className="text-sm text-slate-600">Booking ID</p>
-                      <code className="text-xs bg-white px-2 py-1 rounded mt-1 inline-block">
+                      <code className="text-xs bg-white px-2 py-1 rounded mt-1 inline-block font-mono">
                         {dispute._id}
                       </code>
                     </div>
                     <div>
                       <p className="text-sm text-slate-600">Status</p>
-                      <Badge className="mt-1 capitalize">{dispute.status.replace('_', ' ')}</Badge>
+                      <Badge
+                        variant="outline"
+                        className={`mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-full border ${getStatusColor(
+                          dispute.dispute?.status || dispute.status
+                        )}`}
+                      >
+                        {getStatusIcon(dispute.dispute?.status || dispute.status)}
+                        <span>{getStatusLabel(dispute.dispute?.status || dispute.status)}</span>
+                      </Badge>
                     </div>
                     <div>
                       <p className="text-sm text-slate-600">Disputed At</p>

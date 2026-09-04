@@ -855,247 +855,253 @@ const CounselorDashboardPersonalInfo = () => {
       </motion.div>
 
       {/* Information Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Basic Information */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5 text-primary-600" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow icon={User} label="Full Name" value={counselorData.fullName} />
-              <InfoRow icon={Mail} label="Email" value={counselorData.email} />
-              <InfoRow icon={Phone} label="Phone" value={counselorData.phone} />
-              <InfoRow icon={User} label="Gender" value={counselorData.gender} />
-            </CardContent>
-          </Card>
-        </motion.div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Left Column */}
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary-600" />
+                  Basic Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow icon={User} label="Full Name" value={counselorData.fullName} />
+                <InfoRow icon={Mail} label="Email" value={counselorData.email} />
+                <InfoRow icon={Phone} label="Phone" value={counselorData.phone} />
+                <InfoRow icon={User} label="Gender" value={counselorData.gender} />
+              </CardContent>
+            </Card>
+          </motion.div>
 
-        {/* Professional Details */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary-600" />
-                Professional Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow
-                icon={Briefcase}
-                label="Specialization"
-                value={(Array.isArray(counselorData.specialization)
-                  ? counselorData.specialization
-                  : counselorData.specialization
-                    ? [counselorData.specialization]
-                    : []
-                ).map((specialization) => (
-                  <Badge key={specialization} variant="outline" className="m-1">
-                    {specialization}
-                  </Badge>
-                ))}
-              />
-              <InfoRow
-                icon={Award}
-                label="Experience"
-                value={`${counselorData.experienceYears} years (${counselorData.experienceLevel})`}
-              />
-              <InfoRow
-                icon={Languages}
-                label="Languages"
-                value={
-                  normalizeLanguages(counselorData.application.languages).length > 0
-                    ? normalizeLanguages(counselorData.application.languages).join(', ')
-                    : 'Not specified'
-                }
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Education */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-primary-600" />
-                Education
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Graduation */}
-              <div>
-                <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
-                  Graduation
-                </Label>
-                <div className="mt-2 space-y-2">
-                  <InfoRow
-                    icon={Building}
-                    label="University"
-                    value={
-                      counselorData.application.education.graduation.university || 'Not specified'
-                    }
-                    compact
-                  />
-                  <InfoRow
-                    icon={GraduationCap}
-                    label="Degree"
-                    value={counselorData.application.education.graduation.degree || 'Not specified'}
-                    compact
-                  />
-                  <InfoRow
-                    icon={Calendar}
-                    label="Year"
-                    value={counselorData.application.education.graduation.year || 'Not specified'}
-                    compact
-                  />
-                </div>
-              </div>
-
-              {/* Post Graduation */}
-              {(counselorData.application.education.postGraduation.university ||
-                counselorData.application.education.postGraduation.degree) && (
-                <>
-                  <Separator />
-                  <div>
-                    <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
-                      Post Graduation
-                    </Label>
-                    <div className="mt-2 space-y-2">
-                      <InfoRow
-                        icon={Building}
-                        label="University"
-                        value={
-                          counselorData.application.education.postGraduation.university ||
-                          'Not specified'
-                        }
-                        compact
-                      />
-                      <InfoRow
-                        icon={GraduationCap}
-                        label="Degree"
-                        value={
-                          counselorData.application.education.postGraduation.degree ||
-                          'Not specified'
-                        }
-                        compact
-                      />
-                      <InfoRow
-                        icon={Calendar}
-                        label="Year"
-                        value={
-                          counselorData.application.education.postGraduation.year || 'Not specified'
-                        }
-                        compact
-                      />
-                    </div>
+          {/* Education */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary-600" />
+                  Education
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Graduation */}
+                <div>
+                  <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
+                    Graduation
+                  </Label>
+                  <div className="mt-2 space-y-2">
+                    <InfoRow
+                      icon={Building}
+                      label="University"
+                      value={
+                        counselorData.application.education.graduation.university || 'Not specified'
+                      }
+                      compact
+                    />
+                    <InfoRow
+                      icon={GraduationCap}
+                      label="Degree"
+                      value={counselorData.application.education.graduation.degree || 'Not specified'}
+                      compact
+                    />
+                    <InfoRow
+                      icon={Calendar}
+                      label="Year"
+                      value={counselorData.application.education.graduation.year || 'Not specified'}
+                      compact
+                    />
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                </div>
 
-        {/* License Information */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BadgeCheck className="h-5 w-5 text-primary-600" />
-                License Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow
-                icon={FileText}
-                label="License Number"
-                value={counselorData.application.license.licenseNo || 'Not specified'}
-              />
-              <InfoRow
-                icon={Building}
-                label="Issuing Authority"
-                value={counselorData.application.license.issuingAuthority || 'Not specified'}
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
+                {/* Post Graduation */}
+                {(counselorData.application.education.postGraduation.university ||
+                  counselorData.application.education.postGraduation.degree) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
+                        Post Graduation
+                      </Label>
+                      <div className="mt-2 space-y-2">
+                        <InfoRow
+                          icon={Building}
+                          label="University"
+                          value={
+                            counselorData.application.education.postGraduation.university ||
+                            'Not specified'
+                          }
+                          compact
+                        />
+                        <InfoRow
+                          icon={GraduationCap}
+                          label="Degree"
+                          value={
+                            counselorData.application.education.postGraduation.degree ||
+                            'Not specified'
+                          }
+                          compact
+                        />
+                        <InfoRow
+                          icon={Calendar}
+                          label="Year"
+                          value={
+                            counselorData.application.education.postGraduation.year || 'Not specified'
+                          }
+                          compact
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
-        {/* Bank Details */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary-600" />
-                Bank Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow
-                icon={CreditCard}
-                label="Account Number"
-                value={
-                  counselorData.application.bankDetails.accountNo
-                    ? `${counselorData.application.bankDetails.accountNo}`
-                    : 'Not specified'
-                }
-              />
-              <InfoRow
-                icon={FileText}
-                label="IFSC Code"
-                value={counselorData.application.bankDetails.ifscCode || 'Not specified'}
-              />
-              <InfoRow
-                icon={Building}
-                label="Branch"
-                value={counselorData.application.bankDetails.branchName || 'Not specified'}
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Account Status */}
-        <motion.div variants={fadeInUp}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary-600" />
-                Account Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <InfoRow
-                icon={Calendar}
-                label="Member Since"
-                value={formatDate(counselorData.createdAt)}
-              />
-              <InfoRow
-                icon={Clock}
-                label="Last Login"
-                value={formatSmartDate(counselorData.lastLogin)}
-                tooltip={formatDateTime(counselorData.lastLogin)}
-              />
-              {counselorData.application.applicationSubmittedAt && (
+          {/* Bank Details */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary-600" />
+                  Bank Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <InfoRow
-                  icon={CheckCircle}
-                  label="Application Submitted"
-                  value={formatDate(counselorData.application.applicationSubmittedAt)}
+                  icon={CreditCard}
+                  label="Account Number"
+                  value={
+                    counselorData.application.bankDetails.accountNo
+                      ? `${counselorData.application.bankDetails.accountNo}`
+                      : 'Not specified'
+                  }
                 />
-              )}
-              <InfoRow
-                icon={Shield}
-                label="Account Status"
-                value={
-                  <Badge variant={counselorData.isBlocked ? 'destructive' : 'outline'}>
-                    {counselorData.isBlocked ? 'Blocked' : 'Active'}
-                  </Badge>
-                }
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
+                <InfoRow
+                  icon={FileText}
+                  label="IFSC Code"
+                  value={counselorData.application.bankDetails.ifscCode || 'Not specified'}
+                />
+                <InfoRow
+                  icon={Building}
+                  label="Branch"
+                  value={counselorData.application.bankDetails.branchName || 'Not specified'}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Professional Details */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-primary-600" />
+                  Professional Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow
+                  icon={Briefcase}
+                  label="Specialization"
+                  value={(Array.isArray(counselorData.specialization)
+                    ? counselorData.specialization
+                    : counselorData.specialization
+                      ? [counselorData.specialization]
+                      : []
+                  ).map((specialization) => (
+                    <Badge key={specialization} variant="outline" className="m-1">
+                      {specialization}
+                    </Badge>
+                  ))}
+                />
+                <InfoRow
+                  icon={Award}
+                  label="Experience"
+                  value={`${counselorData.experienceYears} years (${counselorData.experienceLevel})`}
+                />
+                <InfoRow
+                  icon={Languages}
+                  label="Languages"
+                  value={
+                    normalizeLanguages(counselorData.application.languages).length > 0
+                      ? normalizeLanguages(counselorData.application.languages).join(', ')
+                      : 'Not specified'
+                  }
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* License Information */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BadgeCheck className="h-5 w-5 text-primary-600" />
+                  License Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow
+                  icon={FileText}
+                  label="License Number"
+                  value={counselorData.application.license.licenseNo || 'Not specified'}
+                />
+                <InfoRow
+                  icon={Building}
+                  label="Issuing Authority"
+                  value={counselorData.application.license.issuingAuthority || 'Not specified'}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Account Status */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary-600" />
+                  Account Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow
+                  icon={Calendar}
+                  label="Member Since"
+                  value={formatDate(counselorData.createdAt)}
+                />
+                <InfoRow
+                  icon={Clock}
+                  label="Last Login"
+                  value={formatSmartDate(counselorData.lastLogin)}
+                  tooltip={formatDateTime(counselorData.lastLogin)}
+                />
+                {counselorData.application.applicationSubmittedAt && (
+                  <InfoRow
+                    icon={CheckCircle}
+                    label="Application Submitted"
+                    value={formatDate(counselorData.application.applicationSubmittedAt)}
+                  />
+                )}
+                <InfoRow
+                  icon={Shield}
+                  label="Account Status"
+                  value={
+                    <Badge variant={counselorData.isBlocked ? 'destructive' : 'outline'}>
+                      {counselorData.isBlocked ? 'Blocked' : 'Active'}
+                    </Badge>
+                  }
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </div>
 
       {/* Edit Profile Dialog */}

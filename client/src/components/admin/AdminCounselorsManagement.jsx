@@ -143,28 +143,40 @@ const AdminCounselorsManagement = () => {
     switch (status) {
       case 'approved':
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-            <CheckCircle className="w-3 h-3 mr-1" />
+          <Badge
+            variant="outline"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-xs bg-emerald-50 text-emerald-700 border-emerald-200/80"
+          >
+            <CheckCircle className="w-3.5 h-3.5 shrink-0" />
             Approved
           </Badge>
         );
       case 'pending':
         return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-            <Clock className="w-3 h-3 mr-1" />
+          <Badge
+            variant="outline"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-xs bg-amber-50 text-amber-700 border-amber-200/80"
+          >
+            <Clock className="w-3.5 h-3.5 shrink-0" />
             Pending
           </Badge>
         );
       case 'rejected':
         return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
-            <XCircle className="w-3 h-3 mr-1" />
+          <Badge
+            variant="outline"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-xs bg-rose-50 text-rose-700 border-rose-200/80"
+          >
+            <XCircle className="w-3.5 h-3.5 shrink-0" />
             Rejected
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">
+          <Badge
+            variant="outline"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-xs bg-slate-100 text-slate-700 border-slate-200"
+          >
             Not Submitted
           </Badge>
         );
@@ -269,8 +281,10 @@ const AdminCounselorsManagement = () => {
                 value={selectedStatus || 'all'}
                 onValueChange={(value) => setSelectedStatus(value === 'all' ? '' : value)}
               >
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <Filter className="w-4 h-4 mr-2" />
+                <SelectTrigger
+                  leftIcon={<Filter className="w-4 h-4 text-slate-400" />}
+                  className="w-full md:w-[200px] bg-white border-slate-200"
+                >
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -393,21 +407,21 @@ const AdminCounselorsManagement = () => {
                           <td className="px-4 py-4">
                             <Badge
                               variant="outline"
-                              className={`${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-xs ${
                                 counselor.isBlocked
-                                  ? 'bg-red-100 text-red-800 border-red-200'
-                                  : 'bg-green-100 text-green-800 border-green-200'
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
                               }`}
                             >
                               {counselor.isBlocked ? (
                                 <>
-                                  <UserX className="w-3 h-3 mr-1" />
-                                  Blocked
+                                  <UserX className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Blocked</span>
                                 </>
                               ) : (
                                 <>
-                                  <UserCheck className="w-3 h-3 mr-1" />
-                                  Active
+                                  <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Active</span>
                                 </>
                               )}
                             </Badge>

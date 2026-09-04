@@ -111,31 +111,41 @@ const AdminDisputeManagement = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'under_review':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-amber-50 text-amber-700 border-amber-200/80 shadow-xs';
       case 'resolved_valid':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200/80 shadow-xs';
       case 'resolved_invalid':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-rose-50 text-rose-700 border-rose-200/80 shadow-xs';
       case 'closed':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200 shadow-xs';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'under_review':
-        return <Clock className="w-4 h-4" />;
+        return <Clock className="w-3.5 h-3.5 shrink-0" />;
       case 'resolved_valid':
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle className="w-3.5 h-3.5 shrink-0" />;
       case 'resolved_invalid':
-        return <XCircle className="w-4 h-4" />;
+        return <XCircle className="w-3.5 h-3.5 shrink-0" />;
       case 'closed':
-        return <FileX className="w-4 h-4" />;
+        return <FileX className="w-3.5 h-3.5 shrink-0" />;
       default:
-        return <AlertTriangle className="w-4 h-4" />;
+        return <AlertTriangle className="w-3.5 h-3.5 shrink-0" />;
     }
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      under_review: 'Under Review',
+      resolved_valid: 'Resolved (Valid)',
+      resolved_invalid: 'Resolved (Invalid)',
+      closed: 'Closed',
+    };
+    return labels[status] || (status ? status.replace(/_/g, ' ') : 'N/A');
   };
 
   // ✅ Updated formatDate function using dayjs with timezone
@@ -282,8 +292,10 @@ const AdminDisputeManagement = () => {
                 value={selectedStatus || 'all'}
                 onValueChange={(value) => setSelectedStatus(value === 'all' ? '' : value)}
               >
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <Filter className="w-4 h-4 mr-2" />
+                <SelectTrigger
+                  leftIcon={<Filter className="w-4 h-4 text-slate-400" />}
+                  className="w-full md:w-[220px] bg-white border-slate-200"
+                >
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -357,7 +369,7 @@ const AdminDisputeManagement = () => {
                       {disputes.map((dispute) => (
                         <tr key={dispute._id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-4 py-4">
-                            <code className="text-xs bg-slate-100 px-2 py-1 rounded">
+                            <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono">
                               {dispute._id}
                             </code>
                           </td>
@@ -392,13 +404,13 @@ const AdminDisputeManagement = () => {
                           <td className="px-4 py-4">
                             <Badge
                               variant="outline"
-                              className={`flex items-center gap-1 w-fit ${getStatusColor(
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border ${getStatusColor(
                                 dispute.dispute?.status
                               )}`}
                             >
                               {getStatusIcon(dispute.dispute?.status)}
-                              <span className="capitalize">
-                                {dispute.dispute?.status.replace('_', ' ')}
+                              <span>
+                                {getStatusLabel(dispute.dispute?.status)}
                               </span>
                             </Badge>
                           </td>

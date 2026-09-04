@@ -205,8 +205,10 @@ const AdminClientsManagement = () => {
                 value={selectedStatus || 'all'}
                 onValueChange={(value) => setSelectedStatus(value === 'all' ? '' : value)}
               >
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <Filter className="w-4 h-4 mr-2" />
+                <SelectTrigger
+                  leftIcon={<Filter className="w-4 h-4 text-slate-400" />}
+                  className="w-full md:w-[200px] bg-white border-slate-200"
+                >
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -325,21 +327,21 @@ const AdminClientsManagement = () => {
                           <td className="px-4 py-4">
                             <Badge
                               variant="outline"
-                              className={`${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border shadow-xs ${
                                 client.isBlocked
-                                  ? 'bg-red-100 text-red-800 border-red-200'
-                                  : 'bg-green-100 text-green-800 border-green-200'
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
                               }`}
                             >
                               {client.isBlocked ? (
                                 <>
-                                  <UserX className="w-3 h-3 mr-1" />
-                                  Blocked
+                                  <UserX className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Blocked</span>
                                 </>
                               ) : (
                                 <>
-                                  <UserCheck className="w-3 h-3 mr-1" />
-                                  Active
+                                  <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Active</span>
                                 </>
                               )}
                             </Badge>

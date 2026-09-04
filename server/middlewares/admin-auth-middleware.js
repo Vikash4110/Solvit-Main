@@ -4,7 +4,11 @@ import { Admin } from '../models/admin-model.js';
 
 export const verifyJWTAdmin = async (req, res, next) => {
   try {
-    const token = req.cookies?.accessToken || req.header('Authorization')?.replace('Bearer ', '');
+    const authHeader = req.header('Authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.replace('Bearer ', '').trim()
+      : authHeader?.trim();
+    const token = bearerToken || req.cookies?.adminAccessToken || req.cookies?.accessToken;
 
     if (!token) {
       return res.status(401).json({
@@ -22,7 +26,7 @@ export const verifyJWTAdmin = async (req, res, next) => {
       });
     }
 
-    const admin = await Admin.findById(decodedToken._id).select('-password');
+    const admin = await Admin.findById(decodedToken._id).select('-password').lean();
 
     if (!admin) {
       return res.status(401).json({

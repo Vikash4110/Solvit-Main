@@ -12,8 +12,15 @@ import {
   FileText,
   Search,
   Filter,
-  AlertTriangle, // ✅ ADD THIS ICON
+  AlertTriangle,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const ApplicationsPage = () => {
   const { getAllCounselorApplications, updateApplicationStatus } =
@@ -171,21 +178,23 @@ const ApplicationsPage = () => {
               </div>
             </div>
             <div className="sm:w-48">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Filter className="h-5 w-5 text-gray-400" />
-                </div>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+              <Select
+                value={selectedStatus || 'all'}
+                onValueChange={(val) => setSelectedStatus(val === 'all' ? '' : val)}
+              >
+                <SelectTrigger
+                  leftIcon={<Filter className="h-4 w-4 text-slate-400" />}
+                  className="w-full bg-white border-gray-300"
                 >
-                  <option value="">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
