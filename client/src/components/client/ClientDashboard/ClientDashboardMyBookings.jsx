@@ -49,11 +49,13 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter.js';
 import PreSessionGuidelines from '../ClientDashboard/ClientDashboardPreSessionGuidelines';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 
 const EARLY_JOIN_MINUTES = 10; // must match earlyJoinMinutesForSession constant on the server
 
@@ -66,12 +68,14 @@ const fadeInUp = {
 // This is evaluated both on fetch AND every 30 s via a timer so the button
 // locks/unlocks in real time without a page reload.
 const computeCanJoin = (booking) => {
-  if (!booking.videoSDKRoomId || !booking.startTime || !booking.endTime) return false;
+  if (!booking?.videoSDKRoomId || !booking?.startTime || !booking?.endTime) return false;
   if (booking.status !== 'confirmed') return false;
 
   const now = dayjs().utc();
   const start = dayjs.utc(booking.startTime);
   const end = dayjs.utc(booking.endTime);
+
+  if (!start.isValid() || !end.isValid()) return false;
 
   // Mirror server logic: join window = [start − EARLY_JOIN_MINUTES, end]
   return now.isSameOrAfter(start.subtract(EARLY_JOIN_MINUTES, 'minute')) && now.isBefore(end);
