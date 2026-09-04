@@ -354,95 +354,100 @@ const CounselorDashboardMySessions = () => {
             </Alert>
           )}
 
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-6 sm:p-7 space-y-5">
             {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <Avatar className="h-12 w-12 border-2 border-primary-200 dark:border-primary-800">
+            <div className="flex items-start justify-between gap-4 pb-1">
+              <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                <Avatar className="h-12 w-12 sm:h-14 sm:w-14 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
                   <AvatarImage src={booking.clientPhoto} alt={clientName} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary-500 to-primary-600 text-white font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-primary-500 to-primary-600 text-white font-semibold text-sm sm:text-base">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                  <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                     {clientName}
                   </h3>
                   <button
                     onClick={() => copyBookingId(booking.bookingId)}
-                    className="flex items-center gap-1.5 mt-0.5 text-xs text-neutral-500 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                    className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-[11px] font-mono text-neutral-600 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-neutral-200/70 dark:hover:bg-neutral-700 transition-colors"
+                    title="Copy booking ID"
                   >
                     <Copy className="w-3 h-3" />
-                    <span className="font-mono">{String(booking.bookingId || '').slice(-8)}</span>
+                    <span>{String(booking.bookingId || '').slice(-8)}</span>
                   </button>
                 </div>
               </div>
 
-              <Badge className={statusUI.className}>{statusUI.label}</Badge>
+              <Badge className={`px-3 py-1 text-xs font-semibold rounded-lg shadow-sm shrink-0 ${statusUI.className}`}>
+                {statusUI.label}
+              </Badge>
             </div>
 
-            <Separator className="bg-neutral-200 dark:bg-neutral-800" />
+            <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
-            {/* Session meta */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
+            {/* Session meta in clean structured tiles with generous breathing room */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 pt-1">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Calendar className="w-3.5 h-3.5" /><span>Date</span>
+                  <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                  <span className="font-medium">Date</span>
                 </div>
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                   {s ? s.date : 'N/A'}
                 </p>
               </div>
 
-              <div className="space-y-1">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Clock className="w-3.5 h-3.5" /><span>Time</span>
+                  <Clock className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                  <span className="font-medium">Time</span>
                 </div>
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                   {s ? s.time : 'N/A'}
                 </p>
                 {s && (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {s.duration} • <Video className="w-3 h-3 inline" /> Video session
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
+                    {s.duration} • <Video className="w-3 h-3 inline text-primary-500" /> Video session
                   </p>
                 )}
               </div>
 
-              <div className="space-y-1">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <IndianRupee className="w-3.5 h-3.5" /><span>Your Earnings</span>
+                  <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="font-medium">Your Earnings</span>
                 </div>
-                <p className={`text-sm font-semibold ${
+                <p className={`text-base font-bold ${
                   booking.status === 'disputed'
                     ? 'text-amber-600 dark:text-amber-400'
                     : 'text-emerald-600 dark:text-emerald-400'
                 }`}>
                   ₹{booking.earnings ?? 0}
                   {booking.status === 'disputed' && (
-                    <span className="ml-1.5 text-[10px] font-normal text-amber-500 dark:text-amber-400">(on hold)</span>
+                    <span className="ml-1.5 text-[10px] font-medium text-amber-500 dark:text-amber-400">(on hold)</span>
                   )}
                   {booking.status === 'dispute_window_open' && (
-                    <span className="ml-1.5 text-[10px] font-normal text-violet-500 dark:text-violet-400">(pending)</span>
+                    <span className="ml-1.5 text-[10px] font-medium text-violet-500 dark:text-violet-400">(pending)</span>
                   )}
                 </p>
               </div>
 
-              {booking.clientEmail && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                    <Mail className="w-3.5 h-3.5" /><span>Email</span>
-                  </div>
-                  <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate">
-                    {booking.clientEmail}
-                  </p>
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <Mail className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                  <span className="font-medium">Email</span>
                 </div>
-              )}
+                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate" title={booking.clientEmail}>
+                  {booking.clientEmail || 'N/A'}
+                </p>
+              </div>
             </div>
 
             {/* Dispute detail block (only when disputed) */}
             {booking.status === 'disputed' && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-3 space-y-1.5">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-4 space-y-2">
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                   <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Issue raised by client</p>
@@ -467,7 +472,7 @@ const CounselorDashboardMySessions = () => {
 
             {/* Review-window info block */}
             {booking.status === 'dispute_window_open' && (
-              <div className="rounded-xl border border-violet-200 bg-violet-50 dark:border-violet-900/60 dark:bg-violet-950/20 p-3 space-y-1">
+              <div className="rounded-xl border border-violet-200 bg-violet-50 dark:border-violet-900/60 dark:bg-violet-950/20 p-4 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <Hourglass className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
                   <p className="text-xs font-semibold text-violet-900 dark:text-violet-200">Review window is open</p>
@@ -478,27 +483,29 @@ const CounselorDashboardMySessions = () => {
               </div>
             )}
 
-            <Separator className="bg-neutral-200 dark:bg-neutral-800" />
+            <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
-            {/* Actions */}
-            {booking.canJoin ? (
-              <Button
-                onClick={() => handleJoinSession(booking)}
-                className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-md hover:shadow-lg transition-all"
-                size="lg"
-              >
-                <Video className="w-4 h-4 mr-2" />
-                Join Session
-              </Button>
-            ) : booking.status === 'confirmed' && s ? (
-              <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
-                {s.minutesToStart > 0
-                  ? `Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES
-                      ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
-                      : `in ${s.minutesToStart} min`}`
-                  : 'Session window has closed'}
-              </p>
-            ) : null}
+            {/* Actions with generous breathing room */}
+            <div className="pt-1">
+              {booking.canJoin ? (
+                <Button
+                  onClick={() => handleJoinSession(booking)}
+                  className="w-full rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold py-3 shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all"
+                  size="lg"
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  Join Session
+                </Button>
+              ) : booking.status === 'confirmed' && s ? (
+                <div className="py-3 px-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 text-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                  {s.minutesToStart > 0
+                    ? `Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES
+                        ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
+                        : `in ${s.minutesToStart} min`}`
+                    : 'Session window has closed'}
+                </div>
+              ) : null}
+            </div>
           </CardContent>
         </Card>
       </motion.div>

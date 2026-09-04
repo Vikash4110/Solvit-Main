@@ -95,47 +95,48 @@ const CounselorDashboardSidebar = ({ onNavigate, showCloseButton = false }) => {
 
       {/* Navigation - Scrollable with proper padding */}
       <ScrollArea className="flex-1">
-        <nav className="px-4 py-4 space-y-2" role="navigation" aria-label="Main navigation">
+        <nav className="px-3.5 py-4 space-y-2.5" role="navigation" aria-label="Main navigation">
           {sidebarItems.map((item, index) => {
             const Icon = item.icon;
             const active = isActive(item.path);
 
             return (
-              <Link key={item.id} to={item.path} onClick={handleNavClick}>
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.05, ease: [0.4, 0, 0.2, 1] }}
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.04 }}
+              >
+                <Link
+                  to={item.path}
+                  onClick={handleNavClick}
+                  aria-current={active ? 'page' : undefined}
+                  className={`
+                    group flex items-start gap-3.5 w-full p-3.5 rounded-xl transition-all duration-200
+                    ${
+                      active
+                        ? 'bg-primary-600 text-white shadow-md shadow-primary-500/25'
+                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white'
+                    }
+                  `}
                 >
-                  <Button
-                    variant={active ? 'default' : 'ghost'}
-                    size="xl"
-                    className={`
-                      w-full justify-start py-4 px-4 transition-all duration-300 h-96
-                      ${
-                        active
-                          ? 'bg-primary-600 text-white shadow-md hover:bg-primary-700'
-                          : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
-                      }
-                    `}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    <div className="flex items-start gap-3 w-full flex-wrap">
-                      <Icon
-                        className={`w-5 h-5 shrink-0 mt-0.5 transition-all duration-300 ${active ? 'text-white' : 'text-primary-600 dark:text-primary-400'}`}
-                      />
-                      <div className="flex-1 text-left min-w-0">
-                        <div className="font-semibold text-sm leading-snug">{item.name}</div>
-                        <div
-                          className={`text-xs mt-1 leading-snug ${active ? 'text-white/90' : 'text-neutral-500 dark:text-neutral-400'}`}
-                        >
-                          {item.description}
-                        </div>
-                      </div>
+                  <Icon
+                    className={`w-5 h-5 shrink-0 mt-0.5 transition-colors duration-200 ${
+                      active ? 'text-white' : 'text-primary-600 dark:text-primary-400 group-hover:text-primary-700 dark:group-hover:text-primary-300'
+                    }`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm leading-tight">{item.name}</div>
+                    <div
+                      className={`text-xs mt-1 leading-relaxed ${
+                        active ? 'text-white/85' : 'text-neutral-500 dark:text-neutral-400'
+                      }`}
+                    >
+                      {item.description}
                     </div>
-                  </Button>
-                </motion.div>
-              </Link>
+                  </div>
+                </Link>
+              </motion.div>
             );
           })}
         </nav>
