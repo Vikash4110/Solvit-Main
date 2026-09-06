@@ -6,8 +6,11 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Home/Navbar';
 import ScrollToTop from './components/general/ScrollToTop';
 import ProtectedRoute from './components/client/ClientProtectedRoute';
+import ClientPublicRoute from './components/client/ClientPublicRoute';
 import CounselorProtectedRoute from './components/counselor/CounselorProtectedRoute';
+import CounselorPublicRoute from './components/counselor/CounselorPublicRoute';
 import AdminProtectedRoute from './pages/admin/AdminProtectedRoute';
+import AdminPublicRoute from './pages/admin/AdminPublicRoute';
 import AdminLayout from './components/admin/AdminLayout';
 import PageLoader from './components/common/PageLoader';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -79,11 +82,39 @@ function App() {
                   <Route path="/blogs" element={<Blogs />} />
                   <Route path="/blogs/:slug" element={<BlogPost />} />
 
-                  {/* CLIENT AUTHENTICATION ROUTES */}
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/forgot-password" element={<ClientForgotPassword />} />
-                  <Route path="/reset-password" element={<ClientResetPassword />} />
+                  {/* CLIENT AUTHENTICATION ROUTES (Restricted if already logged in) */}
+                  <Route
+                    path="/login"
+                    element={
+                      <ClientPublicRoute>
+                        <Login />
+                      </ClientPublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
+                      <ClientPublicRoute>
+                        <Register />
+                      </ClientPublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/forgot-password"
+                    element={
+                      <ClientPublicRoute>
+                        <ClientForgotPassword />
+                      </ClientPublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/reset-password"
+                    element={
+                      <ClientPublicRoute>
+                        <ClientResetPassword />
+                      </ClientPublicRoute>
+                    }
+                  />
 
                   {/* VIDEO CALL ROUTES */}
                   <Route path="/meeting/:bookingId/:meetingId" element={<VideoCallInterface />} />
@@ -108,11 +139,39 @@ function App() {
                   <Route path="/browse-counselors" element={<BrowseCounselor />} />
                   <Route path="/book-counselor/:counselorId" element={<BookCounselorCalendar />} />
 
-                  {/* COUNSELOR AUTHENTICATION ROUTES */}
-                  <Route path="/counselor/login" element={<CounselorLogin />} />
-                  <Route path="/counselor/register" element={<CounselorRegister />} />
-                  <Route path="/counselor/forgot-password" element={<CounselorForgotPassword />} />
-                  <Route path="/counselor/reset-password" element={<CounselorResetPassword />} />
+                  {/* COUNSELOR AUTHENTICATION ROUTES (Restricted if already logged in) */}
+                  <Route
+                    path="/counselor/login"
+                    element={
+                      <CounselorPublicRoute>
+                        <CounselorLogin />
+                      </CounselorPublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/counselor/register"
+                    element={
+                      <CounselorPublicRoute>
+                        <CounselorRegister />
+                      </CounselorPublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/counselor/forgot-password"
+                    element={
+                      <CounselorPublicRoute>
+                        <CounselorForgotPassword />
+                      </CounselorPublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/counselor/reset-password"
+                    element={
+                      <CounselorPublicRoute>
+                        <CounselorResetPassword />
+                      </CounselorPublicRoute>
+                    }
+                  />
 
                   {/* COUNSELOR PROTECTED ROUTES */}
                   <Route
@@ -134,7 +193,14 @@ function App() {
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
                   {/* ADMIN ROUTES */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route
+                    path="/admin/login"
+                    element={
+                      <AdminPublicRoute>
+                        <AdminLogin />
+                      </AdminPublicRoute>
+                    }
+                  />
                   {/* Admin Routes (With sidebar) */}
                   <Route
                     path="/admin"
