@@ -57,8 +57,8 @@ function Calendar({
     <DayPicker
       // showOutsideDays={showOutsideDays}
       className={cn(
-        "group/calendar p-4 sm:p-5",
-        "[--cell-size:3rem] sm:[--cell-size:3rem]",
+        "group/calendar p-2.5 sm:p-5",
+        "[--cell-size:2.65rem] sm:[--cell-size:3rem]",
         "[[data-slot=card-content]_&]:bg-transparent",
         "[[data-slot=popover-content]_&]:bg-transparent",
         "motion-reduce:transition-none",
@@ -74,7 +74,7 @@ function Calendar({
         ...formatters,
       }}
       classNames={{
-        root: cn("w-fit", defaultClassNames.root),
+        root: cn("w-fit mx-auto", defaultClassNames.root),
         months: cn(
           "flex gap-4 flex-col sm:flex-row relative",
           defaultClassNames.months
@@ -129,7 +129,7 @@ function Calendar({
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
           "text-neutral-600 dark:text-neutral-400",
-          "rounded-md flex-1 font-medium text-xs uppercase tracking-wide select-none",
+          "rounded-md flex-1 font-medium text-xs uppercase tracking-wide select-none text-center",
           "pb-2",
           defaultClassNames.weekday
         ),
@@ -160,10 +160,6 @@ function Calendar({
           defaultClassNames.range_end
         ),
         today: cn(
-         
-          "text-primary-800 dark:text-primary-200",
-          "rounded-full",
-          "font-semibold ring-2 ring-primary-500",
           defaultClassNames.today
         ),
         outside: cn(
@@ -250,7 +246,7 @@ function CalendarDayButton({ className, day, modifiers, hasSlotsDates = [], ...p
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        "flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1",
+        "flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 items-center justify-center",
         "leading-none font-medium text-sm",
         "rounded-full transition-all duration-300",
         "hover:bg-primary-100 dark:hover:bg-primary-900/30",

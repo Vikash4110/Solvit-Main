@@ -1180,25 +1180,27 @@ const CalendarCard = ({
   return (
     <motion.div variants={cardVariants}>
       <Card className="sticky top-24 shadow-2xl bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800">
-        <CardHeader className="bg-gradient-to-r from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-800/20">
+        <CardHeader className="bg-gradient-to-r from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-800/20 p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="w-5 h-5 text-primary-700 dark:text-primary-400" />
             Book Your Session
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5 pt-5">
+        <CardContent className="space-y-4 p-3 sm:p-5 pt-3 sm:pt-4">
           {/* Calendar Component */}
-          <div className="flex justify-center">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              disabled={disabledDays}
-              hasSlotsDates={hasSlotsDates}
-              variant="elevated"
-              className="rounded-lg"
-              initialFocus
-            />
+          <div className="w-full overflow-x-auto pb-1.5 flex justify-start sm:justify-center">
+            <div className="min-w-fit mx-auto">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                disabled={disabledDays}
+                hasSlotsDates={hasSlotsDates}
+                variant="elevated"
+                className="rounded-xl"
+                initialFocus
+              />
+            </div>
           </div>
 
           <Separator />
@@ -1296,108 +1298,111 @@ const BookingModal = ({
 }) => (
   <Dialog open={show} onOpenChange={onClose} modal={!isRazorpayOpen}>
     <DialogContent
-      className="max-w-md"
+      className="sm:max-w-lg w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-full p-0 overflow-hidden"
       style={isRazorpayOpen ? { pointerEvents: 'none' } : undefined}
     >
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2 text-xl">
-          <CheckCircle className="w-6 h-6 text-primary-600" />
+      <DialogHeader className="px-5 pt-5 sm:px-6 sm:pt-6 pb-2 text-left">
+        <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold">
+          <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600 dark:text-primary-400 shrink-0" />
           Confirm Booking
         </DialogTitle>
-        <DialogDescription>Review your session details before payment</DialogDescription>
+        <DialogDescription className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          Review your session details before payment
+        </DialogDescription>
       </DialogHeader>
 
       {selectedSlot && counselor && (
-        <div className="space-y-4 py-4">
+        <div className="px-5 sm:px-6 py-2 space-y-4">
           {/* Counselor Info */}
-          <div className="flex items-start gap-4 p-4 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
-            <Avatar className="w-16 h-16 ring-2 ring-primary-200 dark:ring-primary-800">
-              <AvatarImage src={counselor.profilePicture} alt={counselor.fullName} />
+          <div className="flex items-center gap-3.5 p-3.5 sm:p-4 bg-primary-50/70 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800/40">
+            <Avatar className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 ring-2 ring-primary-200 dark:ring-primary-800 shadow-sm">
+              <AvatarImage src={counselor.profilePicture} alt={counselor.fullName} className="object-cover" />
               <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-primary-700 to-primary-600 text-white">
                 {counselor.fullName.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <h4 className="font-semibold text-base text-neutral-900 dark:text-white">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-base text-neutral-900 dark:text-white truncate">
                 {counselor.fullName}
               </h4>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-0.5 line-clamp-2">
                 {Array.isArray(counselor.specialization)
                   ? counselor.specialization.join(', ')
                   : counselor.specialization}
               </p>
-              <Badge className="mt-1 gap-1 text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+              <Badge className="mt-1.5 inline-flex items-center gap-1 text-[11px] sm:text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 rounded-full font-medium">
                 <Shield className="w-3 h-3" />
                 Verified
               </Badge>
             </div>
           </div>
 
-          <Separator />
-
           {/* Session Details */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4" />
+          <div className="bg-neutral-50/80 dark:bg-neutral-800/40 rounded-xl p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800 space-y-2.5">
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 Date
               </span>
-              <span className="font-semibold text-sm text-neutral-900 dark:text-white">
+              <span className="font-semibold text-neutral-900 dark:text-white">
                 {dayjs(selectedSlot.startTime).tz(TIMEZONE).format('ddd, MMM D, YYYY')}
               </span>
             </div>
-            <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 Time
               </span>
-              <span className="font-semibold text-sm text-neutral-900 dark:text-white">
+              <span className="font-semibold text-neutral-900 dark:text-white">
                 {dayjs(selectedSlot.startTime).tz(TIMEZONE).format('hh:mm A')} -{' '}
                 {dayjs(selectedSlot.endTime).tz(TIMEZONE).format('hh:mm A')}
               </span>
             </div>
-            <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-                <Video className="w-4 h-4" />
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+                <Video className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 Duration
               </span>
-              <span className="font-semibold text-sm text-neutral-900 dark:text-white">
+              <span className="font-semibold text-neutral-900 dark:text-white">
                 45 minutes
               </span>
             </div>
           </div>
 
-          <Separator />
-
           {/* Payment Summary */}
-          <div className="bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-800/20 p-4 rounded-lg space-y-2">
+          <div className="bg-gradient-to-br from-primary-100/80 to-primary-50/40 dark:from-primary-900/30 dark:to-primary-800/20 p-3.5 sm:p-4 rounded-xl border border-primary-200/60 dark:border-primary-800/40 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">Total Amount</span>
-              <span className="text-2xl font-bold text-primary-700 dark:text-primary-400">
+              <span className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300">Total Amount</span>
+              <span className="text-xl sm:text-2xl font-bold text-primary-700 dark:text-primary-400">
                 ₹{getSlotPrice(selectedSlot)}
               </span>
             </div>
-            <p className="text-xs text-neutral-600 dark:text-neutral-400">Inclusive of all taxes</p>
+            <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400">Inclusive of all taxes</p>
           </div>
 
           {/* Info Alert */}
-          <Alert>
-            <Sparkles className="h-4 w-4" />
-            <AlertDescription className="text-sm">
+          <Alert className="rounded-xl border-primary-200/60 dark:border-primary-800/50 bg-primary-50/40 dark:bg-primary-950/30 py-2.5 px-3.5 flex items-start gap-2.5">
+            <Sparkles className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+            <AlertDescription className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 leading-snug">
               You can join the session 5-10 minutes before the scheduled time
             </AlertDescription>
           </Alert>
         </div>
       )}
 
-      <DialogFooter className="gap-2">
-        <Button variant="outline" onClick={onClose} disabled={bookingLoading || isRazorpayOpen}>
+      <DialogFooter className="px-5 pb-6 sm:px-6 sm:pb-7 pt-3 flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          disabled={bookingLoading || isRazorpayOpen}
+          className="w-full sm:w-auto h-10 text-sm font-medium"
+        >
           Cancel
         </Button>
         <Button
           onClick={() => initiatePayment(false)}
           disabled={bookingLoading || !razorpayLoaded || !isOnline}
-          className="bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700"
+          className="w-full sm:w-auto h-10 text-sm font-semibold bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 shadow-md"
         >
           {bookingLoading ? (
             <>

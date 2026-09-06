@@ -167,7 +167,7 @@ const Footer = () => {
                 +91 7620296973
               </a>
             </li>
-            <li>Solvit Pvt. Ltd. Atal Nagar, Naya Raipur– 493661, India</li>
+            <li>212 2nd Floor, Jalaram Mangalam Building, Parhi Nagar, Nagpur, India</li>
           </ul>
           
         </motion.address>
