@@ -128,7 +128,7 @@ const OurMission = () => {
               </Card>
             </div>
 
-            <Link to="/register">
+            <Link to="/browse-counselors">
               <Button
                 size="lg"
                 className="group mt-8 bg-gradient-to-br from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-sm sm:text-base font-semibold rounded-xl px-7 py-5 sm:px-8 sm:py-6 shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 hover:scale-105"
