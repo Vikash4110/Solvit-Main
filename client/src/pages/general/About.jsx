@@ -218,7 +218,7 @@ const AboutUs = () => {
               </motion.p>
 
               <motion.div variants={fadeInUp} className="flex justify-center lg:justify-start">
-                <Link to="/register">
+                <Link to="/browse-counselors">
                   <Button
                     size="lg"
                     className="group relative overflow-hidden bg-white hover:bg-white/90 text-primary-900 font-semibold rounded-xl px-7 py-5 sm:px-8 sm:py-6 text-sm sm:text-base shadow-2xl hover:shadow-white/20 transition-all duration-300 hover:scale-105"

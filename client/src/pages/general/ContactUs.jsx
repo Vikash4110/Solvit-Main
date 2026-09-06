@@ -206,8 +206,8 @@ const ContactUs = () => {
     {
       icon: FaMapMarkerAlt,
       title: 'Office Location',
-      details: 'Solvit Pvt. Ltd.',
-      subtext: 'Atal Nagar, Naya Raipur493661, India',
+      details: '212, 2nd Floor, Jalaram Mangalam Building',
+      subtext: 'Parhi Nagar, Nagpur, India',
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
     },

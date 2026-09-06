@@ -814,13 +814,13 @@ const BrowseCounselor = () => {
                             <div className="relative p-4 sm:p-5">
                               <div className="flex flex-col sm:flex-row gap-4">
                                 {/* Left: Profile Image */}
-                                <div className="relative flex-shrink-0">
-                                  <div className="w-full sm:w-28 h-32 sm:h-32 rounded-xl overflow-hidden bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-950/20 border-2 border-white dark:border-neutral-800 shadow-lg">
+                                <div className="relative flex-shrink-0 flex justify-center sm:block">
+                                  <div className="w-44 h-48 sm:w-28 sm:h-32 rounded-xl overflow-hidden bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-950/20 border-2 border-white dark:border-neutral-800 shadow-lg">
                                     {counselor.profilePicture ? (
                                       <img
                                         src={counselor.profilePicture}
                                         alt={counselor.fullName}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
                                         loading="lazy"
                                       />
                                     ) : (
@@ -831,14 +831,14 @@ const BrowseCounselor = () => {
                                   </div>
 
                                   {/* Verified Badge on Image */}
-                                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg">
+                                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg whitespace-nowrap z-10">
                                     <Shield className="w-3 h-3" />
                                     <span>Verified</span>
                                   </div>
                                 </div>
 
                                 {/* Middle: Main Content */}
-                                <div className="flex-1 min-w-0 space-y-2.5 pt-2 sm:pt-0">
+                                <div className="flex-1 min-w-0 space-y-2.5 pt-3 sm:pt-0">
                                   {/* Name with Gender Badge and Rating */}
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
