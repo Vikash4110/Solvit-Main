@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import clsx from 'clsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { v4 as uuidv4 } from 'uuid'; // ✅ NEW: npm install uuid
+import { v4 as uuidv4 } from 'uuid'; 
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
@@ -25,7 +25,7 @@ import {
   Users,
   Sparkles,
   Wifi,
-  WifiOff, // ✅ NEW
+  WifiOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1058,9 +1058,42 @@ const SpecializationsCard = ({ counselor }) => {
 // ==========================================
 // COMPONENT: LANGUAGES CARD
 // ==========================================
+const normalizeLanguagesList = (raw) => {
+  if (!raw) return [];
+  try {
+    const list = Array.isArray(raw) ? raw : [raw];
+    const extracted = list
+      .flat(Infinity)
+      .flatMap((item) => {
+        if (typeof item !== 'string') return [];
+        const trimmed = item.trim();
+        if (!trimmed) return [];
+        if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            return Array.isArray(parsed) ? parsed.flat(Infinity) : [parsed];
+          } catch {
+            return trimmed.split(',');
+          }
+        }
+        return trimmed.includes(',') ? trimmed.split(',') : [trimmed];
+      })
+      .map((s) => (typeof s === 'string' ? s.trim() : ''))
+      .filter(Boolean);
+
+    return Array.from(new Set(extracted));
+  } catch {
+    return [];
+  }
+};
+
 const LanguagesCard = ({ counselor }) => {
-  if (!counselor.application?.languages || counselor.application.languages.length === 0)
-    return null;
+  const languages = useMemo(
+    () => normalizeLanguagesList(counselor?.application?.languages),
+    [counselor?.application?.languages]
+  );
+
+  if (languages.length === 0) return null;
 
   return (
     <motion.div variants={cardVariants}>
@@ -1077,9 +1110,9 @@ const LanguagesCard = ({ counselor }) => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {counselor.application.languages[0].map((lang, idx) => (
+            {languages.map((lang) => (
               <Badge
-                key={idx}
+                key={lang}
                 className="gap-2 px-4 py-2 text-sm bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-700 hover:bg-primary-200 dark:hover:bg-primary-800/30 transition-colors"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
