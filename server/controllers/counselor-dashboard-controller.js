@@ -76,12 +76,14 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
     experienceYears,
     languages,
     professionalSummary,
+    education,
+    license,
+    bankDetails,
   } = req.body;
 
-  // Validate required fields
-
-  if (!phone?.trim()) {
-    throw new ApiError(400, 'Phone number is required');
+  // Validate phone if supplied
+  if (phone !== undefined && !phone?.trim()) {
+    throw new ApiError(400, 'Phone number cannot be empty');
   }
 
   // Check if username is being changed and if it's already taken
@@ -97,29 +99,41 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
   }
 
   // Check if phone is being changed and if it's already taken
-  const existingPhoneCounselor = await Counselor.findOne({
-    phone: phone.trim(),
-    _id: { $ne: counselorId },
-  });
+  if (phone && phone.trim()) {
+    const existingPhoneCounselor = await Counselor.findOne({
+      phone: phone.trim(),
+      _id: { $ne: counselorId },
+    });
 
-  if (existingPhoneCounselor) {
-    throw new ApiError(409, 'Phone number is already registered');
+    if (existingPhoneCounselor) {
+      throw new ApiError(409, 'Phone number is already registered');
+    }
   }
 
-  // Prepare update object with nested field handling
-  const updateData = {};
+  // Fetch counselor
+  const counselor = await Counselor.findById(counselorId).select('-password -refreshToken -__v');
+  if (!counselor) {
+    throw new ApiError(404, 'Counselor not found');
+  }
+
+  if (!counselor.application) {
+    counselor.application = {};
+  }
 
   // Basic fields
-  if (username?.trim()) updateData.username = username.trim();
+  if (username?.trim()) counselor.username = username.trim();
+  if (phone?.trim()) counselor.phone = phone.trim();
+  if (gender) counselor.gender = gender;
+  if (specialization !== undefined) {
+    counselor.specialization = Array.isArray(specialization) ? specialization : [specialization];
+  }
+  if (experienceYears !== undefined) {
+    counselor.experienceYears = parseInt(experienceYears, 10) || 0;
+  }
 
-  if (phone?.trim()) updateData.phone = phone.trim();
-  if (gender) updateData.gender = gender;
-  if (specialization) updateData.specialization = specialization;
-  if (experienceYears !== undefined) updateData.experienceYears = parseInt(experienceYears, 10);
-
-  // Application nested fields
+  // Professional summary & languages
   if (professionalSummary !== undefined) {
-    updateData['application.professionalSummary'] = professionalSummary;
+    counselor.application.professionalSummary = professionalSummary;
   }
 
   if (languages !== undefined) {
@@ -133,26 +147,79 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
           .filter(Boolean)
       )
     );
-    updateData['application.languages'] = cleanLanguages;
+    counselor.application.languages = cleanLanguages;
   }
 
-  // Update counselor profile
-  const counselor = await Counselor.findById(counselorId).select('-password -refreshToken -__v');
-  if (!counselor) {
-    throw new ApiError(404, 'Counselor not found');
+  // Education updates
+  if (education) {
+    if (!counselor.application.education) {
+      counselor.application.education = { graduation: {}, postGraduation: {} };
+    }
+
+    if (education.graduation) {
+      if (!counselor.application.education.graduation) {
+        counselor.application.education.graduation = {};
+      }
+      if (education.graduation.university !== undefined) {
+        counselor.application.education.graduation.university = education.graduation.university.trim();
+      }
+      if (education.graduation.degree !== undefined) {
+        counselor.application.education.graduation.degree = education.graduation.degree.trim();
+      }
+      if (education.graduation.year !== undefined) {
+        counselor.application.education.graduation.year = education.graduation.year
+          ? parseInt(education.graduation.year, 10)
+          : undefined;
+      }
+    }
+
+    if (education.postGraduation) {
+      if (!counselor.application.education.postGraduation) {
+        counselor.application.education.postGraduation = {};
+      }
+      if (education.postGraduation.university !== undefined) {
+        counselor.application.education.postGraduation.university = education.postGraduation.university.trim();
+      }
+      if (education.postGraduation.degree !== undefined) {
+        counselor.application.education.postGraduation.degree = education.postGraduation.degree.trim();
+      }
+      if (education.postGraduation.year !== undefined) {
+        counselor.application.education.postGraduation.year = education.postGraduation.year
+          ? parseInt(education.postGraduation.year, 10)
+          : undefined;
+      }
+    }
   }
 
-  if (updateData.username !== undefined) counselor.username = updateData.username;
-  if (updateData.gender !== undefined) counselor.gender = updateData.gender;
-  if (updateData.phone !== undefined) counselor.phone = updateData.phone;
-  if (updateData.specialization !== undefined) counselor.specialization = updateData.specialization;
-  if (updateData.experienceYears !== undefined) counselor.experienceYears = updateData.experienceYears;
-  if (updateData['application.professionalSummary'] !== undefined) {
-    counselor.application.professionalSummary = updateData['application.professionalSummary'];
+  // License updates
+  if (license) {
+    if (!counselor.application.license) {
+      counselor.application.license = {};
+    }
+    if (license.licenseNo !== undefined) {
+      counselor.application.license.licenseNo = license.licenseNo.trim();
+    }
+    if (license.issuingAuthority !== undefined) {
+      counselor.application.license.issuingAuthority = license.issuingAuthority.trim();
+    }
   }
-  if (updateData['application.languages'] !== undefined) {
-    counselor.application.languages = updateData['application.languages'];
+
+  // Bank Details updates
+  if (bankDetails) {
+    if (!counselor.application.bankDetails) {
+      counselor.application.bankDetails = {};
+    }
+    if (bankDetails.accountNo !== undefined) {
+      counselor.application.bankDetails.accountNo = bankDetails.accountNo.trim();
+    }
+    if (bankDetails.ifscCode !== undefined) {
+      counselor.application.bankDetails.ifscCode = bankDetails.ifscCode.trim().toUpperCase();
+    }
+    if (bankDetails.branchName !== undefined) {
+      counselor.application.bankDetails.branchName = bankDetails.branchName.trim();
+    }
   }
+
   await counselor.save();
   logger.info(`Profile updated successfully for counselor: ${counselorId}`);
   return res.status(200).json(new ApiResponse(200, counselor, 'Profile updated successfully'));
@@ -318,23 +385,9 @@ export const getCounselorStats = wrapper(async (req, res) => {
 });
 
 /**
- * @desc Validate counselor profile completeness
- * @route GET /api/v1/counselor/profile/completeness
- * @access Private (Counselor only)
+ * @desc Helper to compute counselor profile completeness
  */
-export const validateCounselorProfileCompleteness = wrapper(async (req, res) => {
-  const counselorId = req.verifiedCounselorId._id;
-  logger.info(`Validating profile completeness for counselor: ${counselorId}`);
-
-  const counselor = await Counselor.findById(counselorId)
-    .select('-password -refreshToken -__v')
-    .lean();
-
-  if (!counselor) {
-    throw new ApiError(404, 'Counselor not found');
-  }
-
-  // Check profile completeness
+export const calculateProfileCompleteness = (counselor) => {
   const completeness = {
     hasBasicInfo: !!(counselor.fullName && counselor.email && counselor.phone && counselor.gender),
     hasProfilePicture: !!counselor.profilePicture,
@@ -364,7 +417,7 @@ export const validateCounselorProfileCompleteness = wrapper(async (req, res) => 
   const completedFields = Object.values(completeness).filter(Boolean).length;
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
-  const result = {
+  return {
     isComplete: completionPercentage === 100,
     completionPercentage,
     missingFields: Object.entries(completeness)
@@ -372,6 +425,26 @@ export const validateCounselorProfileCompleteness = wrapper(async (req, res) => 
       .map(([key]) => key),
     details: completeness,
   };
+};
+
+/**
+ * @desc Validate counselor profile completeness
+ * @route GET /api/v1/counselor/profile/completeness
+ * @access Private (Counselor only)
+ */
+export const validateCounselorProfileCompleteness = wrapper(async (req, res) => {
+  const counselorId = req.verifiedCounselorId._id;
+  logger.info(`Validating profile completeness for counselor: ${counselorId}`);
+
+  const counselor = await Counselor.findById(counselorId)
+    .select('-password -refreshToken -__v')
+    .lean();
+
+  if (!counselor) {
+    throw new ApiError(404, 'Counselor not found');
+  }
+
+  const result = calculateProfileCompleteness(counselor);
 
   logger.info(`Profile completeness validated for counselor: ${counselorId}`);
   return res.status(200).json(new ApiResponse(200, result, 'Profile validation completed'));
@@ -400,9 +473,12 @@ export const submitCounselorApplication = wrapper(async (req, res) => {
   }
 
   // Validate profile completeness before submission
-  const validation = await validateCounselorProfileCompleteness(req, res);
-  if (!validation.data.isComplete) {
-    throw new ApiError(400, 'Please complete all required fields before submitting application');
+  const validation = calculateProfileCompleteness(counselor);
+  if (!validation.isComplete) {
+    throw new ApiError(
+      400,
+      `Please complete all required fields before submitting application. Missing: ${validation.missingFields.join(', ')}`
+    );
   }
 
   // Update application status

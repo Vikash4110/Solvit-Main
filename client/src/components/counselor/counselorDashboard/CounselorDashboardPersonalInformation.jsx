@@ -284,7 +284,7 @@ const CounselorDashboardPersonalInfo = () => {
       console.error('Error fetching profile completeness:', err);
     }
   };
-  const handleOpenEditModal = () => {
+  const handleOpenEditModal = (initialTab = 'basic') => {
     if (counselorData) {
       setFormData({
         ...counselorData,
@@ -295,12 +295,33 @@ const CounselorDashboardPersonalInfo = () => {
             : [],
         application: {
           ...counselorData.application,
+          education: {
+            graduation: {
+              university: counselorData.application?.education?.graduation?.university || '',
+              degree: counselorData.application?.education?.graduation?.degree || '',
+              year: counselorData.application?.education?.graduation?.year || '',
+            },
+            postGraduation: {
+              university: counselorData.application?.education?.postGraduation?.university || '',
+              degree: counselorData.application?.education?.postGraduation?.degree || '',
+              year: counselorData.application?.education?.postGraduation?.year || '',
+            },
+          },
           languages: normalizeLanguages(counselorData.application?.languages),
           professionalSummary: counselorData.application?.professionalSummary || '',
+          license: {
+            licenseNo: counselorData.application?.license?.licenseNo || '',
+            issuingAuthority: counselorData.application?.license?.issuingAuthority || '',
+          },
+          bankDetails: {
+            accountNo: counselorData.application?.bankDetails?.accountNo || '',
+            ifscCode: counselorData.application?.bankDetails?.ifscCode || '',
+            branchName: counselorData.application?.bankDetails?.branchName || '',
+          },
         },
       });
     }
-    setActiveTab('basic');
+    setActiveTab(initialTab);
     setIsEditDialogOpen(true);
   };
 
@@ -358,6 +379,27 @@ const CounselorDashboardPersonalInfo = () => {
     }));
   };
 
+  const handleSubmitApplication = async () => {
+    setIsLoading(true);
+    try {
+      await api.post(API_ENDPOINTS.COUNSELOR_APPLICATION_SUBMIT);
+      toast.success('Application Submitted', {
+        description: 'Your verification application has been submitted for review.',
+      });
+      await fetchCounselorData();
+      await fetchProfileCompleteness();
+    } catch (err) {
+      console.error('Error submitting application:', err);
+      toast.error('Submission Failed', {
+        description:
+          err.response?.data?.message ||
+          'Please complete all required fields before submitting your application.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSaveChanges = async () => {
     if (!formData?.username?.trim()) {
       toast.error('Validation Error', {
@@ -391,7 +433,12 @@ const CounselorDashboardPersonalInfo = () => {
       return;
     }
 
-    if (formData.experienceYears === undefined || formData.experienceYears === '' || isNaN(Number(formData.experienceYears)) || Number(formData.experienceYears) < 0) {
+    if (
+      formData.experienceYears === undefined ||
+      formData.experienceYears === '' ||
+      isNaN(Number(formData.experienceYears)) ||
+      Number(formData.experienceYears) < 0
+    ) {
       toast.error('Validation Error', {
         description: 'Please enter a valid number for years of experience.',
       });
@@ -399,8 +446,47 @@ const CounselorDashboardPersonalInfo = () => {
       return;
     }
 
+    // Optional bank validation
+    const ifsc = formData.application?.bankDetails?.ifscCode?.trim();
+    if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc.toUpperCase())) {
+      toast.error('Invalid IFSC Code', {
+        description: 'IFSC should be 11 characters (e.g. HDFC0001234, SBIN0004321).',
+      });
+      setActiveTab('bank');
+      return;
+    }
+
+    // Optional education year validations
+    const gradYear = formData.application?.education?.graduation?.year;
+    if (
+      gradYear &&
+      (isNaN(Number(gradYear)) ||
+        Number(gradYear) < 1960 ||
+        Number(gradYear) > new Date().getFullYear() + 5)
+    ) {
+      toast.error('Invalid Graduation Year', {
+        description: `Please enter a valid graduation year (1960 - ${new Date().getFullYear() + 5}).`,
+      });
+      setActiveTab('education');
+      return;
+    }
+
+    const postGradYear = formData.application?.education?.postGraduation?.year;
+    if (
+      postGradYear &&
+      (isNaN(Number(postGradYear)) ||
+        Number(postGradYear) < 1960 ||
+        Number(postGradYear) > new Date().getFullYear() + 5)
+    ) {
+      toast.error('Invalid Post-Graduation Year', {
+        description: `Please enter a valid year (1960 - ${new Date().getFullYear() + 5}).`,
+      });
+      setActiveTab('education');
+      return;
+    }
+
     setIsLoading(true);
-    
+
     try {
       const changedData = {
         username: formData.username.trim(),
@@ -410,6 +496,31 @@ const CounselorDashboardPersonalInfo = () => {
         experienceYears: parseInt(formData.experienceYears, 10) || 0,
         professionalSummary: formData.application?.professionalSummary || '',
         languages: normalizeLanguages(formData?.application?.languages),
+        education: {
+          graduation: {
+            university: formData.application?.education?.graduation?.university?.trim() || '',
+            degree: formData.application?.education?.graduation?.degree?.trim() || '',
+            year: formData.application?.education?.graduation?.year
+              ? parseInt(formData.application.education.graduation.year, 10)
+              : undefined,
+          },
+          postGraduation: {
+            university: formData.application?.education?.postGraduation?.university?.trim() || '',
+            degree: formData.application?.education?.postGraduation?.degree?.trim() || '',
+            year: formData.application?.education?.postGraduation?.year
+              ? parseInt(formData.application.education.postGraduation.year, 10)
+              : undefined,
+          },
+        },
+        license: {
+          licenseNo: formData.application?.license?.licenseNo?.trim() || '',
+          issuingAuthority: formData.application?.license?.issuingAuthority?.trim() || '',
+        },
+        bankDetails: {
+          accountNo: formData.application?.bankDetails?.accountNo?.trim() || '',
+          ifscCode: formData.application?.bankDetails?.ifscCode?.trim()?.toUpperCase() || '',
+          branchName: formData.application?.bankDetails?.branchName?.trim() || '',
+        },
       };
 
       await api.put(API_ENDPOINTS.COUNSELOR_PROFILE_UPDATE, changedData);
@@ -419,12 +530,13 @@ const CounselorDashboardPersonalInfo = () => {
       setIsEditDialogOpen(false);
 
       toast.success('Profile Updated Successfully', {
-        description: 'Your professional profile details have been saved.',
+        description: 'All your profile details and credentials have been saved.',
       });
     } catch (err) {
       console.error('Error updating profile:', err);
       toast.error('Update Failed', {
-        description: err.response?.data?.message || err.message || 'Failed to update profile. Please try again.',
+        description:
+          err.response?.data?.message || err.message || 'Failed to update profile. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -861,11 +973,20 @@ const CounselorDashboardPersonalInfo = () => {
           {/* Basic Information */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <User className="h-5 w-5 text-primary-600" />
                   Basic Information
                 </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEditModal('basic')}
+                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <InfoRow icon={User} label="Full Name" value={counselorData.fullName} />
@@ -879,81 +1000,87 @@ const CounselorDashboardPersonalInfo = () => {
           {/* Education */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <GraduationCap className="h-5 w-5 text-primary-600" />
                   Education
                 </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEditModal('education')}
+                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Graduation */}
                 <div>
-                  <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
+                  <Label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block mb-2">
                     Graduation
                   </Label>
-                  <div className="mt-2 space-y-2">
+                  <div className="space-y-2">
                     <InfoRow
                       icon={Building}
                       label="University"
                       value={
-                        counselorData.application.education.graduation.university || 'Not specified'
+                        counselorData.application.education?.graduation?.university || 'Not specified'
                       }
                       compact
                     />
                     <InfoRow
                       icon={GraduationCap}
                       label="Degree"
-                      value={counselorData.application.education.graduation.degree || 'Not specified'}
+                      value={counselorData.application.education?.graduation?.degree || 'Not specified'}
                       compact
                     />
                     <InfoRow
                       icon={Calendar}
                       label="Year"
-                      value={counselorData.application.education.graduation.year || 'Not specified'}
+                      value={counselorData.application.education?.graduation?.year || 'Not specified'}
                       compact
                     />
                   </div>
                 </div>
 
                 {/* Post Graduation */}
-                {(counselorData.application.education.postGraduation.university ||
-                  counselorData.application.education.postGraduation.degree) && (
-                  <>
-                    <Separator />
-                    <div>
-                      <Label className="text-xs text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
-                        Post Graduation
-                      </Label>
-                      <div className="mt-2 space-y-2">
-                        <InfoRow
-                          icon={Building}
-                          label="University"
-                          value={
-                            counselorData.application.education.postGraduation.university ||
-                            'Not specified'
-                          }
-                          compact
-                        />
-                        <InfoRow
-                          icon={GraduationCap}
-                          label="Degree"
-                          value={
-                            counselorData.application.education.postGraduation.degree ||
-                            'Not specified'
-                          }
-                          compact
-                        />
-                        <InfoRow
-                          icon={Calendar}
-                          label="Year"
-                          value={
-                            counselorData.application.education.postGraduation.year || 'Not specified'
-                          }
-                          compact
-                        />
-                      </div>
+                {(counselorData.application.education?.postGraduation?.university ||
+                  counselorData.application.education?.postGraduation?.degree) && (
+                  <div className="border-t border-neutral-200/80 dark:border-neutral-800 pt-4">
+                    <Label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block mb-3">
+                      Post Graduation
+                    </Label>
+                    <div className="space-y-2">
+                      <InfoRow
+                        icon={Building}
+                        label="University"
+                        value={
+                          counselorData.application.education?.postGraduation?.university ||
+                          'Not specified'
+                        }
+                        compact
+                      />
+                      <InfoRow
+                        icon={GraduationCap}
+                        label="Degree"
+                        value={
+                          counselorData.application.education?.postGraduation?.degree ||
+                          'Not specified'
+                        }
+                        compact
+                      />
+                      <InfoRow
+                        icon={Calendar}
+                        label="Year"
+                        value={
+                          counselorData.application.education?.postGraduation?.year || 'Not specified'
+                        }
+                        compact
+                      />
                     </div>
-                  </>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -962,18 +1089,27 @@ const CounselorDashboardPersonalInfo = () => {
           {/* Bank Details */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <CreditCard className="h-5 w-5 text-primary-600" />
                   Bank Details
                 </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEditModal('bank')}
+                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <InfoRow
                   icon={CreditCard}
                   label="Account Number"
                   value={
-                    counselorData.application.bankDetails.accountNo
+                    counselorData.application.bankDetails?.accountNo
                       ? `${counselorData.application.bankDetails.accountNo}`
                       : 'Not specified'
                   }
@@ -981,12 +1117,12 @@ const CounselorDashboardPersonalInfo = () => {
                 <InfoRow
                   icon={FileText}
                   label="IFSC Code"
-                  value={counselorData.application.bankDetails.ifscCode || 'Not specified'}
+                  value={counselorData.application.bankDetails?.ifscCode || 'Not specified'}
                 />
                 <InfoRow
                   icon={Building}
                   label="Branch"
-                  value={counselorData.application.bankDetails.branchName || 'Not specified'}
+                  value={counselorData.application.bankDetails?.branchName || 'Not specified'}
                 />
               </CardContent>
             </Card>
@@ -998,11 +1134,20 @@ const CounselorDashboardPersonalInfo = () => {
           {/* Professional Details */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Briefcase className="h-5 w-5 text-primary-600" />
                   Professional Details
                 </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEditModal('professional')}
+                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <InfoRow
@@ -1040,22 +1185,31 @@ const CounselorDashboardPersonalInfo = () => {
           {/* License Information */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <BadgeCheck className="h-5 w-5 text-primary-600" />
                   License Information
                 </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEditModal('license')}
+                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <InfoRow
                   icon={FileText}
                   label="License Number"
-                  value={counselorData.application.license.licenseNo || 'Not specified'}
+                  value={counselorData.application.license?.licenseNo || 'Not specified'}
                 />
                 <InfoRow
                   icon={Building}
                   label="Issuing Authority"
-                  value={counselorData.application.license.issuingAuthority || 'Not specified'}
+                  value={counselorData.application.license?.issuingAuthority || 'Not specified'}
                 />
               </CardContent>
             </Card>
@@ -1064,11 +1218,20 @@ const CounselorDashboardPersonalInfo = () => {
           {/* Account Status */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Clock className="h-5 w-5 text-primary-600" />
                   Account Status
                 </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEditModal('status')}
+                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  View Status
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 <InfoRow
@@ -1131,23 +1294,54 @@ const CounselorDashboardPersonalInfo = () => {
             onValueChange={setActiveTab}
             className="flex flex-col flex-1 min-h-0"
           >
-            <div className="px-5 sm:px-6 pt-4 pb-2 shrink-0 bg-white dark:bg-neutral-900">
-              <TabsList className="grid w-full grid-cols-2 p-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-xl h-12 border border-neutral-200/80 dark:border-neutral-700">
-                <TabsTrigger
-                  value="basic"
-                  className="flex items-center justify-center gap-2 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
-                >
-                  <User className="h-4 w-4 shrink-0" />
-                  <span>Basic Details</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="professional"
-                  className="flex items-center justify-center gap-2 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
-                >
-                  <Briefcase className="h-4 w-4 shrink-0" />
-                  <span>Professional Info</span>
-                </TabsTrigger>
-              </TabsList>
+            {/* Scrollable Tabs Bar */}
+            <div className="px-4 sm:px-6 pt-3 pb-2 shrink-0 bg-white dark:bg-neutral-900 border-b border-neutral-200/80 dark:border-neutral-800">
+              <div className="overflow-x-auto no-scrollbar pb-1">
+                <TabsList className="flex w-max min-w-full p-1.5 bg-neutral-100 dark:bg-neutral-800/80 rounded-xl h-auto gap-1 border border-neutral-200/80 dark:border-neutral-700">
+                  <TabsTrigger
+                    value="basic"
+                    className="flex items-center gap-1.5 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 whitespace-nowrap"
+                  >
+                    <User className="h-3.5 w-3.5 shrink-0" />
+                    <span>Basic</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="professional"
+                    className="flex items-center gap-1.5 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 whitespace-nowrap"
+                  >
+                    <Briefcase className="h-3.5 w-3.5 shrink-0" />
+                    <span>Professional</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="education"
+                    className="flex items-center gap-1.5 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 whitespace-nowrap"
+                  >
+                    <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                    <span>Education</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="license"
+                    className="flex items-center gap-1.5 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 whitespace-nowrap"
+                  >
+                    <BadgeCheck className="h-3.5 w-3.5 shrink-0" />
+                    <span>License</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="bank"
+                    className="flex items-center gap-1.5 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 whitespace-nowrap"
+                  >
+                    <CreditCard className="h-3.5 w-3.5 shrink-0" />
+                    <span>Bank Details</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="status"
+                    className="flex items-center gap-1.5 rounded-lg font-semibold text-xs sm:text-sm py-2 px-3 transition-all cursor-pointer select-none data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm data-[state=active]:text-primary-700 dark:data-[state=active]:text-primary-300 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 whitespace-nowrap"
+                  >
+                    <Shield className="h-3.5 w-3.5 shrink-0" />
+                    <span>Status</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
             </div>
 
             <SheetBody className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-6">
@@ -1396,6 +1590,400 @@ const CounselorDashboardPersonalInfo = () => {
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                     Brief summary visible to clients exploring your counsellor profile.
                   </p>
+                </div>
+              </TabsContent>
+
+              {/* Education Tab */}
+              <TabsContent value="education" className="mt-0 space-y-6 focus-visible:outline-none">
+                <div className="rounded-xl p-4 bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/50 flex items-start gap-3">
+                  <GraduationCap className="h-5 w-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-primary-900 dark:text-primary-200 space-y-1">
+                    <p className="font-semibold">Academic & Professional Credentials</p>
+                    <p className="text-primary-700/80 dark:text-primary-300/80 leading-relaxed">
+                      Adding your university degrees helps clients understand your training in psychology, counselling, or healthcare.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Graduation Section */}
+                <div className="rounded-xl p-4 sm:p-5 bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-700/60 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5">
+                      <Building className="h-3.5 w-3.5 text-primary-600" />
+                      Graduation (Primary Degree)
+                    </span>
+                    <Badge variant="outline" className="text-[10px] font-semibold text-primary-600 border-primary-300">
+                      Primary
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-3.5">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="gradUniversity" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        University / College / Institute
+                      </Label>
+                      <Input
+                        id="gradUniversity"
+                        value={formData?.application?.education?.graduation?.university || ''}
+                        onChange={(e) =>
+                          handleDeepNestedInputChange('application', 'education', 'graduation', {
+                            ...formData?.application?.education?.graduation,
+                            university: e.target.value,
+                          })
+                        }
+                        placeholder="e.g. University of Delhi"
+                        className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2 space-y-1.5">
+                        <Label htmlFor="gradDegree" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                          Degree Title
+                        </Label>
+                        <Input
+                          id="gradDegree"
+                          value={formData?.application?.education?.graduation?.degree || ''}
+                          onChange={(e) =>
+                            handleDeepNestedInputChange('application', 'education', 'graduation', {
+                              ...formData?.application?.education?.graduation,
+                              degree: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. B.A. Psychology (Hons)"
+                          className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="gradYear" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                          Passing Year
+                        </Label>
+                        <Input
+                          id="gradYear"
+                          type="number"
+                          min="1960"
+                          max={new Date().getFullYear() + 5}
+                          value={formData?.application?.education?.graduation?.year || ''}
+                          onChange={(e) =>
+                            handleDeepNestedInputChange('application', 'education', 'graduation', {
+                              ...formData?.application?.education?.graduation,
+                              year: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. 2018"
+                          className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Post Graduation Section */}
+                <div className="rounded-xl p-4 sm:p-5 bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-700/60 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5">
+                      <GraduationCap className="h-3.5 w-3.5 text-primary-600" />
+                      Post Graduation Degree (Master's / M.Phil / Ph.D)
+                    </span>
+                    <Badge variant="outline" className="text-[10px] text-neutral-500 border-neutral-300">
+                      Optional
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-3.5">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="postGradUniversity" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        University / Institute
+                      </Label>
+                      <Input
+                        id="postGradUniversity"
+                        value={formData?.application?.education?.postGraduation?.university || ''}
+                        onChange={(e) =>
+                          handleDeepNestedInputChange('application', 'education', 'postGraduation', {
+                            ...formData?.application?.education?.postGraduation,
+                            university: e.target.value,
+                          })
+                        }
+                        placeholder="e.g. Tata Institute of Social Sciences (TISS)"
+                        className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2 space-y-1.5">
+                        <Label htmlFor="postGradDegree" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                          Degree Title
+                        </Label>
+                        <Input
+                          id="postGradDegree"
+                          value={formData?.application?.education?.postGraduation?.degree || ''}
+                          onChange={(e) =>
+                            handleDeepNestedInputChange('application', 'education', 'postGraduation', {
+                              ...formData?.application?.education?.postGraduation,
+                              degree: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. M.Sc. Clinical Psychology"
+                          className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="postGradYear" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                          Passing Year
+                        </Label>
+                        <Input
+                          id="postGradYear"
+                          type="number"
+                          min="1960"
+                          max={new Date().getFullYear() + 5}
+                          value={formData?.application?.education?.postGraduation?.year || ''}
+                          onChange={(e) =>
+                            handleDeepNestedInputChange('application', 'education', 'postGraduation', {
+                              ...formData?.application?.education?.postGraduation,
+                              year: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. 2021"
+                          className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* License Info Tab */}
+              <TabsContent value="license" className="mt-0 space-y-5 focus-visible:outline-none">
+                <div className="rounded-xl p-4 bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/50 flex items-start gap-3">
+                  <BadgeCheck className="h-5 w-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-primary-900 dark:text-primary-200 space-y-1">
+                    <p className="font-semibold">Professional License & Accreditation</p>
+                    <p className="text-primary-700/80 dark:text-primary-300/80 leading-relaxed">
+                      Your clinical license or registration details establish practitioner trust and will display a verified badge on your profile once approved.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="licenseNo" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <FileText className="h-3.5 w-3.5 text-neutral-500" />
+                      License / Registration Number
+                    </Label>
+                    <Input
+                      id="licenseNo"
+                      value={formData?.application?.license?.licenseNo || ''}
+                      onChange={(e) =>
+                        handleNestedInputChange('application', 'license', {
+                          ...formData?.application?.license,
+                          licenseNo: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. RCI/CRR/2023/12345"
+                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                    />
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Registration number issued by your professional licensing authority or council.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="issuingAuthority" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <Building className="h-3.5 w-3.5 text-neutral-500" />
+                      Issuing Authority / Council
+                    </Label>
+                    <Input
+                      id="issuingAuthority"
+                      value={formData?.application?.license?.issuingAuthority || ''}
+                      onChange={(e) =>
+                        handleNestedInputChange('application', 'license', {
+                          ...formData?.application?.license,
+                          issuingAuthority: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. Rehabilitation Council of India (RCI)"
+                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                    />
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      The official body or state council that issued your practitioner certification.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Bank Details Tab */}
+              <TabsContent value="bank" className="mt-0 space-y-5 focus-visible:outline-none">
+                <div className="rounded-xl p-4 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 flex items-start gap-3">
+                  <CreditCard className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
+                    <p className="font-semibold">Direct Payout Settlement Account</p>
+                    <p className="text-emerald-700/80 dark:text-emerald-300/80 leading-relaxed">
+                      Counselor session payouts and earnings will be directly transferred via automated NEFT/IMPS to this bank account.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="accountNo" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <CreditCard className="h-3.5 w-3.5 text-neutral-500" />
+                      Bank Account Number
+                    </Label>
+                    <Input
+                      id="accountNo"
+                      type="text"
+                      value={formData?.application?.bankDetails?.accountNo || ''}
+                      onChange={(e) =>
+                        handleNestedInputChange('application', 'bankDetails', {
+                          ...formData?.application?.bankDetails,
+                          accountNo: e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
+                        })
+                      }
+                      placeholder="e.g. 50100234567891"
+                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm font-mono"
+                    />
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Double-check your account number to prevent payout transfer delays.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ifscCode" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <Building className="h-3.5 w-3.5 text-neutral-500" />
+                      Bank IFSC Code
+                    </Label>
+                    <Input
+                      id="ifscCode"
+                      type="text"
+                      maxLength={11}
+                      value={formData?.application?.bankDetails?.ifscCode || ''}
+                      onChange={(e) =>
+                        handleNestedInputChange('application', 'bankDetails', {
+                          ...formData?.application?.bankDetails,
+                          ifscCode: e.target.value.toUpperCase().trim(),
+                        })
+                      }
+                      placeholder="e.g. HDFC0001234"
+                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm font-mono tracking-wider"
+                    />
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      11-character bank branch identification code (e.g. HDFC0001234, SBIN0004321).
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="branchName" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <FileText className="h-3.5 w-3.5 text-neutral-500" />
+                      Bank & Branch Name
+                    </Label>
+                    <Input
+                      id="branchName"
+                      type="text"
+                      value={formData?.application?.bankDetails?.branchName || ''}
+                      onChange={(e) =>
+                        handleNestedInputChange('application', 'bankDetails', {
+                          ...formData?.application?.bankDetails,
+                          branchName: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. HDFC Bank, Indiranagar Branch, Bengaluru"
+                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                    />
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Branch location or bank name matching your account passbook / statement.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Account Status Tab */}
+              <TabsContent value="status" className="mt-0 space-y-5 focus-visible:outline-none">
+                {/* Application Status Banner */}
+                <div className="rounded-xl p-4 sm:p-5 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/60 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      Practitioner Application Status
+                    </span>
+                    <Badge className={applicationStatus.color}>
+                      {applicationStatus.label}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+                    {counselorData.application?.applicationStatus === 'approved' && (
+                      <div className="p-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg text-xs text-green-800 dark:text-green-300 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                        <span>Your counselor application has been verified and approved. You are eligible to take bookings.</span>
+                      </div>
+                    )}
+                    {counselorData.application?.applicationStatus === 'pending' && (
+                      <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Your application is currently under review by our clinical verification team.</span>
+                      </div>
+                    )}
+                    {counselorData.application?.applicationStatus === 'rejected' && (
+                      <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-800 dark:text-red-300 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+                          <span className="font-semibold">Application Requires Updates</span>
+                        </div>
+                        <p>Please update your credentials and submit again for verification.</p>
+                      </div>
+                    )}
+                    {counselorData.application?.applicationStatus === 'not_submitted' && (
+                      <div className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-xs text-neutral-700 dark:text-neutral-300 space-y-2">
+                        <p>Complete all required profile sections to submit your application for practitioner verification.</p>
+                        {profileCompleteness && (
+                          <div className="flex items-center justify-between pt-1">
+                            <span>Current Completeness:</span>
+                            <span className="font-bold text-primary-600">{profileCompleteness.completionPercentage}%</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {(counselorData.application?.applicationStatus === 'not_submitted' ||
+                    counselorData.application?.applicationStatus === 'rejected') && (
+                    <Button
+                      type="button"
+                      onClick={handleSubmitApplication}
+                      disabled={isLoading || (profileCompleteness && profileCompleteness.completionPercentage < 100)}
+                      className="w-full gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs h-10"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Submit Application for Review
+                    </Button>
+                  )}
+                </div>
+
+                {/* Platform Standing */}
+                <div className="rounded-xl p-4 sm:p-5 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/60 space-y-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                    Account & Security Overview
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60">
+                      <span className="text-xs text-neutral-500 block">Member Since</span>
+                      <span className="font-medium text-neutral-800 dark:text-neutral-200">{formatDate(counselorData.createdAt)}</span>
+                    </div>
+                    <div className="p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60">
+                      <span className="text-xs text-neutral-500 block">Last Active</span>
+                      <span className="font-medium text-neutral-800 dark:text-neutral-200">{formatSmartDate(counselorData.lastLogin)}</span>
+                    </div>
+                    <div className="p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 sm:col-span-2 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs text-neutral-500 block">Account Status</span>
+                        <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                          {counselorData.isBlocked ? 'Blocked / Restricted' : 'Active & In Good Standing'}
+                        </span>
+                      </div>
+                      <Badge variant={counselorData.isBlocked ? 'destructive' : 'default'} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                        {counselorData.isBlocked ? 'Blocked' : 'Active'}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
             </SheetBody>
