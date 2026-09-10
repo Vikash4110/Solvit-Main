@@ -23,7 +23,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { TIMEZONE ,SLOT_DURATION_MINUTES } from '../../../constants/constants';
+import { TIMEZONE, SLOT_DURATION_MINUTES, TIME_OPTIONS_5_MIN as timeOptions } from '../../../constants/constants';
 import { toast } from 'sonner';
 
 // shadcn/ui imports
@@ -195,29 +195,6 @@ const CounselorDashboardSlotsManager = () => {
   };
 
   // NEW: Add Custom Slot Handlers
-  const generateTimeOptions = () => {
-    const times = [];
-    for (let minute = 0; minute < 60; minute += 30) {
-      times.push(`12:${minute.toString().padStart(2, '0')} AM`);
-    }
-    for (let hour = 1; hour <= 11; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        times.push(`${hour}:${minute.toString().padStart(2, '0')} AM`);
-      }
-    }
-    for (let minute = 0; minute < 60; minute += 30) {
-      times.push(`12:${minute.toString().padStart(2, '0')} PM`);
-    }
-    for (let hour = 1; hour <= 11; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        times.push(`${hour}:${minute.toString().padStart(2, '0')} PM`);
-      }
-    }
-    return times;
-  };
-
-  const timeOptions = generateTimeOptions();
-
   const handleAddCustomSlot = async () => {
     if (!newSlotData.date || !newSlotData.startTime || !newSlotData.endTime || !newSlotData.price) {
       toast.error('Please fill all fields');
