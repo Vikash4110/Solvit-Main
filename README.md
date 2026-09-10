@@ -243,6 +243,21 @@ npm run pm2:start
 
 ---
 
+## 📋 Recent UI Improvements & Bug Fixing Log
+
+### 🕒 Slot Scheduling & Availability System
+* **5-Minute Interval Granularity:** Refactored slot generation and recurring availability managers (`CounselorDashboardSlotsManager`, `RecurringAvailabilityManager`, `constants.js`) to allow selecting start/end times at flexible 5-minute increments (e.g., `12:05`, `12:10`, `1:25`) instead of rigid 30-minute steps.
+* **45-Minute Maximum Slot Cap:** Implemented strict dual-layer frontend and backend validation in `slotsManager-controller.js` to enforce maximum consultation slot lengths of ≤ 45 minutes.
+* **Weekly Summary Badge Spacing Fix:** Resolved UI clipping and divider line overlaps in the Counselor Dashboard Weekly Summary card by switching to clean `divide-y` sectioning and responsive badge wrappers.
+
+### 🎥 WebRTC Live Consultation Lifecycle
+* **Automated Session Expiration:** Enforced strict session termination at the scheduled end time (`slotId.endTime`). The client automatically concludes the call and triggers clean media track teardowns when time expires.
+* **Live In-Call Countdown & Warning Alerts:** Integrated a floating, backdrop-blurred countdown badge (`Time Left: MM:SS`) inside `MeetingContainer.jsx` with warning toasts at 5 minutes and 1 minute remaining.
+* **Network Disconnect & Accidental Leave Recovery:** Enhanced `LeaveScreen.jsx` with an active session window detector and a **"Rejoin Session"** action to quickly recover from network glitches before the scheduled end time.
+* **Hardware Media Stream Teardown:** Added deterministic camera and microphone stream track termination on unmount, completely preventing OS camera/mic sensor lockups across sessions.
+
+---
+
 ## 📄 License
 
 Copyright © 2026 Solvit Counseling. All rights reserved.  
