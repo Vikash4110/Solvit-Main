@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, createRef, memo, useCallback, useMemo } from 'react';
 import { Constants, useMeeting, useParticipant, usePubSub } from '@videosdk.live/react-sdk';
+import { Clock } from 'lucide-react';
 import { BottomBar } from './components/BottomBar';
 import { SidebarConatiner } from '../components/sidebar/SidebarContainer';
 import MemorizedParticipantView from './components/ParticipantView';
@@ -49,7 +50,13 @@ const ParticipantMicStream = memo(
 
 ParticipantMicStream.displayName = 'ParticipantMicStream';
 
-export function MeetingContainer({ onMeetingLeave, setIsMeetingLeft }) {
+export function MeetingContainer({
+  onMeetingLeave,
+  setIsMeetingLeft,
+  participantId,
+  sessionData,
+  setLeaveReason,
+}) {
   const { setSelectedMic, setSelectedWebcam, setSelectedSpeaker, useRaisedHandParticipants } =
     useMeetingAppContext();
 
@@ -60,6 +67,12 @@ export function MeetingContainer({ onMeetingLeave, setIsMeetingLeft }) {
   const [localParticipantAllowedJoin, setLocalParticipantAllowedJoin] = useState(null);
   const [meetingErrorVisible, setMeetingErrorVisible] = useState(false);
   const [meetingError, setMeetingError] = useState({ code: null, message: '' });
+
+  // Session timer state
+  const [remainingSeconds, setRemainingSeconds] = useState(null);
+  const [isEndingSession, setIsEndingSession] = useState(false);
+  const warned5MinRef = useRef(false);
+  const warned1MinRef = useRef(false);
 
   // Refs
   const mMeetingRef = useRef();
@@ -306,6 +319,80 @@ export function MeetingContainer({ onMeetingLeave, setIsMeetingLeft }) {
     ),
   });
 
+  // Calculate scheduled end time
+  const scheduledEndTime = useMemo(() => {
+    const endTimeStr =
+      sessionData?.booking?.slotId?.endTime ||
+      sessionData?.booking?.endTime ||
+      sessionData?.slotId?.endTime;
+    return endTimeStr ? new Date(endTimeStr).getTime() : null;
+  }, [sessionData]);
+
+  // Automatic session end and remaining time tracking
+  useEffect(() => {
+    if (!scheduledEndTime) return;
+
+    const checkSessionTime = () => {
+      const now = Date.now();
+      const diffInSeconds = Math.floor((scheduledEndTime - now) / 1000);
+
+      if (diffInSeconds <= 0) {
+        setRemainingSeconds(0);
+        if (!isEndingSession) {
+          setIsEndingSession(true);
+          if (setLeaveReason) {
+            setLeaveReason('The scheduled session time has ended.');
+          }
+          toast.info('The scheduled session time has ended. Leaving call...', {
+            position: 'top-center',
+            autoClose: 4000,
+          });
+          const currentMeeting = mMeetingRef.current;
+          if (currentMeeting && typeof currentMeeting.leave === 'function') {
+            try {
+              currentMeeting.leave();
+            } catch (err) {
+              console.error('Error leaving meeting on expiration:', err);
+            }
+          }
+          setIsMeetingLeft(true);
+        }
+        return;
+      }
+
+      setRemainingSeconds(diffInSeconds);
+
+      // Warning at 5 minutes
+      if (diffInSeconds <= 300 && diffInSeconds > 60 && !warned5MinRef.current) {
+        warned5MinRef.current = true;
+        toast.warning('⚠️ 5 minutes remaining in this session.', {
+          position: 'top-center',
+          autoClose: 6000,
+        });
+      }
+
+      // Warning at 1 minute
+      if (diffInSeconds <= 60 && diffInSeconds > 0 && !warned1MinRef.current) {
+        warned1MinRef.current = true;
+        toast.error('⏳ 1 minute remaining! The session will automatically end at the scheduled time.', {
+          position: 'top-center',
+          autoClose: 8000,
+        });
+      }
+    };
+
+    checkSessionTime();
+    const timerInterval = setInterval(checkSessionTime, 1000);
+    return () => clearInterval(timerInterval);
+  }, [scheduledEndTime, isEndingSession, setIsMeetingLeft, setLeaveReason]);
+
+  const formattedTimeRemaining = useMemo(() => {
+    if (remainingSeconds === null) return null;
+    const mins = Math.max(0, Math.floor(remainingSeconds / 60));
+    const secs = Math.max(0, remainingSeconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }, [remainingSeconds]);
+
   // Render waiting screen or meeting content
   const renderMeetingContent = () => {
     if (typeof localParticipantAllowedJoin !== 'boolean') {
@@ -319,7 +406,32 @@ export function MeetingContainer({ onMeetingLeave, setIsMeetingLeft }) {
     return (
       <>
         {/* Main Meeting Area - Takes remaining height after bottom bar */}
-        <div className="flex flex-1 flex-row bg-gradient-to-br from-neutral-900 via-neutral-900 to-primary-950/30 overflow-hidden">
+        <div className="relative flex flex-1 flex-row bg-gradient-to-br from-neutral-900 via-neutral-900 to-primary-950/30 overflow-hidden">
+          {formattedTimeRemaining && (
+            <div
+              className={`absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3.5 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all ${
+                remainingSeconds <= 60
+                  ? 'bg-red-950/80 text-red-300 border-red-500/60 animate-pulse'
+                  : remainingSeconds <= 300
+                    ? 'bg-amber-950/80 text-amber-300 border-amber-500/60'
+                    : 'bg-neutral-900/80 text-neutral-200 border-neutral-700/80'
+              }`}
+            >
+              <Clock
+                className={`w-3.5 h-3.5 ${
+                  remainingSeconds <= 60
+                    ? 'text-red-400'
+                    : remainingSeconds <= 300
+                      ? 'text-amber-400'
+                      : 'text-primary-400'
+                }`}
+              />
+              <span className="text-xs font-semibold tracking-wide">
+                Time Left: {formattedTimeRemaining}
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-1 overflow-hidden">
             {isPresenting && <PresenterView height={containerHeight - BOTTOM_BAR_HEIGHT} />}
 

@@ -43,6 +43,7 @@ function VideoCallInterface() {
   const [customVideoStream, setCustomVideoStream] = useState(null);
   const [isMeetingStarted, setMeetingStarted] = useState(false);
   const [isMeetingLeft, setIsMeetingLeft] = useState(false);
+  const [leaveReason, setLeaveReason] = useState('');
 
   const isMobile = window.matchMedia('only screen and (max-width: 768px)').matches;
 
@@ -171,10 +172,16 @@ function VideoCallInterface() {
               }}
               setIsMeetingLeft={setIsMeetingLeft}
               participantId={participantId}
+              sessionData={sessionData}
+              setLeaveReason={setLeaveReason}
             />
           </MeetingProvider>
         ) : isMeetingLeft ? (
-          <LeaveScreen setIsMeetingLeft={setIsMeetingLeft} participantId={participantId} />
+          <LeaveScreen
+            setIsMeetingLeft={setIsMeetingLeft}
+            participantId={participantId}
+            leaveReason={leaveReason}
+          />
         ) : (
           <JoiningScreen
             meetingId={meetingId}
