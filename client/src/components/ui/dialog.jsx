@@ -66,6 +66,7 @@ const DialogContent = React.forwardRef(
           data-slot="dialog-content"
           className={cn(
             "fixed top-[50%] left-[50%] z-50 w-full translate-x-[-50%] translate-y-[-50%] gap-4",
+            "max-w-[calc(100%-2rem)] sm:max-w-lg",
             sizeClasses[size],
             "bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden",
             "max-h-[90vh] overflow-y-auto",
