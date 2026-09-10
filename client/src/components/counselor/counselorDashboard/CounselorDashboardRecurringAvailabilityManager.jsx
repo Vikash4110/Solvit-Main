@@ -746,45 +746,42 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
                 </CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3 pt-0">
-              <div className="flex items-center justify-between">
+            <CardContent className="divide-y divide-neutral-200/80 dark:divide-neutral-800/80 pt-0">
+              <div className="flex items-center justify-between pb-3 pt-1">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
                   Available Days
                 </span>
-                <Badge variant="secondary" className="font-semibold text-xs">
+                <Badge variant="secondary" className="font-semibold text-xs px-2.5 py-1 shrink-0">
                   {summary.availableDaysCount} of 7
                 </Badge>
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
+
+              <div className="flex items-center justify-between py-3">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
                   Total Time Slots
                 </span>
-                <Badge variant="secondary" className="font-semibold text-xs">
+                <Badge variant="secondary" className="font-semibold text-xs px-2.5 py-1 shrink-0">
                   {summary.totalSlots} slot{summary.totalSlots !== 1 ? 's' : ''}
                 </Badge>
               </div>
 
               {summary.availableDays.length > 0 && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
-                      Selected Days
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {summary.availableDays.map((day) => (
-                        <Badge
-                          key={day.dayOfWeek}
-                          variant="outline"
-                          className="font-semibold text-xs"
-                        >
-                          {getDayShort(day.dayOfWeek)} ({day.timeRanges.length})
-                        </Badge>
-                      ))}
-                    </div>
+                <div className="pt-3 pb-1 space-y-2">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium block">
+                    Selected Days
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {summary.availableDays.map((day) => (
+                      <Badge
+                        key={day.dayOfWeek}
+                        variant="outline"
+                        className="font-semibold text-xs px-2 py-0.5"
+                      >
+                        {getDayShort(day.dayOfWeek)} ({day.timeRanges.length})
+                      </Badge>
+                    ))}
                   </div>
-                </>
+                </div>
               )}
             </CardContent>
           </Card>
