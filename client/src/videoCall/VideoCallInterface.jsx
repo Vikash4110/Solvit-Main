@@ -181,6 +181,8 @@ function VideoCallInterface() {
             setIsMeetingLeft={setIsMeetingLeft}
             participantId={participantId}
             leaveReason={leaveReason}
+            setLeaveReason={setLeaveReason}
+            sessionData={sessionData}
           />
         ) : (
           <JoiningScreen
