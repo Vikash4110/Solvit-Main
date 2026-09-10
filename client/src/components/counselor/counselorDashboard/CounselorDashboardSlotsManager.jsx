@@ -459,11 +459,13 @@ const CounselorDashboardSlotsManager = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-full sm:w-40 h-9 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                        <Filter className="w-4 h-4 mr-2 text-primary-600" />
-                        <SelectValue />
+                      <SelectTrigger
+                        leftIcon={<Filter className="w-4 h-4 text-primary-600 dark:text-primary-400" />}
+                        className="flex-1 sm:w-40 h-9 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                      >
+                        <SelectValue placeholder="All Slots" />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                         <SelectItem value="all">All Slots</SelectItem>
@@ -475,7 +477,7 @@ const CounselorDashboardSlotsManager = () => {
                     <Button
                       size="sm"
                       onClick={() => setSelectedDate(dayjs().tz(TIMEZONE))}
-                      className="bg-primary-600 hover:bg-primary-700 text-white"
+                      className="bg-primary-600 hover:bg-primary-700 text-white shrink-0 h-9 px-4"
                     >
                       Today
                     </Button>
@@ -483,15 +485,19 @@ const CounselorDashboardSlotsManager = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="flex justify-center pb-6">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate.toDate()}
-                  onSelect={(date) => date && setSelectedDate(dayjs(date).tz(TIMEZONE))}
-                  hasSlotsDates={getDatesWithSlots()}
-                  variant="elevated"
-                  className="rounded-xl"
-                />
+              <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
+                <div className="w-full overflow-x-auto pb-1.5 flex justify-start sm:justify-center">
+                  <div className="min-w-fit mx-auto">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate.toDate()}
+                      onSelect={(date) => date && setSelectedDate(dayjs(date).tz(TIMEZONE))}
+                      hasSlotsDates={getDatesWithSlots()}
+                      variant="elevated"
+                      className="rounded-xl"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
