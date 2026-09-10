@@ -112,6 +112,14 @@ const settingRecurringAvailability = wrapper(async (req, res) => {
         });
       }
 
+      const durationMinutes = endI.diff(startI, 'minute');
+      if (durationMinutes > slotDuration) {
+        return res.status(400).json({
+          status: 400,
+          message: `Time range ${rangeI.startTime} - ${rangeI.endTime} on ${day.dayOfWeek} exceeds maximum slot duration of ${slotDuration} minutes`,
+        });
+      }
+
       for (let j = 0; j < day.timeRanges.length; j++) {
         if (i === j) continue;
 

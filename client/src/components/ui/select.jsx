@@ -100,7 +100,7 @@ const SelectTrigger = React.forwardRef(
           {leftIcon}
         </span>
       )}
-      <div className="flex-1 text-left truncate">
+      <div className="flex-1 text-left truncate flex items-center gap-1.5 min-w-0">
         {children}
       </div>
       <SelectPrimitive.Icon asChild>

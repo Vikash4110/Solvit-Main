@@ -23,7 +23,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { TIMEZONE ,SLOT_DURATION_MINUTES } from '../../../constants/constants';
+import { TIMEZONE, SLOT_DURATION_MINUTES, TIME_OPTIONS_5_MIN as timeOptions } from '../../../constants/constants';
 import { toast } from 'sonner';
 
 // shadcn/ui imports
@@ -195,29 +195,6 @@ const CounselorDashboardSlotsManager = () => {
   };
 
   // NEW: Add Custom Slot Handlers
-  const generateTimeOptions = () => {
-    const times = [];
-    for (let minute = 0; minute < 60; minute += 30) {
-      times.push(`12:${minute.toString().padStart(2, '0')} AM`);
-    }
-    for (let hour = 1; hour <= 11; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        times.push(`${hour}:${minute.toString().padStart(2, '0')} AM`);
-      }
-    }
-    for (let minute = 0; minute < 60; minute += 30) {
-      times.push(`12:${minute.toString().padStart(2, '0')} PM`);
-    }
-    for (let hour = 1; hour <= 11; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        times.push(`${hour}:${minute.toString().padStart(2, '0')} PM`);
-      }
-    }
-    return times;
-  };
-
-  const timeOptions = generateTimeOptions();
-
   const handleAddCustomSlot = async () => {
     if (!newSlotData.date || !newSlotData.startTime || !newSlotData.endTime || !newSlotData.price) {
       toast.error('Please fill all fields');
@@ -482,11 +459,13 @@ const CounselorDashboardSlotsManager = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-full sm:w-40 h-9 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                        <Filter className="w-4 h-4 mr-2 text-primary-600" />
-                        <SelectValue />
+                      <SelectTrigger
+                        leftIcon={<Filter className="w-4 h-4 text-primary-600 dark:text-primary-400" />}
+                        className="flex-1 sm:w-40 h-9 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                      >
+                        <SelectValue placeholder="All Slots" />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                         <SelectItem value="all">All Slots</SelectItem>
@@ -498,7 +477,7 @@ const CounselorDashboardSlotsManager = () => {
                     <Button
                       size="sm"
                       onClick={() => setSelectedDate(dayjs().tz(TIMEZONE))}
-                      className="bg-primary-600 hover:bg-primary-700 text-white"
+                      className="bg-primary-600 hover:bg-primary-700 text-white shrink-0 h-9 px-4"
                     >
                       Today
                     </Button>
@@ -506,15 +485,19 @@ const CounselorDashboardSlotsManager = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="flex justify-center pb-6">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate.toDate()}
-                  onSelect={(date) => date && setSelectedDate(dayjs(date).tz(TIMEZONE))}
-                  hasSlotsDates={getDatesWithSlots()}
-                  variant="elevated"
-                  className="rounded-xl"
-                />
+              <CardContent className="space-y-4 p-3 sm:p-6 pt-0">
+                <div className="w-full overflow-x-auto pb-1.5 flex justify-start sm:justify-center">
+                  <div className="min-w-fit mx-auto">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate.toDate()}
+                      onSelect={(date) => date && setSelectedDate(dayjs(date).tz(TIMEZONE))}
+                      hasSlotsDates={getDatesWithSlots()}
+                      variant="elevated"
+                      className="rounded-xl"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -808,24 +791,25 @@ const CounselorDashboardSlotsManager = () => {
 
       {/* NEW: Add Custom Slot Dialog */}
       <Dialog open={showAddSlotDialog} onOpenChange={setShowAddSlotDialog}>
-        <DialogContent className="sm:max-w-md bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800">
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+        <DialogContent className="sm:max-w-md p-5 sm:p-6 bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 shadow-2xl rounded-2xl">
+          <DialogHeader className="p-0 sm:p-0 text-left pr-8 sm:pr-10">
+            <div className="flex items-center gap-3 mb-1.5">
+              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center shrink-0 shadow-xs">
                 <Plus className="w-5 h-5 text-primary-600 dark:text-primary-500" />
               </div>
-              <DialogTitle className="text-lg">Add Custom Slot</DialogTitle>
+              <DialogTitle className="text-lg font-bold text-neutral-900 dark:text-white">
+                Add Custom Slot
+              </DialogTitle>
             </div>
-            <DialogDescription className="text-sm">
-              Create a one-time slot for a specific date and time without modifying your recurring
-              availability.
+            <DialogDescription className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              Create a one-time slot for a specific date and time without modifying your recurring availability.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-2">
             {/* Date Input */}
-            <div className="space-y-2">
-              <Label htmlFor="slot-date" className="text-sm font-medium">
+            <div className="space-y-1.5">
+              <Label htmlFor="slot-date" className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                 Date
               </Label>
               <Input
@@ -834,14 +818,14 @@ const CounselorDashboardSlotsManager = () => {
                 min={dayjs().format('YYYY-MM-DD')}
                 value={newSlotData.date}
                 onChange={(e) => setNewSlotData({ ...newSlotData, date: e.target.value })}
-                className="w-full"
+                className="w-full h-10 px-3.5 rounded-xl border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-primary-500/20"
               />
             </div>
 
             {/* Time Range */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="start-time" className="text-sm font-medium">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="start-time" className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                   Start Time
                 </Label>
                 <Select
@@ -855,10 +839,10 @@ const CounselorDashboardSlotsManager = () => {
                     });
                   }}
                 >
-                  <SelectTrigger id="start-time">
-                    <SelectValue />
+                  <SelectTrigger id="start-time" className="h-10 rounded-xl border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm">
+                    <SelectValue placeholder="Select start time" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                     <ScrollArea className="h-48">
                       {timeOptions.map((time) => (
                         <SelectItem key={time} value={time} className="text-sm">
@@ -870,34 +854,36 @@ const CounselorDashboardSlotsManager = () => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="end-time" className="text-sm font-medium text-neutral-500">
-                  End Time
-                  <span className="text-xs ml-1.5 text-neutral-400">(Auto-calculated)</span>
-                </Label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="end-time" className="text-xs sm:text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                    End Time
+                  </Label>
+                  <span className="text-[11px] text-primary-600 dark:text-primary-400 font-medium">
+                    (Auto-calculated)
+                  </span>
+                </div>
                 <Select value={newSlotData.endTime} disabled>
                   <SelectTrigger
                     id="end-time"
-                    className="bg-neutral-50 dark:bg-neutral-800/50 cursor-not-allowed opacity-75"
+                    className="h-10 rounded-xl border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/60 cursor-not-allowed text-neutral-500 text-sm"
                   >
-                    <SelectValue />
+                    <SelectValue placeholder="End time" />
                   </SelectTrigger>
                 </Select>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Duration: {
-                    SLOT_DURATION_MINUTES
-                  }minutes
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">
+                  Duration: {SLOT_DURATION_MINUTES} minutes
                 </p>
               </div>
             </div>
 
             {/* Price Input */}
-            <div className="space-y-2">
-              <Label htmlFor="slot-price" className="text-sm font-medium">
+            <div className="space-y-1.5">
+              <Label htmlFor="slot-price" className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                 Price (₹)
               </Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-medium">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400 font-semibold text-sm pointer-events-none">
                   ₹
                 </span>
                 <Input
@@ -908,17 +894,26 @@ const CounselorDashboardSlotsManager = () => {
                   placeholder="Enter price"
                   value={newSlotData.price}
                   onChange={(e) => setNewSlotData({ ...newSlotData, price: e.target.value })}
-                  className="pl-6"
+                  className="pl-8 h-10 rounded-xl border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-primary-500/20"
                 />
               </div>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={handleCloseAddSlotDialog} disabled={addSlotLoading}>
+          <DialogFooter className="p-0 sm:p-0 pt-2 flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={handleCloseAddSlotDialog}
+              disabled={addSlotLoading}
+              className="w-full sm:w-auto rounded-xl border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm"
+            >
               Cancel
             </Button>
-            <Button onClick={handleAddCustomSlot} disabled={addSlotLoading}>
+            <Button
+              onClick={handleAddCustomSlot}
+              disabled={addSlotLoading}
+              className="w-full sm:w-auto rounded-xl bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-500/20 text-sm"
+            >
               {addSlotLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

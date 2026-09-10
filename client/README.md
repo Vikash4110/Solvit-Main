@@ -5,24 +5,29 @@ A modern React frontend for the Solvit mental health platform, built with React,
 ## Features
 
 - 🔐 **User Authentication**: Login and registration with OTP verification
+- 🎥 **WebRTC Video Consultations**: 1-on-1 encrypted video/audio sessions with real-time in-call chat, screen sharing, and picture-in-picture
+- ⏳ **Automated Session Timing**: Real-time in-call countdown timer with automatic termination at scheduled end time and 5m/1m warnings
+- 🔄 **Network Resilience**: Seamless rejoining flow for active sessions during accidental disconnects or network dropouts
+- 🕒 **Flexible 5-Minute Slot Scheduling**: Granular slot creation and recurring availability management (5-min intervals, max 45-min duration)
 - 👤 **User Profile Management**: Complete profile with editable information
 - 📱 **Responsive Design**: Mobile-first design with Tailwind CSS
 - 🎨 **Modern UI**: Beautiful, accessible interface with smooth animations
 - 🔒 **Protected Routes**: Secure navigation with authentication guards
 - 📸 **Profile Picture Upload**: Image upload with preview functionality
 - ✅ **Form Validation**: Comprehensive form validation with react-hook-form
-- 🔔 **Toast Notifications**: User-friendly notifications with react-hot-toast
+- 🔔 **Toast Notifications**: User-friendly notifications with react-toastify & sonner
 
 ## Tech Stack
 
 - **React 19** - Latest React with modern features
-- **Vite** - Fast build tool and development server
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Router DOM** - Client-side routing
+- **Vite 7** - Fast build tool and development server
+- **VideoSDK.live** - Real-time WebRTC audio/video infrastructure
+- **Tailwind CSS v4** - Utility-first CSS framework
+- **React Router DOM v7** - Client-side routing
 - **React Hook Form** - Form handling and validation
 - **Axios** - HTTP client for API calls
-- **Lucide React** - Beautiful icons
-- **React Hot Toast** - Toast notifications
+- **Lucide React** - Modern vector icons
+- **React Toastify & Sonner** - Dual toast notification engines
 
 ## Getting Started
 
@@ -181,6 +186,15 @@ VITE_API_BASE_URL=http://localhost:8000/api/v1
 3. Add proper error handling
 4. Test on different devices and browsers
 5. Update documentation for new features
+
+## Recent UI Improvements & Bug Fixing Log
+
+- 🕒 **5-Minute Slot Time Picker**: Added dynamic 5-minute interval selection (`00, 05, 10, ..., 55`) across all slot scheduling interfaces.
+- ⏱️ **45-Minute Maximum Consultation Window**: Enforced slot length limit to prevent scheduling beyond 45 minutes per booking.
+- 📐 **Weekly Summary Badge Alignment**: Fixed badge clipping and divider line overlapping in `CounselorDashboardRecurringAvailabilityManager.jsx`.
+- 🛑 **Strict Session Expiration**: Added real-time countdown timer in `MeetingContainer.jsx` that automatically terminates the call and frees hardware device tracks when the scheduled end time is reached.
+- 🔔 **Early Expiration Notifications**: Integrated warning toasts at 5 minutes and 1 minute remaining before automatic session shutdown.
+- 🔁 **Active Session Rejoin Support**: `LeaveScreen.jsx` allows immediate re-entry for accidental disconnects/network glitches as long as the scheduled slot is active.
 
 ## License
 
