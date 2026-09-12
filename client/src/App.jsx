@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { Toaster } from '@/components/ui/sonner';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 // Core layout, shell, providers & route guards (statically loaded for immediate bootstrap)
 import Navbar from './components/Home/Navbar';
@@ -63,12 +63,15 @@ const AdminPaymentsManagement = lazy(() => import('./components/admin/AdminPayme
 const AdminBookingsManagement = lazy(() => import('./components/admin/AdminBookingsManagement'));
 
 function App() {
+  const location = useLocation();
+  const isMeetingRoute = location.pathname.startsWith('/meeting');
+
   return (
     <ClientAuthProvider>
       <CounselorAuthProvider>
         <AdminAuthProvider>
           <div className="min-h-screen bg-gray-100">
-            <Navbar />
+            {!isMeetingRoute && <Navbar />}
             <ScrollToTop />
             <ErrorBoundary>
               <Suspense fallback={<PageLoader />}>

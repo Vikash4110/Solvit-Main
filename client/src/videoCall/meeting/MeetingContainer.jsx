@@ -86,8 +86,8 @@ export function MeetingContainer({
   const isLGDesktop = useMediaQuery({ minWidth: 1024, maxWidth: 1439 });
   const isXLDesktop = useMediaQuery({ minWidth: 1440 });
 
-  // Constants - Updated to account for navbar
-  const NAVBAR_HEIGHT = 80;
+  // Constants - Navbar is hidden during active meeting for full-screen immersive experience
+  const NAVBAR_HEIGHT = 0;
   const BOTTOM_BAR_HEIGHT = 60;
 
   // Calculate sidebar width based on screen size
