@@ -109,17 +109,8 @@ const ClientDashboard = () => {
 
         {/* Scrollable Content Area */}
         <main className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={fadeIn}
-              className="h-full"
-            >
-              <Routes>
-                <Route index element={<Navigate to="personal-info" replace />} />
+          <Routes>
+            <Route index element={<Navigate to="personal-info" replace />} />
 
                 <Route
                   path="personal-info"
@@ -193,8 +184,6 @@ const ClientDashboard = () => {
                   }
                 />
               </Routes>
-            </motion.div>
-          </AnimatePresence>
         </main>
       </div>
     </div>
