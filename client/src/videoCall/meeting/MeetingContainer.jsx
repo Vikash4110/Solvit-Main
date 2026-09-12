@@ -284,21 +284,35 @@ export function MeetingContainer({
   }, []);
 
   // Raised hand participants hook
-  const { participantRaisedHand } = useRaisedHandParticipants();
+  const { participantRaisedHand, participantLoweredHand } = useRaisedHandParticipants();
 
   // Subscribe to RAISE_HAND events
   usePubSub('RAISE_HAND', {
     onMessageReceived: useCallback(
       (data) => {
         const localParticipantId = mMeeting?.localParticipant?.id;
-        const { senderId, senderName } = data;
+        const { senderId, senderName, message } = data;
         const isLocal = senderId === localParticipantId;
 
-        playNotificationSound();
-        showToast(`${isLocal ? 'You' : nameTructed(senderName, 15)} raised hand 🖐🏼`);
-        participantRaisedHand(senderId);
+        const isLower =
+          message === 'LOWER_HAND' ||
+          message === 'Lower Hand' ||
+          data?.action === 'LOWER' ||
+          data?.action === 'DOWN';
+
+        if (isLower) {
+          if (participantLoweredHand) {
+            participantLoweredHand(senderId);
+          }
+        } else {
+          playNotificationSound();
+          showToast(`${isLocal ? 'You' : nameTructed(senderName, 15)} raised hand 🖐🏼`);
+          if (participantRaisedHand) {
+            participantRaisedHand(senderId);
+          }
+        }
       },
-      [mMeeting, playNotificationSound, showToast, participantRaisedHand]
+      [mMeeting, playNotificationSound, showToast, participantRaisedHand, participantLoweredHand]
     ),
   });
 

@@ -74,8 +74,7 @@ export function ParticipantPanel({ panelHeight }) {
       style={{ height: panelHeight }}
     >
       <div className="flex flex-col flex-1 p-3" style={{ height: panelHeight - 100 }}>
-        {[...participants.keys()].map((participantId, index) => {
-          const { raisedHand, participantId: peerId } = sortedRaisedHandsParticipants[index];
+        {sortedRaisedHandsParticipants.map(({ raisedHand, participantId: peerId }) => {
           return (
             <ParticipantListItem key={peerId} participantId={peerId} raisedHand={raisedHand} />
           );

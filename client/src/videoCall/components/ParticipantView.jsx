@@ -1,5 +1,5 @@
 import { Popover, Transition } from '@headlessui/react';
-import { X, MicOff, Volume2, Activity } from 'lucide-react';
+import { X, MicOff, Volume2, Activity, Hand } from 'lucide-react';
 import { useParticipant, VideoPlayer } from '@videosdk.live/react-sdk';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
@@ -18,6 +18,7 @@ export const CornerDisplayName = ({
   micOn,
   mouseOver,
   isActiveSpeaker,
+  isHandRaised,
 }) => {
   const isMobile = useIsMobile();
   const isTab = useIsTab();
@@ -205,6 +206,11 @@ export const CornerDisplayName = ({
           transform: `scale(${show ? 1 : 0})`,
         }}
       >
+        {isHandRaised && (
+          <div className="flex items-center justify-center p-1 mr-1.5 rounded-md bg-amber-500 text-neutral-950 shadow-sm" title="Hand Raised">
+            <Hand className="h-3.5 w-3.5 fill-neutral-950" />
+          </div>
+        )}
         {!micOn && !isPresenting ? (
           <MicOff className="h-4 w-4 text-red-400" />
         ) : micOn && isActiveSpeaker ? (
@@ -370,9 +376,13 @@ export function ParticipantView({ participantId }) {
   const { displayName, micStream, webcamOn, micOn, isLocal, mode, isActiveSpeaker } =
     useParticipant(participantId);
 
-  const { selectedSpeaker } = useMeetingAppContext();
+  const { selectedSpeaker, raisedHandsParticipants } = useMeetingAppContext();
   const micRef = useRef(null);
   const [mouseOver, setMouseOver] = useState(false);
+
+  const isHandRaised = useMemo(() => {
+    return (raisedHandsParticipants || []).some((p) => p.participantId === participantId);
+  }, [raisedHandsParticipants, participantId]);
 
   useEffect(() => {
     const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
@@ -410,9 +420,22 @@ export function ParticipantView({ participantId }) {
       onMouseLeave={() => {
         setMouseOver(false);
       }}
-      className={`h-full w-full bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-800 relative overflow-hidden rounded-xl border border-neutral-700/50 hover:border-neutral-600/50 transition-all duration-300 shadow-lg hover:shadow-xl`}
+      className={`h-full w-full bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-800 relative overflow-hidden rounded-xl border transition-all duration-300 shadow-lg ${
+        isHandRaised
+          ? 'ring-2 ring-amber-400 border-amber-400 shadow-amber-500/20'
+          : 'border-neutral-700/50 hover:border-neutral-600/50 hover:shadow-xl'
+      }`}
     >
       <audio ref={micRef} autoPlay muted={isLocal} />
+
+      {/* Floating Hand Raised Indicator Badge */}
+      {isHandRaised && (
+        <div className="absolute top-3 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500 text-neutral-950 font-bold text-xs shadow-lg shadow-amber-500/40 backdrop-blur-sm animate-pulse">
+          <Hand className="h-4 w-4 fill-neutral-950" />
+          <span>Hand Raised</span>
+        </div>
+      )}
+
       {webcamOn ? (
         <div className="absolute inset-0">
           <VideoPlayer
@@ -448,6 +471,7 @@ export function ParticipantView({ participantId }) {
           participantId,
           mouseOver,
           isActiveSpeaker,
+          isHandRaised,
         }}
       />
     </div>
