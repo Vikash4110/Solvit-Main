@@ -12,10 +12,6 @@ import { useMeetingAppContext } from '../../MeetingAppContextDef';
 const SideBarTabView = ({
   height,
   sideBarContainerWidth,
-  panelHeight,
-  panelHeaderHeight,
-  panelHeaderPadding,
-  panelPadding,
   handleClose,
 }) => {
   const { participants } = useMeeting();
@@ -23,76 +19,52 @@ const SideBarTabView = ({
 
   return (
     <div
-      className="bg-neutral-900 rounded-xl shadow-2xl border border-neutral-800 overflow-hidden"
+      className="bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-800 flex flex-col overflow-hidden my-auto"
       style={{
-        height,
-        width: sideBarContainerWidth,
-        padding: panelPadding,
+        height: typeof height === 'number' ? `${height}px` : height,
+        width: typeof sideBarContainerWidth === 'number' ? `${sideBarContainerWidth}px` : sideBarContainerWidth,
+        maxHeight: '100%',
       }}
     >
-      <div
-        className="bg-neutral-900 rounded-xl flex flex-col h-full border border-neutral-800"
-        style={{
-          height: height,
-          overflow: 'hidden',
-        }}
-      >
-        {sideBarMode && (
-          <div
-            className="flex items-center justify-between px-5 bg-neutral-800/50 backdrop-blur-sm"
-            style={{
-              height: panelHeaderHeight - 1,
-              paddingTop: panelHeaderPadding / 2,
-              paddingBottom: panelHeaderPadding / 2,
-              borderBottom: '1px solid #404040',
-            }}
+      {sideBarMode && (
+        <div className="flex items-center justify-between px-4 py-3 bg-neutral-800/70 backdrop-blur-md border-b border-neutral-800 shrink-0">
+          <p className="text-sm font-bold text-white select-none">
+            {sideBarMode === 'PARTICIPANTS'
+              ? `Participants (${new Map(participants).size})`
+              : sideBarMode.charAt(0).toUpperCase() + sideBarMode.slice(1).toLowerCase()}
+          </p>
+          <button
+            className="text-neutral-400 hover:text-white hover:bg-neutral-700/60 rounded-lg p-1.5 transition-all duration-200"
+            onClick={handleClose}
+            aria-label="Close sidebar"
+            type="button"
           >
-            <p className="text-base font-bold text-white select-none">
-              {sideBarMode === 'PARTICIPANTS'
-                ? `Participants (${new Map(participants).size})`
-                : sideBarMode.charAt(0).toUpperCase() + sideBarMode.slice(1).toLowerCase() || ''}
-            </p>
-            <button
-              className="text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-lg p-1.5 transition-all duration-200"
-              onClick={handleClose}
-              aria-label="Close sidebar"
-              type="button"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto bg-neutral-900" style={{ height: panelHeight }}>
-          {sideBarMode === 'PARTICIPANTS' ? (
-            <ParticipantPanel panelHeight={panelHeight} />
-          ) : sideBarMode === 'CHAT' ? (
-            <ChatPanel panelHeight={panelHeight} />
-          ) : null}
+            <X className="h-4 w-4" />
+          </button>
         </div>
+      )}
+
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-neutral-900">
+        {sideBarMode === 'PARTICIPANTS' ? (
+          <ParticipantPanel />
+        ) : sideBarMode === 'CHAT' ? (
+          <ChatPanel />
+        ) : null}
       </div>
     </div>
   );
 };
 
 export function SidebarConatiner({ height, sideBarContainerWidth }) {
-  const { raisedHandsParticipants, sideBarMode, setSideBarMode } = useMeetingAppContext();
+  const { sideBarMode, setSideBarMode } = useMeetingAppContext();
   const isMobile = useIsMobile();
   const isTab = useIsTab();
-  const isLGDesktop = useMediaQuery({ minWidth: 1024, maxWidth: 1439 });
-  const isXLDesktop = useMediaQuery({ minWidth: 1440 });
-
-  const panelPadding = 12;
-
-  const paddedHeight = height - panelPadding * 3.5;
-
-  const panelHeaderHeight = isMobile ? 40 : isTab ? 44 : isLGDesktop ? 48 : isXLDesktop ? 52 : 48;
-
-  const panelHeaderPadding = isMobile ? 8 : isTab ? 10 : isLGDesktop ? 12 : isXLDesktop ? 14 : 10;
 
   const handleClose = () => {
     setSideBarMode(null);
   };
+
+  const desktopHeight = height - 16;
 
   return sideBarMode ? (
     isTab || isMobile ? (
@@ -119,17 +91,12 @@ export function SidebarConatiner({ height, sideBarContainerWidth }) {
             leaveFrom="translate-y-0 opacity-100 scale-100"
             leaveTo="translate-y-full opacity-0 scale-95"
           >
-            <div className="fixed inset-0 flex items-center justify-center p-4">
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl transition-all">
+            <div className="fixed inset-0 flex items-center justify-center p-3 sm:p-4">
+              <Dialog.Panel className="w-full max-w-md h-[80vh] transform overflow-hidden rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl transition-all">
                 <SideBarTabView
-                  height={'100%'}
-                  sideBarContainerWidth={'100%'}
-                  panelHeight={height}
-                  panelHeaderHeight={panelHeaderHeight}
-                  panelHeaderPadding={panelHeaderPadding}
-                  panelPadding={panelPadding}
+                  height="100%"
+                  sideBarContainerWidth="100%"
                   handleClose={handleClose}
-                  raisedHandsParticipants={raisedHandsParticipants}
                 />
               </Dialog.Panel>
             </div>
@@ -138,14 +105,9 @@ export function SidebarConatiner({ height, sideBarContainerWidth }) {
       </Transition>
     ) : (
       <SideBarTabView
-        height={paddedHeight}
+        height={desktopHeight}
         sideBarContainerWidth={sideBarContainerWidth}
-        panelHeight={paddedHeight - panelHeaderHeight - panelHeaderPadding}
-        panelHeaderHeight={panelHeaderHeight}
-        panelHeaderPadding={panelHeaderPadding}
-        panelPadding={panelPadding}
         handleClose={handleClose}
-        raisedHandsParticipants={raisedHandsParticipants}
       />
     )
   ) : null;

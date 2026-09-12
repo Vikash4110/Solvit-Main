@@ -35,16 +35,25 @@ export const trimSnackBarText = (text = '') => {
   return text.length > maxLength ? `${text.substr(0, maxLength - 5)}...` : text;
 };
 
-export const nameTructed = (name, tructedLength) => {
-  if (name?.length > tructedLength) {
-    if (tructedLength === 15) {
-      return `${name.substr(0, 12)}...`;
-    } else {
-      return `${name.substr(0, tructedLength)}...`;
+export const cleanDisplayName = (name) => {
+  if (!name || typeof name !== 'string') return '';
+  const lastUnderscoreIndex = name.lastIndexOf('_');
+  if (lastUnderscoreIndex > 0) {
+    const suffix = name.substring(lastUnderscoreIndex + 1);
+    if (/^[0-9a-fA-F]{12,36}$/.test(suffix) || /^[0-9a-zA-Z]{12,}$/.test(suffix)) {
+      return name.substring(0, lastUnderscoreIndex).trim();
     }
-  } else {
-    return name;
   }
+  return name.trim();
+};
+
+export const nameTructed = (name, tructedLength = 20) => {
+  const cleanName = cleanDisplayName(name);
+  if (!cleanName) return '';
+  if (cleanName.length > tructedLength) {
+    return `${cleanName.substr(0, Math.max(3, tructedLength - 3))}...`;
+  }
+  return cleanName;
 };
 
 export const sideBarModes = {

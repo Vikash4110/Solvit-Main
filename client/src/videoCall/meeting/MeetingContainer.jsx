@@ -326,7 +326,25 @@ export function MeetingContainer({
 
         if (!isLocal) {
           playNotificationSound();
-          showToast(trimSnackBarText(`${nameTructed(senderName, 15)} says: ${message}`));
+          let displayMsg = '';
+          if (typeof message === 'string') {
+            const trimmed = message.trim();
+            if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+              try {
+                const parsed = JSON.parse(trimmed);
+                displayMsg = parsed.text || parsed.message || message;
+              } catch {
+                displayMsg = message;
+              }
+            } else {
+              displayMsg = message;
+            }
+          } else if (typeof message === 'object' && message !== null) {
+            displayMsg = message.text || message.message || '';
+          }
+          if (displayMsg) {
+            showToast(trimSnackBarText(`${nameTructed(senderName, 15)}: ${displayMsg}`));
+          }
         }
       },
       [mMeeting, playNotificationSound, showToast]

@@ -6,7 +6,7 @@ import { useMediaQuery } from 'react-responsive';
 import useIsMobile from '../hooks/useIsMobile';
 import useIsTab from '../hooks/useIsTab';
 import useWindowSize from '../hooks/useWindowSize';
-import { getQualityScore, nameTructed } from '../utils/common';
+import { getQualityScore, nameTructed, cleanDisplayName } from '../utils/common';
 import * as ReactDOM from 'react-dom';
 import { useMeetingAppContext } from '../MeetingAppContextDef';
 
@@ -457,7 +457,7 @@ export function ParticipantView({ participantId }) {
           <div
             className={`z-10 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-primary-700 shadow-2xl border-4 border-neutral-700 2xl:h-[92px] h-[52px] 2xl:w-[92px] w-[52px]`}
           >
-            <p className="text-2xl text-white font-bold">{String(displayName).charAt(0).toUpperCase()}</p>
+            <p className="text-2xl text-white font-bold">{(cleanDisplayName(displayName) || 'U').charAt(0).toUpperCase()}</p>
           </div>
         </div>
       )}
