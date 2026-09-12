@@ -184,7 +184,7 @@ const ClientDashboardMyBookings = () => {
 
   const handleProceedToSession = (bookingId, videoSDKRoomId) => {
     setGuidelinesState({ show: false, booking: null });
-    window.open(`/meeting/${bookingId}/${videoSDKRoomId}`, '_blank');
+    navigate(`/meeting/${bookingId}/${videoSDKRoomId}`);
   };
 
   // ── Cancel ───────────────────────────────────────────────────────────────────

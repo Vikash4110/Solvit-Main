@@ -464,36 +464,59 @@ const WebCamBTN = () => {
 export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
   const { sideBarMode, setSideBarMode } = useMeetingAppContext();
   
- const RaiseHandBTN = ({ isMobile, isTab }) => {
-  const { publish } = usePubSub('RAISE_HAND');
-  const [isHandRaised, setIsHandRaised] = useState(false);
-  
-  const toggleRaiseHand = () => {
-    if (!isHandRaised) {
-      publish('Raise Hand');
-    }
-    setIsHandRaised(!isHandRaised);
-  };
+  const RaiseHandBTN = ({ isMobile, isTab }) => {
+    const { publish } = usePubSub('RAISE_HAND');
+    const { localParticipant } = useMeeting();
+    const { raisedHandsParticipants, participantRaisedHand, participantLoweredHand } =
+      useMeetingAppContext();
 
-  return isMobile || isTab ? (
-    <MobileIconButton
-      id="RaiseHandBTN"
-      tooltipTitle={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
-      Icon={Hand}
-      onClick={toggleRaiseHand}
-      buttonText={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
-      isFocused={isHandRaised}
-    />
-  ) : (
-    <OutlinedButton 
-      onClick={toggleRaiseHand} 
-      tooltip={isHandRaised ? 'Lower Hand ✋' : 'Raise Hand'} 
-      Icon={Hand}
-      isFocused={isHandRaised}
-      bgColor={isHandRaised ? 'bg-gradient-to-br from-yellow-500 to-yellow-600 animate-pulse' : 'bg-neutral-800'}
-    />
-  );
-};
+    const isHandRaised = useMemo(() => {
+      return (raisedHandsParticipants || []).some(
+        (p) => p.participantId === localParticipant?.id
+      );
+    }, [raisedHandsParticipants, localParticipant?.id]);
+
+    const toggleRaiseHand = () => {
+      if (isHandRaised) {
+        publish('LOWER_HAND');
+        if (participantLoweredHand && localParticipant?.id) {
+          participantLoweredHand(localParticipant.id);
+        }
+      } else {
+        publish('RAISE_HAND');
+        if (participantRaisedHand && localParticipant?.id) {
+          participantRaisedHand(localParticipant.id);
+        }
+      }
+    };
+
+    return isMobile || isTab ? (
+      <MobileIconButton
+        id="RaiseHandBTN"
+        tooltipTitle={isHandRaised ? 'Lower Hand ✋' : 'Raise Hand'}
+        Icon={Hand}
+        onClick={toggleRaiseHand}
+        buttonText={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
+        isFocused={isHandRaised}
+        focusIconColor={isHandRaised ? '#000000' : undefined}
+        bgColor={isHandRaised ? '#eab308' : undefined}
+      />
+    ) : (
+      <OutlinedButton
+        btnID="RaiseHandBTN"
+        onClick={toggleRaiseHand}
+        tooltip={isHandRaised ? 'Lower Hand ✋' : 'Raise Hand'}
+        Icon={Hand}
+        isFocused={isHandRaised}
+        focusIconColor={isHandRaised ? '#000000' : undefined}
+        bgColor={
+          isHandRaised
+            ? 'bg-gradient-to-br from-amber-400 to-amber-500 border-amber-300 shadow-lg shadow-amber-500/40 text-neutral-950 font-bold'
+            : 'bg-neutral-800 hover:bg-neutral-750'
+        }
+      />
+    );
+  };
 
 
 

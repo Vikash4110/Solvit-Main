@@ -1,4 +1,4 @@
-import { useContext, createContext, useState, useEffect, useRef } from 'react';
+import { useContext, createContext, useState, useCallback } from 'react';
 
 export const MeetingAppContext = createContext();
 
@@ -14,61 +14,32 @@ export const MeetingAppProvider = ({ children }) => {
   const [sideBarMode, setSideBarMode] = useState(null);
   const [pipMode, setPipMode] = useState(false);
 
+  const participantRaisedHand = useCallback((participantId) => {
+    if (!participantId) return;
+    setRaisedHandsParticipants((prev) => {
+      const exists = prev.some((p) => p.participantId === participantId);
+      if (exists) {
+        return prev.map((p) =>
+          p.participantId === participantId ? { ...p, raisedHandOn: Date.now() } : p
+        );
+      }
+      return [...prev, { participantId, raisedHandOn: Date.now() }];
+    });
+  }, []);
+
+  const participantLoweredHand = useCallback((participantId) => {
+    if (!participantId) return;
+    setRaisedHandsParticipants((prev) => prev.filter((p) => p.participantId !== participantId));
+  }, []);
+
   const useRaisedHandParticipants = () => {
-    const raisedHandsParticipantsRef = useRef();
-
-    const participantRaisedHand = (participantId) => {
-      const raisedHandsParticipants = [...raisedHandsParticipantsRef.current];
-
-      const newItem = { participantId, raisedHandOn: new Date().getTime() };
-
-      const participantFound = raisedHandsParticipants.findIndex(
-        ({ participantId: pID }) => pID === participantId
-      );
-
-      if (participantFound === -1) {
-        raisedHandsParticipants.push(newItem);
-      } else {
-        raisedHandsParticipants[participantFound] = newItem;
-      }
-
-      setRaisedHandsParticipants(raisedHandsParticipants);
-    };
-
-    useEffect(() => {
-      raisedHandsParticipantsRef.current = raisedHandsParticipants;
-    }, [raisedHandsParticipants]);
-
-    const _handleRemoveOld = () => {
-      const raisedHandsParticipants = [...raisedHandsParticipantsRef.current];
-
-      const now = new Date().getTime();
-
-      const persisted = raisedHandsParticipants.filter(({ raisedHandOn }) => {
-        return parseInt(raisedHandOn) + 15000 > parseInt(now);
-      });
-
-      if (raisedHandsParticipants.length !== persisted.length) {
-        setRaisedHandsParticipants(persisted);
-      }
-    };
-
-    useEffect(() => {
-      const interval = setInterval(_handleRemoveOld, 1000);
-
-      return () => {
-        clearInterval(interval);
-      };
-    }, []);
-
-    return { participantRaisedHand };
+    return { participantRaisedHand, participantLoweredHand };
   };
 
   return (
     <MeetingAppContext.Provider
       value={{
         // states
-
         raisedHandsParticipants,
         selectedMic,
         selectedWebcam,
@@ -78,8 +49,9 @@ export const MeetingAppProvider = ({ children }) => {
         isCameraPermissionAllowed,
         isMicrophonePermissionAllowed,
 
-        // setters
-
+        // setters & actions
+        participantRaisedHand,
+        participantLoweredHand,
         setRaisedHandsParticipants,
         setSelectedMic,
         setSelectedWebcam,

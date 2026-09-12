@@ -434,7 +434,7 @@ export function JoiningScreen({
   return (
     <>
       <div className="flex min-h-screen flex-1 flex-col overflow-y-auto bg-gradient-to-br from-neutral-50 via-primary-50/30 to-primary-100/20 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30">
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-12 pt-20">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 md:px-6 md:py-10 lg:px-8 lg:py-12">
           <div className="mx-auto w-full max-w-7xl">
             {/* Header Section */}
             <div className="mb-6 text-center space-y-3">

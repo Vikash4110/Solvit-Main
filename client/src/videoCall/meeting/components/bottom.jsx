@@ -466,21 +466,55 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
   
   const RaiseHandBTN = ({ isMobile, isTab }) => {
     const { publish } = usePubSub('RAISE_HAND');
-    const RaiseHand = () => {
-      publish('Raise Hand');
-   
+    const { localParticipant } = useMeeting();
+    const { raisedHandsParticipants, participantRaisedHand, participantLoweredHand } =
+      useMeetingAppContext();
+
+    const isHandRaised = useMemo(() => {
+      return (raisedHandsParticipants || []).some(
+        (p) => p.participantId === localParticipant?.id
+      );
+    }, [raisedHandsParticipants, localParticipant?.id]);
+
+    const toggleRaiseHand = () => {
+      if (isHandRaised) {
+        publish('LOWER_HAND');
+        if (participantLoweredHand && localParticipant?.id) {
+          participantLoweredHand(localParticipant.id);
+        }
+      } else {
+        publish('RAISE_HAND');
+        if (participantRaisedHand && localParticipant?.id) {
+          participantRaisedHand(localParticipant.id);
+        }
+      }
     };
 
     return isMobile || isTab ? (
       <MobileIconButton
         id="RaiseHandBTN"
-        tooltipTitle={'Raise hand'}
+        tooltipTitle={isHandRaised ? 'Lower Hand ✋' : 'Raise Hand'}
         Icon={Hand}
-        onClick={RaiseHand}
-        buttonText={'Raise Hand'}
+        onClick={toggleRaiseHand}
+        buttonText={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
+        isFocused={isHandRaised}
+        focusIconColor={isHandRaised ? '#000000' : undefined}
+        bgColor={isHandRaised ? '#eab308' : undefined}
       />
     ) : (
-      <OutlinedButton onClick={RaiseHand} tooltip={'Raise Hand'} Icon={Hand} />
+      <OutlinedButton
+        btnID="RaiseHandBTN"
+        onClick={toggleRaiseHand}
+        tooltip={isHandRaised ? 'Lower Hand ✋' : 'Raise Hand'}
+        Icon={Hand}
+        isFocused={isHandRaised}
+        focusIconColor={isHandRaised ? '#000000' : undefined}
+        bgColor={
+          isHandRaised
+            ? 'bg-gradient-to-br from-amber-400 to-amber-500 border-amber-300 shadow-lg shadow-amber-500/40 text-neutral-950 font-bold'
+            : 'bg-neutral-800 hover:bg-neutral-750'
+        }
+      />
     );
   };
 

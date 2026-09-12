@@ -86,8 +86,8 @@ export function MeetingContainer({
   const isLGDesktop = useMediaQuery({ minWidth: 1024, maxWidth: 1439 });
   const isXLDesktop = useMediaQuery({ minWidth: 1440 });
 
-  // Constants - Updated to account for navbar
-  const NAVBAR_HEIGHT = 80;
+  // Constants - Navbar is hidden during active meeting for full-screen immersive experience
+  const NAVBAR_HEIGHT = 0;
   const BOTTOM_BAR_HEIGHT = 60;
 
   // Calculate sidebar width based on screen size
@@ -284,21 +284,35 @@ export function MeetingContainer({
   }, []);
 
   // Raised hand participants hook
-  const { participantRaisedHand } = useRaisedHandParticipants();
+  const { participantRaisedHand, participantLoweredHand } = useRaisedHandParticipants();
 
   // Subscribe to RAISE_HAND events
   usePubSub('RAISE_HAND', {
     onMessageReceived: useCallback(
       (data) => {
         const localParticipantId = mMeeting?.localParticipant?.id;
-        const { senderId, senderName } = data;
+        const { senderId, senderName, message } = data;
         const isLocal = senderId === localParticipantId;
 
-        playNotificationSound();
-        showToast(`${isLocal ? 'You' : nameTructed(senderName, 15)} raised hand 🖐🏼`);
-        participantRaisedHand(senderId);
+        const isLower =
+          message === 'LOWER_HAND' ||
+          message === 'Lower Hand' ||
+          data?.action === 'LOWER' ||
+          data?.action === 'DOWN';
+
+        if (isLower) {
+          if (participantLoweredHand) {
+            participantLoweredHand(senderId);
+          }
+        } else {
+          playNotificationSound();
+          showToast(`${isLocal ? 'You' : nameTructed(senderName, 15)} raised hand 🖐🏼`);
+          if (participantRaisedHand) {
+            participantRaisedHand(senderId);
+          }
+        }
       },
-      [mMeeting, playNotificationSound, showToast, participantRaisedHand]
+      [mMeeting, playNotificationSound, showToast, participantRaisedHand, participantLoweredHand]
     ),
   });
 
@@ -312,7 +326,25 @@ export function MeetingContainer({
 
         if (!isLocal) {
           playNotificationSound();
-          showToast(trimSnackBarText(`${nameTructed(senderName, 15)} says: ${message}`));
+          let displayMsg = '';
+          if (typeof message === 'string') {
+            const trimmed = message.trim();
+            if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+              try {
+                const parsed = JSON.parse(trimmed);
+                displayMsg = parsed.text || parsed.message || message;
+              } catch {
+                displayMsg = message;
+              }
+            } else {
+              displayMsg = message;
+            }
+          } else if (typeof message === 'object' && message !== null) {
+            displayMsg = message.text || message.message || '';
+          }
+          if (displayMsg) {
+            showToast(trimSnackBarText(`${nameTructed(senderName, 15)}: ${displayMsg}`));
+          }
         }
       },
       [mMeeting, playNotificationSound, showToast]
