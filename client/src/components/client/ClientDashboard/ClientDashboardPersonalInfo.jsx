@@ -648,19 +648,19 @@ const ClientDashboardPersonalInfo = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Profile Card */}
           <motion.div variants={fadeInUp} className="lg:col-span-1">
-            <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardContent className="pt-6">
+            <Card className="border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-2xl bg-white dark:bg-slate-900 transition-all duration-300">
+              <CardContent className="p-6 sm:p-7">
                 <div className="flex flex-col items-center">
-                  {/* Profile Picture with Dropdown Menu */}
+                  {/* Top Circular Profile Picture with Camera Action */}
                   <div className="relative group mb-4">
-                    <Avatar className="h-40 w-40 lg:h-48 lg:w-48 ring-4 ring-[#1c3c63] dark:ring-slate-800 shadow-xl transition-all duration-300 ">
+                    <Avatar className="h-32 w-32 sm:h-36 sm:w-36 ring-4 ring-blue-500/20 dark:ring-blue-400/20 shadow-xl transition-all duration-300 rounded-full border-2 border-white dark:border-slate-800">
                       <AvatarImage
                         src={clientData.profilePicture}
                         alt={clientData.fullName}
-                        className="object-cover"
+                        className="object-cover rounded-full"
                       />
-                      <AvatarFallback className="bg-gradient-to-br from-[#1c3c63] to-[#2563eb] text-white font-semibold text-6xl">
-                        {clientData.fullName[0]}
+                      <AvatarFallback className="bg-gradient-to-br from-[#1c3c63] to-[#2563eb] text-white font-bold text-4xl rounded-full">
+                        {clientData.fullName?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
 
@@ -669,20 +669,25 @@ const ClientDashboardPersonalInfo = () => {
                         <Button
                           size="icon"
                           variant="secondary"
-                          className="absolute bottom-0 right-0 h-12 w-12 rounded-full shadow-lg  group-hover: transition-opacity duration-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                          className="absolute bottom-0 right-1 h-10 w-10 rounded-full shadow-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border-2 border-white dark:border-slate-800 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
+                          title="Change or view profile photo"
                         >
-                          <Camera className="h-5 w-5" />
+                          <Camera className="h-4.5 w-4.5 text-slate-700 dark:text-slate-200" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent align="end" className="w-48 shadow-lg rounded-xl z-50">
                         <DropdownMenuItem
                           onClick={() => setIsViewPhotoDialogOpen(true)}
                           disabled={!clientData.profilePicture}
+                          className="cursor-pointer"
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View Photo
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setIsPhotoDialogOpen(true)}>
+                        <DropdownMenuItem
+                          onClick={() => setIsPhotoDialogOpen(true)}
+                          className="cursor-pointer"
+                        >
                           <Pencil className="h-4 w-4 mr-2" />
                           Update Photo
                         </DropdownMenuItem>
@@ -691,53 +696,63 @@ const ClientDashboardPersonalInfo = () => {
                   </div>
 
                   {/* Name and Username */}
-                  <h2 className="text-2xl font-bold text-[#1c3c63] dark:text-white mb-1 text-center">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white text-center tracking-tight">
                     {clientData.fullName}
                   </h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                    @{clientData.username}
-                  </p>
-
-                  <Separator className="my-4" />
+                  <div className="flex items-center gap-1.5 mt-1 mb-3.5">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      @{clientData.username}
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                    <span className="text-[11px] font-semibold text-primary-600 dark:text-primary-400 flex items-center gap-0.5">
+                      <Shield className="w-3 h-3 inline" /> Verified
+                    </span>
+                  </div>
 
                   {/* Bio */}
-                  {clientData.bio && (
-                    <div className="w-full">
-                      <p className="text-sm text-slate-700 dark:text-slate-300 text-center leading-relaxed mb-4 px-2">
-                        {clientData.bio}
+                  {clientData.bio &&
+                  clientData.bio.trim() !== '' &&
+                  clientData.bio.toLowerCase() !== 'undefined' &&
+                  clientData.bio.toLowerCase() !== 'null' ? (
+                    <div className="w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 text-center mb-4">
+                      <p className="text-xs text-slate-700 dark:text-slate-300 font-normal line-clamp-3 leading-relaxed">
+                        {clientData.bio.trim()}
                       </p>
-                      <Separator className="my-4" />
+                    </div>
+                  ) : (
+                    <div className="w-full py-1.5 text-center mb-3">
+                      <p className="text-xs text-slate-400 dark:text-slate-500 font-normal">
+                        No bio added yet
+                      </p>
                     </div>
                   )}
 
-                  {/* Quick Stats with Day.js formatting */}
-                  <div className="w-full space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
+                  {/* Quick Stats with Modern Pill Boxes */}
+                  <div className="w-full space-y-2 mb-5">
+                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2 font-medium">
+                        <Calendar className="h-3.5 w-3.5 text-blue-500" />
                         Joined
                       </span>
-                      <span className="font-medium text-slate-900 dark:text-white">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {formatDate(clientData.createdAt)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Last Login
+                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2 font-medium">
+                        <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                        Last Active
                       </span>
-                      <span className="font-medium text-slate-900 dark:text-white">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {formatSmartDate(clientData.lastLogin)}
                       </span>
                     </div>
                   </div>
 
-                  <Separator className="my-4" />
-
                   {/* Edit Profile Button */}
                   <Sheet open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                     <SheetTrigger asChild>
-                      <Button className="w-full bg-gradient-to-r from-[#1c3c63] to-[#2563eb] hover:from-[#152f4f] hover:to-[#1e40af] text-white shadow-lg hover:shadow-xl transition-all duration-300">
+                      <Button className="w-full h-11 bg-gradient-to-r from-[#1c3c63] to-[#2563eb] hover:from-[#152f4f] hover:to-[#1e40af] text-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-semibold text-sm">
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Profile
                       </Button>
