@@ -110,6 +110,9 @@ const BlogPost = () => {
     if (clientToken || counselorToken) {
       setIsAuthenticated(true);
       setUserType(clientToken ? 'client' : 'counselor');
+    } else {
+      setIsAuthenticated(false);
+      setUserType(null);
     }
 
     if (slug) {
@@ -117,30 +120,37 @@ const BlogPost = () => {
     }
   }, [slug]);
 
-  // ✅ UPDATED: Fetch blog using correct API endpoint
+  // Fetch blog using API endpoint
   const fetchBlog = async () => {
     try {
       setLoading(true);
 
       const response = await api.get(`${API_ENDPOINTS.BLOGS_GET_BY_SLUG}/${slug}`);
       const data = response.data;
-      if (data.success) {
+      if (data.success && data.data?.blog) {
         setBlog(data.data.blog);
-        setRelatedBlogs(data.data.relatedBlogs);
+        setRelatedBlogs(data.data.relatedBlogs || []);
         setLikesCount(data.data.blog.likes?.length || 0);
 
-        // ✅ IMPROVED: Better user identification and like status checking
-        if (isAuthenticated) {
-          const userId =
-            userType === 'client'
-              ? JSON.parse(localStorage.getItem('client') || '{}')._id
-              : JSON.parse(localStorage.getItem('counselor') || '{}')._id;
-          console.log(userId);
-          const userLiked = data.data.blog.likes?.some((like) => {
-            const likeUserId = typeof like === 'object' ? like._id : like;
-            return likeUserId === userId;
-          });
-          setLiked(!!userLiked);
+        // Safe user identification and like status checking
+        const clientToken = localStorage.getItem('clientAccessToken');
+        const counselorToken = localStorage.getItem('counselorAccessToken');
+        const activeUserType = clientToken ? 'client' : counselorToken ? 'counselor' : null;
+
+        if (activeUserType) {
+          try {
+            const storedUser = localStorage.getItem(activeUserType);
+            const userId = storedUser ? JSON.parse(storedUser)?._id : null;
+            if (userId) {
+              const userLiked = data.data.blog.likes?.some((like) => {
+                const likeUserId = typeof like === 'object' ? like?._id : like;
+                return likeUserId === userId;
+              });
+              setLiked(Boolean(userLiked));
+            }
+          } catch (storageErr) {
+            console.error('Error reading stored user session:', storageErr);
+          }
         }
       } else {
         toast.error(data.message || 'Failed to load blog');
@@ -296,7 +306,7 @@ const BlogPost = () => {
             to="/blogs"
             className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
           >
-            <FaArrowLeft className="mr-2" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Blogs
           </Link>
         </div>
@@ -340,6 +350,10 @@ const BlogPost = () => {
               <span className="font-medium">
                 <Link to="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
                   Login
+                </Link>{' '}
+                or{' '}
+                <Link to="/register" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+                  Register
                 </Link>{' '}
                 to like and comment on this blog
               </span>
@@ -526,16 +540,26 @@ const BlogPost = () => {
                   </div>
                 </form>
               ) : (
-                <div className="mb-8 p-6 bg-gray-50 rounded-xl text-center">
-                  <FaLock className="mx-auto h-8 w-8 text-gray-400 mb-3" />
-                  <p className="text-gray-600 mb-4">You need to be logged in to post a comment</p>
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all"
-                  >
-                    <FaLock className="mr-2" />
-                    Login to Comment
-                  </Link>
+                <div className="mb-8 p-6 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800 text-center">
+                  <Lock className="mx-auto h-8 w-8 text-gray-400 dark:text-gray-500 mb-3" />
+                  <p className="text-gray-600 dark:text-gray-300 font-medium mb-4">
+                    You need to be logged in to post a comment
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Link
+                      to="/login"
+                      className="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-medium rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all text-sm shadow-sm"
+                    >
+                      <Lock className="w-4 h-4 mr-2" />
+                      Login to Comment
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="inline-flex items-center px-6 py-2.5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-sm shadow-sm"
+                    >
+                      Register
+                    </Link>
+                  </div>
                 </div>
               )}
 
