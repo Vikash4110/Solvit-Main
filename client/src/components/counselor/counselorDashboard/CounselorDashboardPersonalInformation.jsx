@@ -39,8 +39,10 @@ import {
   Clock,
   Crown,
   Lock,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DEFAULT_LANGUAGES } from '../../../constants/constants';
 
 // shadcn/ui imports
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,20 +103,8 @@ const specializationOptions = [
   'Health and Wellness Counselling',
 ];
 
-// Languages from model
-const LANGUAGES = [
-  'English',
-  'Hindi',
-  'Bengali',
-  'Marathi',
-  'Telugu',
-  'Tamil',
-  'Gujarati',
-  'Urdu',
-  'Kannada',
-  'Malayalam',
-  'Punjabi',
-];
+// Languages from model / constants
+const LANGUAGES = DEFAULT_LANGUAGES;
 
 // Helper to normalize and deduplicate language arrays/strings
 const normalizeLanguages = (raw) => {
@@ -199,6 +189,30 @@ const CounselorDashboardPersonalInfo = () => {
   const [counselorData, setCounselorData] = useState(null);
   const [formData, setFormData] = useState(null);
   const [profileCompleteness, setProfileCompleteness] = useState(null);
+  const [customLanguageInput, setCustomLanguageInput] = useState('');
+
+  const handleAddCustomLanguage = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = customLanguageInput.trim();
+    if (!trimmed) return;
+    const formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    const currentLangs = normalizeLanguages(formData?.application?.languages);
+    if (currentLangs.some((l) => l.toLowerCase() === formatted.toLowerCase())) {
+      toast.info(`${formatted} is already selected`);
+      setCustomLanguageInput('');
+      return;
+    }
+    const newLangs = [...currentLangs, formatted];
+    handleNestedInputChange('application', 'languages', newLangs);
+    setCustomLanguageInput('');
+    toast.success(`Added ${formatted} to languages spoken`);
+  };
+
+  const handleRemoveCustomLanguage = (langToRemove) => {
+    const currentLangs = normalizeLanguages(formData?.application?.languages);
+    const newLangs = currentLangs.filter((l) => l !== langToRemove);
+    handleNestedInputChange('application', 'languages', newLangs);
+  };
 
   // Fetch counselor data on mount
   useEffect(() => {
@@ -1556,6 +1570,75 @@ const CounselorDashboardPersonalInfo = () => {
                         </button>
                       );
                     })}
+                  </div>
+
+                  {/* Custom Languages Added */}
+                  {normalizeLanguages(formData?.application?.languages).filter(
+                    (l) => !LANGUAGES.includes(l)
+                  ).length > 0 && (
+                    <div className="pt-2 space-y-1.5">
+                      <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                        Custom Added Languages:
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
+                        {normalizeLanguages(formData?.application?.languages)
+                          .filter((l) => !LANGUAGES.includes(l))
+                          .map((customLang) => (
+                            <Badge
+                              key={customLang}
+                              variant="secondary"
+                              className="bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200 border border-primary-300 dark:border-primary-700 pl-2.5 pr-1 py-1 gap-1 flex items-center text-xs"
+                            >
+                              <span>{customLang}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCustomLanguage(customLang)}
+                                className="h-4 w-4 rounded-full inline-flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Write / Add Custom Language Input */}
+                  <div className="pt-1 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                    <div className="relative flex-1">
+                      <Input
+                        type="text"
+                        placeholder="Other language not listed? Type here (e.g., French, Marwari)..."
+                        value={customLanguageInput}
+                        onChange={(e) => setCustomLanguageInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomLanguage();
+                          }
+                        }}
+                        className="h-9 text-xs pr-8"
+                      />
+                      {customLanguageInput && (
+                        <button
+                          type="button"
+                          onClick={() => setCustomLanguageInput('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleAddCustomLanguage}
+                      className="h-9 px-3 text-xs gap-1.5 shrink-0 hover:bg-primary-50 hover:text-primary-700 dark:hover:bg-primary-950/50 border-neutral-300 dark:border-neutral-700"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Language
+                    </Button>
                   </div>
                 </div>
 

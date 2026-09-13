@@ -33,7 +33,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { TIMEZONE } from '../../constants/constants';
+import { TIMEZONE, DEFAULT_LANGUAGES } from '../../constants/constants';
 import { toast } from 'sonner';
 import HeroImage from '../../assets/browseCounselors/heroImage.png';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
@@ -328,7 +328,18 @@ const BrowseCounselor = () => {
     []
   );
 
-  const LANGUAGES = useMemo(() => ['English', 'Hindi'], []);
+  const LANGUAGES = useMemo(() => {
+    const languageSet = new Set(DEFAULT_LANGUAGES);
+    counselors.forEach((c) => {
+      const langs = c.application?.languages || [];
+      langs.forEach((l) => {
+        if (typeof l === 'string' && l.trim()) {
+          languageSet.add(l.trim());
+        }
+      });
+    });
+    return Array.from(languageSet);
+  }, [counselors]);
 
   const fetchCounselors = useCallback(async (isAutoRefresh = false) => {
     try {

@@ -56,4 +56,25 @@ export const isValidTimeRange = (startTime, endTime, maxDurationMinutes = SLOT_D
   return diff > 0 && diff <= maxDurationMinutes;
 };
 
+export const DEFAULT_LANGUAGES = [
+  'English',
+  'Hindi',
+  'Bengali',
+  'Marathi',
+  'Telugu',
+  'Tamil',
+  'Gujarati',
+  'Urdu',
+  'Kannada',
+  'Odia',
+  'Malayalam',
+  'Punjabi',
+  'Assamese',
+  'Maithili',
+  'Sanskrit',
+  'Spanish',
+  'French',
+  'German',
+];
+
 

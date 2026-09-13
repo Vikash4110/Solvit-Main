@@ -33,9 +33,11 @@ import {
   RotateCw,
   Check,
   Globe,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import LocationDetector from '../../general/LocationDetector';
+import { DEFAULT_LANGUAGES } from '../../../constants/constants';
 
 // shadcn/ui imports
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -177,6 +179,30 @@ const ClientDashboardPersonalInfo = () => {
 
   const [clientData, setClientData] = useState(null);
   const [formData, setFormData] = useState(null);
+  const [customLanguageInput, setCustomLanguageInput] = useState('');
+
+  const handleAddCustomLanguage = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = customLanguageInput.trim();
+    if (!trimmed) return;
+    const formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    const currentLangs = formData?.preferredLanguages || [];
+    if (currentLangs.some((l) => l.toLowerCase() === formatted.toLowerCase())) {
+      toast.info(`${formatted} is already in your selected languages`);
+      setCustomLanguageInput('');
+      return;
+    }
+    const updated = [...currentLangs, formatted];
+    handleInputChange('preferredLanguages', updated);
+    setCustomLanguageInput('');
+    toast.success(`Added ${formatted} to preferred languages`);
+  };
+
+  const handleRemoveCustomLanguage = (langToRemove) => {
+    const currentLangs = formData?.preferredLanguages || [];
+    const updated = currentLangs.filter((l) => l !== langToRemove);
+    handleInputChange('preferredLanguages', updated);
+  };
 
   // Fetch client data and profile completeness
   useEffect(() => {
@@ -201,7 +227,7 @@ const ClientDashboardPersonalInfo = () => {
         gender: data?.gender,
         profilePicture: data?.profilePicture || '',
         preferredLanguages: data?.preferredLanguages || [],
-        bio: data?.bio?.[0]?.toUpperCase() + data?.bio?.slice(1, data?.bio?.length) || '',
+        bio: data?.bio ? (data.bio.charAt(0).toUpperCase() + data.bio.slice(1)) : '',
         address: {
           city: data?.address?.city || '',
           area: data?.address?.area || '',
@@ -716,259 +742,432 @@ const ClientDashboardPersonalInfo = () => {
                         Edit Profile
                       </Button>
                     </SheetTrigger>
-                    <SheetContent side="right" className="w-full sm:max-w-2xl overflow-hidden p-0">
-                      <ScrollArea className="h-full">
-                        <div className="p-6">
-                          <SheetHeader className="mb-6">
-                            <SheetTitle className="text-2xl text-[#1c3c63] dark:text-white">
-                              Edit Profile Information
-                            </SheetTitle>
-                            <SheetDescription>
-                              Update your personal details and preferences
-                            </SheetDescription>
-                          </SheetHeader>
+                    <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl overflow-hidden p-0 flex flex-col bg-slate-50/80 dark:bg-slate-950">
+                      {/* Sticky Modal Header */}
+                      <div className="p-5 sm:p-6 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+                        <SheetHeader>
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+                              <Edit className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <SheetTitle className="text-xl font-bold text-slate-900 dark:text-white">
+                                Edit Profile Information
+                              </SheetTitle>
+                              <SheetDescription className="text-xs text-slate-500 dark:text-slate-400">
+                                Update your personal details, address, and therapy preferences
+                              </SheetDescription>
+                            </div>
+                          </div>
+                        </SheetHeader>
+                      </div>
 
-                          <div className="space-y-6">
-                            {/* Basic Information */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-[#1c3c63] dark:text-white flex items-center gap-2">
-                                <User className="h-5 w-5" />
-                                Basic Information
-                              </h3>
-                              <Separator />
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="fullName">Full Name *</Label>
-                                  <Input
-                                    id="fullName"
-                                    value={formData.fullName}
-                                    onChange={(e) => handleInputChange('fullName', e.target.value)}
-                                    placeholder="Enter your full name"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="username">Username *</Label>
-                                  <Input
-                                    id="username"
-                                    value={formData.username}
-                                    onChange={(e) => handleInputChange('username', e.target.value)}
-                                    placeholder="Choose a username"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="email">Email Address *</Label>
-                                  <Input
-                                    id="email"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => handleInputChange('email', e.target.value)}
-                                    placeholder="your.email@example.com"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="phone">Phone Number *</Label>
-                                  <Input
-                                    id="phone"
-                                    value={formData.phone}
-                                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                                    placeholder="+91 98765 43210"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="gender">Gender</Label>
-                                  <Select
-                                    value={formData.gender}
-                                    onValueChange={(value) => handleInputChange('gender', value)}
-                                  >
-                                    <SelectTrigger id="gender">
-                                      <SelectValue placeholder="Select gender" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Male">Male</SelectItem>
-                                      <SelectItem value="Female">Female</SelectItem>
-                                      <SelectItem value="Other">Other</SelectItem>
-                                      <SelectItem value="Prefer not to say">
-                                        Prefer not to say
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                      {/* Scrollable Form Body */}
+                      <ScrollArea className="flex-1">
+                        <div className="p-5 sm:p-6 space-y-6">
+                          {/* Card 1: Basic Information */}
+                          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+                            <div className="flex items-center gap-2.5 pb-1 border-b border-slate-100 dark:border-slate-800/80">
+                              <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                <User className="h-4 w-4" />
                               </div>
-
-                              <div className="space-y-2">
-                                <Label htmlFor="bio">Bio</Label>
-                                <Textarea
-                                  id="bio"
-                                  value={formData.bio}
-                                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                                  placeholder="Tell us about yourself..."
-                                  rows={3}
-                                  maxLength={500}
-                                />
-                                <p className="text-xs text-slate-500 text-right">
-                                  {formData.bio?.length || 0}/500 characters
+                              <div>
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                  Basic Information
+                                </h3>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  Your name, contact details, and public bio
                                 </p>
                               </div>
                             </div>
 
-                            {/* Address Information */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-[#1c3c63] dark:text-white flex items-center gap-2">
-                                <MapPin className="h-5 w-5" />
-                                Address Information
-                              </h3>
-                              <Separator />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="fullName" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Full Name <span className="text-rose-500">*</span>
+                                </Label>
+                                <Input
+                                  id="fullName"
+                                  value={formData.fullName}
+                                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                                  placeholder="Enter your full name"
+                                  className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-primary-500/20"
+                                />
+                              </div>
 
-                              {/* Auto-Detect Location */}
-                              <LocationDetector
-                                onLocationDetected={(address) => {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    address: {
-                                      city: address.city || prev.address.city,
-                                      area: address.area || prev.address.area,
-                                      pincode: address.pincode || prev.address.pincode,
-                                    },
-                                  }));
-                                }}
-                                disabled={isLoading}
+                              <div className="space-y-1.5">
+                                <Label htmlFor="username" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Username <span className="text-rose-500">*</span>
+                                </Label>
+                                <Input
+                                  id="username"
+                                  value={formData.username}
+                                  onChange={(e) => handleInputChange('username', e.target.value)}
+                                  placeholder="Choose a username"
+                                  className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-primary-500/20"
+                                />
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <Label htmlFor="email" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Email Address <span className="text-rose-500">*</span>
+                                </Label>
+                                <Input
+                                  id="email"
+                                  type="email"
+                                  value={formData.email}
+                                  onChange={(e) => handleInputChange('email', e.target.value)}
+                                  placeholder="your.email@example.com"
+                                  className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-primary-500/20"
+                                />
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <Label htmlFor="phone" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Phone Number <span className="text-rose-500">*</span>
+                                </Label>
+                                <Input
+                                  id="phone"
+                                  value={formData.phone}
+                                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                                  placeholder="+91 98765 43210"
+                                  className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus-visible:ring-primary-500/20"
+                                />
+                              </div>
+
+                              <div className="space-y-1.5 sm:col-span-2">
+                                <Label htmlFor="gender" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Gender
+                                </Label>
+                                <Select
+                                  value={formData.gender}
+                                  onValueChange={(value) => handleInputChange('gender', value)}
+                                >
+                                  <SelectTrigger id="gender" className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800">
+                                    <SelectValue placeholder="Select gender" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Male">Male</SelectItem>
+                                    <SelectItem value="Female">Female</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                    <SelectItem value="Prefer not to say">
+                                      Prefer not to say
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor="bio" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Bio / About You
+                                </Label>
+                                <span className="text-[11px] text-slate-400">
+                                  {formData.bio?.length || 0}/500 characters
+                                </span>
+                              </div>
+                              <Textarea
+                                id="bio"
+                                value={formData.bio || ''}
+                                onChange={(e) => handleInputChange('bio', e.target.value)}
+                                placeholder="Share a brief introduction about yourself..."
+                                rows={3}
+                                maxLength={500}
+                                className="text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 resize-none focus-visible:ring-primary-500/20"
                               />
+                            </div>
+                          </div>
 
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="city">City</Label>
-                                  <Input
-                                    id="city"
-                                    value={formData.address.city}
-                                    onChange={(e) =>
-                                      handleNestedInputChange('address', 'city', e.target.value)
-                                    }
-                                    placeholder="Mumbai"
-                                  />
+                          {/* Card 2: Address Information */}
+                          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+                            <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800/80">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                  <MapPin className="h-4 w-4" />
                                 </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="area">Area</Label>
-                                  <Input
-                                    id="area"
-                                    value={formData.address.area}
-                                    onChange={(e) =>
-                                      handleNestedInputChange('address', 'area', e.target.value)
-                                    }
-                                    placeholder="Andheri West"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="pincode">Pincode</Label>
-                                  <Input
-                                    id="pincode"
-                                    value={formData.address.pincode}
-                                    onChange={(e) =>
-                                      handleNestedInputChange('address', 'pincode', e.target.value)
-                                    }
-                                    placeholder="400058"
-                                  />
+                                <div>
+                                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                    Address & Location
+                                  </h3>
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    Helps connect you with counselors in your region
+                                  </p>
                                 </div>
                               </div>
                             </div>
 
-                            {/*Therapy Preferences */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-[#1c3c63] dark:text-white flex items-center gap-2">
-                                Therapy Preferences
-                              </h3>
-                              <Separator />
+                            {/* Auto-Detect Location */}
+                            <LocationDetector
+                              onLocationDetected={(address) => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  address: {
+                                    city: address.city || prev.address.city,
+                                    area: address.area || prev.address.area,
+                                    pincode: address.pincode || prev.address.pincode,
+                                  },
+                                }));
+                              }}
+                              disabled={isLoading}
+                            />
 
-                              <div className="space-y-3">
-                                <Label>Preferred Languages</Label>
-                               
-                                <div className="flex gap-4">
-                                  {['Hindi', 'English'].map((lang) => (
-                                    <div key={lang} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={lang}
-                                        checked={formData.preferredLanguages?.includes(lang)}
-                                        onCheckedChange={(checked) => {
-                                          const updated = checked
-                                            ? [...formData.preferredLanguages, lang]
-                                            : formData.preferredLanguages.filter((l) => l !== lang);
-                                          handleInputChange('preferredLanguages', updated);
-                                        }}
-                                      />
-                                      <Label htmlFor={lang} className="cursor-pointer">
-                                        {lang}
-                                      </Label>
-                                    </div>
-                                  ))}
-                                </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="city" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  City
+                                </Label>
+                                <Input
+                                  id="city"
+                                  value={formData.address?.city || ''}
+                                  onChange={(e) =>
+                                    handleNestedInputChange('address', 'city', e.target.value)
+                                  }
+                                  placeholder="e.g., Mumbai"
+                                  className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                                />
                               </div>
 
-                              <div className="space-y-3">
-                                <Label>Preferred Topics</Label>
-    
-                                <div className="flex gap-4 flex-wrap">
-                                  {topics.map((topic) => (
-                                    <div key={topic} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={topic}
-                                        checked={formData.prefferedTopics.includes(topic)}
-                                        onCheckedChange={(checked) => {
-                                          const updated = checked
-                                            ? [...formData.prefferedTopics, topic]
-                                            : formData.prefferedTopics.filter(
-                                                (t) => t !== topic
-                                              );
-                                          handleInputChange('prefferedTopics', updated);
-                                        }}
-                                      />
+                              <div className="space-y-1.5">
+                                <Label htmlFor="area" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Area
+                                </Label>
+                                <Input
+                                  id="area"
+                                  value={formData.address?.area || ''}
+                                  onChange={(e) =>
+                                    handleNestedInputChange('address', 'area', e.target.value)
+                                  }
+                                  placeholder="e.g., Andheri West"
+                                  className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                                />
+                              </div>
 
-                                      <Label htmlFor={topic} className="cursor-pointer">
-                                        {topic}
-                                      </Label>
-                                    </div>
-                                  ))}
-                                </div>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="pincode" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Pincode
+                                </Label>
+                                <Input
+                                  id="pincode"
+                                  value={formData.address?.pincode || ''}
+                                  onChange={(e) =>
+                                    handleNestedInputChange('address', 'pincode', e.target.value)
+                                  }
+                                  placeholder="e.g., 400058"
+                                  className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                                />
                               </div>
                             </div>
                           </div>
 
-                          {/* Action Buttons */}
-                          <div className="flex gap-3 mt-8 pt-6 border-t sticky bottom-0 bg-white dark:bg-slate-950 pb-6">
-                            <Button
-                              onClick={() => setIsEditDialogOpen(false)}
-                              variant="outline"
-                              className="flex-1"
-                              disabled={isLoading}
-                            >
-                              <X className="h-4 w-4 mr-2" />
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={handleSaveChanges}
-                              disabled={isLoading}
-                              className="flex-1 bg-gradient-to-r from-[#1c3c63] to-[#2563eb] hover:from-[#152f4f] hover:to-[#1e40af] text-white"
-                            >
-                              {isLoading ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Saving...
-                                </>
-                              ) : (
-                                <>
-                                  <Save className="h-4 w-4 mr-2" />
-                                  Save Changes
-                                </>
+                          {/* Card 3: Therapy Preferences */}
+                          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-5">
+                            <div className="flex items-center gap-2.5 pb-1 border-b border-slate-100 dark:border-slate-800/80">
+                              <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                <Sparkles className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                  Therapy Preferences
+                                </h3>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  Select your comfortable languages and areas of interest
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Preferred Languages */}
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                  <Globe className="h-3.5 w-3.5 text-slate-500" />
+                                  Preferred Languages
+                                </Label>
+                                <Badge variant="secondary" className="text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0">
+                                  {formData.preferredLanguages?.length || 0} selected
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-0.5">
+                                {DEFAULT_LANGUAGES.map((lang) => {
+                                  const isSelected = formData.preferredLanguages?.includes(lang);
+                                  return (
+                                    <button
+                                      key={lang}
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = isSelected
+                                          ? formData.preferredLanguages.filter((l) => l !== lang)
+                                          : [...(formData.preferredLanguages || []), lang];
+                                        handleInputChange('preferredLanguages', updated);
+                                      }}
+                                      className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-medium transition-all text-left cursor-pointer ${
+                                        isSelected
+                                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/50 text-primary-800 dark:text-primary-200 ring-1 ring-primary-600/30 shadow-xs'
+                                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                                      }`}
+                                    >
+                                      <span className="truncate">{lang}</span>
+                                      {isSelected ? (
+                                        <Check className="h-3.5 w-3.5 text-primary-600 dark:text-primary-400 shrink-0 ml-1.5" />
+                                      ) : (
+                                        <span className="h-3.5 w-3.5 rounded-full border border-slate-300 dark:border-slate-700 shrink-0 ml-1.5" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Custom / Other Languages Added */}
+                              {formData.preferredLanguages?.filter(
+                                (l) => !DEFAULT_LANGUAGES.includes(l)
+                              ).length > 0 && (
+                                <div className="pt-2 space-y-1.5">
+                                  <Label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                    Custom Added Languages:
+                                  </Label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {formData.preferredLanguages
+                                      .filter((l) => !DEFAULT_LANGUAGES.includes(l))
+                                      .map((customLang) => (
+                                        <Badge
+                                          key={customLang}
+                                          variant="secondary"
+                                          className="bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200 border border-primary-300 dark:border-primary-700 pl-2.5 pr-1 py-1 gap-1 flex items-center text-xs rounded-lg"
+                                        >
+                                          <span>{customLang}</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveCustomLanguage(customLang)}
+                                            className="h-4 w-4 rounded-full inline-flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </button>
+                                        </Badge>
+                                      ))}
+                                  </div>
+                                </div>
                               )}
-                            </Button>
+
+                              {/* Write / Add Custom Language Input */}
+                              <div className="pt-1 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                                <div className="relative flex-1">
+                                  <Input
+                                    type="text"
+                                    placeholder="Other language? Type here (e.g., French, Marwari)..."
+                                    value={customLanguageInput}
+                                    onChange={(e) => setCustomLanguageInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleAddCustomLanguage();
+                                      }
+                                    }}
+                                    className="h-9 text-xs pr-8 bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                                  />
+                                  {customLanguageInput && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setCustomLanguageInput('')}
+                                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleAddCustomLanguage}
+                                  className="h-9 px-3 text-xs gap-1.5 shrink-0 hover:bg-primary-50 hover:text-primary-700 dark:hover:bg-primary-950/50 border-slate-200 dark:border-slate-700"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                  Add Language
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Preferred Topics */}
+                            <div className="space-y-3 pt-2">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                  <Heart className="h-3.5 w-3.5 text-slate-500" />
+                                  Preferred Topics
+                                </Label>
+                                <Badge variant="secondary" className="text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0">
+                                  {formData.prefferedTopics?.length || 0} selected
+                                </Badge>
+                              </div>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                Select all topics you would like support or counseling for:
+                              </p>
+
+                              <div className="flex gap-2 flex-wrap max-h-56 overflow-y-auto pr-1 pt-1">
+                                {topics.map((topic) => {
+                                  const isSelected = formData.prefferedTopics?.includes(topic);
+                                  return (
+                                    <button
+                                      key={topic}
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = isSelected
+                                          ? formData.prefferedTopics.filter((t) => t !== topic)
+                                          : [...(formData.prefferedTopics || []), topic];
+                                        handleInputChange('prefferedTopics', updated);
+                                      }}
+                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                                        isSelected
+                                          ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/50 text-primary-800 dark:text-primary-200 ring-1 ring-primary-600/30 shadow-xs'
+                                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                                      }`}
+                                    >
+                                      {isSelected ? (
+                                        <Check className="h-3 w-3 text-primary-600 dark:text-primary-400 shrink-0" />
+                                      ) : (
+                                        <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                      )}
+                                      <span>{topic}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </ScrollArea>
+
+                      {/* Sticky Elevated Modal Footer */}
+                      <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-10 flex gap-3 shadow-lg shrink-0">
+                        <Button
+                          type="button"
+                          onClick={() => setIsEditDialogOpen(false)}
+                          variant="outline"
+                          className="flex-1 h-10 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          disabled={isLoading}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleSaveChanges}
+                          disabled={isLoading}
+                          className="flex-1 h-10 bg-gradient-to-r from-[#1c3c63] to-[#2563eb] hover:from-[#152f4f] hover:to-[#1e40af] text-white shadow-md transition-all font-semibold"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Saving Changes...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </SheetContent>
                   </Sheet>
                 </div>
