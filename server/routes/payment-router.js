@@ -6,8 +6,9 @@ import {
   checkout,
   paymentVerification,
   razorpayWebhook,
+  checkRecentBooking,
 } from '../controllers/payment-controller.js';
-import { verifyJWTClient } from '../middlewares/clientAuth-middleware.js';
+import { verifyJWTUser } from '../middlewares/userAuth.middleware.js';
 
 const paymentRouter = express.Router();
 
@@ -15,8 +16,9 @@ const paymentRouter = express.Router();
 paymentRouter.route('/webhook').post(razorpayWebhook);
 
 // Existing routes (WITH AUTH)
-paymentRouter.route('/getkey').get(verifyJWTClient, getKey);
-paymentRouter.route('/checkout').post(verifyJWTClient, checkout);
-paymentRouter.route('/paymentverification').post(verifyJWTClient, paymentVerification);
+paymentRouter.route('/getkey').get(verifyJWTUser, getKey);
+paymentRouter.route('/checkout').post(verifyJWTUser, checkout);
+paymentRouter.route('/paymentverification').post(verifyJWTUser, paymentVerification);
+paymentRouter.route('/check-recent').get(verifyJWTUser, checkRecentBooking);
 
 export { paymentRouter };

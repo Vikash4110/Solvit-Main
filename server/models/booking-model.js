@@ -5,8 +5,13 @@ const bookingSchema = new mongoose.Schema(
   {
     clientId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Client',
+      refPath: 'clientModel',
       required: true,
+    },
+    clientModel: {
+      type: String,
+      enum: ['Client', 'Counselor'],
+      default: 'Client',
     },
     slotId: {
       type: mongoose.Schema.Types.ObjectId,

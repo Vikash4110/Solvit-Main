@@ -21,7 +21,11 @@ import {
   AlertCircle,
   CreditCard,
   Award,
+  Plus,
+  X,
+  Globe,
 } from 'lucide-react';
+import { DEFAULT_LANGUAGES } from '../../constants/constants';
 
 // shadcn/ui imports
 import { Button } from '@/components/ui/button';
@@ -130,12 +134,39 @@ const CounselorApplication = () => {
     }
   };
 
+  const [customLanguageInput, setCustomLanguageInput] = useState('');
+
   const handleLanguageChange = (language) => {
     setFormData((prev) => ({
       ...prev,
       languages: prev.languages.includes(language)
         ? prev.languages.filter((lang) => lang !== language)
         : [...prev.languages, language],
+    }));
+  };
+
+  const handleAddCustomLanguage = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = customLanguageInput.trim();
+    if (!trimmed) return;
+    const formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    if (formData.languages.some((l) => l.toLowerCase() === formatted.toLowerCase())) {
+      toast.info(`${formatted} is already in your selected languages`);
+      setCustomLanguageInput('');
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      languages: [...prev.languages, formatted],
+    }));
+    setCustomLanguageInput('');
+    toast.success(`Added ${formatted}`);
+  };
+
+  const handleRemoveCustomLanguage = (langToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      languages: prev.languages.filter((l) => l !== langToRemove),
     }));
   };
 
@@ -571,16 +602,17 @@ const CounselorApplication = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {['English', 'Hindi'].map((language) => (
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {DEFAULT_LANGUAGES.map((language) => (
                     <motion.div
                       key={language}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`flex items-center space-x-3 p-3 sm:p-4 rounded-lg border-2 transition-all duration-200 ${
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => handleLanguageChange(language)}
+                      className={`flex items-center space-x-2.5 p-2.5 rounded-lg border-2 transition-all duration-200 cursor-pointer ${
                         formData.languages.includes(language)
-                          ? 'border-primary-600 dark:border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                          ? 'border-primary-600 dark:border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-900 dark:text-primary-100 shadow-sm'
                           : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
                       }`}
                     >
@@ -588,16 +620,85 @@ const CounselorApplication = () => {
                         id={`lang-${language}`}
                         checked={formData.languages.includes(language)}
                         onCheckedChange={() => handleLanguageChange(language)}
+                        onClick={(e) => e.stopPropagation()}
                         className="border-neutral-400 dark:border-neutral-600"
                       />
                       <Label
                         htmlFor={`lang-${language}`}
-                        className="text-sm font-medium cursor-pointer flex-1"
+                        className="text-xs sm:text-sm font-medium cursor-pointer flex-1 truncate"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         {language}
                       </Label>
                     </motion.div>
                   ))}
+                </div>
+
+                {/* Custom Added Languages */}
+                {formData.languages.filter((l) => !DEFAULT_LANGUAGES.includes(l)).length > 0 && (
+                  <div className="pt-2 space-y-1.5">
+                    <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                      Custom Added Languages:
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.languages
+                        .filter((l) => !DEFAULT_LANGUAGES.includes(l))
+                        .map((customLang) => (
+                          <Badge
+                            key={customLang}
+                            variant="secondary"
+                            className="bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200 border border-primary-300 dark:border-primary-700 pl-2.5 pr-1 py-1 gap-1 flex items-center text-xs"
+                          >
+                            <span>{customLang}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomLanguage(customLang)}
+                              className="h-4 w-4 rounded-full inline-flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Write / Add Custom Language Input */}
+                <div className="pt-1 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                  <div className="relative flex-1">
+                    <Input
+                      type="text"
+                      placeholder="Other language not listed? Type here (e.g., French, Marwari)..."
+                      value={customLanguageInput}
+                      onChange={(e) => setCustomLanguageInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomLanguage();
+                        }
+                      }}
+                      className="h-9 text-xs pr-8"
+                    />
+                    {customLanguageInput && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomLanguageInput('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAddCustomLanguage}
+                    className="h-9 px-3 text-xs gap-1.5 shrink-0 hover:bg-primary-50 hover:text-primary-700 dark:hover:bg-primary-950/50 border-neutral-300 dark:border-neutral-700"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Language
+                  </Button>
                 </div>
               </CardContent>
             </Card>

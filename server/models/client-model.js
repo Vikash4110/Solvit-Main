@@ -53,8 +53,7 @@ const clientSchema = new mongoose.Schema(
     },
     preferredLanguages: {
       type: [String],
-      enum: ['Hindi', 'English'],
-      default: ['Hindi', 'English'],
+      default: ['English', 'Hindi'],
     },
 
     bio: {
