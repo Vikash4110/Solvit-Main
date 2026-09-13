@@ -78,12 +78,17 @@ function VideoCallInterface() {
         setLoading(true);
 
         // Get session details
+        const token =
+          localStorage.getItem('clientAccessToken') ||
+          localStorage.getItem('counselorAccessToken') ||
+          localStorage.getItem('adminAccessToken');
+
         const detailsResponse = await fetch(
           `${import.meta.env.VITE_API_URL}/meeting/session/${bookingId}/details`,
           {
             method: 'GET',
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('clientAccessToken')}`,
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
             credentials: 'include',

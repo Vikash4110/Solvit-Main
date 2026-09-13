@@ -631,6 +631,14 @@ export const getCounselorBookings = wrapper(async (req, res) => {
     },
     {
       $lookup: {
+        from: 'counselors',
+        localField: 'clientId',
+        foreignField: '_id',
+        as: 'counselorBuyerData',
+      },
+    },
+    {
+      $lookup: {
         from: 'payments',
         localField: 'paymentId',
         foreignField: '_id',
@@ -640,7 +648,12 @@ export const getCounselorBookings = wrapper(async (req, res) => {
     {
       $addFields: {
         slotInfo: '$slotData',
-        clientInfo: { $arrayElemAt: ['$clientData', 0] },
+        clientInfo: {
+          $ifNull: [
+            { $arrayElemAt: ['$clientData', 0] },
+            { $arrayElemAt: ['$counselorBuyerData', 0] },
+          ],
+        },
         paymentInfo: { $arrayElemAt: ['$paymentData', 0] },
       },
     },

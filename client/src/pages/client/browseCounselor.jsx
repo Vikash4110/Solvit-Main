@@ -297,7 +297,7 @@ FilterSection.displayName = 'FilterSection';
 const BrowseCounselor = () => {
   const navigate = useNavigate();
   const { client, clientLoading } = useClientAuth();
-  const { counselor, counselorLoading } = useCounselorAuth();
+  const { counselor: loggedInCounselor, counselorLoading } = useCounselorAuth();
 
   const [counselors, setCounselors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -313,7 +313,7 @@ const BrowseCounselor = () => {
   const [sortBy, setSortBy] = useState('rating');
   const [sortOpen, setSortOpen] = useState(false);
 
-  const isAuthenticated = !!(client || counselor);
+  const isAuthenticated = !!(client || loggedInCounselor);
   const isLoading = clientLoading || counselorLoading;
 
   const SPECIALIZATIONS = useMemo(
@@ -847,6 +847,12 @@ const BrowseCounselor = () => {
                                           {counselor.fullName}
                                         </h3>
 
+                                        {loggedInCounselor?._id === counselor._id && (
+                                          <Badge className="text-xs bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-300 border-0 h-5 font-semibold">
+                                            You
+                                          </Badge>
+                                        )}
+
                                         {/* Gender Badge */}
                                         {counselor.gender && (
                                           <Badge
@@ -992,7 +998,11 @@ const BrowseCounselor = () => {
                                     onClick={() => bookCounselor(counselor._id)}
                                   >
                                     <CalendarIcon className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                                    <span className="text-xs font-semibold">View Profile & Book Now</span>
+                                    <span className="text-xs font-semibold">
+                                      {loggedInCounselor?._id === counselor._id
+                                        ? 'View Your Profile'
+                                        : 'View Profile & Book Now'}
+                                    </span>
                                   </Button>
                                 </div>
                               </div>

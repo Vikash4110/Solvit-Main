@@ -48,6 +48,8 @@ import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
 import useSmartRefresh from '../../hooks/useSmartRefresh';
+import { useClientAuth } from '../../contexts/ClientAuthContext';
+import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -92,6 +94,36 @@ const containerVariants = {
 const BookCounselorCalendar = () => {
   const { counselorId } = useParams();
   const navigate = useNavigate();
+
+  const { client } = useClientAuth();
+  const { counselor: loggedInCounselor } = useCounselorAuth();
+
+  const currentUser = useMemo(() => {
+    if (client) return { ...client, role: 'client' };
+    if (loggedInCounselor) return { ...loggedInCounselor, role: 'counselor' };
+    const storedClient = localStorage.getItem('client');
+    if (storedClient) {
+      try {
+        return { ...JSON.parse(storedClient), role: 'client' };
+      } catch (e) {}
+    }
+    const storedCounselor = localStorage.getItem('counselor');
+    if (storedCounselor) {
+      try {
+        return { ...JSON.parse(storedCounselor), role: 'counselor' };
+      } catch (e) {}
+    }
+    return null;
+  }, [client, loggedInCounselor]);
+
+  const currentAccessToken =
+    localStorage.getItem('clientAccessToken') ||
+    localStorage.getItem('counselorAccessToken');
+
+  const isSelfBooking = useMemo(() => {
+    if (!currentUser?._id || !counselorId) return false;
+    return currentUser._id.toString() === counselorId.toString();
+  }, [currentUser, counselorId]);
 
   // ==========================================
   // STATE MANAGEMENT
@@ -313,22 +345,25 @@ const BookCounselorCalendar = () => {
 
   const getSlotPrice = (slot) => slot.totalPriceAfterPlatformFee;
 
-  const getClientData = () =>
-    localStorage.getItem('client') ? JSON.parse(localStorage.getItem('client')) : null;
+  const getUserData = () => currentUser;
 
   // ==========================================
   // ✅ OPEN BOOKING MODAL (WITH VALIDATION + IDEMPOTENCY)
   // ==========================================
   const openBookingModal = (slot) => {
-    const accessToken = localStorage.getItem('clientAccessToken');
+    if (isSelfBooking) {
+      toast.error('You cannot book a session with yourself.');
+      return;
+    }
 
-    if (!accessToken) {
+    if (!currentAccessToken || !currentUser) {
       toast.error('Please log in to book a session.');
       navigate('/login', {
         state: { redirectTo: `/book-counselor/${counselorId}` },
       });
       return;
     }
+
     // Validate booking window
     const now = dayjs().tz(TIMEZONE);
     const slotStart = dayjs(slot.startTime).tz(TIMEZONE);
@@ -350,9 +385,9 @@ const BookCounselorCalendar = () => {
     setSelectedSlot(slot);
 
     // ✅ Generate idempotency key
-    const clientData = getClientData();
-    if (clientData) {
-      const idempotencyKey = `${clientData._id}_${slot._id}_${Date.now()}_${uuidv4()}`;
+    const userData = getUserData();
+    if (userData) {
+      const idempotencyKey = `${userData._id}_${slot._id}_${Date.now()}_${uuidv4()}`;
       setCurrentIdempotencyKey(idempotencyKey);
       sessionStorage.setItem(
         'current_booking_attempt',
@@ -382,6 +417,11 @@ const BookCounselorCalendar = () => {
   const initiatePayment = async (isRetry = false) => {
     if (!selectedSlot) return;
 
+    if (isSelfBooking) {
+      toast.error('You cannot book a session with yourself.');
+      return;
+    }
+
     if (!razorpayLoaded) {
       toast.error('Payment service is loading. Please try again shortly.');
       return;
@@ -396,10 +436,10 @@ const BookCounselorCalendar = () => {
     try {
       setBookingLoading(true);
 
-      const clientData = getClientData();
-      const accessToken = localStorage.getItem('clientAccessToken');
+      const userData = getUserData();
+      const accessToken = currentAccessToken;
 
-      if (!clientData || !accessToken) {
+      if (!userData || !accessToken) {
         toast.error('Please log in to proceed.');
         navigate('/login', {
           state: { redirectTo: `/book-counselor/${counselorId}` },
@@ -424,7 +464,7 @@ const BookCounselorCalendar = () => {
         }
 
         if (!idempotencyKey) {
-          idempotencyKey = `${clientData._id}_${selectedSlot._id}_${Date.now()}_${uuidv4()}`;
+          idempotencyKey = `${userData._id}_${selectedSlot._id}_${Date.now()}_${uuidv4()}`;
           setCurrentIdempotencyKey(idempotencyKey);
           sessionStorage.setItem(
             'current_booking_attempt',
@@ -446,7 +486,7 @@ const BookCounselorCalendar = () => {
       try {
         const orderResponse = await api.post(
           API_ENDPOINTS.PAYMENT_CHECKOUT,
-          { amount, clientId: clientData._id, slotId: selectedSlot._id },
+          { amount, clientId: userData._id, slotId: selectedSlot._id },
           { headers: { 'Idempotency-Key': idempotencyKey } }
         );
         orderData = orderResponse.data;
@@ -505,14 +545,14 @@ const BookCounselorCalendar = () => {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              clientId: clientData._id,
+              clientId: userData._id,
               slotId: selectedSlot._id,
             });
           },
           prefill: {
-            name: clientData.fullName,
-            email: clientData.email,
-            contact: clientData.phone || '9999999999',
+            name: userData.fullName,
+            email: userData.email,
+            contact: userData.phone || '9999999999',
           },
           notes: {
             counselor: counselor.fullName,
@@ -569,9 +609,9 @@ const BookCounselorCalendar = () => {
 
         if (!idempotencyKey) {
           console.error('No idempotency key found for verification');
-          const clientData = getClientData();
-          if (clientData && paymentData.slotId) {
-            idempotencyKey = `${clientData._id}_${paymentData.slotId}_${Date.now()}_${uuidv4()}`;
+          const userData = getUserData();
+          if (userData && paymentData.slotId) {
+            idempotencyKey = `${userData._id}_${paymentData.slotId}_${Date.now()}_${uuidv4()}`;
           } else {
             toast.error('Unable to verify payment. Please contact support with your payment ID.');
             setBookingLoading(false);
@@ -670,9 +710,13 @@ const BookCounselorCalendar = () => {
         setShowBookingModal(false);
         setSelectedSlot(null);
 
-        // Navigate to success page
+        // Navigate to dashboard
         setTimeout(() => {
-          navigate(`/session-success/${booking._id}`);
+          if (currentUser?.role === 'counselor') {
+            navigate('/counselor/dashboard');
+          } else {
+            navigate('/client/dashboard/bookings');
+          }
         }, 1500);
         return;
       }
@@ -706,8 +750,12 @@ const BookCounselorCalendar = () => {
         setCurrentIdempotencyKey(null);
         sessionStorage.removeItem('current_booking_attempt');
 
-        // Navigate to success page
-        navigate(`/session-success/${data.data.recentBooking._id}`);
+        // Navigate to dashboard
+        if (currentUser?.role === 'counselor') {
+          navigate('/counselor/dashboard');
+        } else {
+          navigate('/client/dashboard/bookings');
+        }
       } else {
         toast.info('No recent booking found. You can try booking again.', {
           duration: 5000,
@@ -855,6 +903,7 @@ const BookCounselorCalendar = () => {
                 selectedDateSlots={selectedDateSlots}
                 getSlotPrice={getSlotPrice}
                 openBookingModal={openBookingModal}
+                isSelfBooking={isSelfBooking}
               />
             </TabsContent>
           </Tabs>
@@ -887,6 +936,7 @@ const BookCounselorCalendar = () => {
               selectedDateSlots={selectedDateSlots}
               getSlotPrice={getSlotPrice}
               openBookingModal={openBookingModal}
+              isSelfBooking={isSelfBooking}
             />
           </div>
         </motion.div>
@@ -910,15 +960,25 @@ const BookCounselorCalendar = () => {
       {/* Sticky Bottom CTA (Mobile) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-t border-neutral-200 dark:border-neutral-800 p-4 z-30 shadow-lg">
         <Button
-          className="w-full gap-2 h-12 text-base bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+          className={clsx(
+            "w-full gap-2 h-12 text-base shadow-lg transition-all duration-300",
+            isSelfBooking
+              ? "opacity-60 bg-neutral-400 text-white cursor-not-allowed"
+              : "bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 hover:shadow-xl hover:scale-105"
+          )}
           size="lg"
+          disabled={isSelfBooking}
           onClick={() => {
+            if (isSelfBooking) {
+              toast.error('You cannot book a session with yourself.');
+              return;
+            }
             setActiveTab('availability');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >
           <CalendarIcon className="w-5 h-5" />
-          Book Your Session
+          {isSelfBooking ? 'Self Booking Not Allowed' : 'Book Your Session'}
         </Button>
       </div>
     </div>
@@ -1204,6 +1264,7 @@ const CalendarCard = ({
   selectedDateSlots,
   getSlotPrice,
   openBookingModal,
+  isSelfBooking,
 }) => {
   const hasSlotsDates = availableDates.map((dateStr) => {
     const [year, month, day] = dateStr.split('-');
@@ -1220,6 +1281,16 @@ const CalendarCard = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 p-3 sm:p-5 pt-3 sm:pt-4">
+          {/* Self-booking Alert */}
+          {isSelfBooking && (
+            <Alert className="border-amber-400/50 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 py-3">
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <AlertDescription className="text-xs sm:text-sm font-medium">
+                You are viewing your own profile. Counselors cannot book sessions with themselves.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Calendar Component */}
           <div className="w-full overflow-x-auto pb-1.5 flex justify-start sm:justify-center">
             <div className="min-w-fit mx-auto">
@@ -1286,11 +1357,17 @@ const CalendarCard = ({
                       </div>
                       <Button
                         onClick={() => openBookingModal(slot)}
+                        disabled={isSelfBooking}
                         size="sm"
-                        className="gap-2 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                        className={clsx(
+                          "gap-2 shadow-lg transition-all duration-300",
+                          isSelfBooking
+                            ? "opacity-60 bg-neutral-400 text-white cursor-not-allowed hover:bg-neutral-400"
+                            : "bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 hover:shadow-xl hover:scale-105 text-white"
+                        )}
                       >
                         <Video className="w-4 h-4" />
-                        Book Now
+                        {isSelfBooking ? "Cannot Book Yourself" : "Book Now"}
                       </Button>
                     </div>
                   </motion.div>

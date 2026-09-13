@@ -1,12 +1,14 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
+import { useClientAuth } from '../../contexts/ClientAuthContext';
 import PageLoader from '../common/PageLoader';
 
 const CounselorPublicRoute = ({ children }) => {
   const { counselor, counselorLoading } = useCounselorAuth();
+  const { client, clientLoading } = useClientAuth();
 
-  if (counselorLoading) {
+  if (counselorLoading || clientLoading) {
     return <PageLoader />;
   }
 
@@ -18,6 +20,10 @@ const CounselorPublicRoute = ({ children }) => {
       return <Navigate to="/counselor/application-status" replace />;
     }
     return <Navigate to="/counselor/dashboard" replace />;
+  }
+
+  if (client) {
+    return <Navigate to="/client/dashboard" replace />;
   }
 
   return children;

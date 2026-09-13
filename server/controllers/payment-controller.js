@@ -367,14 +367,23 @@ const executeBookingTransaction = async (payment, clientId, slotId, contextLogge
       async () => {
         contextLogger.info('Transaction callback executing', { sessionId: session.id });
 
-        // Fetch client and slot
-        const [client, slot] = await Promise.all([
+        // Fetch client/counselor buyer and slot
+        const [clientUser, counselorUser, slot] = await Promise.all([
           Client.findById(clientId).select('-password').session(session),
+          Counselor.findById(clientId).select('-password').session(session),
           GeneratedSlot.findById(slotId).session(session),
         ]);
 
-        if (!client) throw new Error('CLIENT_NOT_FOUND');
+        const buyer = clientUser || counselorUser;
+        const buyerModel = clientUser ? 'Client' : 'Counselor';
+
+        if (!buyer) throw new Error('CLIENT_NOT_FOUND');
         if (!slot) throw new Error('SLOT_NOT_FOUND');
+
+        // Prevent counselor from booking themselves
+        if (slot.counselorId.toString() === clientId.toString()) {
+          throw new Error('SELF_BOOKING_NOT_ALLOWED');
+        }
 
         // ✅ Re-verify slot is available (race condition protection)
         if (slot.status !== 'available') {
@@ -406,7 +415,8 @@ const executeBookingTransaction = async (payment, clientId, slotId, contextLogge
         const [booking] = await Booking.create(
           [
             {
-              clientId: client._id,
+              clientId: buyer._id,
+              clientModel: buyerModel,
               slotId: lockedSlot._id,
               paymentId: payment._id,
               status: BOOKING_STATUS.CONFIRMED,
@@ -450,7 +460,7 @@ const executeBookingTransaction = async (payment, clientId, slotId, contextLogge
         result = {
           success: true,
           booking,
-          client,
+          client: buyer,
           counselor,
           slot: lockedSlot,
         };
@@ -641,8 +651,14 @@ const checkout = wrapper(async (req, res) => {
   const { amount, clientId, slotId } = req.body;
   const idempotencyKey = req.header('Idempotency-Key');
 
+  const currentUserId = (
+    req.verifiedUser?._id ||
+    req.user?._id ||
+    req.verifiedClientId?._id
+  )?.toString();
+
   // Validate client
-  if (clientId !== req.verifiedClientId._id.toString()) {
+  if (!currentUserId || clientId !== currentUserId) {
     throw new ApiError(403, 'Cannot create orders for other users');
   }
 
@@ -744,6 +760,18 @@ const checkout = wrapper(async (req, res) => {
         contextLogger
       );
       throw new ApiError(400, 'The Counselor which had posted this slot is no longer available.');
+    }
+
+    // Verify user is not booking themselves
+    if (slot.counselorId.toString() === currentUserId) {
+      await updateIdempotencyStatus(
+        idempotencyKey,
+        IDEMPOTENCY_TYPES.CHECKOUT,
+        'failed',
+        null,
+        contextLogger
+      );
+      throw new ApiError(400, 'You cannot book a session with yourself');
     }
 
     // Validate booking window
@@ -1183,4 +1211,32 @@ const paymentVerification = wrapper(async (req, res) => {
   }
 });
 
-export { getKey, checkout, paymentVerification, razorpayWebhook };
+// ========================================
+// RECOVERY: Check Recent Booking
+// ========================================
+const checkRecentBooking = wrapper(async (req, res) => {
+  const currentUserId = req.verifiedClientId?._id || req.verifiedCounselorId?._id;
+  if (!currentUserId) {
+    throw new ApiError(401, 'Authentication required');
+  }
+
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+  const recentBooking = await Booking.findOne({
+    clientId: currentUserId,
+    createdAt: { $gte: fifteenMinutesAgo },
+    status: { $in: [BOOKING_STATUS.CONFIRMED, 'ongoing'] },
+  })
+    .populate('slotId')
+    .sort({ createdAt: -1 });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { recentBooking: recentBooking || null },
+      recentBooking ? 'Recent booking found' : 'No recent booking found'
+    )
+  );
+});
+
+export { getKey, checkout, paymentVerification, razorpayWebhook, checkRecentBooking };

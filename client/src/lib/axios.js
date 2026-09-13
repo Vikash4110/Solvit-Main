@@ -63,10 +63,21 @@ api.interceptors.response.use(
           window.location.href = '/counselor/login';
         }
       } else {
-        localStorage.removeItem('clientAccessToken');
-        localStorage.removeItem('client');
-        if (pathname !== '/login') {
-          window.location.href = '/login';
+        const hasCounselorToken = !!localStorage.getItem('counselorAccessToken');
+        const hasClientToken = !!localStorage.getItem('clientAccessToken');
+
+        if (!hasClientToken && hasCounselorToken) {
+          localStorage.removeItem('counselorAccessToken');
+          localStorage.removeItem('counselor');
+          if (pathname !== '/counselor/login') {
+            window.location.href = '/counselor/login';
+          }
+        } else {
+          localStorage.removeItem('clientAccessToken');
+          localStorage.removeItem('client');
+          if (pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
       }
     }
