@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clock,
@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Shield,
   Sparkles,
+  Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../../../config/api';
@@ -55,7 +56,7 @@ const fadeInUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
+    transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
   },
 };
 
@@ -63,9 +64,21 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 },
+    transition: { staggerChildren: 0.08 },
   },
 };
+
+const DAY_SHORT_MAP = {
+  Monday: 'Mon',
+  Tuesday: 'Tue',
+  Wednesday: 'Wed',
+  Thursday: 'Thu',
+  Friday: 'Fri',
+  Saturday: 'Sat',
+  Sunday: 'Sun',
+};
+
+const getDayShort = (day) => DAY_SHORT_MAP[day] || day;
 
 const RecurringAvailabilityComponent = () => {
   const [weeklyAvailability, setWeeklyAvailability] = useState([
@@ -89,12 +102,7 @@ const RecurringAvailabilityComponent = () => {
     experienceLevel: '',
   });
 
-  useEffect(() => {
-    fetchPriceConstraints();
-    fetchExistingAvailability();
-  }, []);
-
-  const fetchPriceConstraints = async () => {
+  const fetchPriceConstraints = useCallback(async () => {
     try {
       const response = await api.get(API_ENDPOINTS.PRICE_CONSTRAINTS);
       const { minPrice, maxPrice, experienceLevel } = response.data.data;
@@ -102,34 +110,35 @@ const RecurringAvailabilityComponent = () => {
     } catch (error) {
       setPriceConstraints({ minPrice: 500, maxPrice: 5000, experienceLevel: '' });
     }
-  };
+  }, []);
 
-  const fetchExistingAvailability = async () => {
+  const fetchExistingAvailability = useCallback(async () => {
     try {
       setInitialLoading(true);
       const response = await api.get(API_ENDPOINTS.SLOT_MANAGEMENT_MY_RECURRING);
       const data = response.data;
       if (data.availability && data.availability.length > 0) {
-          const availabilityMap = {};
-          let existingPrice = '';
+        const availabilityMap = {};
+        let existingPrice = '';
 
-          data.availability.forEach((dayData) => {
-            availabilityMap[dayData.dayOfWeek] = {
-              isAvailable: dayData.isAvailable,
-              timeRanges: dayData.timeRanges || [],
-            };
-            if (dayData.isAvailable && dayData.price && !existingPrice) {
-              existingPrice = dayData.price.toString();
-            }
-          });
+        data.availability.forEach((dayData) => {
+          availabilityMap[dayData.dayOfWeek] = {
+            isAvailable: dayData.isAvailable,
+            timeRanges: dayData.timeRanges || [],
+          };
+          if (dayData.isAvailable && dayData.price && !existingPrice) {
+            existingPrice = dayData.price.toString();
+          }
+        });
 
-          setGlobalPrice(existingPrice);
-          const updatedAvailability = weeklyAvailability.map((day) => ({
+        setGlobalPrice(existingPrice);
+        setWeeklyAvailability((prev) =>
+          prev.map((day) => ({
             ...day,
             isAvailable: availabilityMap[day.dayOfWeek]?.isAvailable || false,
             timeRanges: availabilityMap[day.dayOfWeek]?.timeRanges || [],
-          }));
-        setWeeklyAvailability(updatedAvailability);
+          }))
+        );
       }
     } catch (error) {
       if (error.response?.status !== 404) {
@@ -138,45 +147,53 @@ const RecurringAvailabilityComponent = () => {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, []);
 
-  const toggleDayAvailability = (dayIndex) => {
+  useEffect(() => {
+    fetchPriceConstraints();
+    fetchExistingAvailability();
+  }, [fetchPriceConstraints, fetchExistingAvailability]);
+
+  const toggleDayAvailability = useCallback((dayIndex) => {
     setWeeklyAvailability((prev) => {
       const updated = [...prev];
       updated[dayIndex] = {
         ...updated[dayIndex],
         isAvailable: !updated[dayIndex].isAvailable,
-        timeRanges: !updated[dayIndex].isAvailable 
-          ? [{ startTime: '9:00 AM', endTime: '9:45 AM' }] 
-          : []
+        timeRanges: !updated[dayIndex].isAvailable
+          ? [{ startTime: '9:00 AM', endTime: '9:45 AM' }]
+          : [],
       };
       return updated;
     });
-  };
+  }, []);
 
-  const addTimeRange = (dayIndex) => {
+  const addTimeRange = useCallback((dayIndex) => {
     setWeeklyAvailability((prev) => {
       const updated = [...prev];
       updated[dayIndex] = {
         ...updated[dayIndex],
-        timeRanges: [...updated[dayIndex].timeRanges, { startTime: '9:00 AM', endTime: '9:45 AM' }]
+        timeRanges: [
+          ...updated[dayIndex].timeRanges,
+          { startTime: '9:00 AM', endTime: '9:45 AM' },
+        ],
       };
       return updated;
     });
-  };
+  }, []);
 
-  const removeTimeRange = (dayIndex, timeRangeIndex) => {
+  const removeTimeRange = useCallback((dayIndex, timeRangeIndex) => {
     setWeeklyAvailability((prev) => {
       const updated = [...prev];
       updated[dayIndex] = {
         ...updated[dayIndex],
-        timeRanges: updated[dayIndex].timeRanges.filter((_, idx) => idx !== timeRangeIndex)
+        timeRanges: updated[dayIndex].timeRanges.filter((_, idx) => idx !== timeRangeIndex),
       };
       return updated;
     });
-  };
+  }, []);
 
-  const updateTimeRange = (dayIndex, timeRangeIndex, field, value) => {
+  const updateTimeRange = useCallback((dayIndex, timeRangeIndex, field, value) => {
     setWeeklyAvailability((prev) => {
       const updated = [...prev];
       updated[dayIndex] = {
@@ -202,30 +219,33 @@ const RecurringAvailabilityComponent = () => {
           }
 
           return { startTime: newStartTime, endTime: newEndTime };
-        })
+        }),
       };
       return updated;
     });
-  };
+  }, []);
 
-  const validatePriceInput = (price) => {
-    if (!price || price.trim() === '') {
-      return { isValid: false, message: 'Price is required' };
-    }
-    const priceNum = Number(price);
-    if (isNaN(priceNum)) {
-      return { isValid: false, message: 'Price must be a number' };
-    }
-    if (priceNum < priceConstraints.minPrice || priceNum > priceConstraints.maxPrice) {
-      return {
-        isValid: false,
-        message: `Price must be between ₹${priceConstraints.minPrice} - ₹${priceConstraints.maxPrice}`,
-      };
-    }
-    return { isValid: true, message: '' };
-  };
+  const validatePriceInput = useCallback(
+    (price) => {
+      if (!price || price.trim() === '') {
+        return { isValid: false, message: 'Price is required' };
+      }
+      const priceNum = Number(price);
+      if (isNaN(priceNum)) {
+        return { isValid: false, message: 'Price must be a number' };
+      }
+      if (priceNum < priceConstraints.minPrice || priceNum > priceConstraints.maxPrice) {
+        return {
+          isValid: false,
+          message: `Price must be between ₹${priceConstraints.minPrice} - ₹${priceConstraints.maxPrice}`,
+        };
+      }
+      return { isValid: true, message: '' };
+    },
+    [priceConstraints]
+  );
 
-  const handleSaveClick = () => {
+  const handleSaveClick = useCallback(() => {
     const priceValidation = validatePriceInput(globalPrice);
     if (!priceValidation.isValid) {
       toast.error(priceValidation.message);
@@ -250,9 +270,9 @@ const RecurringAvailabilityComponent = () => {
       }
     }
     setShowDialog(true);
-  };
+  }, [globalPrice, validatePriceInput, weeklyAvailability]);
 
-  const handleConfirmSave = async () => {
+  const handleConfirmSave = useCallback(async () => {
     setShowDialog(false);
     setLoading(true);
 
@@ -279,17 +299,15 @@ const RecurringAvailabilityComponent = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [globalPrice, weeklyAvailability]);
 
-  const getDayShort = (day) => {
-    return { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' }[day];
-  };
-
-  const getSummary = () => {
+  const summary = useMemo(() => {
     const availableDays = weeklyAvailability.filter((d) => d.isAvailable);
     const totalSlots = availableDays.reduce((sum, d) => sum + d.timeRanges.length, 0);
     return { availableDaysCount: availableDays.length, totalSlots, availableDays };
-  };
+  }, [weeklyAvailability]);
+
+  const selectedDay = weeklyAvailability[selectedDayIndex] || weeklyAvailability[0];
 
   if (initialLoading) {
     return (
@@ -306,9 +324,6 @@ const RecurringAvailabilityComponent = () => {
     );
   }
 
-  const summary = getSummary();
-  const selectedDay = weeklyAvailability[selectedDayIndex];
-
   return (
     <section className="relative  flex items-center justify-center overflow-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30 py-16 lg:py-20">
       <motion.div
@@ -320,67 +335,133 @@ const RecurringAvailabilityComponent = () => {
       >
         {/* Confirmation Dialog */}
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="sm:max-w-xl">
-            <DialogHeader>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+          <DialogContent className="sm:max-w-xl p-0 flex flex-col max-h-[85vh] sm:max-h-[88vh] overflow-hidden border border-neutral-200/80 dark:border-neutral-800 rounded-2xl sm:rounded-3xl shadow-2xl bg-white dark:bg-neutral-900">
+            {/* Pinned Header */}
+            <div className="p-5 sm:p-6 pb-4 border-b border-neutral-100 dark:border-neutral-800 shrink-0">
+              <div className="flex items-center gap-3.5 pr-8">
+                <div className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 rounded-2xl flex items-center justify-center text-white shadow-md shadow-primary-500/20 ring-4 ring-primary-500/10 shrink-0">
+                  <Calendar className="w-5 h-5" />
                 </div>
-                <DialogTitle className="text-lg">Confirm Availability Update</DialogTitle>
+                <div>
+                  <DialogTitle className="text-lg font-bold text-neutral-900 dark:text-white leading-tight">
+                    Confirm Availability Update
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    Please review your weekly availability and pricing before saving changes.
+                  </DialogDescription>
+                </div>
               </div>
-              <DialogDescription className="text-sm">Review your weekly schedule before saving changes</DialogDescription>
-            </DialogHeader>
+            </div>
 
-            <Card className="bg-neutral-50 dark:bg-neutral-900 border">
-              <CardContent className="pt-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Available Days</span>
-                  <Badge variant="secondary" className="text-xs">{summary.availableDaysCount} / 7</Badge>
+            {/* Scrollable Body - Never cuts off */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 min-h-0">
+              {/* Top 3 KPI metrics */}
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="p-3 bg-neutral-50 dark:bg-neutral-800/60 rounded-xl border border-neutral-200/80 dark:border-neutral-700/60 text-center">
+                  <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
+                    Days Active
+                  </span>
+                  <p className="text-lg font-extrabold text-neutral-900 dark:text-white mt-1">
+                    {summary.availableDaysCount} <span className="text-xs font-normal text-neutral-400">/ 7</span>
+                  </p>
                 </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Total Slots</span>
-                  <Badge variant="secondary" className="text-xs">{summary.totalSlots}</Badge>
+
+                <div className="p-3 bg-neutral-50 dark:bg-neutral-800/60 rounded-xl border border-neutral-200/80 dark:border-neutral-700/60 text-center">
+                  <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
+                    Total Slots
+                  </span>
+                  <p className="text-lg font-extrabold text-neutral-900 dark:text-white mt-1">
+                    {summary.totalSlots} <span className="text-xs font-normal text-neutral-400">slots</span>
+                  </p>
                 </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Session Price</span>
-                  <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs">
+
+                <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200/70 dark:border-emerald-800/50 text-center">
+                  <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">
+                    Session Rate
+                  </span>
+                  <p className="text-lg font-extrabold text-emerald-700 dark:text-emerald-300 mt-1">
                     ₹{globalPrice}
+                  </p>
+                </div>
+              </div>
+
+              {/* Schedule Breakdown */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                    Schedule Details
+                  </span>
+                  <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0.5">
+                    {summary.availableDays.length} day{summary.availableDays.length !== 1 ? 's' : ''} configured
                   </Badge>
                 </div>
-                
-                {summary.availableDays.length > 0 && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Schedule Details</span>
-                      <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                        {summary.availableDays.map((day) => (
-                          <div key={day.dayOfWeek} className="p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
-                            <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 mb-1">{day.dayOfWeek}</div>
-                            <ul className="space-y-0.5">
-                              {day.timeRanges.map((range, idx) => (
-                                <li key={idx} className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
-                                  <Timer className="w-3 h-3 text-primary-600" />
-                                  {range.startTime} - {range.endTime}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
 
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setShowDialog(false)} disabled={loading} size="sm">
+                {summary.availableDays.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {summary.availableDays.map((day) => (
+                      <div
+                        key={day.dayOfWeek}
+                        className="p-3.5 bg-neutral-50/80 dark:bg-neutral-800/50 rounded-xl border border-neutral-200/70 dark:border-neutral-700/60 transition-all hover:bg-neutral-50 dark:hover:bg-neutral-800/80"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-xs text-neutral-900 dark:text-white flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-primary-600 dark:bg-primary-400" />
+                            {day.dayOfWeek}
+                          </span>
+                          <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
+                            {day.timeRanges.length} slot{day.timeRanges.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {day.timeRanges.map((range, idx) => (
+                            <div
+                              key={idx}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300 shadow-2xs"
+                            >
+                              <Timer className="w-3 h-3 text-primary-600 dark:text-primary-400 shrink-0" />
+                              <span>{range.startTime} – {range.endTime}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 text-center bg-neutral-50/50 dark:bg-neutral-900/30">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      No available days are selected.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Informative helper note */}
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/40 text-xs text-neutral-600 dark:text-neutral-300">
+                <Info className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+                <span>
+                  Saving will generate recurring time slots automatically for student bookings across the next booking window.
+                </span>
+              </div>
+            </div>
+
+            {/* Pinned Footer - Fully visible */}
+            <div className="p-4 px-6 bg-neutral-50/90 dark:bg-neutral-900/90 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-end gap-3 shrink-0">
+              <Button
+                variant="outline"
+                onClick={() => setShowDialog(false)}
+                disabled={loading}
+                size="sm"
+                className="rounded-xl h-9 px-4 text-xs font-medium border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              >
                 Cancel
               </Button>
-              <Button onClick={handleConfirmSave} disabled={loading} size="sm">
+              <Button
+                onClick={handleConfirmSave}
+                disabled={loading}
+                size="sm"
+                className="rounded-xl h-9 px-5 text-xs font-semibold shadow-md shadow-primary-500/20 gap-1.5"
+              >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
@@ -388,7 +469,7 @@ const RecurringAvailabilityComponent = () => {
                 )}
                 Confirm & Save
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -646,40 +727,224 @@ const RecurringAvailabilityComponent = () => {
 
         {/* Summary & Save */}
         <motion.div variants={fadeInUp} className="space-y-4">
-          <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 transition-all duration-500">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300">
-                  <TrendingUp className="w-5 h-5 text-white" />
+          <Card className="group relative overflow-hidden bg-gradient-to-br from-white via-white to-primary-50/20 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/20 border border-neutral-200/80 dark:border-neutral-800 shadow-xl shadow-neutral-200/40 dark:shadow-none hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-300 rounded-2xl">
+            {/* Header */}
+            <CardHeader className="p-5 pb-4 border-b border-neutral-100 dark:border-neutral-800/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center text-white shadow-md shadow-primary-500/25 ring-2 ring-primary-500/10">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-bold text-neutral-900 dark:text-white leading-tight">
+                      Weekly Summary
+                    </CardTitle>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      Overview of your weekly counseling schedule
+                    </p>
+                  </div>
                 </div>
-                <CardTitle className="text-base font-bold text-neutral-900 dark:text-white">Weekly Summary</CardTitle>
+
+                <Badge
+                  variant="outline"
+                  className={
+                    summary.availableDaysCount > 0
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60 font-semibold text-xs px-2.5 py-1 flex items-center gap-1.5'
+                      : 'bg-neutral-50 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 text-xs px-2.5 py-1'
+                  }
+                >
+                  {summary.availableDaysCount > 0 ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Active Schedule
+                    </>
+                  ) : (
+                    'No Days Configured'
+                  )}
+                </Badge>
               </div>
             </CardHeader>
-            <CardContent className="divide-y divide-neutral-200/80 dark:divide-neutral-800/80 pt-0">
-              <div className="flex items-center justify-between pb-3 pt-1">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Available Days</span>
-                <Badge variant="secondary" className="font-semibold text-xs px-2.5 py-1 shrink-0">
-                  {summary.availableDaysCount} of 7
-                </Badge>
-              </div>
-              
-              <div className="flex items-center justify-between py-3">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">Total Time Slots</span>
-                <Badge variant="secondary" className="font-semibold text-xs px-2.5 py-1 shrink-0">
-                  {summary.totalSlots} slot{summary.totalSlots !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-              
-              {summary.availableDays.length > 0 && (
-                <div className="pt-3 pb-1 space-y-2">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400 font-medium block">Selected Days</span>
-                  <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {summary.availableDays.map((day) => (
-                      <Badge key={day.dayOfWeek} variant="outline" className="font-semibold text-xs px-2 py-0.5">
-                        {getDayShort(day.dayOfWeek)} ({day.timeRanges.length})
-                      </Badge>
-                    ))}
+
+            <CardContent className="p-5 space-y-5">
+              {/* 2-Column KPI Stat Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Available Days Stat */}
+                <div className="bg-neutral-50/90 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-700/60 rounded-xl p-4 transition-all duration-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60">
+                  <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider">Available Days</span>
+                    <div className="w-7 h-7 rounded-lg bg-primary-100/70 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+                      <Calendar className="w-4 h-4" />
+                    </div>
                   </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+                      {summary.availableDaysCount}
+                    </span>
+                    <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                      of 7 days
+                    </span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="mt-3">
+                    <div className="h-1.5 w-full bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-primary-600 to-primary-500 rounded-full transition-all duration-500"
+                        style={{ width: `${(summary.availableDaysCount / 7) * 100}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <span>{Math.round((summary.availableDaysCount / 7) * 100)}% active</span>
+                      <span>{7 - summary.availableDaysCount} off</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Time Slots Stat */}
+                <div className="bg-neutral-50/90 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-700/60 rounded-xl p-4 transition-all duration-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60">
+                  <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider">Total Time Slots</span>
+                    <div className="w-7 h-7 rounded-lg bg-primary-100/70 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+                      {summary.totalSlots}
+                    </span>
+                    <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                      slot{summary.totalSlots !== 1 ? 's' : ''} / week
+                    </span>
+                  </div>
+                  {/* Hours computation */}
+                  <div className="mt-3 flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 bg-white/70 dark:bg-neutral-900/60 py-1.5 px-2.5 rounded-lg border border-neutral-200/50 dark:border-neutral-800">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="font-medium">
+                      ~{((summary.totalSlots * SLOT_DURATION_MINUTES) / 60).toFixed(1)} hrs total counseling
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 7-Day Week Matrix / Distribution */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                    Weekly Distribution
+                  </span>
+                  <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                    Click day to configure
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                  {weeklyAvailability.map((day, idx) => {
+                    const isSelected = selectedDayIndex === idx;
+                    const isActive = day.isAvailable;
+                    const slotCount = day.timeRanges.length;
+
+                    return (
+                      <button
+                        key={day.dayOfWeek}
+                        type="button"
+                        onClick={() => setSelectedDayIndex(idx)}
+                        className={`group relative flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all duration-200 border text-center ${
+                          isSelected
+                            ? 'ring-2 ring-primary-500 ring-offset-1 dark:ring-offset-neutral-900'
+                            : ''
+                        } ${
+                          isActive
+                            ? 'bg-gradient-to-b from-primary-50/70 to-primary-100/40 dark:from-primary-950/40 dark:to-primary-900/20 border-primary-200 dark:border-primary-800/70 text-primary-950 dark:text-primary-100 shadow-xs'
+                            : 'bg-neutral-50/60 dark:bg-neutral-800/30 border-neutral-200/70 dark:border-neutral-800 text-neutral-400 dark:text-neutral-500 hover:border-neutral-300 dark:hover:border-neutral-700'
+                        }`}
+                      >
+                        <span className={`text-[11px] sm:text-xs font-bold ${isActive ? 'text-primary-700 dark:text-primary-300' : 'text-neutral-500 dark:text-neutral-400'}`}>
+                          {getDayShort(day.dayOfWeek)}
+                        </span>
+                        
+                        <div className="mt-1 flex items-center justify-center">
+                          {isActive ? (
+                            <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-primary-600 text-white dark:bg-primary-500 shadow-xs">
+                              {slotCount}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-neutral-400 dark:text-neutral-600 font-medium">
+                              —
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Selected Days Detailed Pills */}
+              {summary.availableDays.length > 0 ? (
+                <div className="bg-neutral-50/60 dark:bg-neutral-800/30 rounded-xl p-3 border border-neutral-200/70 dark:border-neutral-800/70 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      Active Days & Slot Allocation
+                    </span>
+                    <span className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
+                      {summary.availableDays.length} day{summary.availableDays.length !== 1 ? 's' : ''} configured
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {summary.availableDays.map((day) => {
+                      const dayIdx = weeklyAvailability.findIndex((d) => d.dayOfWeek === day.dayOfWeek);
+                      const isCurrent = selectedDayIndex === dayIdx;
+                      return (
+                        <button
+                          key={day.dayOfWeek}
+                          type="button"
+                          onClick={() => setSelectedDayIndex(dayIdx)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                            isCurrent
+                              ? 'bg-primary-600 text-white shadow-xs ring-1 ring-primary-400'
+                              : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700'
+                          }`}
+                        >
+                          <span>{day.dayOfWeek}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            isCurrent
+                              ? 'bg-white/20 text-white'
+                              : 'bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400'
+                          }`}>
+                            {day.timeRanges.length} slot{day.timeRanges.length !== 1 ? 's' : ''}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 text-center bg-neutral-50/50 dark:bg-neutral-900/30">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    No active days configured. Toggle days on above to build your recurring schedule.
+                  </p>
+                </div>
+              )}
+
+              {/* Revenue projection notice if price is set */}
+              {globalPrice && !isNaN(Number(globalPrice)) && Number(globalPrice) > 0 && summary.totalSlots > 0 && (
+                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-200/70 dark:border-emerald-800/40 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center font-bold text-[11px] shadow-xs">
+                      ₹
+                    </div>
+                    <div>
+                      <span className="font-semibold text-emerald-900 dark:text-emerald-200">
+                        Max Weekly Potential: ₹{(summary.totalSlots * Number(globalPrice)).toLocaleString('en-IN')}
+                      </span>
+                      <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">
+                        ({summary.totalSlots} slots × ₹{globalPrice}/session)
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-[10px] bg-white/60 dark:bg-neutral-900/60">
+                    Est. Revenue
+                  </Badge>
                 </div>
               )}
             </CardContent>
@@ -689,7 +954,7 @@ const RecurringAvailabilityComponent = () => {
             onClick={handleSaveClick}
             disabled={loading}
             size="lg"
-            className="w-full shadow-md"
+            className="w-full h-12 shadow-lg shadow-primary-500/20 hover:shadow-primary-500/30 transition-all font-semibold text-sm rounded-xl gap-2"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
