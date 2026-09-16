@@ -4,6 +4,9 @@ import {
   trackSessionEvent,
   getSessionDetails,
   getSessionAnalytics,
+  submitClientFeedback,
+  submitCounselorNote,
+  getCounselorNote,
   saveSessionFeedback,
   getSessionRecordings,
   getTokenForJoiningSession,
@@ -20,7 +23,10 @@ router.post('/session/:sessionId/track-event', trackSessionEvent);
 
 // Post-session routes
 router.get('/session/:sessionId/analytics', getSessionAnalytics);
-router.post('/session/:sessionId/feedback', saveSessionFeedback);
+router.post('/session/:sessionId/feedback', submitClientFeedback);
+router.post('/session/:sessionId/notes', submitCounselorNote);
+router.get('/session/:sessionId/notes', getCounselorNote);
+router.post('/session/:sessionId/legacy-feedback', saveSessionFeedback);
 router.get('/session/:sessionId/recordings', getSessionRecordings);
 router.post('/meeting-join-token', getTokenForJoiningSession);
 export { router as videoCallRouter };
