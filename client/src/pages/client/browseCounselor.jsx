@@ -23,6 +23,7 @@ import {
   MapPin,
   Lock,
   ChevronDown,
+  ChevronUp,
   CalendarIcon,
   X,
   RotateCcw,
@@ -357,6 +358,244 @@ const FilterSection = React.memo(
 );
 
 FilterSection.displayName = 'FilterSection';
+
+// ============================================
+// COUNSELOR CARD ITEM WITH EXPANDABLE SPECIALIZATIONS
+// ============================================
+const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounselor, index }) => {
+  const [showAllSpecs, setShowAllSpecs] = useState(false);
+  const specs = counselor.specialization || [];
+  const initialLimit = 4;
+  const hasExtraSpecs = specs.length > initialLimit;
+  const visibleSpecs = showAllSpecs ? specs : specs.slice(0, initialLimit);
+  const remainingCount = specs.length - initialLimit;
+
+  // Next slot calculation
+  const nextSlot = counselor.availableSlots?.find(
+    (slot) => slot.status === 'available'
+  );
+
+  let slotDateLabel = null;
+  let slotTimeLabel = null;
+  if (nextSlot) {
+    const slotDate = dayjs(nextSlot.startTime).tz(TIMEZONE);
+    const today = dayjs().tz(TIMEZONE);
+    const tomorrow = today.add(1, 'day');
+
+    let dateLabel = slotDate.format('MMM D');
+    if (slotDate.isSame(today, 'day')) {
+      dateLabel = 'Today';
+    } else if (slotDate.isSame(tomorrow, 'day')) {
+      dateLabel = 'Tomorrow';
+    }
+    slotDateLabel = dateLabel;
+    slotTimeLabel = slotDate.format('h:mm A');
+  }
+
+  return (
+    <motion.div
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+      transition={{ delay: index * 0.05 }}
+    >
+      <Card className="group relative bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-500/80 shadow-xs hover:shadow-xl hover:shadow-primary-500/5 dark:hover:shadow-primary-500/5 transition-all duration-300 rounded-2xl overflow-hidden">
+        {/* Left accent bar on hover */}
+        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary-600 to-primary-700 opacity-0 group-hover:opacity-100 transition-opacity rounded-l" />
+
+        <div className="p-4 sm:p-5 sm:pl-6">
+          <div className="flex flex-col md:flex-row gap-5 items-start">
+            {/* Left: Profile Image & Verified Badge */}
+            <div className="relative flex-shrink-0 mx-auto sm:mx-0">
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border-2 border-white dark:border-neutral-800 shadow-md">
+                {counselor.profilePicture ? (
+                  <img
+                    src={counselor.profilePicture}
+                    alt={counselor.fullName}
+                    className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-950 dark:to-neutral-900">
+                    <User className="w-12 h-12 text-primary-600 dark:text-primary-400" />
+                  </div>
+                )}
+              </div>
+
+              {/* Verified Badge attached to bottom of image */}
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap z-10 border border-white dark:border-neutral-900">
+                <Shield className="w-3 h-3" />
+                <span>Verified</span>
+              </div>
+            </div>
+
+            {/* Middle: Main Content */}
+            <div className="flex-1 min-w-0 space-y-3 w-full">
+              {/* Name, Badges & Experience */}
+              <div>
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h3 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white leading-tight">
+                    {counselor.fullName}
+                  </h3>
+
+                  {loggedInCounselor?._id === counselor._id && (
+                    <Badge className="text-[10px] bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-300 border-0 h-5 font-bold px-2 rounded-full">
+                      You
+                    </Badge>
+                  )}
+
+                  {counselor.gender && (
+                    <Badge
+                      variant="secondary"
+                      className="text-[11px] font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border-0 h-5 px-2 rounded-full"
+                    >
+                      {counselor.gender}
+                    </Badge>
+                  )}
+
+                  {counselor.rating && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-full">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                      <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                        {counselor.rating.toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 flex-wrap">
+                  {counselor.experienceYears && (
+                    <div className="flex items-center gap-1 font-medium text-neutral-700 dark:text-neutral-300">
+                      <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                      <span>{counselor.experienceYears}+ years experience</span>
+                    </div>
+                  )}
+
+                  {counselor.application?.languages &&
+                    counselor.application.languages.length > 0 && (
+                      <>
+                        <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                        <div className="flex items-center gap-1 font-medium">
+                          <Languages className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                          <span>
+                            {counselor.application.languages.slice(0, 3).join(', ')}
+                            {counselor.application.languages.length > 3
+                              ? ` +${counselor.application.languages.length - 3}`
+                              : ''}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                </div>
+              </div>
+
+              {/* Specializations / Expertise Chips */}
+              {specs.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  {visibleSpecs.map((specItem, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-neutral-100/90 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60 transition-colors"
+                    >
+                      {specItem}
+                    </span>
+                  ))}
+                  {hasExtraSpecs && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAllSpecs((prev) => !prev);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-50 dark:bg-primary-950/50 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                      title={showAllSpecs ? 'Collapse specializations' : `Show all ${specs.length} specializations`}
+                    >
+                      {showAllSpecs ? (
+                        <>
+                          <span>Show less</span>
+                          <ChevronUp className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+                        </>
+                      ) : (
+                        <>
+                          <span>+{remainingCount} more</span>
+                          <ChevronDown className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Feature Pills & Next Slot */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <Badge
+                  variant="outline"
+                  className="text-xs font-semibold bg-primary-50/60 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border-primary-200/80 dark:border-primary-800/60 flex items-center gap-1.5 px-2.5 py-1 rounded-lg shadow-xs"
+                >
+                  <Clock className="w-3 h-3" />
+                  45 min
+                </Badge>
+
+                <Badge
+                  variant="outline"
+                  className="text-xs font-semibold bg-primary-50/60 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border-primary-200/80 dark:border-primary-800/60 flex items-center gap-1.5 px-2.5 py-1 rounded-lg shadow-xs"
+                >
+                  <Video className="w-3 h-3" />
+                  1-on-1 Video
+                </Badge>
+
+                {/* Next Available Slot */}
+                {slotDateLabel && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold shadow-xs">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>
+                      Next: {slotDateLabel}, {slotTimeLabel}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Dedicated Pricing & Action Column */}
+            <div className="flex flex-row md:flex-col justify-between md:justify-center items-center md:items-end gap-3 w-full md:w-48 pt-3 md:pt-0 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 md:pl-5 shrink-0">
+              <div className="text-left md:text-right">
+                <p className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+                  Starting at
+                </p>
+                <div className="flex items-baseline md:justify-end gap-1">
+                  <span className="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+                    ₹
+                    {counselor.availableSlots?.[0]
+                      ?.totalPriceAfterPlatformFee || 690}
+                  </span>
+                  <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                    / session
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                size="sm"
+                className="h-10 px-4 rounded-xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-md shadow-primary-700/20 hover:shadow-lg hover:shadow-primary-700/30 hover:scale-[1.02] transition-all font-semibold text-xs flex items-center gap-1.5 w-auto md:w-full justify-center"
+                onClick={() => bookCounselor(counselor._id)}
+              >
+                <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {loggedInCounselor?._id === counselor._id
+                    ? 'Your Profile'
+                    : 'Book Consultation'}
+                </span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </motion.div>
+  );
+});
+
+CounselorCardItem.displayName = 'CounselorCardItem';
 
 // ============================================
 // MAIN COMPONENT
@@ -926,216 +1165,13 @@ const BrowseCounselor = () => {
                       </motion.div>
                     ) : (
                       currentItems.map((counselor, index) => (
-                        <motion.div
+                        <CounselorCardItem
                           key={counselor._id}
-                          variants={cardVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="hidden"
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 transition-all duration-500 overflow-hidden">
-                            {/* Decorative Corner Element */}
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-500/5 to-transparent rounded-bl-[4rem] pointer-events-none" />
-
-                            <div className="relative p-4 sm:p-5">
-                              <div className="flex flex-col sm:flex-row gap-4">
-                                {/* Left: Profile Image */}
-                                <div className="relative flex-shrink-0 flex justify-center sm:block">
-                                  <div className="w-44 h-48 sm:w-28 sm:h-32 rounded-xl overflow-hidden bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-950/20 border-2 border-white dark:border-neutral-800 shadow-lg">
-                                    {counselor.profilePicture ? (
-                                      <img
-                                        src={counselor.profilePicture}
-                                        alt={counselor.fullName}
-                                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
-                                        loading="lazy"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center">
-                                        <User className="w-14 h-14 text-primary-600 dark:text-primary-400" />
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Verified Badge on Image */}
-                                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg whitespace-nowrap z-10">
-                                    <Shield className="w-3 h-3" />
-                                    <span>Verified</span>
-                                  </div>
-                                </div>
-
-                                {/* Middle: Main Content */}
-                                <div className="flex-1 min-w-0 space-y-2.5 pt-3 sm:pt-0">
-                                  {/* Name with Gender Badge and Rating */}
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <h3 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white leading-tight">
-                                          {counselor.fullName}
-                                        </h3>
-
-                                        {loggedInCounselor?._id === counselor._id && (
-                                          <Badge className="text-xs bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-300 border-0 h-5 font-semibold">
-                                            You
-                                          </Badge>
-                                        )}
-
-                                        {/* Gender Badge */}
-                                        {counselor.gender && (
-                                          <Badge
-                                            variant="secondary"
-                                            className="text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-0 h-5"
-                                          >
-                                            {counselor.gender}
-                                          </Badge>
-                                        )}
-                                      </div>
-
-                                      {/* Experience & Price Row */}
-                                      <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                        {counselor.experienceYears && (
-                                          <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-400">
-                                            <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                                            <span className="font-medium">
-                                              {counselor.experienceYears}+ yrs exp
-                                            </span>
-                                          </div>
-                                        )}
-
-                                        <Separator orientation="vertical" className="h-3" />
-
-                                        {/* Price */}
-                                        {counselor.availableSlots?.[0]
-                                          ?.totalPriceAfterPlatformFee && (
-                                          <div className="flex items-center gap-1">
-                                            <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                                              ₹
-                                              {
-                                                counselor.availableSlots[0]
-                                                  .totalPriceAfterPlatformFee
-                                              }
-                                            </span>
-                                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                                              /session
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Rating Badge */}
-                                    {counselor.rating && (
-                                      <div className="flex items-center gap-1 px-2.5 py-1 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
-                                        <Star className="w-3.5 h-3.5 fill-primary-500 text-primary-500" />
-                                        <span className="text-sm font-bold text-neutral-900 dark:text-white">
-                                          {counselor.rating.toFixed(1)}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Expertise Badge - Separate Row */}
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                                      Expertise:
-                                    </span>
-                                    {counselor.specialization?.map((spec) => {
-                                      return (
-                                        <Badge
-                                          variant="secondary"
-                                          className="text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-0"
-                                        >
-                                          {spec}
-                                        </Badge>
-                                      );
-                                    })}
-                                  </div>
-
-                                  {/* Session Details Badges */}
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-800 flex items-center gap-1"
-                                    >
-                                      <Clock className="w-3 h-3" />
-                                      45 min
-                                    </Badge>
-
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-800 flex items-center gap-1"
-                                    >
-                                      <Video className="w-3 h-3" />
-                                      Video
-                                    </Badge>
-                                  </div>
-
-                                  {/* Languages & Next Slot Row */}
-                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
-                                    {/* Languages */}
-                                    {counselor.application?.languages &&
-                                      counselor.application.languages.length > 0 && (
-                                        <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                                          <Languages className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                                          <span className="font-medium">
-                                            {counselor.application.languages.join(', ')}
-                                          </span>
-                                        </div>
-                                      )}
-
-                                    {/* Next Slot */}
-                                    {counselor.availableSlots &&
-                                      counselor.availableSlots.length > 0 &&
-                                      (() => {
-                                        const nextSlot = counselor.availableSlots.filter(
-                                          (slot) => slot.status === 'available'
-                                        )[0];
-
-                                        if (nextSlot) {
-                                          const slotDate = dayjs(nextSlot.startTime).tz(TIMEZONE);
-                                          const today = dayjs().tz(TIMEZONE);
-                                          const tomorrow = today.add(1, 'day');
-
-                                          let dateLabel = slotDate.format('MMM D');
-                                          if (slotDate.isSame(today, 'day')) {
-                                            dateLabel = 'Today';
-                                          } else if (slotDate.isSame(tomorrow, 'day')) {
-                                            dateLabel = 'Tomorrow';
-                                          }
-
-                                          return (
-                                            <div className="flex items-center gap-1.5 text-primary-600 dark:text-primary-400 font-medium">
-                                              <CheckCircle className="w-3.5 h-3.5" />
-                                              <span>
-                                                Next slot: {dateLabel}, {slotDate.format('h:mm A')}
-                                              </span>
-                                            </div>
-                                          );
-                                        }
-                                        return null;
-                                      })()}
-                                  </div>
-                                </div>
-
-                                {/* Right: Action Buttons */}
-                                <div className="flex flex-col sm:flex-col gap-2 w-full sm:w-auto sm:min-w-[150px] sm:pt-2">
-                                  <Button
-                                    size="sm"
-                                    className="w-full sm:w-auto h-auto min-h-9 py-2 px-3 bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-md whitespace-normal text-center"
-                                    onClick={() => bookCounselor(counselor._id)}
-                                  >
-                                    <CalendarIcon className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                                    <span className="text-xs font-semibold">
-                                      {loggedInCounselor?._id === counselor._id
-                                        ? 'View Your Profile'
-                                        : 'View Profile & Book Now'}
-                                    </span>
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        </motion.div>
+                          counselor={counselor}
+                          loggedInCounselor={loggedInCounselor}
+                          bookCounselor={bookCounselor}
+                          index={index}
+                        />
                       ))
                     )}
                   </AnimatePresence>
