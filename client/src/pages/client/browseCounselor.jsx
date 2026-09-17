@@ -25,6 +25,11 @@ import {
   ChevronDown,
   CalendarIcon,
   X,
+  RotateCcw,
+  IndianRupee,
+  Users,
+  GraduationCap,
+  Check,
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
@@ -137,44 +142,92 @@ const FilterSection = React.memo(
     const [specOpen, setSpecOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
 
+    const activeFilterCount = useMemo(() => {
+      let count = 0;
+      if (search && search.trim()) count++;
+      if (spec && spec !== 'all') count++;
+      if (gender && gender !== 'all') count++;
+      if (language && language !== 'all') count++;
+      if (priceRange && (priceRange[0] > 0 || priceRange[1] < 10000)) count++;
+      return count;
+    }, [search, spec, gender, language, priceRange]);
+
+    const genderOptions = [
+      { id: 'all', label: 'All', icon: Users },
+      { id: 'Male', label: 'Male', icon: User },
+      { id: 'Female', label: 'Female', icon: User },
+      { id: 'Other', label: 'Other', icon: Sparkles },
+    ];
+
     return (
-      <div className="space-y-6 px-2 py-2">
+      <div className="space-y-5 px-1 py-1">
         {/* Search Input */}
         <div className="space-y-2">
-          <Label
-            htmlFor="filter-search-input"
-            className="text-sm font-medium text-neutral-700 dark:text-neutral-300"
-          >
-            Search
-          </Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-600 dark:text-primary-400 w-4 h-4 pointer-events-none z-10" />
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor="filter-search-input"
+              className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5"
+            >
+              <Search className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+              Search Counselor
+            </Label>
+            {search && (
+              <span className="text-[10px] text-primary-600 dark:text-primary-400 font-semibold">
+                Active filter
+              </span>
+            )}
+          </div>
+          <div className="relative group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 w-4 h-4 transition-colors pointer-events-none z-10" />
             <Input
               id="filter-search-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by Name"
-              className="pl-10"
+              placeholder="Search by name, title..."
+              className="h-10 pl-10 pr-9 text-sm rounded-xl bg-neutral-50/80 dark:bg-neutral-800/60 border-neutral-200/80 dark:border-neutral-700/80 focus:bg-white dark:focus:bg-neutral-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all shadow-sm"
               autoComplete="off"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50 transition-colors"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        <Separator />
+        <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-neutral-800 to-transparent" />
 
         {/* Specialization Dropdown */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          <Label className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+            <GraduationCap className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
             Specialization
           </Label>
           <DropdownMenu open={specOpen} onOpenChange={setSpecOpen} modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                <span className="truncate">{spec === 'all' ? 'All Specializations' : spec}</span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              <Button
+                variant="outline"
+                className={`w-full h-10 px-3.5 justify-between rounded-xl text-sm font-medium transition-all shadow-sm ${
+                  spec !== 'all'
+                    ? 'bg-primary-50/70 border-primary-300 dark:bg-primary-950/40 dark:border-primary-800 text-primary-900 dark:text-primary-100 font-semibold'
+                    : 'bg-neutral-50/80 dark:bg-neutral-800/60 border-neutral-200/80 dark:border-neutral-700/80 hover:bg-white dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200'
+                }`}
+              >
+                <span className="truncate flex items-center gap-2">
+                  {spec !== 'all' && (
+                    <span className="w-2 h-2 rounded-full bg-primary-600 animate-pulse shrink-0" />
+                  )}
+                  {spec === 'all' ? 'All Specializations' : spec}
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72" align="start" avoidCollisions>
+            <DropdownMenuContent className="w-72 p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl" align="start" avoidCollisions>
               <DropdownMenuRadioGroup
                 value={spec}
                 onValueChange={(value) => {
@@ -182,10 +235,19 @@ const FilterSection = React.memo(
                   setSpecOpen(false);
                 }}
               >
-                <DropdownMenuRadioItem value="all">All Specializations</DropdownMenuRadioItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuRadioItem
+                  value="all"
+                  className="rounded-lg py-2 cursor-pointer font-medium"
+                >
+                  All Specializations
+                </DropdownMenuRadioItem>
+                <DropdownMenuSeparator className="my-1" />
                 {SPECIALIZATIONS.map((s) => (
-                  <DropdownMenuRadioItem key={s} value={s}>
+                  <DropdownMenuRadioItem
+                    key={s}
+                    value={s}
+                    className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer"
+                  >
                     {s}
                   </DropdownMenuRadioItem>
                 ))}
@@ -194,96 +256,101 @@ const FilterSection = React.memo(
           </DropdownMenu>
         </div>
 
-        {/* Gender RadioGroup */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Gender
+        <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-neutral-800 to-transparent" />
+
+        {/* Gender Segmented Chips */}
+        <div className="space-y-2.5">
+          <Label className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+            Gender Preference
           </Label>
-          <RadioGroup value={gender} onValueChange={setGender}>
-            {['all', 'Male', 'Female', 'Other'].map((g) => (
-              <div key={g} className="flex items-center space-x-2">
-                <RadioGroupItem value={g} id={`filter-gender-${g}`} />
-                <Label
-                  htmlFor={`filter-gender-${g}`}
-                  className="text-sm font-normal cursor-pointer"
+          <div className="grid grid-cols-2 gap-2">
+            {genderOptions.map((g) => {
+              const isSelected = gender === g.id;
+              const IconComponent = g.icon;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setGender(g.id)}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border ${
+                    isSelected
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-md shadow-primary-600/25 scale-[1.02]'
+                      : 'bg-neutral-50/80 dark:bg-neutral-800/60 text-neutral-700 dark:text-neutral-300 border-neutral-200/80 dark:border-neutral-700/80 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
                 >
-                  {g === 'all' ? 'All Genders' : g}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
+                  <IconComponent className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-neutral-400'}`} />
+                  <span>{g.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <Separator />
-
-        {/* Language Dropdown */}
-        {/* <div className="space-y-2">
-          <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Language
-          </Label> */}
-          {/* <DropdownMenu open={langOpen} onOpenChange={setLangOpen} modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                <span className="truncate">{language === 'all' ? 'All Languages' : language}</span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72" align="start" avoidCollisions>
-              <DropdownMenuRadioGroup
-                value={language}
-                onValueChange={(value) => {
-                  setLanguage(value);
-                  setLangOpen(false);
-                }}
-              >
-                <DropdownMenuRadioItem value="all">All Languages</DropdownMenuRadioItem>
-                <DropdownMenuSeparator />
-                {LANGUAGES.map((lang) => (
-                  <DropdownMenuRadioItem key={lang} value={lang}>
-                    {lang}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu> */}
-        {/* </div> */}
-
-        <Separator />
+        <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-neutral-800 to-transparent" />
 
         {/* Price Range Slider */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Price Range
+            <Label className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+              <IndianRupee className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+              Session Budget
             </Label>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-sm text-primary-600 dark:text-primary-400 font-semibold cursor-help">
-                  ₹{priceRange[0]} - ₹{priceRange[1]}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-primary-50 dark:bg-primary-950/60 border border-primary-200/60 dark:border-primary-800/50 text-primary-700 dark:text-primary-300 text-xs font-bold tabular-nums shadow-sm">
+                    ₹{priceRange[0]}
+                  </span>
+                  <span className="text-neutral-400 text-xs">-</span>
+                  <span className="px-2 py-0.5 rounded-md bg-primary-50 dark:bg-primary-950/60 border border-primary-200/60 dark:border-primary-800/50 text-primary-700 dark:text-primary-300 text-xs font-bold tabular-nums shadow-sm">
+                    ₹{priceRange[1].toLocaleString()}
+                  </span>
+                </div>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>Filter counselors by session price</p>
+              <TooltipContent side="top">
+                <p>Filter counselors within this price range</p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <Slider
-            value={priceRange}
-            onValueChange={setPriceRange}
-            max={10000}
-            step={100}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
-            <span>₹0</span>
-            <span>₹10,000</span>
+
+          <div className="pt-2 px-1">
+            <Slider
+              value={priceRange}
+              onValueChange={setPriceRange}
+              max={10000}
+              step={100}
+              className="w-full"
+            />
+          </div>
+
+          <div className="flex justify-between items-center text-[11px] font-medium text-neutral-400 dark:text-neutral-500 px-1">
+            <span>₹0 (Free/Intro)</span>
+            <span>₹10,000 max</span>
           </div>
         </div>
 
-        <Button onClick={clearFilters} variant="outline" className="w-full mt-6">
-          <X className="w-4 h-4 mr-2" />
-          Clear All Filters
-        </Button>
+        {/* Clear All Filters Button */}
+        {activeFilterCount > 0 ? (
+          <Button
+            onClick={clearFilters}
+            variant="outline"
+            className="w-full h-10 rounded-xl mt-3 border-red-200 dark:border-red-900/50 bg-red-50/60 dark:bg-red-950/20 text-red-600 dark:text-red-400 hover:bg-red-100/80 hover:border-red-300 dark:hover:bg-red-900/40 text-xs font-semibold transition-all shadow-sm hover:shadow"
+          >
+            <RotateCcw className="w-3.5 h-3.5 mr-2" />
+            Reset All Filters ({activeFilterCount})
+          </Button>
+        ) : (
+          <Button
+            onClick={clearFilters}
+            variant="ghost"
+            disabled
+            className="w-full h-10 rounded-xl mt-3 text-neutral-400 dark:text-neutral-600 text-xs font-medium border border-dashed border-neutral-200 dark:border-neutral-800"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5 mr-2 opacity-50" />
+            No Filters Applied
+          </Button>
+        )}
       </div>
     );
   }
@@ -315,6 +382,16 @@ const BrowseCounselor = () => {
 
   const isAuthenticated = !!(client || loggedInCounselor);
   const isLoading = clientLoading || counselorLoading;
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (search && search.trim()) count++;
+    if (spec && spec !== 'all') count++;
+    if (gender && gender !== 'all') count++;
+    if (language && language !== 'all') count++;
+    if (priceRange && (priceRange[0] > 0 || priceRange[1] < 10000)) count++;
+    return count;
+  }, [search, spec, gender, language, priceRange]);
 
   const SPECIALIZATIONS = useMemo(
     () => [
@@ -620,15 +697,34 @@ const BrowseCounselor = () => {
               {/* Desktop Sidebar */}
               <aside className="hidden lg:block w-80 flex-shrink-0">
                 <div className="sticky top-4 space-y-6">
-                  <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500 overflow-hidden">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2">
-                        <SlidersHorizontal className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                        Filters
-                      </CardTitle>
+                  <Card className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-xl shadow-neutral-900/5 backdrop-blur-xl transition-all duration-300 overflow-hidden">
+                    <CardHeader className="py-4 px-5 border-b border-neutral-100 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-900/50">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2.5 text-base font-bold text-neutral-900 dark:text-white">
+                          <div className="p-1.5 rounded-lg bg-primary-50 dark:bg-primary-950/60 border border-primary-100 dark:border-primary-900/40 text-primary-600 dark:text-primary-400 shadow-sm">
+                            <SlidersHorizontal className="w-4 h-4" />
+                          </div>
+                          <span>Filters</span>
+                          {activeFilterCount > 0 && (
+                            <Badge variant="secondary" className="px-2 py-0.5 text-[11px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300 rounded-full border border-primary-200 dark:border-primary-800">
+                              {activeFilterCount}
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        {activeFilterCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="text-xs font-semibold text-neutral-500 hover:text-primary-600 dark:text-neutral-400 dark:hover:text-primary-400 transition-colors flex items-center gap-1 py-1 px-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            Reset
+                          </button>
+                        )}
+                      </div>
                     </CardHeader>
-                    <CardContent className="px-4 pb-4">
-                      <ScrollArea className="h-[calc(100vh-280px)] pr-3">
+                    <CardContent className="p-5">
+                      <ScrollArea className="h-[calc(100vh-280px)] pr-2">
                         <FilterSection
                           search={search}
                           setSearch={setSearch}
@@ -713,17 +809,37 @@ const BrowseCounselor = () => {
                   <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     <Sheet>
                       <SheetTrigger asChild className="lg:hidden">
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <Filter className="w-4 h-4" />
+                        <Button variant="outline" size="sm" className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700">
+                          <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                           Filters
+                          {activeFilterCount > 0 && (
+                            <span className="w-5 h-5 rounded-full bg-primary-600 text-white text-[10px] font-bold flex items-center justify-center">
+                              {activeFilterCount}
+                            </span>
+                          )}
                         </Button>
                       </SheetTrigger>
-                      <SheetContent side="left" className="w-[85vw] max-w-sm sm:w-96 p-6 flex flex-col">
-                        <SheetHeader className="text-left px-1">
-                          <SheetTitle className="text-lg font-bold text-neutral-900 dark:text-white">Filters</SheetTitle>
-                          <SheetDescription>Refine your search</SheetDescription>
+                      <SheetContent side="left" className="w-[85vw] max-w-sm sm:w-96 p-6 flex flex-col rounded-r-2xl">
+                        <SheetHeader className="text-left pb-3 border-b border-neutral-100 dark:border-neutral-800">
+                          <div className="flex items-center justify-between">
+                            <SheetTitle className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
+                              <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                              Filters
+                            </SheetTitle>
+                            {activeFilterCount > 0 && (
+                              <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="text-xs font-semibold text-neutral-500 hover:text-primary-600 transition-colors flex items-center gap-1 py-1 px-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                              >
+                                <RotateCcw className="w-3 h-3" />
+                                Reset
+                              </button>
+                            )}
+                          </div>
+                          <SheetDescription className="text-xs text-neutral-500">Refine counselors by specialty, budget, and preferences</SheetDescription>
                         </SheetHeader>
-                        <ScrollArea className="h-[calc(100vh-120px)] mt-4 px-1">
+                        <ScrollArea className="flex-1 mt-3 pr-2">
                           <FilterSection
                             search={search}
                             setSearch={setSearch}
