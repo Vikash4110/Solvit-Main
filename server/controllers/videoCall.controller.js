@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { wrapper } from '../utils/wrapper.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
@@ -531,6 +532,10 @@ const getSessionAnalytics = wrapper(async (req, res) => {
 
 // Helper to resolve session and booking from either ID
 const resolveSessionAndBooking = async (id) => {
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return { session: null, booking: null };
+  }
+
   let session = await Session.findById(id).populate({
     path: 'bookingId',
     populate: { path: 'slotId' },
