@@ -401,14 +401,13 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
       transition={{ delay: index * 0.05 }}
     >
       <Card className="group relative bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-500/80 shadow-xs hover:shadow-xl hover:shadow-primary-500/5 dark:hover:shadow-primary-500/5 transition-all duration-300 rounded-2xl overflow-hidden">
-        {/* Left accent bar on hover */}
         <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary-600 to-primary-700 opacity-0 group-hover:opacity-100 transition-opacity rounded-l" />
 
         <div className="p-4 sm:p-5 sm:pl-6">
-          <div className="flex flex-col md:flex-row gap-5 items-start">
+          <div className="flex flex-col sm:flex-row md:flex-row gap-4 sm:gap-5 items-start">
             {/* Left: Profile Image & Verified Badge */}
-            <div className="relative flex-shrink-0 mx-auto sm:mx-0">
-              <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border-2 border-white dark:border-neutral-800 shadow-md">
+            <div className="relative flex-shrink-0 self-start sm:self-auto">
+              <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border-2 border-white dark:border-neutral-800 shadow-md">
                 {counselor.profilePicture ? (
                   <img
                     src={counselor.profilePicture}
@@ -418,13 +417,13 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-950 dark:to-neutral-900">
-                    <User className="w-12 h-12 text-primary-600 dark:text-primary-400" />
+                    <User className="w-10 h-10 sm:w-12 sm:h-12 text-primary-600 dark:text-primary-400" />
                   </div>
                 )}
               </div>
 
               {/* Verified Badge attached to bottom of image */}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap z-10 border border-white dark:border-neutral-900">
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary-600 text-white text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap z-10 border border-white dark:border-neutral-900">
                 <Shield className="w-3 h-3" />
                 <span>Verified</span>
               </div>
@@ -464,11 +463,11 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 flex-wrap">
+                <div className="flex items-center gap-2.5 sm:gap-3 text-xs text-neutral-600 dark:text-neutral-400 flex-wrap">
                   {counselor.experienceYears && (
                     <div className="flex items-center gap-1 font-medium text-neutral-700 dark:text-neutral-300">
-                      <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                      <span>{counselor.experienceYears}+ years experience</span>
+                      <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                      <span>{counselor.experienceYears}+ yrs exp</span>
                     </div>
                   )}
 
@@ -477,7 +476,7 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
                       <>
                         <span className="text-neutral-300 dark:text-neutral-700">•</span>
                         <div className="flex items-center gap-1 font-medium">
-                          <Languages className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                          <Languages className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
                           <span>
                             {counselor.application.languages.slice(0, 3).join(', ')}
                             {counselor.application.languages.length > 3
@@ -528,7 +527,7 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
               )}
 
               {/* Feature Pills & Next Slot */}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
                 <Badge
                   variant="outline"
                   className="text-xs font-semibold bg-primary-50/60 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border-primary-200/80 dark:border-primary-800/60 flex items-center gap-1.5 px-2.5 py-1 rounded-lg shadow-xs"
@@ -548,7 +547,7 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
                 {/* Next Available Slot */}
                 {slotDateLabel && (
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold shadow-xs">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>
                       Next: {slotDateLabel}, {slotTimeLabel}
                     </span>
@@ -558,13 +557,13 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
             </div>
 
             {/* Right: Dedicated Pricing & Action Column */}
-            <div className="flex flex-row md:flex-col justify-between md:justify-center items-center md:items-end gap-3 w-full md:w-48 pt-3 md:pt-0 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 md:pl-5 shrink-0">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end gap-3 w-full md:w-48 pt-3.5 md:pt-0 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 md:pl-5 shrink-0">
               <div className="text-left md:text-right">
                 <p className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                   Starting at
                 </p>
                 <div className="flex items-baseline md:justify-end gap-1">
-                  <span className="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+                  <span className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
                     ₹
                     {counselor.availableSlots?.[0]
                       ?.totalPriceAfterPlatformFee || 690}
@@ -577,7 +576,7 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
 
               <Button
                 size="sm"
-                className="h-10 px-4 rounded-xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-md shadow-primary-700/20 hover:shadow-lg hover:shadow-primary-700/30 hover:scale-[1.02] transition-all font-semibold text-xs flex items-center gap-1.5 w-auto md:w-full justify-center"
+                className="h-10 px-4 rounded-xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-md shadow-primary-700/20 hover:shadow-lg hover:shadow-primary-700/30 hover:scale-[1.02] transition-all font-semibold text-xs flex items-center gap-1.5 w-auto sm:w-auto md:w-full justify-center"
                 onClick={() => bookCounselor(counselor._id)}
               >
                 <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
