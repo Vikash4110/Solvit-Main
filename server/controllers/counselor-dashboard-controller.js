@@ -646,6 +646,34 @@ export const getCounselorBookings = wrapper(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: 'counselornotes',
+        let: { bId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$bookingId', '$$bId'] },
+                  { $eq: ['$counselorId', new mongoose.Types.ObjectId(String(counselorId))] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              tags: 1,
+              followUpRequired: 1,
+              followUpDate: 1,
+              updatedAt: 1,
+            },
+          },
+        ],
+        as: 'noteData',
+      },
+    },
+    {
       $addFields: {
         slotInfo: '$slotData',
         clientInfo: {
@@ -655,6 +683,7 @@ export const getCounselorBookings = wrapper(async (req, res) => {
           ],
         },
         paymentInfo: { $arrayElemAt: ['$paymentData', 0] },
+        noteInfo: { $arrayElemAt: ['$noteData', 0] },
       },
     },
     {
@@ -675,6 +704,9 @@ export const getCounselorBookings = wrapper(async (req, res) => {
         videoSDKRoomId: 1,
         // Dispute info (optional)
         dispute: 1,
+        // Clinical notes status
+        hasNotes: { $gt: [{ $size: '$noteData' }, 0] },
+        noteInfo: 1,
       },
     },
     {

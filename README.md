@@ -243,18 +243,21 @@ npm run pm2:start
 
 ---
 
-## 📋 Recent UI Improvements & Bug Fixing Log
+### 📝 Clinical Documentation & Post-Session Feedback
+* **Counselor Clinical Notes Modal (`ClinicalNotesModal.jsx`):** HIPAA-compliant clinical documentation suite accessible directly from Counselor Dashboard session cards. Allows practitioners to view, create, and edit private SOAP observations, topic tags, and scheduled follow-ups anytime.
+* **Session Documentation Status Badges:** Dynamic visual indicators (`📝 Notes Saved` vs `⚠️ Notes Pending`) embedded into session cards powered by a single-roundtrip MongoDB `$lookup` aggregation pipeline.
+* **Post-Consultation Feedback Suite:** Role-adaptive leave screen with 1–5 star ratings, experience tags, and audio/video quality scores for clients, and one-click clinical note saving for counselors.
+* **Watermark-Free Visual Assets:** Recreated Browse Counselors hero asset with high-resolution photography without AI generation watermarks.
 
-### 🕒 Slot Scheduling & Availability System
-* **5-Minute Interval Granularity:** Refactored slot generation and recurring availability managers (`CounselorDashboardSlotsManager`, `RecurringAvailabilityManager`, `constants.js`) to allow selecting start/end times at flexible 5-minute increments (e.g., `12:05`, `12:10`, `1:25`) instead of rigid 30-minute steps.
-* **45-Minute Maximum Slot Cap:** Implemented strict dual-layer frontend and backend validation in `slotsManager-controller.js` to enforce maximum consultation slot lengths of ≤ 45 minutes.
-* **Weekly Summary Badge Spacing Fix:** Resolved UI clipping and divider line overlaps in the Counselor Dashboard Weekly Summary card by switching to clean `divide-y` sectioning and responsive badge wrappers.
+---
 
-### 🎥 WebRTC Live Consultation Lifecycle
-* **Automated Session Expiration:** Enforced strict session termination at the scheduled end time (`slotId.endTime`). The client automatically concludes the call and triggers clean media track teardowns when time expires.
-* **Live In-Call Countdown & Warning Alerts:** Integrated a floating, backdrop-blurred countdown badge (`Time Left: MM:SS`) inside `MeetingContainer.jsx` with warning toasts at 5 minutes and 1 minute remaining.
-* **Network Disconnect & Accidental Leave Recovery:** Enhanced `LeaveScreen.jsx` with an active session window detector and a **"Rejoin Session"** action to quickly recover from network glitches before the scheduled end time.
-* **Hardware Media Stream Teardown:** Added deterministic camera and microphone stream track termination on unmount, completely preventing OS camera/mic sensor lockups across sessions.
+## 📚 Comprehensive Documentation
+
+For complete technical deep dives, architecture specifications, and logs, refer to the `Docs/` directory:
+* **[UI & Bug Fixes Log](file:///Docs/UI_AND_BUG_FIXES_LOG.md)**: Exhaustive 23-section record of all UI polishes, bug fixes, and verification matrix.
+* **[New Features Implemented](file:///Docs/NEW_FEATURES_IMPLEMENTED_BY_ME.md)**: In-depth technical architecture of the Post-Session Feedback & Counselor Clinical Notes Suite.
+* **[Client Scalability & Audit Report](file:///Docs/CLIENT_SCALABILITY_AUDIT_REPORT.md)**: Detailed audit of frontend bundle size, state management, and memory optimization.
+* **[Server Scalability & Audit Report](file:///Docs/SERVER_SCALABILITY_AUDIT_REPORT.md)**: Database connection pooling, indexing, PM2 cluster scaling, and security benchmarks.
 
 ---
 
@@ -262,3 +265,4 @@ npm run pm2:start
 
 Copyright © 2026 Solvit Counseling. All rights reserved.  
 This project and its associated source code are proprietary and confidential. Unauthorized copying, distribution, or reproduction via any medium is strictly prohibited.
+

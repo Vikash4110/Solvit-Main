@@ -1310,73 +1310,115 @@ const CalendarCard = ({
           <Separator />
 
           {/* Selected Date Slots */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-neutral-900 dark:text-white">
-                {dayjs(selectedDate).format('dddd, MMMM D')}
-              </p>
-              <Badge variant="outline" className="gap-1 border-primary-300 dark:border-primary-700">
-                <Clock className="w-3 h-3" />
-                {selectedDateSlots.length} available
-              </Badge>
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between pb-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-md bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400">
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                </div>
+                <p className="text-sm font-bold text-neutral-900 dark:text-white">
+                  {dayjs(selectedDate).format('dddd, MMMM D')}
+                </p>
+              </div>
+              {selectedDateSlots.length > 0 ? (
+                <Badge className="gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  {selectedDateSlots.length} available
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="px-2.5 py-1 text-xs font-medium text-neutral-500 rounded-full border-neutral-200 dark:border-neutral-700">
+                  0 available
+                </Badge>
+              )}
             </div>
 
-            <div className="max-h-[320px] overflow-y-auto space-y-3 pr-2">
+            <div className="max-h-[500px] overflow-y-auto space-y-2.5 pr-2 custom-scrollbar">
               {selectedDateSlots.length > 0 ? (
-                selectedDateSlots.map((slot, idx) => (
-                  <motion.div
-                    key={slot._id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: idx * 0.05 }}
-                    className="p-4 rounded-lg border-2 border-neutral-200 dark:border-neutral-800 bg-gradient-to-br from-white to-primary-50/50 dark:from-neutral-900 dark:to-primary-900/20 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-lg hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 transition-all duration-300"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                        <span className="font-semibold text-sm text-neutral-900 dark:text-white">
-                          {dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')}
-                        </span>
-                        <span className="text-xs text-neutral-600 dark:text-neutral-400">-</span>
-                        <span className="font-semibold text-sm text-neutral-900 dark:text-white">
-                          {dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')}
-                        </span>
+                selectedDateSlots.map((slot, idx) => {
+                  const diffMins =
+                    Math.round(dayjs(slot.endTime).diff(dayjs(slot.startTime), 'minute')) || 45;
+
+                  return (
+                    <motion.div
+                      key={slot._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: idx * 0.04 }}
+                      className="group relative p-3.5 sm:p-4 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs hover:shadow-md hover:border-primary-400 dark:hover:border-primary-500/80 transition-all duration-300 overflow-hidden"
+                    >
+                      {/* Left accent bar on hover */}
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary-600 to-primary-700 opacity-0 group-hover:opacity-100 transition-opacity rounded-l" />
+
+                      {/* Top row: Time & Duration */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1 rounded-lg bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 border border-primary-100 dark:border-primary-900/40 shadow-xs">
+                            <Clock className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-sm text-neutral-900 dark:text-white tracking-tight">
+                              {dayjs(slot.startTime).tz(TIMEZONE).format('hh:mm A')}
+                            </span>
+                            <span className="text-neutral-300 dark:text-neutral-600 font-bold text-xs">
+                              →
+                            </span>
+                            <span className="font-bold text-sm text-neutral-900 dark:text-white tracking-tight">
+                              {dayjs(slot.endTime).tz(TIMEZONE).format('hh:mm A')}
+                            </span>
+                          </div>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="px-2.5 py-0.5 text-[11px] font-semibold bg-neutral-50 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-300 border-neutral-200/90 dark:border-neutral-700 rounded-lg shadow-xs"
+                        >
+                          {diffMins} mins
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        45 mins
-                      </Badge>
-                    </div>
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">
-                          ₹{getSlotPrice(slot)}
-                        </p>
-                        <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                          per session
-                        </p>
+
+                      {/* Divider */}
+                      <div className="h-px bg-neutral-100 dark:bg-neutral-800/80 my-2.5" />
+
+                      {/* Bottom row: Price & Action */}
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+                              ₹{getSlotPrice(slot).toLocaleString()}
+                            </span>
+                            <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                              / session
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => openBookingModal(slot)}
+                          disabled={isSelfBooking}
+                          size="sm"
+                          className={clsx(
+                            "h-9 px-4 rounded-xl font-semibold text-xs gap-2 transition-all duration-300 shadow-md",
+                            isSelfBooking
+                              ? "opacity-60 bg-neutral-400 text-white cursor-not-allowed hover:bg-neutral-400"
+                              : "bg-gradient-to-r from-primary-700 via-primary-600 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-primary-700/20 hover:shadow-lg hover:shadow-primary-700/30 hover:scale-[1.02]"
+                          )}
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>{isSelfBooking ? "Cannot Book Yourself" : "Book Slot"}</span>
+                        </Button>
                       </div>
-                      <Button
-                        onClick={() => openBookingModal(slot)}
-                        disabled={isSelfBooking}
-                        size="sm"
-                        className={clsx(
-                          "gap-2 shadow-lg transition-all duration-300",
-                          isSelfBooking
-                            ? "opacity-60 bg-neutral-400 text-white cursor-not-allowed hover:bg-neutral-400"
-                            : "bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 hover:shadow-xl hover:scale-105 text-white"
-                        )}
-                      >
-                        <Video className="w-4 h-4" />
-                        {isSelfBooking ? "Cannot Book Yourself" : "Book Now"}
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))
+                    </motion.div>
+                  );
+                })
               ) : (
-                <div className="text-center py-12 text-neutral-600 dark:text-neutral-400">
-                  <CalendarIcon className="w-16 h-16 mx-auto mb-3 opacity-20" />
-                  <p className="font-medium">No slots available</p>
-                  <p className="text-xs">Please select another date</p>
+                <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
+                  <div className="w-12 h-12 rounded-full bg-primary-50 dark:bg-primary-950/60 border border-primary-100 dark:border-primary-900/40 flex items-center justify-center mx-auto mb-3 text-primary-600 dark:text-primary-400 shadow-sm">
+                    <CalendarIcon className="w-5 h-5 opacity-80" />
+                  </div>
+                  <p className="font-semibold text-sm text-neutral-800 dark:text-neutral-200 mb-1">
+                    No slots available on this date
+                  </p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-xs mx-auto">
+                    Please select a highlighted date with blue dots on the calendar above.
+                  </p>
                 </div>
               )}
             </div>

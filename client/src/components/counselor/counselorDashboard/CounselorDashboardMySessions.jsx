@@ -18,6 +18,8 @@ import {
   Hourglass,
   ShieldAlert,
   Info,
+  FileText,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -36,6 +38,7 @@ import timezone from 'dayjs/plugin/timezone.js';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter.js';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
 import PreSessionGuidelines from './CounselorDashboardPreSessonGuidelines';
+import { ClinicalNotesModal } from './ClinicalNotesModal';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -82,7 +85,18 @@ const CounselorDashboardMySessions = () => {
   });
 
   const [guidelinesState, setGuidelinesState] = useState({ show: false, booking: null });
+  const [notesModalState, setNotesModalState] = useState({ show: false, booking: null });
   const timerRef = useRef(null);
+
+  const handleNotesSaved = (bookingId, savedNote) => {
+    setBookings((prevBookings) =>
+      prevBookings.map((b) =>
+        b.bookingId === bookingId || b._id === bookingId
+          ? { ...b, hasNotes: true, noteInfo: savedNote }
+          : b
+      )
+    );
+  };
 
   const handleAuthError = useCallback(() => {
     localStorage.removeItem('counselorAccessToken');
@@ -380,9 +394,41 @@ const CounselorDashboardMySessions = () => {
                 </div>
               </div>
 
-              <Badge className={`px-3 py-1 text-xs font-semibold rounded-lg shadow-sm shrink-0 ${statusUI.className}`}>
-                {statusUI.label}
-              </Badge>
+              <div className="flex items-center gap-2 shrink-0">
+                {booking.hasNotes ? (
+                  <Badge
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNotesModalState({ show: true, booking });
+                    }}
+                    className="px-2.5 py-1 text-xs font-medium rounded-lg bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/80 flex items-center gap-1 shadow-xs cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                    title="Click to view saved clinical notes"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Notes Saved</span>
+                  </Badge>
+                ) : (
+                  (booking.status === 'completed' || booking.status === 'dispute_window_open' || booking.status === 'disputed') && (
+                    <Badge
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNotesModalState({ show: true, booking });
+                      }}
+                      className="px-2.5 py-1 text-xs font-medium rounded-lg bg-amber-50/90 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800/80 flex items-center gap-1 shadow-xs cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                      title="Click to add clinical notes"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>Notes Pending</span>
+                    </Badge>
+                  )
+                )}
+
+                <Badge className={`px-3 py-1 text-xs font-semibold rounded-lg shadow-sm ${statusUI.className}`}>
+                  {statusUI.label}
+                </Badge>
+              </div>
             </div>
 
             <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
@@ -486,7 +532,7 @@ const CounselorDashboardMySessions = () => {
             <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
             {/* Actions with generous breathing room */}
-            <div className="pt-1">
+            <div className="pt-1 space-y-2.5">
               {booking.canJoin ? (
                 <Button
                   onClick={() => handleJoinSession(booking)}
@@ -496,15 +542,26 @@ const CounselorDashboardMySessions = () => {
                   <Video className="w-4 h-4 mr-2" />
                   Join Session
                 </Button>
-              ) : booking.status === 'confirmed' && s ? (
+              ) : booking.status === 'confirmed' && s && s.minutesToStart > 0 ? (
                 <div className="py-3 px-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 text-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                  {s.minutesToStart > 0
-                    ? `Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES
-                        ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
-                        : `in ${s.minutesToStart} min`}`
-                    : 'Session window has closed'}
+                  {`Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES
+                      ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
+                      : `in ${s.minutesToStart} min`}`}
                 </div>
               ) : null}
+
+              <Button
+                variant="outline"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNotesModalState({ show: true, booking });
+                }}
+                className="w-full rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-semibold py-2.5 shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                <span>{booking.hasNotes ? 'View Clinical Notes' : 'Clinical Notes'}</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -635,6 +692,13 @@ const CounselorDashboardMySessions = () => {
             );
           }
         }}
+      />
+
+      <ClinicalNotesModal
+        isOpen={notesModalState.show}
+        onClose={() => setNotesModalState({ show: false, booking: null })}
+        booking={notesModalState.booking}
+        onNotesSaved={handleNotesSaved}
       />
     </section>
   );

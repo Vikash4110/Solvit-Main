@@ -1,8 +1,11 @@
+import mongoose from 'mongoose';
 import { wrapper } from '../utils/wrapper.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { Session } from '../models/session.model.js';
 import { Booking } from '../models/booking-model.js';
+import { SessionFeedback } from '../models/sessionFeedback.model.js';
+import { CounselorNote } from '../models/counselorNote.model.js';
 import videoSDKService from '../services/videoSDK.service.js';
 import { logger } from '../utils/logger.js';
 import dayjs from 'dayjs';
@@ -527,44 +530,197 @@ const getSessionAnalytics = wrapper(async (req, res) => {
     .json(new ApiResponse(200, analytics, 'Session analytics retrieved successfully'));
 });
 
-const saveSessionFeedback = wrapper(async (req, res) => {
+// Helper to resolve session and booking from either ID
+const resolveSessionAndBooking = async (id) => {
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return { session: null, booking: null };
+  }
+
+  let session = await Session.findById(id).populate({
+    path: 'bookingId',
+    populate: { path: 'slotId' },
+  });
+  let booking = null;
+
+  if (session && session.bookingId) {
+    booking = session.bookingId;
+  } else {
+    booking = await Booking.findById(id).populate('slotId');
+    if (booking) {
+      session = await Session.findOne({ bookingId: booking._id });
+    }
+  }
+
+  return { session, booking };
+};
+
+// ─── Client Feedback ─────────────────────────────────────────────────────────
+
+const submitClientFeedback = wrapper(async (req, res) => {
   const { sessionId } = req.params;
-  const { rating, comment, notes, followUpRequired } = req.body;
+  const { rating, review, comment, callQualityRating, tags, isPublic } = req.body;
   const userId = req.verifiedUser?._id;
 
-  if (!userId || !rating) throw new ApiError(400, 'User authentication and rating are required');
+  if (!userId) throw new ApiError(401, 'Authentication required');
+  if (!rating || rating < 1 || rating > 5) {
+    throw new ApiError(400, 'A valid rating between 1 and 5 is required');
+  }
 
-  const session = await Session.findById(sessionId).populate('bookingId');
-  if (!session) throw new ApiError(404, 'Session not found');
+  const { session, booking } = await resolveSessionAndBooking(sessionId);
+  if (!booking) throw new ApiError(404, 'Booking or Session not found');
 
-  const booking = session.bookingId;
-  const isClient = booking.clientId.toString() === userId.toString();
-  const isCounselor =
-    booking.slotId &&
-    booking.slotId.counselorId &&
-    booking.slotId.counselorId.toString() === userId.toString();
+  const clientId = booking.clientId?._id || booking.clientId;
+  if (clientId.toString() !== userId.toString()) {
+    throw new ApiError(403, 'Only the client who booked this session can submit feedback');
+  }
+
+  const counselorId = booking.slotId?.counselorId?._id || booking.slotId?.counselorId;
+  if (!counselorId) {
+    throw new ApiError(400, 'Counselor information missing on booking');
+  }
+
+  const feedback = await SessionFeedback.findOneAndUpdate(
+    { bookingId: booking._id, clientId: userId },
+    {
+      bookingId: booking._id,
+      sessionId: session?._id || null,
+      clientId: userId,
+      counselorId,
+      rating: Number(rating),
+      review: (review || comment || '').trim(),
+      callQualityRating: callQualityRating ? Number(callQualityRating) : undefined,
+      tags: Array.isArray(tags) ? tags : [],
+      isPublic: typeof isPublic === 'boolean' ? isPublic : true,
+    },
+    { upsert: true, new: true, runValidators: true }
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, feedback, 'Feedback submitted successfully'));
+});
+
+// ─── Counselor Clinical Notes ────────────────────────────────────────────────
+
+const submitCounselorNote = wrapper(async (req, res) => {
+  const { sessionId } = req.params;
+  const { notes, tags, followUpRequired, followUpDate } = req.body;
+  const userId = req.verifiedUser?._id;
+
+  if (!userId) throw new ApiError(401, 'Authentication required');
+  if (!notes || typeof notes !== 'string' || notes.trim() === '') {
+    throw new ApiError(400, 'Clinical notes content is required');
+  }
+
+  const { session, booking } = await resolveSessionAndBooking(sessionId);
+  if (!booking) throw new ApiError(404, 'Booking or Session not found');
+
+  const counselorId = booking.slotId?.counselorId?._id || booking.slotId?.counselorId;
+  if (!counselorId || counselorId.toString() !== userId.toString()) {
+    throw new ApiError(403, 'Only the counselor for this booking can submit clinical notes');
+  }
+
+  const clientId = booking.clientId?._id || booking.clientId;
+
+  const counselorNote = await CounselorNote.findOneAndUpdate(
+    { bookingId: booking._id, counselorId: userId },
+    {
+      bookingId: booking._id,
+      sessionId: session?._id || null,
+      counselorId: userId,
+      clientId,
+      notes: notes.trim(),
+      tags: Array.isArray(tags) ? tags : [],
+      followUpRequired: Boolean(followUpRequired),
+      followUpDate: followUpRequired && followUpDate ? new Date(followUpDate) : undefined,
+    },
+    { upsert: true, new: true, runValidators: true }
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, counselorNote, 'Counselor notes saved successfully'));
+});
+
+// ─── Get Counselor Note ──────────────────────────────────────────────────────
+
+const getCounselorNote = wrapper(async (req, res) => {
+  const { sessionId } = req.params;
+  const userId = req.verifiedUser?._id;
+
+  if (!userId) throw new ApiError(401, 'Authentication required');
+
+  const { booking } = await resolveSessionAndBooking(sessionId);
+  if (!booking) throw new ApiError(404, 'Booking or Session not found');
+
+  const counselorId = booking.slotId?.counselorId?._id || booking.slotId?.counselorId;
+  if (!counselorId || counselorId.toString() !== userId.toString()) {
+    throw new ApiError(403, 'Access denied: clinical notes are private to the counselor');
+  }
+
+  const note = await CounselorNote.findOne({ bookingId: booking._id, counselorId: userId });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, note || null, 'Counselor note retrieved successfully'));
+});
+
+// ─── Unified fallback (backwards compatibility) ──────────────────────────────
+
+const saveSessionFeedback = wrapper(async (req, res) => {
+  const { sessionId } = req.params;
+  const { rating, comment, notes, followUpRequired, followUpDate } = req.body;
+  const userId = req.verifiedUser?._id;
+
+  if (!userId) throw new ApiError(401, 'User authentication required');
+
+  const { session, booking } = await resolveSessionAndBooking(sessionId);
+  if (!booking) throw new ApiError(404, 'Session not found');
+
+  const clientId = booking.clientId?._id || booking.clientId;
+  const isClient = clientId.toString() === userId.toString();
+
+  const counselorId = booking.slotId?.counselorId?._id || booking.slotId?.counselorId;
+  const isCounselor = counselorId && counselorId.toString() === userId.toString();
 
   if (!isClient && !isCounselor) throw new ApiError(403, 'Access denied');
 
   if (isClient) {
-    session.postSessionData.clientFeedback = {
-      rating,
-      comment: comment || '',
-      submittedAt: new Date(),
-    };
+    if (!rating) throw new ApiError(400, 'Rating is required for client feedback');
+    const feedback = await SessionFeedback.findOneAndUpdate(
+      { bookingId: booking._id, clientId: userId },
+      {
+        bookingId: booking._id,
+        sessionId: session?._id || null,
+        clientId: userId,
+        counselorId,
+        rating: Number(rating),
+        review: (comment || '').trim(),
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, feedback, 'Session feedback saved successfully'));
   } else if (isCounselor) {
-    session.postSessionData.counselorNotes = notes || '';
-    session.postSessionData.followUpRequired = followUpRequired || false;
-    if (followUpRequired && req.body.followUpDate) {
-      session.postSessionData.followUpScheduled = new Date(req.body.followUpDate);
-    }
+    if (!notes) throw new ApiError(400, 'Notes content is required');
+    const note = await CounselorNote.findOneAndUpdate(
+      { bookingId: booking._id, counselorId: userId },
+      {
+        bookingId: booking._id,
+        sessionId: session?._id || null,
+        counselorId: userId,
+        clientId,
+        notes: (notes || '').trim(),
+        followUpRequired: Boolean(followUpRequired),
+        followUpDate: followUpRequired && followUpDate ? new Date(followUpDate) : undefined,
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, note, 'Counselor notes saved successfully'));
   }
-
-  await session.save();
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { success: true }, 'Session feedback saved successfully'));
 });
 
 const getSessionRecordings = wrapper(async (req, res) => {
@@ -585,7 +741,7 @@ const getSessionRecordings = wrapper(async (req, res) => {
 
   if (!isClient && !isCounselor) throw new ApiError(403, 'Access denied');
 
-  if (!session.recording.isRecorded) {
+  if (!session.recording?.isRecorded) {
     return res
       .status(200)
       .json(new ApiResponse(200, { available: false }, 'No recording available for this session'));
@@ -598,10 +754,10 @@ const getSessionRecordings = wrapper(async (req, res) => {
     downloadUrl: session.recording.downloadUrl,
     duration: session.recording.recordingDuration,
     sessionDate: session.scheduledStartTime,
-    participants: session.participants.map((p) => ({
+    participants: session.participants?.map((p) => ({
       name: p.displayName,
       type: p.userType,
-    })),
+    })) || [],
   };
 
   return res
@@ -613,6 +769,9 @@ export {
   trackSessionEvent,
   getSessionDetails,
   getSessionAnalytics,
+  submitClientFeedback,
+  submitCounselorNote,
+  getCounselorNote,
   saveSessionFeedback,
   getSessionRecordings,
   getTokenForJoiningSession,
