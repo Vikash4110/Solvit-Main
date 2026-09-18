@@ -82,8 +82,8 @@ const privacySections = [
     content: (
       <p>
         For privacy-related queries, contact{' '}
-        <a href="mailto:privacy@solvit.com" className="text-indigo-600 hover:underline">
-          privacy@solvit.com
+        <a href="mailto:support@solvitcounselling.com" className="text-indigo-600 hover:underline">
+          support@solvitcounselling.com
         </a>
         .
       </p>
@@ -211,7 +211,7 @@ const PrivacyPolicy = () => {
               how we handle your personal information.
             </p>
             <motion.a
-              href="mailto:privacy@solvit.com"
+              href="mailto:support@solvitcounselling.com"
               className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-sm"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
