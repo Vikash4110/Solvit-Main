@@ -659,12 +659,13 @@ const CounselorDashboardBlogManager = () => {
                   {/* Excerpt */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Brief Summary (Excerpt) <span className="text-red-500">*</span>
+                      Brief Summary <span className="text-red-500">*</span>
+                      <span className="text-xs text-gray-500 font-normal ml-2">(Short preview shown on blog cards)</span>
                     </label>
                     <textarea
                       value={blogData.excerpt}
                       onChange={(e) => setBlogData({ ...blogData, excerpt: e.target.value })}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm sm:text-base"
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm sm:text-base leading-relaxed"
                       rows="3"
                       placeholder="Write a compelling summary that will appear in blog previews..."
                       maxLength="300"
@@ -683,9 +684,9 @@ const CounselorDashboardBlogManager = () => {
                     <textarea
                       value={blogData.content}
                       onChange={(e) => setBlogData({ ...blogData, content: e.target.value })}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-mono text-sm leading-relaxed"
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm sm:text-base leading-relaxed"
                       rows="15"
-                      placeholder="Write your blog content here. You can use HTML tags for formatting..."
+                      placeholder="Write your article content here. Share your professional guidance, insights, and coping strategies..."
                       required
                     />
                   </div>
