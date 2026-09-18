@@ -190,15 +190,15 @@ const ContactUs = () => {
     {
       icon: FaPhone,
       title: 'Phone Support',
-      details: '+91 7620296973',
-      subtext: 'Mon-Fri 9AM-6PM EST',
+      details: '+91 9527542303',
+      subtext: 'Mon-Fri 9AM-6PM IST',
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
     {
       icon: FaEnvelope,
       title: 'Email Support',
-      details: 'solvitcounselling@gmail.com',
+      details: 'support@solvitcounselling.com',
       subtext: 'We respond within 24 hours',
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',

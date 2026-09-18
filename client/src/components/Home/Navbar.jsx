@@ -259,6 +259,7 @@ const Navbar = () => {
               </Button>
 
               
+              {!counselor && (
                 <Button
                   variant="ghost"
                   onClick={() => navigate('/browse-counselors')}
@@ -274,9 +275,9 @@ const Navbar = () => {
                   <Users className="h-4 w-4" />
                   Counselors
                 </Button>
-            
+              )}
 
-              {/* <Button
+              <Button
                 variant="ghost"
                 onClick={() => navigate('/blogs')}
                 className="
@@ -290,7 +291,7 @@ const Navbar = () => {
               >
                 <BookOpen className="h-4 w-4" />
                 Blogs
-              </Button> */}
+              </Button>
 
               {isAuthenticated ? (
                 <Button
@@ -634,20 +635,22 @@ const Navbar = () => {
                         </Button>
                       </div>
 
-                      {/* Counselors Link */}
-                      <div className="px-4">
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            navigate('/browse-counselors');
-                            setIsOpen(false);
-                          }}
-                          className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
-                        >
-                          <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                          <span className="font-medium">Counselors</span>
-                        </Button>
-                      </div>
+                      {/* Counselors Link (Clients & Guests only) */}
+                      {!counselor && (
+                        <div className="px-4">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              navigate('/browse-counselors');
+                              setIsOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                          >
+                            <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                            <span className="font-medium">Counselors</span>
+                          </Button>
+                        </div>
+                      )}
 
                       {/* Blogs Link */}
                       <div className="px-4">

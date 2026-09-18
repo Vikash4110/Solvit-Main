@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   FaSearch,
   FaFilter,
@@ -23,9 +23,12 @@ import {
   ArrowRight,
   BookOpen,
   Calendar,
+  PenSquare,
+  Plus,
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
+import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 import {
   Select,
   SelectContent,
@@ -35,6 +38,8 @@ import {
 } from '@/components/ui/select';
 
 const Blogs = () => {
+  const navigate = useNavigate();
+  const { counselor } = useCounselorAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [blogs, setBlogs] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -211,30 +216,59 @@ const Blogs = () => {
             Discover expert insights, personal stories, and practical tips for your mental wellness
             journey.
           </motion.p>
+
+          {/* Counselor Portal Bar (Visible only to authenticated counselors) */}
+          {counselor && (
+            <motion.div
+              className="mt-6 inline-flex flex-wrap items-center justify-center gap-3 bg-gradient-to-r from-blue-50/90 via-indigo-50/90 to-purple-50/90 dark:from-neutral-800/80 dark:to-neutral-800/80 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl border border-indigo-100 dark:border-neutral-700 shadow-sm"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <div className="flex items-center gap-2 px-2 text-xs sm:text-sm font-medium text-indigo-900 dark:text-indigo-200">
+                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <span>Counselor Portal:</span>
+              </div>
+              <button
+                onClick={() => navigate('/counselor/dashboard/blogs-manager?action=create')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all transform active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create New Post</span>
+              </button>
+              <button
+                onClick={() => navigate('/counselor/dashboard/blogs-manager')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-medium rounded-xl bg-white dark:bg-neutral-700 text-gray-700 dark:text-neutral-200 border border-gray-200 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-600 transition-colors shadow-sm"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-gray-500 dark:text-neutral-400" />
+                <span>Manage My Blogs</span>
+              </button>
+            </motion.div>
+          )}
         </div>
 
         {/* Search and Filters */}
         <motion.div
-          className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 sm:p-6 mb-8 sm:mb-12"
+          className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 sm:p-6 mb-8 sm:mb-12 max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center">
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 w-full max-w-none sm:max-w-lg">
+            <form onSubmit={handleSearch} className="w-full sm:flex-1 sm:max-w-md">
               <div className="relative">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search blogs..."
-                  className="w-full pl-10 sm:pl-12 pr-20 sm:pr-24 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-10 sm:pl-11 pr-20 sm:pr-24 py-2.5 text-sm sm:text-base rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
                 <FaSearch className="absolute left-3.5 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
                 <button
                   type="submit"
-                  className="absolute right-1.5 sm:right-2 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-medium"
+                  className="absolute right-1.5 top-1/2 transform -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-lg transition-colors text-xs sm:text-sm font-medium shadow-xs"
                 >
                   Search
                 </button>
@@ -242,21 +276,25 @@ const Blogs = () => {
             </form>
 
             {/* Sort and Filter Toggles */}
-            <div className="flex flex-wrap gap-2.5 sm:gap-4 items-center justify-between sm:justify-start">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
               <Select value={sortBy} onValueChange={(val) => handleSortChange(val)}>
-                <SelectTrigger className="w-auto min-w-[130px] sm:w-[150px] h-10 px-3 sm:px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white">
+                <SelectTrigger className="w-[140px] sm:w-[150px] h-10 px-3.5 py-2 text-sm rounded-xl border border-gray-200 bg-white shadow-xs">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent align="start">
-                  <SelectItem value="latest">Latest</SelectItem>
-                  <SelectItem value="popular">Most Popular</SelectItem>
-                  <SelectItem value="alphabetical">A-Z</SelectItem>
+                <SelectContent align="start" className="rounded-xl border border-gray-100 shadow-xl bg-white p-1">
+                  <SelectItem value="latest" className="rounded-lg cursor-pointer">Latest</SelectItem>
+                  <SelectItem value="popular" className="rounded-lg cursor-pointer">Most Popular</SelectItem>
+                  <SelectItem value="alphabetical" className="rounded-lg cursor-pointer">A-Z</SelectItem>
                 </SelectContent>
               </Select>
 
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center justify-center h-10 px-3 sm:px-4 py-2 text-sm rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors bg-white"
+                className={`flex items-center justify-center h-10 px-4 py-2 text-sm font-medium rounded-xl border transition-all shadow-xs ${
+                  showFilters
+                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                }`}
               >
                 <FaFilter className="mr-2 text-xs" />
                 Filters

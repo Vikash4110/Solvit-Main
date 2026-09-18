@@ -153,18 +153,18 @@ const Footer = () => {
           <ul className="space-y-5 text-white">
             <li>
               <a
-                href="mailto:solvitcounselling@gmail.com"
+                href="mailto:support@solvitcounselling.com"
                 className="hover:text-primary-300 hover:underline transition-colors duration-200"
               >
-                solvitcounselling@gmail.com
+                support@solvitcounselling.com
               </a>
             </li>
             <li>
               <a
-                href="tel:+917620296973"
+                href="tel:+919527542303"
                 className="hover:text-primary-300 hover:underline transition-colors duration-200"
               >
-                +91 7620296973
+                +91 9527542303
               </a>
             </li>
             <li>212 2nd Floor, Jalaram Mangalam Building, Parhi Nagar, Nagpur, India</li>

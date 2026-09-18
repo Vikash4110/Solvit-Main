@@ -16,7 +16,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import aboutHero from '../../assets/core/IMG_2644.png';
+import aboutHero from '../../assets/core/about_hero.jpg';
 import OurMission from '../../components/Home/OurMission.jsx';
 import Footer from '@/components/Home/Footer';
 const fadeInUp = {
@@ -157,26 +157,29 @@ const AboutUs = () => {
           style={{
             backgroundImage: `url(${aboutHero})`,
             backgroundSize: 'cover',
-            backgroundPosition: 'center 70%',
+            backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
           }}
         />
         <div
-          className="absolute inset-0 z-[1] lg:hidden bg-gradient-to-b from-primary-700/90 via-primary-600/85 to-primary-500/90"
+          className="absolute inset-0 z-[1] lg:hidden bg-gradient-to-b from-primary-700/90 via-primary-600/85 to-primary-500/90 dark:from-primary-900/90 dark:via-primary-800/85 dark:to-primary-700/90"
           aria-hidden="true"
         />
 
         {/* Desktop Background Image */}
-        <div className="absolute right-0 top-0 bottom-0 w-2/3 max-w-4xl h-full z-0 hidden lg:flex items-center justify-end">
+        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-3/5 xl:w-1/2 h-full z-0 hidden lg:block overflow-hidden">
           <img
             src={aboutHero}
-            alt=""
-            className="h-full w-full object-contain object-right"
+            alt="About Solvit"
+            className="h-full w-full object-cover object-center lg:object-right"
             loading="eager"
           />
+          {/* Subtle gradient transitions for seamless edge blending */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-700 via-primary-700/40 to-transparent dark:from-primary-900 dark:via-primary-900/40" />
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary-700/80 via-primary-700/30 to-transparent dark:from-primary-900/80 dark:via-primary-900/30" />
         </div>
         <div
-          className="absolute inset-0 z-[1] hidden lg:block bg-gradient-to-r from-primary-700 via-primary-600/80 via-primary-500/40 to-transparent dark:from-primary-900 dark:via-primary-800/80 dark:via-primary-700/40 dark:to-transparent"
+          className="absolute inset-0 z-[1] hidden lg:block bg-gradient-to-r from-primary-700 via-primary-600/70 via-primary-500/20 to-transparent dark:from-primary-900 dark:via-primary-800/70 dark:via-primary-700/20 dark:to-transparent pointer-events-none"
           aria-hidden="true"
         />
 

@@ -51,7 +51,7 @@ const terms = [
   {
     title: '10. Contact Information',
     content:
-      "For questions, concerns, or clarifications regarding these Terms & Conditions, please reach out to us at solvitcounselling@gmail.com. We're here to assist you.",
+      "For questions, concerns, or clarifications regarding these Terms & Conditions, please reach out to us at support@solvitcounselling.com. We're here to assist you.",
   },
 ];
 
@@ -168,7 +168,7 @@ const TermCondition = () => {
               Our team is happy to answer any questions you may have about our Terms & Conditions.
             </p>
             <motion.a
-              href="mailto:solvitcounselling@gmail.com"
+              href="mailto:support@solvitcounselling.com"
               className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-sm"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

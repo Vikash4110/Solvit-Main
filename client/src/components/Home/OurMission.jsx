@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import supportImg from '../../assets/core/IMG_2648.png';
+import supportImg from '../../assets/core/group_counselling.jpg';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -186,15 +186,15 @@ const OurMission = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <div className="relative">
+              <div className="relative overflow-hidden aspect-[16/10] sm:aspect-[16/9] lg:aspect-auto lg:h-[300px] xl:h-[320px]">
                 <img
                   src={supportImg}
                   alt="Support and counseling community"
-                  className="w-full h-56 sm:h-72 md:h-80 lg:h-[285px] xl:h-[310px] object-cover"
+                  className="w-full h-full object-cover object-center"
                   loading="lazy"
                 />
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/75 via-neutral-950/25 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-neutral-950/20 to-transparent" />
                 
                 {/* Overlay Badge */}
                 <div className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5">

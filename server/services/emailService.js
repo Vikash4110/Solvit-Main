@@ -197,7 +197,7 @@ async function sendCounselorRegistrationOTP(email, otp, userName, expiryMinutes)
                     <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
                       <strong style="color: #374151;">Didn't request this?</strong><br>
                       If you didn't register as a counselor, please ignore this email. For security concerns, contact 
-                      <a href="mailto:support@solvitcounselling.com" style="color: #7C3AED; text-decoration: none; font-weight: 600;">support@solvitcounselling.cloud</a>
+                      <a href="mailto:support@solvitcounselling.com" style="color: #7C3AED; text-decoration: none; font-weight: 600;">support@solvitcounselling.com</a>
                     </p>
                   </td>
                 </tr>
@@ -253,7 +253,7 @@ async function sendCounselorRegistrationOTP(email, otp, userName, expiryMinutes)
                           </p>
                           <p style="color: #9ca3af; font-size: 11px; line-height: 1.5; margin: 8px 0 0 0;">
                             This is an automated message, please do not reply.<br>
-                            Need help? <a href="mailto:support@solvitcounselling.cloud" style="color: #7C3AED; text-decoration: none;">Contact Support</a>
+                            Need help? <a href="mailto:support@solvitcounselling.com" style="color: #7C3AED; text-decoration: none;">Contact Support</a>
                           </p>
                         </td>
                       </tr>
@@ -281,7 +281,7 @@ SECURITY REMINDER:
 Never share this code with anyone. Solvit staff will never ask for your verification code.
 
 Didn't request this code?
-If you didn't attempt to register as a counselor on Solvit, please disregard this email. Contact support@solvitcounselling.cloud if you have concerns.
+If you didn't attempt to register as a counselor on Solvit, please disregard this email. Contact support@solvitcounselling.com if you have concerns.
 
 ---
 Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India
@@ -1584,7 +1584,7 @@ async function sendBookingConfirmationToClient(
                     <!-- Help Text -->
                     <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
                       If you need to reschedule or have any questions, please contact us at 
-                      <a href="mailto:support@solvitcounselling.com" style="color: #1C3C63; text-decoration: none; font-weight: 600;">support@solvitcounselling.cloud</a>
+                      <a href="mailto:support@solvitcounselling.com" style="color: #1C3C63; text-decoration: none; font-weight: 600;">support@solvitcounselling.com</a>
                     </p>
                   </td>
                 </tr>
@@ -1678,7 +1678,7 @@ IMPORTANT GUIDELINES:
 
 You will receive a reminder email 24 hours before your appointment.
 
-Need help? Contact support@solvitcounselling.cloud
+Need help? Contact support@solvitcounselling.com
 
 © \${new Date().getFullYear()} Solvit Counseling. All rights reserved.`,
   };
@@ -1842,7 +1842,7 @@ async function sendBookingNotificationToCounselor(
                     <!-- Help Text -->
                     <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
                       If you have any questions or need to make changes, please contact us at 
-                      <a href="mailto:support@solvitcounselling.com" style="color: #1C3C63; text-decoration: none; font-weight: 600;">support@solvitcounselling.cloud</a>
+                      <a href="mailto:support@solvitcounselling.com" style="color: #1C3C63; text-decoration: none; font-weight: 600;">support@solvitcounselling.com</a>
                     </p>
                   </td>
                 </tr>
@@ -1933,7 +1933,7 @@ The video session link will be available in your dashboard 1 hour before the sch
 
 Please ensure you're prepared and available at the scheduled time.
 
-Need help? Contact support@solvitcounselling.cloud
+Need help? Contact support@solvitcounselling.com
 
 © ${new Date().getFullYear()} Solvit Counseling. All rights reserved.`,
   };

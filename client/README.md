@@ -195,6 +195,10 @@ VITE_API_BASE_URL=http://localhost:8000/api/v1
 - 🛑 **Strict Session Expiration**: Added real-time countdown timer in `MeetingContainer.jsx` that automatically terminates the call and frees hardware device tracks when the scheduled end time is reached.
 - 🔔 **Early Expiration Notifications**: Integrated warning toasts at 5 minutes and 1 minute remaining before automatic session shutdown.
 - 🔁 **Active Session Rejoin Support**: `LeaveScreen.jsx` allows immediate re-entry for accidental disconnects/network glitches as long as the scheduled slot is active.
+- 📝 **Counselor Blog Manager Stability & Typography Polish**: Fixed infinite render loop (`Maximum update depth exceeded`) on featured blog toggles, modernized filter controls with Shadcn UI `Select` popovers, standardized blog content textarea to `font-sans`, and replaced technical HTML placeholders with professional writing prompts.
+- 🧭 **Role-Based Navigation**: Configured contextual navigation in `Navbar.jsx` — counselors see "Blogs" directly while clients see both "Counselors" and "Blogs", with route guards preventing counselors from browsing other practitioners.
+- 📞 **Official Contact Synchronization**: Updated official support helpline (`+91 9527542303`) and email (`support@solvitcounselling.com`) across all client views, footers, and legals.
+- 🖼️ **About Page & Hero Imagery Polish**: Replaced awkwardly cropped group counseling and hero photography with full-bleed 16:9 assets featuring dual-axis gradient edge blending, and cleaned up 30MB+ of unused assets.
 
 ## License
 

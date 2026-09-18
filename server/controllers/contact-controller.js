@@ -80,7 +80,7 @@ Solvit Mental Health Platform • ${new Date().getFullYear()}
 
     // ✅ Send email to support team using your existing utility
     const supportEmailResult = await sendEmail(
-      process.env.SUPPORT_EMAIL || 'support@solvit.com', // Your support email
+      process.env.SUPPORT_EMAIL || 'support@solvitcounselling.com', // Your support email
       emailSubject,
       emailContent
     );
@@ -103,18 +103,18 @@ What's Next?
 ------------
 • Our support team will review your message
 • You'll receive a response within 24 hours
-• For urgent matters, call us at +1 (555) 123-4567
+• For urgent matters, call us at +91 9527542303
 
-Need immediate help? Visit our FAQ section or call during business hours (Mon-Fri, 9AM-6PM EST).
+Need immediate help? Visit our FAQ section or call during business hours (Mon-Fri, 9AM-6PM IST).
 
 Best regards,
 The Solvit Support Team
 
 ---
 Solvit Mental Health Platform
-🌐 Website: https://solvit.com
-📧 Email: support@solvit.com
-📞 Phone: +1 (555) 123-4567
+🌐 Website: https://solvitcounselling.com
+📧 Email: support@solvitcounselling.com
+📞 Phone: +91 9527542303
 
 This is an automated confirmation email. Please don't reply directly to this message.
     `;
@@ -138,7 +138,7 @@ This is an automated confirmation email. Please don't reply directly to this mes
     console.error('Email sending error:', error);
     throw new ApiError(
       500,
-      'Failed to send email. Please try again or contact us directly at support@solvit.com'
+      'Failed to send email. Please try again or contact us directly at support@solvitcounselling.com'
     );
   }
 });

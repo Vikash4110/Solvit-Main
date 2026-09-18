@@ -621,6 +621,14 @@ const BrowseCounselor = () => {
   const isAuthenticated = !!(client || loggedInCounselor);
   const isLoading = clientLoading || counselorLoading;
 
+  // Counselors should not browse/search other counselors (available for clients only)
+  useEffect(() => {
+    if (!counselorLoading && loggedInCounselor) {
+      toast.info('Counselor directory and booking is exclusively available for clients.');
+      navigate('/counselor/dashboard', { replace: true });
+    }
+  }, [loggedInCounselor, counselorLoading, navigate]);
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (search && search.trim()) count++;

@@ -90,7 +90,7 @@ export const invoiceTemplate = (invoiceData) => {
               <p class="font-semibold">Solvit</p>
               <p>123 MG Road, Bangalore, India</p>
               <p>CIN: L12345KA2025PTC0001 | GST: 29ABCDE1234F1Z5</p>
-              <p>Email: support@solvit.com | Phone: +91-9876543210</p>
+              <p>Email: support@solvitcounselling.com | Phone: +91 9527542303</p>
             </div>
           </div>
           <div class="logo-container">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaPlus,
@@ -15,12 +16,38 @@ import {
   FaTimes,
   FaArrowLeft,
 } from 'react-icons/fa';
+import {
+  Brain,
+  Briefcase,
+  Heart,
+  Compass,
+  GraduationCap,
+  Activity,
+  Star,
+  Sparkles,
+  FileText,
+  Globe,
+  CheckCircle2,
+  Layers,
+  BookOpen,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { API_ENDPOINTS } from '../../../config/api';
 import api from '@/lib/axios';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 const CounselorDashboardBlogManager = () => {
-  const [currentView, setCurrentView] = useState('list');
+  const [searchParams] = useSearchParams();
+  const [currentView, setCurrentView] = useState(
+    searchParams.get('action') === 'create' ? 'create' : 'list'
+  );
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,6 +65,12 @@ const CounselorDashboardBlogManager = () => {
     featured: false,
   });
   const [formLoading, setFormLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'create') {
+      setCurrentView('create');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchCounselorBlogs();
@@ -240,31 +273,35 @@ const CounselorDashboardBlogManager = () => {
                   resetForm();
                   setCurrentView('list');
                 }}
-                className="p-2 rounded-xl bg-white/90 backdrop-blur-sm border border-white/50 shadow-lg hover:shadow-xl transition-all"
+                className="p-2.5 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm hover:shadow-md transition-all text-indigo-600 hover:bg-gray-50"
               >
                 <FaArrowLeft className="text-indigo-600" />
               </button>
             )}
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                📝{' '}
-                {currentView === 'list'
-                  ? 'Blog Management'
-                  : currentView === 'create'
-                    ? 'Create New Blog'
-                    : currentView === 'edit'
-                      ? 'Edit Blog'
-                      : 'View Blog'}
-              </h1>
-              <p className="text-xl text-gray-600">
-                {currentView === 'list'
-                  ? 'Manage your blog posts and build your reputation'
-                  : currentView === 'create'
-                    ? 'Share your expertise with your audience'
-                    : currentView === 'edit'
-                      ? 'Update your blog content'
-                      : 'Review your blog post'}
-              </p>
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0">
+                <FileText className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                  {currentView === 'list'
+                    ? 'Blog Management'
+                    : currentView === 'create'
+                      ? 'Create New Blog'
+                      : currentView === 'edit'
+                        ? 'Edit Blog'
+                        : 'View Blog'}
+                </h1>
+                <p className="text-sm sm:text-base text-gray-600">
+                  {currentView === 'list'
+                    ? 'Manage your published insights and build your professional presence'
+                    : currentView === 'create'
+                      ? 'Share your clinical expertise with your audience'
+                      : currentView === 'edit'
+                        ? 'Update and refine your blog content'
+                        : 'Review your blog post'}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -274,9 +311,9 @@ const CounselorDashboardBlogManager = () => {
                 resetForm();
                 setCurrentView('create');
               }}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold shadow-lg"
+              className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold shadow-md hover:shadow-lg text-sm"
             >
-              <FaPlus className="mr-2" />
+              <FaPlus className="mr-2 text-xs" />
               Create New Post
             </button>
           )}
@@ -293,7 +330,7 @@ const CounselorDashboardBlogManager = () => {
               className="space-y-8"
             >
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -357,29 +394,52 @@ const CounselorDashboardBlogManager = () => {
 
               {/* Filters */}
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
                   <div className="flex-1">
                     <div className="relative">
                       <input
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search blogs..."
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Search blogs by title or content..."
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                       />
-                      <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <FaSearch className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
                     </div>
                   </div>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
-                    <option value="archived">Archived</option>
-                  </select>
+                  <div className="w-full md:w-[200px]">
+                    <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
+                      <SelectTrigger className="w-full h-[42px] px-3.5 rounded-xl border border-gray-200 bg-white text-sm shadow-xs focus:ring-2 focus:ring-indigo-500">
+                        <SelectValue placeholder="All Status" />
+                      </SelectTrigger>
+                      <SelectContent align="end" className="rounded-xl border border-gray-100 shadow-xl bg-white p-1">
+                        <SelectItem value="all" className="rounded-lg cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-gray-400" />
+                            <span className="font-medium text-gray-700">All Status</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="published" className="rounded-lg cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <span className="font-medium text-gray-700">Published</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="draft" className="rounded-lg cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                            <span className="font-medium text-gray-700">Draft</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="archived" className="rounded-lg cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-slate-400" />
+                            <span className="font-medium text-gray-700">Archived</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -438,7 +498,8 @@ const CounselorDashboardBlogManager = () => {
                             {blog.status.toUpperCase()}
                           </span>
                           {blog.featured && (
-                            <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-full text-xs font-semibold shadow-xs">
+                              <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
                               FEATURED
                             </span>
                           )}
@@ -517,14 +578,14 @@ const CounselorDashboardBlogManager = () => {
                 >
                   {/* Title */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Blog Title *
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Blog Title <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={blogData.title}
                       onChange={(e) => setBlogData({ ...blogData, title: e.target.value })}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg"
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg bg-white"
                       placeholder="Enter an engaging blog title..."
                       required
                     />
@@ -532,61 +593,107 @@ const CounselorDashboardBlogManager = () => {
 
                   {/* Category */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category *
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Category <span className="text-red-500">*</span>
                     </label>
-                    <select
+                    <Select
                       value={blogData.category}
-                      onChange={(e) => setBlogData({ ...blogData, category: e.target.value })}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      required
+                      onValueChange={(val) => setBlogData({ ...blogData, category: val })}
                     >
-                      <option value="mental-health">🧠 Mental Health</option>
-                      <option value="career">💼 Career Development</option>
-                      <option value="relationship">❤️ Relationships</option>
-                      <option value="life-coaching">🚀 Life Coaching</option>
-                      <option value="academic">🎓 Academic Support</option>
-                      <option value="health-wellness">💚 Health & Wellness</option>
-                    </select>
+                      <SelectTrigger className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border border-gray-100 shadow-xl bg-white p-1">
+                        <SelectItem value="mental-health" className="rounded-lg cursor-pointer py-2.5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-1 rounded-md bg-teal-50 text-teal-600">
+                              <Brain className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium text-gray-800">Mental Health</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="career" className="rounded-lg cursor-pointer py-2.5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-1 rounded-md bg-blue-50 text-blue-600">
+                              <Briefcase className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium text-gray-800">Career Development</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="relationship" className="rounded-lg cursor-pointer py-2.5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-1 rounded-md bg-rose-50 text-rose-600">
+                              <Heart className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium text-gray-800">Relationships</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="life-coaching" className="rounded-lg cursor-pointer py-2.5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-1 rounded-md bg-purple-50 text-purple-600">
+                              <Compass className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium text-gray-800">Life Coaching</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="academic" className="rounded-lg cursor-pointer py-2.5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-1 rounded-md bg-sky-50 text-sky-600">
+                              <GraduationCap className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium text-gray-800">Academic Support</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="health-wellness" className="rounded-lg cursor-pointer py-2.5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-1 rounded-md bg-emerald-50 text-emerald-600">
+                              <Activity className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium text-gray-800">Health & Wellness</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Excerpt */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Brief Summary (Excerpt) *
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Brief Summary <span className="text-red-500">*</span>
+                      <span className="text-xs text-gray-500 font-normal ml-2">(Short preview shown on blog cards)</span>
                     </label>
                     <textarea
                       value={blogData.excerpt}
                       onChange={(e) => setBlogData({ ...blogData, excerpt: e.target.value })}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm sm:text-base leading-relaxed"
                       rows="3"
                       placeholder="Write a compelling summary that will appear in blog previews..."
                       maxLength="300"
                       required
                     />
-                    <div className="text-sm text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 mt-1">
                       {blogData.excerpt.length}/300 characters
                     </div>
                   </div>
 
                   {/* Content */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Blog Content *
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Blog Content <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       value={blogData.content}
                       onChange={(e) => setBlogData({ ...blogData, content: e.target.value })}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm sm:text-base leading-relaxed"
                       rows="15"
-                      placeholder="Write your blog content here. You can use HTML tags for formatting..."
+                      placeholder="Write your article content here. Share your professional guidance, insights, and coping strategies..."
                       required
                     />
                   </div>
 
                   {/* Tags */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Tags (comma-separated)
                     </label>
                     <input
@@ -602,50 +709,88 @@ const CounselorDashboardBlogManager = () => {
                             .filter((tag) => tag),
                         })
                       }
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm sm:text-base"
                     />
                   </div>
 
-                  {/* Featured Image
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Featured Image URL (Optional)
-                    </label>
-                    <input
-                      type="url"
-                      value={blogData.featuredImage}
-                      onChange={(e) => setBlogData({...blogData, featuredImage: e.target.value})}
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="https://example.com/your-image.jpg"
-                    />
-                  </div> */}
-
                   {/* Options */}
-                  <div className="flex flex-wrap gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gradient-to-br from-slate-50 to-indigo-50/30 rounded-2xl border border-slate-200/80">
+                    {/* Publish Status */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
                         Publish Status
                       </label>
-                      <select
+                      <Select
                         value={blogData.status}
-                        onChange={(e) => setBlogData({ ...blogData, status: e.target.value })}
-                        className="p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        onValueChange={(val) => setBlogData({ ...blogData, status: val })}
                       >
-                        <option value="draft">📝 Save as Draft</option>
-                        <option value="published">🚀 Publish Now</option>
-                      </select>
+                        <SelectTrigger className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-indigo-500">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border border-gray-100 shadow-xl bg-white p-1">
+                          <SelectItem value="draft" className="rounded-lg cursor-pointer py-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="p-1 rounded-md bg-amber-50 text-amber-600">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <span className="font-semibold text-gray-800 block text-xs sm:text-sm">Save as Draft</span>
+                                <span className="text-[11px] text-gray-400 block">Private while editing</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="published" className="rounded-lg cursor-pointer py-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="p-1 rounded-md bg-emerald-50 text-emerald-600">
+                                <Globe className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <span className="font-semibold text-gray-800 block text-xs sm:text-sm">Publish Now</span>
+                                <span className="text-[11px] text-gray-400 block">Live for all readers</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    <div className="flex items-center mt-6">
-                      <input
-                        type="checkbox"
-                        id="featured"
-                        checked={blogData.featured}
-                        onChange={(e) => setBlogData({ ...blogData, featured: e.target.checked })}
-                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                      />
-                      <label htmlFor="featured" className="ml-2 text-sm font-medium text-gray-700">
-                        ⭐ Feature this blog
+                    {/* Feature Toggle Card */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                        Promotional Visibility
+                      </label>
+                      <label
+                        htmlFor="featured-switch"
+                        className={`flex items-center justify-between p-2.5 px-3.5 rounded-xl border cursor-pointer transition-all duration-200 h-11 ${
+                          blogData.featured
+                            ? 'bg-amber-50/90 border-amber-300 text-amber-900 shadow-xs'
+                            : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`p-1 rounded-lg transition-colors ${
+                              blogData.featured ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400'
+                            }`}
+                          >
+                            <Star
+                              className={`w-4 h-4 transition-all ${
+                                blogData.featured ? 'fill-amber-400 text-amber-500' : ''
+                              }`}
+                            />
+                          </div>
+                          <div>
+                            <span className="text-xs sm:text-sm font-semibold block leading-tight select-none">Feature this blog</span>
+                            <span className="text-[10px] text-gray-500 block leading-tight select-none">Highlight in hero showcase</span>
+                          </div>
+                        </div>
+                        <Switch
+                          id="featured-switch"
+                          checked={Boolean(blogData.featured)}
+                          onCheckedChange={(checked) =>
+                            setBlogData((prev) => ({ ...prev, featured: Boolean(checked) }))
+                          }
+                        />
                       </label>
                     </div>
                   </div>

@@ -228,7 +228,7 @@ const ApplicationStatus = () => {
 
                 {counselor.applicationStatus === 'rejected' && (
                   <Button
-                    onClick={() => (window.location.href = 'mailto:support@solvit.com')}
+                    onClick={() => (window.location.href = 'mailto:support@solvitcounselling.com')}
                     variant="outline"
                     className="w-full h-11 sm:h-12 border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-900 dark:text-white font-medium transition-all duration-300"
                   >
@@ -255,10 +255,10 @@ const ApplicationStatus = () => {
             <AlertDescription className="text-xs sm:text-sm text-primary-800 dark:text-primary-200">
               If you have any questions about your application status, feel free to reach out to our support team at{' '}
               <a 
-                href="mailto:support@solvit.com" 
+                href="mailto:support@solvitcounselling.com" 
                 className="font-medium underline hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
               >
-                support@solvit.com
+                support@solvitcounselling.com
               </a>
             </AlertDescription>
           </Alert>
