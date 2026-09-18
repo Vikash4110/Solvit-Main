@@ -330,7 +330,7 @@ const CounselorDashboardBlogManager = () => {
               className="space-y-8"
             >
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6">
                   <div className="flex items-center justify-between">
                     <div>

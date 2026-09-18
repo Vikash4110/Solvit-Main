@@ -96,7 +96,15 @@ const BookCounselorCalendar = () => {
   const navigate = useNavigate();
 
   const { client } = useClientAuth();
-  const { counselor: loggedInCounselor } = useCounselorAuth();
+  const { counselor: loggedInCounselor, counselorLoading } = useCounselorAuth();
+
+  // Counselors cannot book consultations (for clients only)
+  useEffect(() => {
+    if (!counselorLoading && loggedInCounselor) {
+      toast.info('Session booking is exclusively available for clients.');
+      navigate('/counselor/dashboard', { replace: true });
+    }
+  }, [loggedInCounselor, counselorLoading, navigate]);
 
   const currentUser = useMemo(() => {
     if (client) return { ...client, role: 'client' };

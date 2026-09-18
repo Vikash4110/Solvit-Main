@@ -217,8 +217,8 @@ const Blogs = () => {
             journey.
           </motion.p>
 
-          {/* Counselor Call-to-Action / Blog Management Bar */}
-          {counselor ? (
+          {/* Counselor Portal Bar (Visible only to authenticated counselors) */}
+          {counselor && (
             <motion.div
               className="mt-6 inline-flex flex-wrap items-center justify-center gap-3 bg-gradient-to-r from-blue-50/90 via-indigo-50/90 to-purple-50/90 dark:from-neutral-800/80 dark:to-neutral-800/80 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl border border-indigo-100 dark:border-neutral-700 shadow-sm"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -242,22 +242,6 @@ const Blogs = () => {
               >
                 <BookOpen className="w-3.5 h-3.5 text-gray-500 dark:text-neutral-400" />
                 <span>Manage My Blogs</span>
-              </button>
-            </motion.div>
-          ) : (
-            <motion.div
-              className="mt-4 inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 bg-white/70 backdrop-blur-sm px-4 py-1.5 rounded-full border border-gray-200/60 shadow-xs"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-              <span>Are you a counselor?</span>
-              <button
-                onClick={() => navigate('/counselor/dashboard/blogs-manager?action=create')}
-                className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
-              >
-                Write an article &rarr;
               </button>
             </motion.div>
           )}
