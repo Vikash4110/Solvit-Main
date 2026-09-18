@@ -265,26 +265,26 @@ const Blogs = () => {
 
         {/* Search and Filters */}
         <motion.div
-          className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 sm:p-6 mb-8 sm:mb-12"
+          className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 sm:p-6 mb-8 sm:mb-12 max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center">
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 w-full max-w-none sm:max-w-lg">
+            <form onSubmit={handleSearch} className="w-full sm:flex-1 sm:max-w-md">
               <div className="relative">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search blogs..."
-                  className="w-full pl-10 sm:pl-12 pr-20 sm:pr-24 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-10 sm:pl-11 pr-20 sm:pr-24 py-2.5 text-sm sm:text-base rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
                 <FaSearch className="absolute left-3.5 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
                 <button
                   type="submit"
-                  className="absolute right-1.5 sm:right-2 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-medium"
+                  className="absolute right-1.5 top-1/2 transform -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-lg transition-colors text-xs sm:text-sm font-medium shadow-xs"
                 >
                   Search
                 </button>
@@ -292,35 +292,29 @@ const Blogs = () => {
             </form>
 
             {/* Sort and Filter Toggles */}
-            <div className="flex flex-wrap gap-2.5 sm:gap-4 items-center justify-between sm:justify-start">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
               <Select value={sortBy} onValueChange={(val) => handleSortChange(val)}>
-                <SelectTrigger className="w-auto min-w-[130px] sm:w-[150px] h-10 px-3 sm:px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white">
+                <SelectTrigger className="w-[140px] sm:w-[150px] h-10 px-3.5 py-2 text-sm rounded-xl border border-gray-200 bg-white shadow-xs">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent align="start">
-                  <SelectItem value="latest">Latest</SelectItem>
-                  <SelectItem value="popular">Most Popular</SelectItem>
-                  <SelectItem value="alphabetical">A-Z</SelectItem>
+                <SelectContent align="start" className="rounded-xl border border-gray-100 shadow-xl bg-white p-1">
+                  <SelectItem value="latest" className="rounded-lg cursor-pointer">Latest</SelectItem>
+                  <SelectItem value="popular" className="rounded-lg cursor-pointer">Most Popular</SelectItem>
+                  <SelectItem value="alphabetical" className="rounded-lg cursor-pointer">A-Z</SelectItem>
                 </SelectContent>
               </Select>
 
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center justify-center h-10 px-3 sm:px-4 py-2 text-sm rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors bg-white"
+                className={`flex items-center justify-center h-10 px-4 py-2 text-sm font-medium rounded-xl border transition-all shadow-xs ${
+                  showFilters
+                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                }`}
               >
                 <FaFilter className="mr-2 text-xs" />
                 Filters
               </button>
-
-              {counselor && (
-                <button
-                  onClick={() => navigate('/counselor/dashboard/blogs-manager?action=create')}
-                  className="hidden md:inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-medium rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors"
-                >
-                  <Plus className="mr-1.5 w-4 h-4" />
-                  Write Post
-                </button>
-              )}
             </div>
           </div>
 
