@@ -1437,12 +1437,6 @@ const CalendarCard = ({
   );
 };
 
-// ==========================================
-// COMPONENT: BOOKING MODAL
-// ✅ FIX: modal={!isRazorpayOpen} disables Radix focus trap when Razorpay is open.
-//         pointerEvents:'none' on DialogContent ensures the dialog overlay doesn't
-//         swallow clicks that should reach the Razorpay iframe/window.
-// ==========================================
 const BookingModal = ({
   show,
   onClose,
@@ -1458,12 +1452,14 @@ const BookingModal = ({
 }) => (
   <Dialog open={show} onOpenChange={onClose} modal={!isRazorpayOpen}>
     <DialogContent
-      className="sm:max-w-lg w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-full p-0 overflow-hidden"
+      className="sm:max-w-lg w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-full p-0 overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[85vh] gap-0 rounded-2xl sm:rounded-3xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl bg-white dark:bg-neutral-900"
       style={isRazorpayOpen ? { pointerEvents: 'none' } : undefined}
     >
-      <DialogHeader className="px-5 pt-5 sm:px-6 sm:pt-6 pb-2 text-left">
-        <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold">
-          <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600 dark:text-primary-400 shrink-0" />
+      <DialogHeader className="px-5 pt-5 sm:px-6 sm:pt-6 pb-3.5 text-left border-b border-neutral-100 dark:border-neutral-800/80 shrink-0">
+        <DialogTitle className="flex items-center gap-2.5 text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+          <span className="p-1 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 shrink-0">
+            <CheckCircle className="w-5 h-5" />
+          </span>
           Confirm Booking
         </DialogTitle>
         <DialogDescription className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
@@ -1472,25 +1468,25 @@ const BookingModal = ({
       </DialogHeader>
 
       {selectedSlot && counselor && (
-        <div className="px-5 sm:px-6 py-2 space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-3.5">
           {/* Counselor Info */}
-          <div className="flex items-center gap-3.5 p-3.5 sm:p-4 bg-primary-50/70 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800/40">
-            <Avatar className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 ring-2 ring-primary-200 dark:ring-primary-800 shadow-sm">
+          <div className="flex items-center gap-3.5 p-3.5 sm:p-4 bg-primary-50/60 dark:bg-primary-950/30 rounded-2xl border border-primary-100/80 dark:border-primary-800/40">
+            <Avatar className="w-13 h-13 sm:w-14 sm:h-14 shrink-0 ring-2 ring-primary-200/80 dark:ring-primary-800/60 shadow-sm">
               <AvatarImage src={counselor.profilePicture} alt={counselor.fullName} className="object-cover" />
-              <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-primary-700 to-primary-600 text-white">
-                {counselor.fullName.charAt(0)}
+              <AvatarFallback className="text-base font-bold bg-gradient-to-br from-primary-700 to-primary-600 text-white">
+                {counselor.fullName?.charAt(0) || 'C'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-base text-neutral-900 dark:text-white truncate">
+              <h4 className="font-semibold text-sm sm:text-base text-neutral-900 dark:text-white truncate">
                 {counselor.fullName}
               </h4>
-              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-0.5 line-clamp-2">
+              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 line-clamp-1">
                 {Array.isArray(counselor.specialization)
                   ? counselor.specialization.join(', ')
                   : counselor.specialization}
               </p>
-              <Badge className="mt-1.5 inline-flex items-center gap-1 text-[11px] sm:text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 rounded-full font-medium">
+              <Badge className="mt-1.5 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 rounded-full font-medium">
                 <Shield className="w-3 h-3" />
                 Verified
               </Badge>
@@ -1498,7 +1494,7 @@ const BookingModal = ({
           </div>
 
           {/* Session Details */}
-          <div className="bg-neutral-50/80 dark:bg-neutral-800/40 rounded-xl p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800 space-y-2.5">
+          <div className="bg-neutral-50/90 dark:bg-neutral-800/40 rounded-2xl p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800 space-y-2.5">
             <div className="flex items-center justify-between text-xs sm:text-sm">
               <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
@@ -1530,39 +1526,41 @@ const BookingModal = ({
           </div>
 
           {/* Payment Summary */}
-          <div className="bg-gradient-to-br from-primary-100/80 to-primary-50/40 dark:from-primary-900/30 dark:to-primary-800/20 p-3.5 sm:p-4 rounded-xl border border-primary-200/60 dark:border-primary-800/40 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300">Total Amount</span>
-              <span className="text-xl sm:text-2xl font-bold text-primary-700 dark:text-primary-400">
-                ₹{getSlotPrice(selectedSlot)}
-              </span>
+          <div className="bg-gradient-to-br from-primary-100/70 via-primary-50/40 to-white dark:from-primary-900/30 dark:via-primary-900/10 dark:to-neutral-900 p-3.5 sm:p-4 rounded-2xl border border-primary-200/60 dark:border-primary-800/40 flex items-center justify-between">
+            <div>
+              <span className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 block">Total Amount</span>
+              <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Inclusive of all taxes</p>
             </div>
-            <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400">Inclusive of all taxes</p>
+            <span className="text-xl sm:text-2xl font-bold text-primary-700 dark:text-primary-400">
+              ₹{getSlotPrice(selectedSlot)}
+            </span>
           </div>
 
           {/* Info Alert */}
-          <Alert className="rounded-xl border-primary-200/60 dark:border-primary-800/50 bg-primary-50/40 dark:bg-primary-950/30 py-2.5 px-3.5 flex items-start gap-2.5">
-            <Sparkles className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
-            <AlertDescription className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 leading-snug">
+          <div className="rounded-xl border border-primary-200/60 dark:border-primary-800/50 bg-primary-50/40 dark:bg-primary-950/30 py-2.5 px-3.5 flex items-center gap-2.5">
+            <Sparkles className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+            <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-snug">
               You can join the session 5-10 minutes before the scheduled time
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
         </div>
       )}
 
-      <DialogFooter className="px-5 pb-6 sm:px-6 sm:pb-7 pt-3 flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3">
+      <DialogFooter className="px-5 py-4 sm:px-6 sm:py-4 bg-neutral-50/80 dark:bg-neutral-800/40 border-t border-neutral-100 dark:border-neutral-800/80 shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 m-0">
         <Button
+          type="button"
           variant="outline"
           onClick={onClose}
           disabled={bookingLoading || isRazorpayOpen}
-          className="w-full sm:w-auto h-10 text-sm font-medium"
+          className="w-full sm:w-auto h-10 px-5 text-sm font-medium rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 border-neutral-200 dark:border-neutral-700"
         >
           Cancel
         </Button>
         <Button
+          type="button"
           onClick={() => initiatePayment(false)}
           disabled={bookingLoading || !razorpayLoaded || !isOnline}
-          className="w-full sm:w-auto h-10 text-sm font-semibold bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 shadow-md"
+          className="w-full sm:w-auto h-10 px-6 text-sm font-semibold text-white rounded-xl bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 shadow-md transition-all active:scale-[0.99]"
         >
           {bookingLoading ? (
             <>
