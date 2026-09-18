@@ -31,13 +31,13 @@ const sidebarItems = [
     icon: Clock,
     description: 'Add, edit, or remove your available time slots for sessions.',
   },
-  // {
-  //   id: 'blogs-manager',
-  //   path: '/counselor/dashboard/blogs-manager',
-  //   name: 'Blogs Manager',
-  //   icon: FileText,
-  //   description: 'Create and manage your blog posts and published content.',
-  // },
+  {
+    id: 'blogs-manager',
+    path: '/counselor/dashboard/blogs-manager',
+    name: 'Blogs Manager',
+    icon: FileText,
+    description: 'Create and manage your blog posts and published content.',
+  },
   {
     id: 'my-sessions',
     path: '/counselor/dashboard/my-sessions',

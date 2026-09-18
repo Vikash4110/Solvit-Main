@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaPlus,
@@ -20,7 +21,10 @@ import { API_ENDPOINTS } from '../../../config/api';
 import api from '@/lib/axios';
 
 const CounselorDashboardBlogManager = () => {
-  const [currentView, setCurrentView] = useState('list');
+  const [searchParams] = useSearchParams();
+  const [currentView, setCurrentView] = useState(
+    searchParams.get('action') === 'create' ? 'create' : 'list'
+  );
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,6 +42,12 @@ const CounselorDashboardBlogManager = () => {
     featured: false,
   });
   const [formLoading, setFormLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'create') {
+      setCurrentView('create');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchCounselorBlogs();

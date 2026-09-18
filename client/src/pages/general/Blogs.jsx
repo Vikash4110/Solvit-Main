@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   FaSearch,
   FaFilter,
@@ -23,9 +23,12 @@ import {
   ArrowRight,
   BookOpen,
   Calendar,
+  PenSquare,
+  Plus,
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
+import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 import {
   Select,
   SelectContent,
@@ -35,6 +38,8 @@ import {
 } from '@/components/ui/select';
 
 const Blogs = () => {
+  const navigate = useNavigate();
+  const { counselor } = useCounselorAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [blogs, setBlogs] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -211,6 +216,51 @@ const Blogs = () => {
             Discover expert insights, personal stories, and practical tips for your mental wellness
             journey.
           </motion.p>
+
+          {/* Counselor Call-to-Action / Blog Management Bar */}
+          {counselor ? (
+            <motion.div
+              className="mt-6 inline-flex flex-wrap items-center justify-center gap-3 bg-gradient-to-r from-blue-50/90 via-indigo-50/90 to-purple-50/90 dark:from-neutral-800/80 dark:to-neutral-800/80 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl border border-indigo-100 dark:border-neutral-700 shadow-sm"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <div className="flex items-center gap-2 px-2 text-xs sm:text-sm font-medium text-indigo-900 dark:text-indigo-200">
+                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <span>Counselor Portal:</span>
+              </div>
+              <button
+                onClick={() => navigate('/counselor/dashboard/blogs-manager?action=create')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all transform active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create New Post</span>
+              </button>
+              <button
+                onClick={() => navigate('/counselor/dashboard/blogs-manager')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-medium rounded-xl bg-white dark:bg-neutral-700 text-gray-700 dark:text-neutral-200 border border-gray-200 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-600 transition-colors shadow-sm"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-gray-500 dark:text-neutral-400" />
+                <span>Manage My Blogs</span>
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              className="mt-4 inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 bg-white/70 backdrop-blur-sm px-4 py-1.5 rounded-full border border-gray-200/60 shadow-xs"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Are you a counselor?</span>
+              <button
+                onClick={() => navigate('/counselor/dashboard/blogs-manager?action=create')}
+                className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+              >
+                Write an article &rarr;
+              </button>
+            </motion.div>
+          )}
         </div>
 
         {/* Search and Filters */}
@@ -261,6 +311,16 @@ const Blogs = () => {
                 <FaFilter className="mr-2 text-xs" />
                 Filters
               </button>
+
+              {counselor && (
+                <button
+                  onClick={() => navigate('/counselor/dashboard/blogs-manager?action=create')}
+                  className="hidden md:inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-medium rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors"
+                >
+                  <Plus className="mr-1.5 w-4 h-4" />
+                  Write Post
+                </button>
+              )}
             </div>
           </div>
 
