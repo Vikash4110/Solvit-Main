@@ -1520,7 +1520,7 @@ const BookingModal = ({
                 Duration
               </span>
               <span className="font-semibold text-neutral-900 dark:text-white">
-                45 minutes
+                50 minutes
               </span>
             </div>
           </div>

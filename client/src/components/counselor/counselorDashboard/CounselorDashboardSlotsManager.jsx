@@ -242,7 +242,7 @@ const CounselorDashboardSlotsManager = () => {
     setNewSlotData({
       date: dayjs().format('YYYY-MM-DD'),
       startTime: '9:00 AM',
-      endTime: '9:45 AM', // Updated to match +45 minutes
+      endTime: '9:50 AM', // Updated to match +50 minutes
       price: '',
     });
   };
@@ -292,7 +292,7 @@ const CounselorDashboardSlotsManager = () => {
     });
     return Array.from(uniqueDates);
   };
-  // NEW: Helper function to calculate end time (start time + slotDuration minutes ( for now it is 45 minutes))
+  // Helper function to calculate end time (start time + SLOT_DURATION_MINUTES)
   const calculateEndTime = (startTime) => {
     // Parse the start time
     const [time, period] = startTime.split(' ');

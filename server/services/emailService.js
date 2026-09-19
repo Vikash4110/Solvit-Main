@@ -1532,7 +1532,7 @@ async function sendBookingConfirmationToClient(
                             <tr>
                               <td style="padding: 8px 0;">
                                 <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Duration:</p>
-                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0;">45 minutes</p>
+                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0;">50 minutes</p>
                               </td>
                             </tr>
                             <tr>
@@ -1665,7 +1665,7 @@ SESSION DETAILS:
 - Specialization: \${counselorData.specialization || 'General Counseling'}
 - Date: \${sessionDate}
 - Time: \${sessionTime}
-- Duration: 45 minutes
+- Duration: 50 minutes
 - Amount Paid: ₹\${paidAmount}
 - Booking ID: \${booking._id}
 
@@ -1803,7 +1803,7 @@ async function sendBookingNotificationToCounselor(
                             <tr>
                               <td style="padding: 8px 0;">
                                 <p style="color: #6b7280; font-size: 14px; margin: 0; font-weight: 500;">Duration:</p>
-                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0;">45 minutes</p>
+                                <p style="color: #1f2937; font-size: 16px; margin: 4px 0 0 0;">50 minutes</p>
                               </td>
                             </tr>
                             <tr>
@@ -1926,7 +1926,7 @@ CLIENT INFORMATION:
 SESSION SCHEDULE:
 - Date: ${sessionDate}
 - Time: ${sessionTime}
-- Duration: 45 minutes
+- Duration: 50 minutes
 - Booking ID: ${booking._id}
 
 The video session link will be available in your dashboard 1 hour before the scheduled time.

@@ -1,5 +1,5 @@
 export const TIMEZONE = 'Asia/Kolkata';
-export const SLOT_DURATION_MINUTES = 45;
+export const SLOT_DURATION_MINUTES = 50;
 
 export const generateTimeOptions = (intervalMinutes = 5) => {
   const times = [];
