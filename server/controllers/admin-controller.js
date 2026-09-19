@@ -629,7 +629,7 @@ const toggleClientBlock = wrapper(async (req, res) => {
  * @route GET /admin/counselors
  * @access Private (Admin only)
  */
-export const getAllCounselors = wrapper(async (req, res) => {
+const getAllCounselors = wrapper(async (req, res) => {
   const { page = 1, limit = 20, search = '', status = '' } = req.query;
 
   const filter = {};
@@ -702,7 +702,7 @@ export const getAllCounselors = wrapper(async (req, res) => {
  * @route GET /admin/counselors/:counselorId
  * @access Private (Admin only)
  */
-export const getCounselorDetails = wrapper(async (req, res) => {
+const getCounselorDetails = wrapper(async (req, res) => {
   const { counselorId } = req.params;
 
   const counselor = await Counselor.findById(counselorId).select('-password');
@@ -725,7 +725,7 @@ export const getCounselorDetails = wrapper(async (req, res) => {
  * @route PATCH /admin/counselors/:counselorId/block
  * @access Private (Admin only)
  */
-export const toggleCounselorBlock = wrapper(async (req, res) => {
+const toggleCounselorBlock = wrapper(async (req, res) => {
   const { counselorId } = req.params;
   const { block } = req.body;
 
@@ -757,7 +757,7 @@ export const toggleCounselorBlock = wrapper(async (req, res) => {
  * @route GET /api/admin/payments
  * @access Private (Admin only)
  */
-export const getAllPayments = async (req, res) => {
+const getAllPayments = async (req, res) => {
   try {
     const {
       page = 1,
@@ -910,7 +910,7 @@ export const getAllPayments = async (req, res) => {
  * @route GET /api/admin/payments/:paymentId
  * @access Private (Admin only)
  */
-export const getPaymentDetails = async (req, res) => {
+const getPaymentDetails = async (req, res) => {
   const { paymentId } = req.params;
 
   try {
@@ -983,7 +983,7 @@ export const getPaymentDetails = async (req, res) => {
  * @route GET /api/admin/payments/analytics
  * @access Private (Admin only)
  */
-export const getPaymentAnalytics = async (req, res) => {
+const getPaymentAnalytics = async (req, res) => {
   const { period = '30days' } = req.query;
 
   try {
@@ -1194,7 +1194,7 @@ async function calculatePaymentStats() {
  * @route GET /api/admin/bookings
  * @access Private (Admin only)
  */
-export const getAllBookings = wrapper(async (req, res) => {
+const getAllBookings = wrapper(async (req, res) => {
   const {
     page = 1,
     limit = 20,
@@ -1415,7 +1415,7 @@ export const getAllBookings = wrapper(async (req, res) => {
  * @route GET /api/admin/bookings/:bookingId
  * @access Private (Admin only)
  */
-export const getBookingDetails = wrapper(async (req, res) => {
+const getBookingDetails = wrapper(async (req, res) => {
   const { bookingId } = req.params;
 
   try {
@@ -1491,7 +1491,7 @@ export const getBookingDetails = wrapper(async (req, res) => {
  * @route GET /api/admin/bookings/analytics
  * @access Private (Admin only)
  */
-export const getBookingAnalytics = wrapper(async (req, res) => {
+const getBookingAnalytics = wrapper(async (req, res) => {
   const { period = '30days' } = req.query;
 
   try {
@@ -1642,7 +1642,7 @@ export const getBookingAnalytics = wrapper(async (req, res) => {
  * @route GET /api/v1/admin/counselor-requests
  * @access Private (Admin only)
  */
-export const getAllCounselorRequests = wrapper(async (req, res) => {
+const getAllCounselorRequests = wrapper(async (req, res) => {
   const { page = 1, limit = 20, search = '', status = '', isChecked = '' } = req.query;
 
   const filter = {};
@@ -1724,7 +1724,7 @@ export const getAllCounselorRequests = wrapper(async (req, res) => {
  * @route GET /api/v1/admin/counselor-requests/:requestId
  * @access Private (Admin only)
  */
-export const getCounselorRequestDetails = wrapper(async (req, res) => {
+const getCounselorRequestDetails = wrapper(async (req, res) => {
   const { requestId } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(requestId)) {
@@ -1751,7 +1751,7 @@ export const getCounselorRequestDetails = wrapper(async (req, res) => {
  * @route PATCH /api/v1/admin/counselor-requests/:requestId/check
  * @access Private (Admin only)
  */
-export const toggleCounselorRequestCheck = wrapper(async (req, res) => {
+const toggleCounselorRequestCheck = wrapper(async (req, res) => {
   const { requestId } = req.params;
   const { isChecked } = req.body;
 
@@ -1784,7 +1784,7 @@ export const toggleCounselorRequestCheck = wrapper(async (req, res) => {
  * @route PUT /api/v1/admin/counselor-requests/:requestId/review
  * @access Private (Admin only)
  */
-export const reviewCounselorRequest = wrapper(async (req, res) => {
+const reviewCounselorRequest = wrapper(async (req, res) => {
   const { requestId } = req.params;
   const { status, adminResponse = '' } = req.body;
   const adminId = req.verifiedAdminId?._id;
