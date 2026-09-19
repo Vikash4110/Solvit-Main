@@ -13,6 +13,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { logger } from '../utils/logger.js';
 import { wrapper } from '../utils/wrapper.js';
+import { CounselorProfileRequest } from '../models/counselorProfileRequest.model.js';
 import fs from 'fs';
 import { timeZone, earlyJoinMinutesForSession } from '../constants.js';
 
@@ -120,18 +121,14 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
     counselor.application = {};
   }
 
-  // Basic fields
+  const isVerified = counselor.application?.applicationStatus === 'approved';
+
+  // Basic fields (Always editable)
   if (username?.trim()) counselor.username = username.trim();
   if (phone?.trim()) counselor.phone = phone.trim();
   if (gender) counselor.gender = gender;
-  if (specialization !== undefined) {
-    counselor.specialization = Array.isArray(specialization) ? specialization : [specialization];
-  }
-  if (experienceYears !== undefined) {
-    counselor.experienceYears = parseInt(experienceYears, 10) || 0;
-  }
 
-  // Professional summary & languages
+  // Professional summary & languages (Always directly editable)
   if (professionalSummary !== undefined) {
     counselor.application.professionalSummary = professionalSummary;
   }
@@ -150,61 +147,7 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
     counselor.application.languages = cleanLanguages;
   }
 
-  // Education updates
-  if (education) {
-    if (!counselor.application.education) {
-      counselor.application.education = { graduation: {}, postGraduation: {} };
-    }
-
-    if (education.graduation) {
-      if (!counselor.application.education.graduation) {
-        counselor.application.education.graduation = {};
-      }
-      if (education.graduation.university !== undefined) {
-        counselor.application.education.graduation.university = education.graduation.university.trim();
-      }
-      if (education.graduation.degree !== undefined) {
-        counselor.application.education.graduation.degree = education.graduation.degree.trim();
-      }
-      if (education.graduation.year !== undefined) {
-        counselor.application.education.graduation.year = education.graduation.year
-          ? parseInt(education.graduation.year, 10)
-          : undefined;
-      }
-    }
-
-    if (education.postGraduation) {
-      if (!counselor.application.education.postGraduation) {
-        counselor.application.education.postGraduation = {};
-      }
-      if (education.postGraduation.university !== undefined) {
-        counselor.application.education.postGraduation.university = education.postGraduation.university.trim();
-      }
-      if (education.postGraduation.degree !== undefined) {
-        counselor.application.education.postGraduation.degree = education.postGraduation.degree.trim();
-      }
-      if (education.postGraduation.year !== undefined) {
-        counselor.application.education.postGraduation.year = education.postGraduation.year
-          ? parseInt(education.postGraduation.year, 10)
-          : undefined;
-      }
-    }
-  }
-
-  // License updates
-  if (license) {
-    if (!counselor.application.license) {
-      counselor.application.license = {};
-    }
-    if (license.licenseNo !== undefined) {
-      counselor.application.license.licenseNo = license.licenseNo.trim();
-    }
-    if (license.issuingAuthority !== undefined) {
-      counselor.application.license.issuingAuthority = license.issuingAuthority.trim();
-    }
-  }
-
-  // Bank Details updates
+  // Bank Details updates (Always editable)
   if (bankDetails) {
     if (!counselor.application.bankDetails) {
       counselor.application.bankDetails = {};
@@ -220,9 +163,158 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
     }
   }
 
+  // Guard: Specialization, Experience, Education & License cannot be modified directly once verified
+  if (!isVerified) {
+    if (specialization !== undefined) {
+      counselor.specialization = Array.isArray(specialization) ? specialization : [specialization];
+    }
+    if (experienceYears !== undefined) {
+      counselor.experienceYears = parseInt(experienceYears, 10) || 0;
+    }
+
+    // Education updates
+    if (education) {
+      if (!counselor.application.education) {
+        counselor.application.education = { graduation: {}, postGraduation: {} };
+      }
+
+      if (education.graduation) {
+        if (!counselor.application.education.graduation) {
+          counselor.application.education.graduation = {};
+        }
+        if (education.graduation.university !== undefined) {
+          counselor.application.education.graduation.university = education.graduation.university.trim();
+        }
+        if (education.graduation.degree !== undefined) {
+          counselor.application.education.graduation.degree = education.graduation.degree.trim();
+        }
+        if (education.graduation.year !== undefined) {
+          counselor.application.education.graduation.year = education.graduation.year
+            ? parseInt(education.graduation.year, 10)
+            : undefined;
+        }
+      }
+
+      if (education.postGraduation) {
+        if (!counselor.application.education.postGraduation) {
+          counselor.application.education.postGraduation = {};
+        }
+        if (education.postGraduation.university !== undefined) {
+          counselor.application.education.postGraduation.university = education.postGraduation.university.trim();
+        }
+        if (education.postGraduation.degree !== undefined) {
+          counselor.application.education.postGraduation.degree = education.postGraduation.degree.trim();
+        }
+        if (education.postGraduation.year !== undefined) {
+          counselor.application.education.postGraduation.year = education.postGraduation.year
+            ? parseInt(education.postGraduation.year, 10)
+            : undefined;
+        }
+      }
+    }
+
+    // License updates
+    if (license) {
+      if (!counselor.application.license) {
+        counselor.application.license = {};
+      }
+      if (license.licenseNo !== undefined) {
+        counselor.application.license.licenseNo = license.licenseNo.trim();
+      }
+      if (license.issuingAuthority !== undefined) {
+        counselor.application.license.issuingAuthority = license.issuingAuthority.trim();
+      }
+    }
+  }
+
   await counselor.save();
   logger.info(`Profile updated successfully for counselor: ${counselorId}`);
   return res.status(200).json(new ApiResponse(200, counselor, 'Profile updated successfully'));
+});
+
+/**
+ * @desc Submit a request to change specialization and experience years (requires admin approval)
+ * @route POST /api/v1/counselor/dashboard/profile/change-request
+ * @access Private (Counselor only)
+ */
+export const createCounselorProfileRequest = wrapper(async (req, res) => {
+  const counselorId = req.verifiedCounselorId._id;
+  const { requestedSpecialization, requestedExperienceYears, message } = req.body;
+
+  if (
+    !requestedSpecialization ||
+    !Array.isArray(requestedSpecialization) ||
+    requestedSpecialization.length === 0
+  ) {
+    throw new ApiError(400, 'Please provide at least one requested specialization');
+  }
+
+  if (
+    requestedExperienceYears === undefined ||
+    requestedExperienceYears === null ||
+    isNaN(Number(requestedExperienceYears)) ||
+    Number(requestedExperienceYears) < 0
+  ) {
+    throw new ApiError(400, 'Please provide a valid number for years of experience');
+  }
+
+  if (!message || !message.trim()) {
+    throw new ApiError(400, 'Please provide a message/reason for your change request');
+  }
+
+  // Check if counselor exists
+  const counselor = await Counselor.findById(counselorId);
+  if (!counselor) {
+    throw new ApiError(404, 'Counselor not found');
+  }
+
+  // Check for any pending request
+  const existingPendingRequest = await CounselorProfileRequest.findOne({
+    counselor: counselorId,
+    status: 'pending',
+  });
+
+  if (existingPendingRequest) {
+    throw new ApiError(
+      400,
+      'You already have a pending profile change request. Please wait for admin review.'
+    );
+  }
+
+  const newRequest = await CounselorProfileRequest.create({
+    counselor: counselorId,
+    requestType: 'specialization_and_experience',
+    currentSpecialization: counselor.specialization || [],
+    currentExperienceYears: counselor.experienceYears || 0,
+    currentExperienceLevel: counselor.experienceLevel || 'Beginner',
+    requestedSpecialization,
+    requestedExperienceYears: Number(requestedExperienceYears),
+    message: message.trim(),
+    status: 'pending',
+    isChecked: false,
+  });
+
+  logger.info(`Profile change request created for counselor ${counselorId}, requestId: ${newRequest._id}`);
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newRequest, 'Profile change request submitted successfully to admin'));
+});
+
+/**
+ * @desc Get counselor's own profile change requests
+ * @route GET /api/v1/counselor/dashboard/profile/change-requests
+ * @access Private (Counselor only)
+ */
+export const getMyProfileRequests = wrapper(async (req, res) => {
+  const counselorId = req.verifiedCounselorId._id;
+
+  const requests = await CounselorProfileRequest.find({ counselor: counselorId })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, requests, 'Profile change requests retrieved successfully'));
 });
 
 /**
@@ -802,6 +894,8 @@ export const getCounselorBookings = wrapper(async (req, res) => {
 export default {
   getCounselorProfile,
   updateCounselorProfile,
+  createCounselorProfileRequest,
+  getMyProfileRequests,
   updateCounselorProfilePicture,
   deleteCounselorProfilePicture,
   getCounselorStats,
