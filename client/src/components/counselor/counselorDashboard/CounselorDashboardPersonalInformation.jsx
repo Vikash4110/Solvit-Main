@@ -40,6 +40,11 @@ import {
   Crown,
   Lock,
   Plus,
+  FileQuestion,
+  ArrowRight,
+  Send,
+  ShieldCheck,
+  Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DEFAULT_LANGUAGES } from '../../../constants/constants';
@@ -214,10 +219,127 @@ const CounselorDashboardPersonalInfo = () => {
     handleNestedInputChange('application', 'languages', newLangs);
   };
 
+  // Profile Requests state
+  const [profileRequests, setProfileRequests] = useState([]);
+  const [isRequestChangeModalOpen, setIsRequestChangeModalOpen] = useState(false);
+  const [requestedSpecialization, setRequestedSpecialization] = useState([]);
+  const [requestedExperienceYears, setRequestedExperienceYears] = useState(0);
+  const [requestMessage, setRequestMessage] = useState('');
+  const [isSubmittingChangeRequest, setIsSubmittingChangeRequest] = useState(false);
+
+  const fetchProfileRequests = async () => {
+    try {
+      const res = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_REQUESTS_GET);
+      setProfileRequests(res.data?.data || []);
+    } catch (err) {
+      console.warn('Could not fetch profile requests:', err);
+    }
+  };
+
+  const handleOpenRequestChangeModal = () => {
+    const pendingReq = profileRequests.find((r) => r.status === 'pending');
+    if (pendingReq) {
+      toast.info('You already have a change request pending admin review');
+      return;
+    }
+    setRequestedSpecialization(
+      Array.isArray(counselorData?.specialization)
+        ? [...counselorData.specialization]
+        : counselorData?.specialization
+        ? [counselorData.specialization]
+        : []
+    );
+    setRequestedExperienceYears(counselorData?.experienceYears ?? 0);
+    setRequestMessage('');
+    setIsRequestChangeModalOpen(true);
+  };
+
+  const handleToggleRequestedSpec = (val) => {
+    if (requestedSpecialization.includes(val)) {
+      if (requestedSpecialization.length === 1) {
+        toast.warning('Please keep at least one specialization selected.');
+        return;
+      }
+      setRequestedSpecialization((prev) => prev.filter((s) => s !== val));
+    } else {
+      setRequestedSpecialization((prev) => [...prev, val]);
+    }
+  };
+
+  const handleAddRequestedSpec = (val) => {
+    if (!requestedSpecialization.includes(val)) {
+      setRequestedSpecialization((prev) => [...prev, val]);
+    }
+  };
+
+  const handleRemoveRequestedSpec = (val) => {
+    if (requestedSpecialization.length === 1) {
+      toast.warning('Please keep at least one specialization selected.');
+      return;
+    }
+    setRequestedSpecialization((prev) => prev.filter((s) => s !== val));
+  };
+
+  const getComputedLevel = (years) => {
+    const num = Number(years) || 0;
+    if (num < 2) return 'Beginner';
+    if (num < 5) return 'Intermediate';
+    if (num < 10) return 'Experienced';
+    return 'Specialist';
+  };
+
+  const handleSubmitProfileChangeRequest = async (e) => {
+    if (e) e.preventDefault();
+    if (!requestedSpecialization || requestedSpecialization.length === 0) {
+      toast.error('Validation Error', {
+        description: 'Please select at least one area of specialization.',
+      });
+      return;
+    }
+    if (
+      requestedExperienceYears === undefined ||
+      requestedExperienceYears === '' ||
+      isNaN(Number(requestedExperienceYears)) ||
+      Number(requestedExperienceYears) < 0
+    ) {
+      toast.error('Validation Error', {
+        description: 'Please enter a valid number for years of experience.',
+      });
+      return;
+    }
+    if (!requestMessage.trim()) {
+      toast.error('Validation Error', {
+        description: 'Please provide a message / reason explaining your request for admin.',
+      });
+      return;
+    }
+
+    setIsSubmittingChangeRequest(true);
+    try {
+      await api.post(API_ENDPOINTS.COUNSELOR_PROFILE_REQUEST_SUBMIT, {
+        requestedSpecialization,
+        requestedExperienceYears: Number(requestedExperienceYears),
+        message: requestMessage.trim(),
+      });
+      toast.success('Change Request Submitted', {
+        description: 'Your request has been submitted and is pending review by Solvit Admin.',
+      });
+      setIsRequestChangeModalOpen(false);
+      await fetchProfileRequests();
+    } catch (err) {
+      toast.error('Submission Failed', {
+        description: err.response?.data?.message || err.message || 'Failed to submit change request',
+      });
+    } finally {
+      setIsSubmittingChangeRequest(false);
+    }
+  };
+
   // Fetch counselor data on mount
   useEffect(() => {
     fetchCounselorData();
     fetchProfileCompleteness();
+    fetchProfileRequests();
   }, []);
 
   const fetchCounselorData = async () => {
@@ -439,25 +561,58 @@ const CounselorDashboardPersonalInfo = () => {
       return;
     }
 
-    if (!formData?.specialization || formData.specialization.length === 0) {
-      toast.error('Validation Error', {
-        description: 'Please select at least one area of specialization.',
-      });
-      setActiveTab('professional');
-      return;
-    }
+    const isVerified = counselorData?.application?.applicationStatus === 'approved';
 
-    if (
-      formData.experienceYears === undefined ||
-      formData.experienceYears === '' ||
-      isNaN(Number(formData.experienceYears)) ||
-      Number(formData.experienceYears) < 0
-    ) {
-      toast.error('Validation Error', {
-        description: 'Please enter a valid number for years of experience.',
-      });
-      setActiveTab('professional');
-      return;
+    if (!isVerified) {
+      if (!formData?.specialization || formData.specialization.length === 0) {
+        toast.error('Validation Error', {
+          description: 'Please select at least one area of specialization.',
+        });
+        setActiveTab('professional');
+        return;
+      }
+
+      if (
+        formData.experienceYears === undefined ||
+        formData.experienceYears === '' ||
+        isNaN(Number(formData.experienceYears)) ||
+        Number(formData.experienceYears) < 0
+      ) {
+        toast.error('Validation Error', {
+          description: 'Please enter a valid number for years of experience.',
+        });
+        setActiveTab('professional');
+        return;
+      }
+
+      // Optional education year validations when not verified
+      const gradYear = formData.application?.education?.graduation?.year;
+      if (
+        gradYear &&
+        (isNaN(Number(gradYear)) ||
+          Number(gradYear) < 1960 ||
+          Number(gradYear) > new Date().getFullYear() + 5)
+      ) {
+        toast.error('Invalid Graduation Year', {
+          description: `Please enter a valid graduation year (1960 - ${new Date().getFullYear() + 5}).`,
+        });
+        setActiveTab('education');
+        return;
+      }
+
+      const postGradYear = formData.application?.education?.postGraduation?.year;
+      if (
+        postGradYear &&
+        (isNaN(Number(postGradYear)) ||
+          Number(postGradYear) < 1960 ||
+          Number(postGradYear) > new Date().getFullYear() + 5)
+      ) {
+        toast.error('Invalid Post-Graduation Year', {
+          description: `Please enter a valid year (1960 - ${new Date().getFullYear() + 5}).`,
+        });
+        setActiveTab('education');
+        return;
+      }
     }
 
     // Optional bank validation
@@ -470,35 +625,6 @@ const CounselorDashboardPersonalInfo = () => {
       return;
     }
 
-    // Optional education year validations
-    const gradYear = formData.application?.education?.graduation?.year;
-    if (
-      gradYear &&
-      (isNaN(Number(gradYear)) ||
-        Number(gradYear) < 1960 ||
-        Number(gradYear) > new Date().getFullYear() + 5)
-    ) {
-      toast.error('Invalid Graduation Year', {
-        description: `Please enter a valid graduation year (1960 - ${new Date().getFullYear() + 5}).`,
-      });
-      setActiveTab('education');
-      return;
-    }
-
-    const postGradYear = formData.application?.education?.postGraduation?.year;
-    if (
-      postGradYear &&
-      (isNaN(Number(postGradYear)) ||
-        Number(postGradYear) < 1960 ||
-        Number(postGradYear) > new Date().getFullYear() + 5)
-    ) {
-      toast.error('Invalid Post-Graduation Year', {
-        description: `Please enter a valid year (1960 - ${new Date().getFullYear() + 5}).`,
-      });
-      setActiveTab('education');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
@@ -506,11 +632,19 @@ const CounselorDashboardPersonalInfo = () => {
         username: formData.username.trim(),
         phone: formData.phone.trim(),
         gender: formData.gender,
-        specialization: formData.specialization,
-        experienceYears: parseInt(formData.experienceYears, 10) || 0,
         professionalSummary: formData.application?.professionalSummary || '',
         languages: normalizeLanguages(formData?.application?.languages),
-        education: {
+        bankDetails: {
+          accountNo: formData.application?.bankDetails?.accountNo?.trim() || '',
+          ifscCode: formData.application?.bankDetails?.ifscCode?.trim()?.toUpperCase() || '',
+          branchName: formData.application?.bankDetails?.branchName?.trim() || '',
+        },
+      };
+
+      if (!isVerified) {
+        changedData.specialization = formData.specialization;
+        changedData.experienceYears = parseInt(formData.experienceYears, 10) || 0;
+        changedData.education = {
           graduation: {
             university: formData.application?.education?.graduation?.university?.trim() || '',
             degree: formData.application?.education?.graduation?.degree?.trim() || '',
@@ -525,17 +659,12 @@ const CounselorDashboardPersonalInfo = () => {
               ? parseInt(formData.application.education.postGraduation.year, 10)
               : undefined,
           },
-        },
-        license: {
+        };
+        changedData.license = {
           licenseNo: formData.application?.license?.licenseNo?.trim() || '',
           issuingAuthority: formData.application?.license?.issuingAuthority?.trim() || '',
-        },
-        bankDetails: {
-          accountNo: formData.application?.bankDetails?.accountNo?.trim() || '',
-          ifscCode: formData.application?.bankDetails?.ifscCode?.trim()?.toUpperCase() || '',
-          branchName: formData.application?.bankDetails?.branchName?.trim() || '',
-        },
-      };
+        };
+      }
 
       await api.put(API_ENDPOINTS.COUNSELOR_PROFILE_UPDATE, changedData);
 
@@ -544,7 +673,7 @@ const CounselorDashboardPersonalInfo = () => {
       setIsEditDialogOpen(false);
 
       toast.success('Profile Updated Successfully', {
-        description: 'All your profile details and credentials have been saved.',
+        description: 'Your profile changes have been saved.',
       });
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -1019,15 +1148,25 @@ const CounselorDashboardPersonalInfo = () => {
                   <GraduationCap className="h-5 w-5 text-primary-600" />
                   Education
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenEditModal('education')}
-                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
+                {counselorData.application?.applicationStatus === 'approved' ? (
+                  <Badge
+                    variant="outline"
+                    className="h-7 text-xs gap-1.5 px-2.5 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800"
+                  >
+                    <Lock className="h-3 w-3 text-emerald-600" />
+                    Verified & Locked
+                  </Badge>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleOpenEditModal('education')}
+                    className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Graduation */}
@@ -1153,15 +1292,28 @@ const CounselorDashboardPersonalInfo = () => {
                   <Briefcase className="h-5 w-5 text-primary-600" />
                   Professional Details
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenEditModal('professional')}
-                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
+                <div className="flex items-center gap-2">
+                  {counselorData.application?.applicationStatus === 'approved' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenRequestChangeModal}
+                      className="h-8 gap-1.5 text-xs text-blue-700 border-blue-200 bg-blue-50/60 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900"
+                    >
+                      <FileQuestion className="h-3.5 w-3.5" />
+                      Request Change
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleOpenEditModal('professional')}
+                    className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <InfoRow
@@ -1204,15 +1356,25 @@ const CounselorDashboardPersonalInfo = () => {
                   <BadgeCheck className="h-5 w-5 text-primary-600" />
                   License Information
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenEditModal('license')}
-                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
+                {counselorData.application?.applicationStatus === 'approved' ? (
+                  <Badge
+                    variant="outline"
+                    className="h-7 text-xs gap-1.5 px-2.5 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800"
+                  >
+                    <Lock className="h-3 w-3 text-emerald-600" />
+                    Verified & Locked
+                  </Badge>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleOpenEditModal('license')}
+                    className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <InfoRow
@@ -1332,6 +1494,9 @@ const CounselorDashboardPersonalInfo = () => {
                   >
                     <GraduationCap className="h-3.5 w-3.5 shrink-0" />
                     <span>Education</span>
+                    {counselorData.application?.applicationStatus === 'approved' && (
+                      <Lock className="h-2.5 w-2.5 text-neutral-400 ml-0.5" />
+                    )}
                   </TabsTrigger>
                   <TabsTrigger
                     value="license"
@@ -1339,6 +1504,9 @@ const CounselorDashboardPersonalInfo = () => {
                   >
                     <BadgeCheck className="h-3.5 w-3.5 shrink-0" />
                     <span>License</span>
+                    {counselorData.application?.applicationStatus === 'approved' && (
+                      <Lock className="h-2.5 w-2.5 text-neutral-400 ml-0.5" />
+                    )}
                   </TabsTrigger>
                   <TabsTrigger
                     value="bank"
@@ -1448,75 +1616,135 @@ const CounselorDashboardPersonalInfo = () => {
 
               {/* Professional Info Tab */}
               <TabsContent value="professional" className="mt-0 space-y-5 focus-visible:outline-none">
+                {/* Active Pending Request Banner */}
+                {profileRequests.find((r) => r.status === 'pending') && (
+                  <div className="rounded-xl p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200">
+                    <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold">Specialization & Experience Change Request Pending</p>
+                      <p className="text-amber-700 dark:text-amber-300 mt-0.5">
+                        Your submitted change request ({profileRequests.find((r) => r.status === 'pending')?.requestedSpecialization?.join(', ')} | {profileRequests.find((r) => r.status === 'pending')?.requestedExperienceYears} yrs) is currently under review by Solvit Admin.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Specialization Selection */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="specialization" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
                       <Award className="h-3.5 w-3.5 text-neutral-500" />
                       Areas of Specialization <span className="text-red-500">*</span>
+                      {counselorData.application?.applicationStatus === 'approved' && (
+                        <Badge variant="outline" className="text-[10px] gap-1 text-neutral-500 ml-1">
+                          <Lock className="h-2.5 w-2.5" /> Verified
+                        </Badge>
+                      )}
                     </Label>
-                    <span className="text-[11px] text-neutral-500 font-medium">
-                      {formData?.specialization?.length || 0} selected
-                    </span>
+                    {counselorData.application?.applicationStatus === 'approved' ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleOpenRequestChangeModal}
+                        className="h-7 text-xs gap-1.5 text-blue-700 border-blue-300 bg-blue-50/60 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
+                      >
+                        <FileQuestion className="h-3 w-3" />
+                        Request Change
+                      </Button>
+                    ) : (
+                      <span className="text-[11px] text-neutral-500 font-medium">
+                        {formData?.specialization?.length || 0} selected
+                      </span>
+                    )}
                   </div>
 
-                  <Select onValueChange={handleSpecializationSelect} value="">
-                    <SelectTrigger className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm">
-                      <span className="text-neutral-500">Choose a specialization to add...</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {specializationOptions.map((spec) => (
-                        <SelectItem
-                          key={spec}
-                          value={spec}
-                          disabled={formData?.specialization?.includes(spec)}
-                          className="text-sm"
-                        >
-                          {spec} {formData?.specialization?.includes(spec) ? '(Added)' : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Selected Specialization Badges */}
-                  {formData?.specialization?.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {formData.specialization.map((spec) => (
-                        <Badge
-                          key={spec}
-                          variant="secondary"
-                          className="px-3 py-1.5 bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-200 border border-primary-200 dark:border-primary-800/60 text-xs font-medium rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
-                        >
-                          <span>{spec}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeSpecialization(spec)}
-                            className="p-0.5 rounded-full hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
-                            aria-label={`Remove ${spec}`}
+                  {counselorData.application?.applicationStatus === 'approved' ? (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {formData?.specialization?.map((spec) => (
+                          <Badge
+                            key={spec}
+                            variant="secondary"
+                            className="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 text-xs font-medium rounded-lg shadow-sm"
                           >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
+                            <span>{spec}</span>
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                        Since your profile is verified, specialization areas cannot be directly edited. Use the <strong>Request Change</strong> button above to propose updates.
+                      </p>
                     </div>
                   ) : (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
-                      Please add at least one specialization for client discovery.
-                    </p>
+                    <>
+                      <Select onValueChange={handleSpecializationSelect} value="">
+                        <SelectTrigger className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm">
+                          <span className="text-neutral-500">Choose a specialization to add...</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {specializationOptions.map((spec) => (
+                            <SelectItem
+                              key={spec}
+                              value={spec}
+                              disabled={formData?.specialization?.includes(spec)}
+                              className="text-sm"
+                            >
+                              {spec} {formData?.specialization?.includes(spec) ? '(Added)' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Selected Specialization Badges */}
+                      {formData?.specialization?.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {formData.specialization.map((spec) => (
+                            <Badge
+                              key={spec}
+                              variant="secondary"
+                              className="px-3 py-1.5 bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-200 border border-primary-200 dark:border-primary-800/60 text-xs font-medium rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+                            >
+                              <span>{spec}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeSpecialization(spec)}
+                                className="p-0.5 rounded-full hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
+                                aria-label={`Remove ${spec}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
+                          Please add at least one specialization for client discovery.
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
                 {/* Experience Years */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="experienceYears" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
-                    <Briefcase className="h-3.5 w-3.5 text-neutral-500" />
-                    Years of Experience <span className="text-red-500">*</span>
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="experienceYears" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <Briefcase className="h-3.5 w-3.5 text-neutral-500" />
+                      Years of Experience <span className="text-red-500">*</span>
+                      {counselorData.application?.applicationStatus === 'approved' && (
+                        <Badge variant="outline" className="text-[10px] gap-1 text-neutral-500 ml-1">
+                          <Lock className="h-2.5 w-2.5" /> Verified
+                        </Badge>
+                      )}
+                    </Label>
+                  </div>
                   <Input
                     id="experienceYears"
                     type="number"
                     min="0"
                     max="60"
+                    disabled={counselorData.application?.applicationStatus === 'approved'}
                     value={formData?.experienceYears ?? ''}
                     onChange={(e) =>
                       handleInputChange(
@@ -1525,14 +1753,20 @@ const CounselorDashboardPersonalInfo = () => {
                       )
                     }
                     placeholder="e.g. 5"
-                    className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 focus-visible:ring-primary-500 text-sm"
+                    className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
+                      counselorData.application?.applicationStatus === 'approved'
+                        ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 cursor-not-allowed'
+                        : 'bg-white dark:bg-neutral-800 focus-visible:ring-primary-500'
+                    }`}
                   />
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    Total years of verified practice in counselling or mental wellness.
+                    {counselorData.application?.applicationStatus === 'approved'
+                      ? 'Years of experience is locked based on clinical verification. Request updates via admin.'
+                      : 'Total years of verified practice in counselling or mental wellness.'}
                   </p>
                 </div>
 
-                {/* Languages */}
+                {/* Languages - ALWAYS DIRECTLY EDITABLE */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
@@ -1642,7 +1876,7 @@ const CounselorDashboardPersonalInfo = () => {
                   </div>
                 </div>
 
-                {/* Professional Summary */}
+                {/* Professional Summary - ALWAYS DIRECTLY EDITABLE */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="professionalSummary" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
@@ -1678,15 +1912,27 @@ const CounselorDashboardPersonalInfo = () => {
 
               {/* Education Tab */}
               <TabsContent value="education" className="mt-0 space-y-6 focus-visible:outline-none">
-                <div className="rounded-xl p-4 bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/50 flex items-start gap-3">
-                  <GraduationCap className="h-5 w-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
-                  <div className="text-xs text-primary-900 dark:text-primary-200 space-y-1">
-                    <p className="font-semibold">Academic & Professional Credentials</p>
-                    <p className="text-primary-700/80 dark:text-primary-300/80 leading-relaxed">
-                      Adding your university degrees helps clients understand your training in psychology, counselling, or healthcare.
-                    </p>
+                {counselorData.application?.applicationStatus === 'approved' ? (
+                  <div className="rounded-xl p-4 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3">
+                    <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                      <p className="font-semibold">Academic Credentials Verified & Locked</p>
+                      <p className="text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
+                        Your university degrees were verified during your counselor application approval. Verified qualifications cannot be edited directly.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-xl p-4 bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/50 flex items-start gap-3">
+                    <GraduationCap className="h-5 w-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-primary-900 dark:text-primary-200 space-y-1">
+                      <p className="font-semibold">Academic & Professional Credentials</p>
+                      <p className="text-primary-700/80 dark:text-primary-300/80 leading-relaxed">
+                        Adding your university degrees helps clients understand your training in psychology, counselling, or healthcare.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Graduation Section */}
                 <div className="rounded-xl p-4 sm:p-5 bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-700/60 space-y-4">
@@ -1707,6 +1953,7 @@ const CounselorDashboardPersonalInfo = () => {
                       </Label>
                       <Input
                         id="gradUniversity"
+                        disabled={counselorData.application?.applicationStatus === 'approved'}
                         value={formData?.application?.education?.graduation?.university || ''}
                         onChange={(e) =>
                           handleDeepNestedInputChange('application', 'education', 'graduation', {
@@ -1715,7 +1962,11 @@ const CounselorDashboardPersonalInfo = () => {
                           })
                         }
                         placeholder="e.g. University of Delhi"
-                        className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                          counselorData.application?.applicationStatus === 'approved'
+                            ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
+                            : 'bg-white dark:bg-neutral-800'
+                        }`}
                       />
                     </div>
 
@@ -1726,6 +1977,7 @@ const CounselorDashboardPersonalInfo = () => {
                         </Label>
                         <Input
                           id="gradDegree"
+                          disabled={counselorData.application?.applicationStatus === 'approved'}
                           value={formData?.application?.education?.graduation?.degree || ''}
                           onChange={(e) =>
                             handleDeepNestedInputChange('application', 'education', 'graduation', {
@@ -1734,7 +1986,11 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. B.A. Psychology (Hons)"
-                          className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                            counselorData.application?.applicationStatus === 'approved'
+                              ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
+                              : 'bg-white dark:bg-neutral-800'
+                          }`}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -1746,6 +2002,7 @@ const CounselorDashboardPersonalInfo = () => {
                           type="number"
                           min="1960"
                           max={new Date().getFullYear() + 5}
+                          disabled={counselorData.application?.applicationStatus === 'approved'}
                           value={formData?.application?.education?.graduation?.year || ''}
                           onChange={(e) =>
                             handleDeepNestedInputChange('application', 'education', 'graduation', {
@@ -1754,7 +2011,11 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. 2018"
-                          className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                            counselorData.application?.applicationStatus === 'approved'
+                              ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
+                              : 'bg-white dark:bg-neutral-800'
+                          }`}
                         />
                       </div>
                     </div>
@@ -1780,6 +2041,7 @@ const CounselorDashboardPersonalInfo = () => {
                       </Label>
                       <Input
                         id="postGradUniversity"
+                        disabled={counselorData.application?.applicationStatus === 'approved'}
                         value={formData?.application?.education?.postGraduation?.university || ''}
                         onChange={(e) =>
                           handleDeepNestedInputChange('application', 'education', 'postGraduation', {
@@ -1788,7 +2050,11 @@ const CounselorDashboardPersonalInfo = () => {
                           })
                         }
                         placeholder="e.g. Tata Institute of Social Sciences (TISS)"
-                        className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                          counselorData.application?.applicationStatus === 'approved'
+                            ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
+                            : 'bg-white dark:bg-neutral-800'
+                        }`}
                       />
                     </div>
 
@@ -1799,6 +2065,7 @@ const CounselorDashboardPersonalInfo = () => {
                         </Label>
                         <Input
                           id="postGradDegree"
+                          disabled={counselorData.application?.applicationStatus === 'approved'}
                           value={formData?.application?.education?.postGraduation?.degree || ''}
                           onChange={(e) =>
                             handleDeepNestedInputChange('application', 'education', 'postGraduation', {
@@ -1807,7 +2074,11 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. M.Sc. Clinical Psychology"
-                          className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                            counselorData.application?.applicationStatus === 'approved'
+                              ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
+                              : 'bg-white dark:bg-neutral-800'
+                          }`}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -1819,6 +2090,7 @@ const CounselorDashboardPersonalInfo = () => {
                           type="number"
                           min="1960"
                           max={new Date().getFullYear() + 5}
+                          disabled={counselorData.application?.applicationStatus === 'approved'}
                           value={formData?.application?.education?.postGraduation?.year || ''}
                           onChange={(e) =>
                             handleDeepNestedInputChange('application', 'education', 'postGraduation', {
@@ -1827,7 +2099,11 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. 2021"
-                          className="h-10 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                            counselorData.application?.applicationStatus === 'approved'
+                              ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
+                              : 'bg-white dark:bg-neutral-800'
+                          }`}
                         />
                       </div>
                     </div>
@@ -1837,15 +2113,27 @@ const CounselorDashboardPersonalInfo = () => {
 
               {/* License Info Tab */}
               <TabsContent value="license" className="mt-0 space-y-5 focus-visible:outline-none">
-                <div className="rounded-xl p-4 bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/50 flex items-start gap-3">
-                  <BadgeCheck className="h-5 w-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
-                  <div className="text-xs text-primary-900 dark:text-primary-200 space-y-1">
-                    <p className="font-semibold">Professional License & Accreditation</p>
-                    <p className="text-primary-700/80 dark:text-primary-300/80 leading-relaxed">
-                      Your clinical license or registration details establish practitioner trust and will display a verified badge on your profile once approved.
-                    </p>
+                {counselorData.application?.applicationStatus === 'approved' ? (
+                  <div className="rounded-xl p-4 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3">
+                    <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                      <p className="font-semibold">Professional License Verified & Locked</p>
+                      <p className="text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
+                        Your licensing and council registration credentials were validated during your practitioner application approval. License details cannot be edited directly on verified profiles.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-xl p-4 bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/50 flex items-start gap-3">
+                    <BadgeCheck className="h-5 w-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-primary-900 dark:text-primary-200 space-y-1">
+                      <p className="font-semibold">Professional License & Accreditation</p>
+                      <p className="text-primary-700/80 dark:text-primary-300/80 leading-relaxed">
+                        Your clinical license or registration details establish practitioner trust and will display a verified badge on your profile once approved.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
@@ -1855,6 +2143,7 @@ const CounselorDashboardPersonalInfo = () => {
                     </Label>
                     <Input
                       id="licenseNo"
+                      disabled={counselorData.application?.applicationStatus === 'approved'}
                       value={formData?.application?.license?.licenseNo || ''}
                       onChange={(e) =>
                         handleNestedInputChange('application', 'license', {
@@ -1863,7 +2152,11 @@ const CounselorDashboardPersonalInfo = () => {
                         })
                       }
                       placeholder="e.g. RCI/CRR/2023/12345"
-                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
+                        counselorData.application?.applicationStatus === 'approved'
+                          ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
+                          : 'bg-white dark:bg-neutral-800'
+                      }`}
                     />
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       Registration number issued by your professional licensing authority or council.
@@ -1877,6 +2170,7 @@ const CounselorDashboardPersonalInfo = () => {
                     </Label>
                     <Input
                       id="issuingAuthority"
+                      disabled={counselorData.application?.applicationStatus === 'approved'}
                       value={formData?.application?.license?.issuingAuthority || ''}
                       onChange={(e) =>
                         handleNestedInputChange('application', 'license', {
@@ -1885,7 +2179,11 @@ const CounselorDashboardPersonalInfo = () => {
                         })
                       }
                       placeholder="e.g. Rehabilitation Council of India (RCI)"
-                      className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
+                        counselorData.application?.applicationStatus === 'approved'
+                          ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
+                          : 'bg-white dark:bg-neutral-800'
+                      }`}
                     />
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       The official body or state council that issued your practitioner certification.
@@ -2259,6 +2557,267 @@ const CounselorDashboardPersonalInfo = () => {
               alt={counselorData?.fullName}
               className="max-h-[70vh] rounded-lg object-contain"
             />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Change for Specialization & Experience Dialog */}
+      <Dialog open={isRequestChangeModalOpen} onOpenChange={setIsRequestChangeModalOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[92vh] p-0 overflow-hidden flex flex-col rounded-2xl shadow-2xl border-neutral-200/80 dark:border-neutral-800">
+          {/* Header Banner */}
+          <div className="relative bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 text-white p-5 sm:p-6 shrink-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-white shadow-inner">
+                  <Sparkles className="h-6 w-6 text-amber-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <DialogTitle className="text-xl font-bold text-white tracking-tight">
+                      Request Credential Updates
+                    </DialogTitle>
+                    <Badge className="bg-emerald-400/20 text-emerald-100 border-emerald-300/30 text-[10px] font-semibold px-2 py-0.5">
+                      <ShieldCheck className="h-3 w-3 mr-1" />
+                      Verified Profile
+                    </Badge>
+                  </div>
+                  <DialogDescription className="text-xs text-primary-100/90 mt-1">
+                    Specialization and experience are verified credentials that undergo admin review before publishing.
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Scroll Area */}
+          <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-6">
+            <form id="credential-change-form" onSubmit={handleSubmitProfileChangeRequest} className="space-y-6">
+              
+              {/* Live Comparison Preview Card */}
+              <div className="rounded-xl p-4 bg-gradient-to-br from-neutral-50 via-slate-50 to-primary-50/30 dark:from-neutral-900/90 dark:via-neutral-900/50 dark:to-primary-950/20 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-200/70 dark:border-neutral-800">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5">
+                    <Layers className="h-3.5 w-3.5 text-primary-600" />
+                    Live Credentials Comparison
+                  </span>
+                  <span className="text-[11px] text-neutral-400">Current vs Proposed</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Current State */}
+                  <div className="p-3 rounded-lg bg-white dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold uppercase text-neutral-500">Current In Profile</span>
+                      <Badge variant="outline" className="text-[10px] text-neutral-600 dark:text-neutral-300 border-neutral-300">
+                        {counselorData?.experienceYears || 0} Yrs ({counselorData?.experienceLevel || 'Beginner'})
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {(Array.isArray(counselorData?.specialization)
+                        ? counselorData.specialization
+                        : counselorData?.specialization
+                        ? [counselorData.specialization]
+                        : []
+                      ).map((s) => (
+                        <Badge key={s} variant="secondary" className="text-[10px] py-0.5 px-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Proposed State */}
+                  <div className="p-3 rounded-lg bg-primary-50/70 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-800/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold uppercase text-primary-700 dark:text-primary-300 flex items-center gap-1">
+                        <ArrowRight className="h-3 w-3" /> Proposed Request
+                      </span>
+                      <Badge className="bg-primary-600 text-white text-[10px]">
+                        {requestedExperienceYears || 0} Yrs ({getComputedLevel(requestedExperienceYears)})
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {requestedSpecialization.length > 0 ? (
+                        requestedSpecialization.map((s) => (
+                          <Badge key={s} className="text-[10px] py-0.5 px-2 bg-primary-100 dark:bg-primary-900/60 text-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700">
+                            {s}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-[11px] text-amber-600 italic">No specialization chosen</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Specialization Selection Grid */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <Award className="h-4 w-4 text-primary-600" />
+                    Requested Specializations <span className="text-red-500">*</span>
+                  </Label>
+                  <span className="text-[11px] font-medium text-neutral-500">
+                    {requestedSpecialization.length} of {specializationOptions.length} selected
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Click on the specializations to add or remove them from your request:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  {specializationOptions.map((opt) => {
+                    const isSelected = requestedSpecialization.includes(opt);
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => handleToggleRequestedSpec(opt)}
+                        className={`flex items-center justify-between p-3 rounded-xl border text-xs font-medium transition-all text-left group ${
+                          isSelected
+                            ? 'bg-primary-50/90 dark:bg-primary-950/40 border-primary-500 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/30'
+                            : 'bg-white dark:bg-neutral-800/70 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-50/50'
+                        }`}
+                      >
+                        <span className="truncate pr-2">{opt}</span>
+                        {isSelected ? (
+                          <div className="h-5 w-5 rounded-full bg-primary-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border border-neutral-300 dark:border-neutral-600 flex items-center justify-center shrink-0 group-hover:border-neutral-400" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Experience Years */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="req-exp-years" className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <Briefcase className="h-4 w-4 text-primary-600" />
+                    Years of Clinical / Practice Experience <span className="text-red-500">*</span>
+                  </Label>
+                  <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-800 dark:text-primary-200 border border-primary-200">
+                    Tier: {getComputedLevel(requestedExperienceYears)}
+                  </Badge>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-neutral-50 dark:bg-neutral-800/40 p-3.5 rounded-xl border border-neutral-200/80 dark:border-neutral-700/60">
+                  <div className="flex-1 w-full space-y-1.5">
+                    <input
+                      type="range"
+                      min="0"
+                      max="40"
+                      step="1"
+                      value={requestedExperienceYears || 0}
+                      onChange={(e) => setRequestedExperienceYears(e.target.value)}
+                      className="w-full accent-primary-600 cursor-pointer h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg"
+                    />
+                    <div className="flex justify-between text-[10px] text-neutral-400">
+                      <span>0 Yrs (Beginner)</span>
+                      <span>5 Yrs (Experienced)</span>
+                      <span>10+ Yrs (Specialist)</span>
+                    </div>
+                  </div>
+                  <div className="w-full sm:w-28 shrink-0">
+                    <Input
+                      id="req-exp-years"
+                      type="number"
+                      min="0"
+                      max="60"
+                      value={requestedExperienceYears}
+                      onChange={(e) => setRequestedExperienceYears(e.target.value)}
+                      placeholder="Years"
+                      className="h-10 text-center font-bold text-sm bg-white dark:bg-neutral-800"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Message / Reason with Quick Fill Helper Tags */}
+              <div className="space-y-2.5 pt-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="req-message" className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-primary-600" />
+                    Request Reason / Context for Admin <span className="text-red-500">*</span>
+                  </Label>
+                  <span className={`text-[11px] ${requestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}>
+                    {requestMessage.length}/1000
+                  </span>
+                </div>
+
+                {/* Quick Suggestion Chips */}
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  <span className="text-[11px] text-neutral-500 mr-1">Quick prompts:</span>
+                  {[
+                    'Annual Clinical Practice Update',
+                    'Completed Specialty Certification',
+                    'Expanded Therapeutic Focus',
+                    'Updated Hospital / Clinic Affiliation',
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => {
+                        setRequestMessage((prev) =>
+                          prev ? `${prev.trim()}\n- ${prompt}` : `Reason for request: ${prompt}`
+                        );
+                      }}
+                      className="text-[11px] px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-primary-50 dark:bg-neutral-800 dark:hover:bg-primary-950/40 text-neutral-600 hover:text-primary-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 transition-colors"
+                    >
+                      + {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <Textarea
+                  id="req-message"
+                  rows={3}
+                  maxLength={1000}
+                  value={requestMessage}
+                  onChange={(e) => setRequestMessage(e.target.value)}
+                  placeholder="Explain why you are requesting these updates (e.g., Completed a 2-year certification in Relationship & Family Therapy, additional clinical hours completed)..."
+                  className="bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-xs leading-relaxed resize-none focus-visible:ring-primary-500"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+
+          {/* Sticky Dialog Footer */}
+          <div className="p-4 sm:p-5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/90 dark:bg-neutral-900/90 backdrop-blur shrink-0 flex items-center justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsRequestChangeModalOpen(false)}
+              disabled={isSubmittingChangeRequest}
+              className="text-xs h-10 px-4"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="credential-change-form"
+              disabled={isSubmittingChangeRequest}
+              className="text-xs h-10 px-5 gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-md transition-all"
+            >
+              {isSubmittingChangeRequest ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Submitting Request...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  <span>Submit Request to Admin</span>
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

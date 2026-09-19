@@ -8,7 +8,7 @@ A modern React frontend for the Solvit mental health platform, built with React,
 - 🎥 **WebRTC Video Consultations**: 1-on-1 encrypted video/audio sessions with real-time in-call chat, screen sharing, and picture-in-picture
 - ⏳ **Automated Session Timing**: Real-time in-call countdown timer with automatic termination at scheduled end time and 5m/1m warnings
 - 🔄 **Network Resilience**: Seamless rejoining flow for active sessions during accidental disconnects or network dropouts
-- 🕒 **Flexible 5-Minute Slot Scheduling**: Granular slot creation and recurring availability management (5-min intervals, max 45-min duration)
+- 🕒 **Flexible 5-Minute Slot Scheduling**: Granular slot creation and recurring availability management (5-min intervals, standard 50-min duration)
 - 👤 **User Profile Management**: Complete profile with editable information
 - 📱 **Responsive Design**: Mobile-first design with Tailwind CSS
 - 🎨 **Modern UI**: Beautiful, accessible interface with smooth animations
@@ -190,11 +190,14 @@ VITE_API_BASE_URL=http://localhost:8000/api/v1
 ## Recent UI Improvements & Bug Fixing Log
 
 - 🕒 **5-Minute Slot Time Picker**: Added dynamic 5-minute interval selection (`00, 05, 10, ..., 55`) across all slot scheduling interfaces.
-- ⏱️ **45-Minute Maximum Consultation Window**: Enforced slot length limit to prevent scheduling beyond 45 minutes per booking.
+- ⏱️ **50-Minute Standardized Consultation Window & Auto-Calculation**: Standardized consultation window to 50 minutes. When a counselor selects a slot start time in recurring availability managers, the end time is automatically computed and populated to 50 minutes later (`calculateEndTime(value, 50)`).
 - 📐 **Weekly Summary Badge Alignment**: Fixed badge clipping and divider line overlapping in `CounselorDashboardRecurringAvailabilityManager.jsx`.
-- 🛑 **Strict Session Expiration**: Added real-time countdown timer in `MeetingContainer.jsx` that automatically terminates the call and frees hardware device tracks when the scheduled end time is reached.
+- 🛑 **Strict Session Expiration**: Added real-time countdown timer in `MeetingContainer.jsx` that automatically terminates the call and frees hardware device tracks when the scheduled 50-minute end time is reached.
 - 🔔 **Early Expiration Notifications**: Integrated warning toasts at 5 minutes and 1 minute remaining before automatic session shutdown.
 - 🔁 **Active Session Rejoin Support**: `LeaveScreen.jsx` allows immediate re-entry for accidental disconnects/network glitches as long as the scheduled slot is active.
+- 🛡️ **Counselor Credential Change Requests & Admin Review Suite**: Implemented `ProfileChangeRequestsModal.jsx` for counselors to view submission history, and built `AdminDashboardRequests.jsx` for platform admins to audit, inspect diffs, and approve/reject profile updates.
+- 💖 **Blog Like / Unlike Toggle & Multi-Click Lock**: Fixed user ID comparison logic and added `isLiking` request guard in `BlogPost.jsx` to prevent duplicate likes and allow seamless like toggling.
+- 💳 **Booking Confirmation Modal Action Button Fix**: Resolved viewport clipping on "Proceed to Pay" and "Cancel" buttons with a sticky blurred action container.
 - 📝 **Counselor Blog Manager Stability & Typography Polish**: Fixed infinite render loop (`Maximum update depth exceeded`) on featured blog toggles, modernized filter controls with Shadcn UI `Select` popovers, standardized blog content textarea to `font-sans`, and replaced technical HTML placeholders with professional writing prompts.
 - 🧭 **Role-Based Navigation**: Configured contextual navigation in `Navbar.jsx` — counselors see "Blogs" directly while clients see both "Counselors" and "Blogs", with route guards preventing counselors from browsing other practitioners.
 - 📞 **Official Contact Synchronization**: Updated official support helpline (`+91 9527542303`) and email (`support@solvitcounselling.com`) across all client views, footers, and legals.

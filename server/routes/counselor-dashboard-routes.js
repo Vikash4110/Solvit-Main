@@ -6,6 +6,8 @@ import { verifyJWTCounselor } from '../middlewares/counselorAuth-middleware.js';
 import {
   getCounselorProfile,
   updateCounselorProfile,
+  createCounselorProfileRequest,
+  getMyProfileRequests,
   updateCounselorProfilePicture,
   deleteCounselorProfilePicture,
   getCounselorStats,
@@ -23,6 +25,8 @@ counselorDashboardRouter.use(verifyJWTCounselor);
 // Profile routes
 counselorDashboardRouter.get('/profile', getCounselorProfile);
 counselorDashboardRouter.put('/profile', updateCounselorProfile);
+counselorDashboardRouter.post('/profile/change-request', createCounselorProfileRequest);
+counselorDashboardRouter.get('/profile/change-requests', getMyProfileRequests);
 counselorDashboardRouter.put(
   '/profile-picture',
   uploadProfilePicture.single('profilePicture'),

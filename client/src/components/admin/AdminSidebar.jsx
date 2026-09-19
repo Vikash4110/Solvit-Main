@@ -20,6 +20,7 @@ import {
   Calendar,
   Bell,
   Search,
+  FileQuestion,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -85,6 +86,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick }) => {
           name: 'Counselors',
           icon: UserCheck,
           path: '/admin/counselors',
+          badge: null,
+        },
+        {
+          name: 'Requests Management',
+          icon: FileQuestion,
+          path: '/admin/counselor-requests',
           badge: null,
         },
         {

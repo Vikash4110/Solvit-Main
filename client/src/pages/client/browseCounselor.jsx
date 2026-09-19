@@ -533,7 +533,7 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
                   className="text-xs font-semibold bg-primary-50/60 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border-primary-200/80 dark:border-primary-800/60 flex items-center gap-1.5 px-2.5 py-1 rounded-lg shadow-xs"
                 >
                   <Clock className="w-3 h-3" />
-                  45 min
+                  50 min
                 </Badge>
 
                 <Badge

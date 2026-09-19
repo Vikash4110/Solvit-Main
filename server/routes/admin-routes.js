@@ -23,6 +23,10 @@ import {
   getAllBookings,
   getBookingDetails,
   getBookingAnalytics,
+  getAllCounselorRequests,
+  getCounselorRequestDetails,
+  toggleCounselorRequestCheck,
+  reviewCounselorRequest,
 } from '../controllers/admin-controller.js';
 import { verifyJWTAdmin } from '../middlewares/admin-auth-middleware.js';
 
@@ -67,6 +71,14 @@ adminRouter.route('/clients/:clientId/block').patch(verifyJWTAdmin, toggleClient
 adminRouter.route('/counselors').get(verifyJWTAdmin, getAllCounselors);
 adminRouter.route('/counselors/:counselorId').get(verifyJWTAdmin, getCounselorDetails);
 adminRouter.route('/counselors/:counselorId/block').patch(verifyJWTAdmin, toggleCounselorBlock);
+
+// ====================================
+// COUNSELOR PROFILE CHANGE REQUESTS ROUTES
+// ====================================
+adminRouter.route('/counselor-requests').get(verifyJWTAdmin, getAllCounselorRequests);
+adminRouter.route('/counselor-requests/:requestId').get(verifyJWTAdmin, getCounselorRequestDetails);
+adminRouter.route('/counselor-requests/:requestId/check').patch(verifyJWTAdmin, toggleCounselorRequestCheck);
+adminRouter.route('/counselor-requests/:requestId/review').put(verifyJWTAdmin, reviewCounselorRequest);
 
 // ====================================
 // PAYMENT MANAGEMENT ROUTES

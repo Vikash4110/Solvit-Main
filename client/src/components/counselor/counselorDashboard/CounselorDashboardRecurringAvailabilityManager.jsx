@@ -158,11 +158,12 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
   const toggleDayAvailability = useCallback((dayIndex) => {
     setWeeklyAvailability((prev) => {
       const updated = [...prev];
+      const isNowAvailable = !updated[dayIndex].isAvailable;
       updated[dayIndex] = {
         ...updated[dayIndex],
-        isAvailable: !updated[dayIndex].isAvailable,
-        timeRanges: !updated[dayIndex].isAvailable
-          ? [{ startTime: '9:00 AM', endTime: '9:45 AM' }]
+        isAvailable: isNowAvailable,
+        timeRanges: isNowAvailable
+          ? [{ startTime: '9:00 AM', endTime: calculateEndTime('9:00 AM', SLOT_DURATION_MINUTES) }]
           : [],
       };
       return updated;
@@ -172,11 +173,23 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
   const addTimeRange = useCallback((dayIndex) => {
     setWeeklyAvailability((prev) => {
       const updated = [...prev];
+      const existingRanges = updated[dayIndex].timeRanges || [];
+      let nextStartTime = '9:00 AM';
+
+      if (existingRanges.length > 0) {
+        const lastRange = existingRanges[existingRanges.length - 1];
+        if (lastRange.endTime) {
+          nextStartTime = lastRange.endTime;
+        }
+      }
+
+      const nextEndTime = calculateEndTime(nextStartTime, SLOT_DURATION_MINUTES);
+
       updated[dayIndex] = {
         ...updated[dayIndex],
         timeRanges: [
-          ...updated[dayIndex].timeRanges,
-          { startTime: '9:00 AM', endTime: '9:45 AM' },
+          ...existingRanges,
+          { startTime: nextStartTime, endTime: nextEndTime },
         ],
       };
       return updated;
@@ -206,10 +219,8 @@ const CounselorDashboardRecurringAvailabilityManager = () => {
           let newEndTime = field === 'endTime' ? value : range.endTime;
 
           if (field === 'startTime') {
-            const diff = getTimeDifferenceInMinutes(value, newEndTime);
-            if (diff <= 0 || diff > SLOT_DURATION_MINUTES) {
-              newEndTime = calculateEndTime(value, SLOT_DURATION_MINUTES);
-            }
+            // When start time is selected, automatically set end time to exactly +50 mins
+            newEndTime = calculateEndTime(value, SLOT_DURATION_MINUTES);
           } else if (field === 'endTime') {
             const diff = getTimeDifferenceInMinutes(newStartTime, value);
             if (diff <= 0) {

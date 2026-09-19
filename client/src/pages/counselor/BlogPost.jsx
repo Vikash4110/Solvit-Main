@@ -97,6 +97,7 @@ const BlogPost = () => {
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -143,8 +144,8 @@ const BlogPost = () => {
             const userId = storedUser ? JSON.parse(storedUser)?._id : null;
             if (userId) {
               const userLiked = data.data.blog.likes?.some((like) => {
-                const likeUserId = typeof like === 'object' ? like?._id : like;
-                return likeUserId === userId;
+                const likeUserId = (like?.user?._id || like?.user || like?._id)?.toString();
+                return likeUserId === userId.toString();
               });
               setLiked(Boolean(userLiked));
             }
@@ -163,7 +164,7 @@ const BlogPost = () => {
     }
   };
 
-  // ✅ UPDATED: Simplified like handling with unified endpoint
+  // ✅ UPDATED: Robust like/unlike handling with unified endpoint
   const handleLike = async () => {
     if (!isAuthenticated) {
       toast.error('Please login to like this blog', {
@@ -180,7 +181,10 @@ const BlogPost = () => {
       return;
     }
 
+    if (isLiking || !blog?._id) return;
+
     try {
+      setIsLiking(true);
       const response = await api.post(`${API_ENDPOINTS.BLOGS_LIKE}/${blog._id}/like`);
       const data = response.data;
       if (data.success) {
@@ -193,6 +197,8 @@ const BlogPost = () => {
     } catch (error) {
       console.error('Error toggling like:', error);
       toast.error('Failed to update like');
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -444,9 +450,10 @@ const BlogPost = () => {
                   onClick={
                     isAuthenticated ? handleLike : () => handleAuthRequired('like this blog')
                   }
+                  disabled={isLiking}
                   className={`flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
                     liked ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300 hover:text-rose-600'
-                  } ${!isAuthenticated ? 'opacity-75' : ''}`}
+                  } ${!isAuthenticated ? 'opacity-75' : ''} ${isLiking ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <Heart className={`w-4 h-4 ${liked ? 'fill-rose-600 text-rose-600' : ''}`} />
                   <span>{likesCount}</span>

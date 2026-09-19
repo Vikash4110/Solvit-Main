@@ -6,6 +6,7 @@ import { Booking } from '../models/booking-model.js';
 import { Client } from '../models/client-model.js';
 import { Payment } from '../models/payment-model.js';
 import { PaymentRefund } from '../models/paymentRefund.model.js';
+import { CounselorProfileRequest } from '../models/counselorProfileRequest.model.js';
 import {
   sendCounselorApplicationRejected,
   sendCounselorApplicationApproved,
@@ -628,7 +629,7 @@ const toggleClientBlock = wrapper(async (req, res) => {
  * @route GET /admin/counselors
  * @access Private (Admin only)
  */
-export const getAllCounselors = wrapper(async (req, res) => {
+const getAllCounselors = wrapper(async (req, res) => {
   const { page = 1, limit = 20, search = '', status = '' } = req.query;
 
   const filter = {};
@@ -701,7 +702,7 @@ export const getAllCounselors = wrapper(async (req, res) => {
  * @route GET /admin/counselors/:counselorId
  * @access Private (Admin only)
  */
-export const getCounselorDetails = wrapper(async (req, res) => {
+const getCounselorDetails = wrapper(async (req, res) => {
   const { counselorId } = req.params;
 
   const counselor = await Counselor.findById(counselorId).select('-password');
@@ -724,7 +725,7 @@ export const getCounselorDetails = wrapper(async (req, res) => {
  * @route PATCH /admin/counselors/:counselorId/block
  * @access Private (Admin only)
  */
-export const toggleCounselorBlock = wrapper(async (req, res) => {
+const toggleCounselorBlock = wrapper(async (req, res) => {
   const { counselorId } = req.params;
   const { block } = req.body;
 
@@ -756,7 +757,7 @@ export const toggleCounselorBlock = wrapper(async (req, res) => {
  * @route GET /api/admin/payments
  * @access Private (Admin only)
  */
-export const getAllPayments = async (req, res) => {
+const getAllPayments = async (req, res) => {
   try {
     const {
       page = 1,
@@ -909,7 +910,7 @@ export const getAllPayments = async (req, res) => {
  * @route GET /api/admin/payments/:paymentId
  * @access Private (Admin only)
  */
-export const getPaymentDetails = async (req, res) => {
+const getPaymentDetails = async (req, res) => {
   const { paymentId } = req.params;
 
   try {
@@ -982,7 +983,7 @@ export const getPaymentDetails = async (req, res) => {
  * @route GET /api/admin/payments/analytics
  * @access Private (Admin only)
  */
-export const getPaymentAnalytics = async (req, res) => {
+const getPaymentAnalytics = async (req, res) => {
   const { period = '30days' } = req.query;
 
   try {
@@ -1193,7 +1194,7 @@ async function calculatePaymentStats() {
  * @route GET /api/admin/bookings
  * @access Private (Admin only)
  */
-export const getAllBookings = wrapper(async (req, res) => {
+const getAllBookings = wrapper(async (req, res) => {
   const {
     page = 1,
     limit = 20,
@@ -1414,7 +1415,7 @@ export const getAllBookings = wrapper(async (req, res) => {
  * @route GET /api/admin/bookings/:bookingId
  * @access Private (Admin only)
  */
-export const getBookingDetails = wrapper(async (req, res) => {
+const getBookingDetails = wrapper(async (req, res) => {
   const { bookingId } = req.params;
 
   try {
@@ -1490,7 +1491,7 @@ export const getBookingDetails = wrapper(async (req, res) => {
  * @route GET /api/admin/bookings/analytics
  * @access Private (Admin only)
  */
-export const getBookingAnalytics = wrapper(async (req, res) => {
+const getBookingAnalytics = wrapper(async (req, res) => {
   const { period = '30days' } = req.query;
 
   try {
@@ -1632,6 +1633,220 @@ export const getBookingAnalytics = wrapper(async (req, res) => {
   }
 });
 
+// ==========================================
+// COUNSELOR PROFILE CHANGE REQUESTS HANDLERS
+// ==========================================
+
+/**
+ * @desc Get all counselor profile change requests with filtering & stats
+ * @route GET /api/v1/admin/counselor-requests
+ * @access Private (Admin only)
+ */
+const getAllCounselorRequests = wrapper(async (req, res) => {
+  const { page = 1, limit = 20, search = '', status = '', isChecked = '' } = req.query;
+
+  const filter = {};
+
+  if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+    filter.status = status;
+  }
+
+  if (isChecked === 'true') {
+    filter.isChecked = true;
+  } else if (isChecked === 'false') {
+    filter.isChecked = false;
+  }
+
+  const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+
+  // If search query provided, find matching counselors first
+  let counselorIds = [];
+  if (search.trim()) {
+    const counselorMatches = await Counselor.find({
+      $or: [
+        { fullName: { $regex: search.trim(), $options: 'i' } },
+        { email: { $regex: search.trim(), $options: 'i' } },
+        { username: { $regex: search.trim(), $options: 'i' } },
+        { specialization: { $in: [new RegExp(search.trim(), 'i')] } },
+      ],
+    }).select('_id');
+
+    counselorIds = counselorMatches.map((c) => c._id);
+
+    filter.$or = [
+      { counselor: { $in: counselorIds } },
+      { message: { $regex: search.trim(), $options: 'i' } },
+      { requestedSpecialization: { $in: [new RegExp(search.trim(), 'i')] } },
+    ];
+  }
+
+  const [requests, total, pendingCount, approvedCount, rejectedCount, uncheckedCount, checkedCount] =
+    await Promise.all([
+      CounselorProfileRequest.find(filter)
+        .populate('counselor', 'fullName email phone profilePicture username specialization experienceYears experienceLevel application')
+        .populate('reviewedBy', 'fullName email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit, 10))
+        .lean(),
+      CounselorProfileRequest.countDocuments(filter),
+      CounselorProfileRequest.countDocuments({ status: 'pending' }),
+      CounselorProfileRequest.countDocuments({ status: 'approved' }),
+      CounselorProfileRequest.countDocuments({ status: 'rejected' }),
+      CounselorProfileRequest.countDocuments({ isChecked: false }),
+      CounselorProfileRequest.countDocuments({ isChecked: true }),
+    ]);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      requests,
+      stats: {
+        total: total,
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        unchecked: uncheckedCount,
+        checked: checkedCount,
+      },
+      pagination: {
+        currentPage: parseInt(page, 10),
+        totalPages: Math.ceil(total / parseInt(limit, 10)) || 1,
+        totalRequests: total,
+        limit: parseInt(limit, 10),
+      },
+    },
+  });
+});
+
+/**
+ * @desc Get counselor profile request by ID
+ * @route GET /api/v1/admin/counselor-requests/:requestId
+ * @access Private (Admin only)
+ */
+const getCounselorRequestDetails = wrapper(async (req, res) => {
+  const { requestId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(requestId)) {
+    return res.status(400).json({ success: false, message: 'Invalid Request ID format' });
+  }
+
+  const request = await CounselorProfileRequest.findById(requestId)
+    .populate('counselor', 'fullName email phone profilePicture username specialization experienceYears experienceLevel application createdAt')
+    .populate('reviewedBy', 'fullName email')
+    .lean();
+
+  if (!request) {
+    return res.status(404).json({ success: false, message: 'Counselor profile request not found' });
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: request,
+  });
+});
+
+/**
+ * @desc Toggle isChecked status of a counselor request
+ * @route PATCH /api/v1/admin/counselor-requests/:requestId/check
+ * @access Private (Admin only)
+ */
+const toggleCounselorRequestCheck = wrapper(async (req, res) => {
+  const { requestId } = req.params;
+  const { isChecked } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(requestId)) {
+    return res.status(400).json({ success: false, message: 'Invalid Request ID format' });
+  }
+
+  const request = await CounselorProfileRequest.findById(requestId);
+  if (!request) {
+    return res.status(404).json({ success: false, message: 'Request not found' });
+  }
+
+  if (typeof isChecked === 'boolean') {
+    request.isChecked = isChecked;
+  } else {
+    request.isChecked = !request.isChecked;
+  }
+
+  await request.save();
+
+  return res.status(200).json({
+    success: true,
+    message: `Request marked as ${request.isChecked ? 'checked' : 'unchecked'}`,
+    data: { isChecked: request.isChecked, _id: request._id },
+  });
+});
+
+/**
+ * @desc Review (approve/reject) a counselor profile change request
+ * @route PUT /api/v1/admin/counselor-requests/:requestId/review
+ * @access Private (Admin only)
+ */
+const reviewCounselorRequest = wrapper(async (req, res) => {
+  const { requestId } = req.params;
+  const { status, adminResponse = '' } = req.body;
+  const adminId = req.verifiedAdminId?._id;
+
+  if (!mongoose.Types.ObjectId.isValid(requestId)) {
+    return res.status(400).json({ success: false, message: 'Invalid Request ID format' });
+  }
+
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ success: false, message: 'Status must be either approved or rejected' });
+  }
+
+  const request = await CounselorProfileRequest.findById(requestId);
+  if (!request) {
+    return res.status(404).json({ success: false, message: 'Request not found' });
+  }
+
+  const counselor = await Counselor.findById(request.counselor);
+  if (!counselor) {
+    return res.status(404).json({ success: false, message: 'Associated counselor not found' });
+  }
+
+  // If approving, apply requested changes to Counselor profile
+  if (status === 'approved') {
+    counselor.specialization = request.requestedSpecialization;
+    counselor.experienceYears = request.requestedExperienceYears;
+
+    // Recalculate experience level based on years
+    if (request.requestedExperienceYears < 2) {
+      counselor.experienceLevel = 'Beginner';
+    } else if (request.requestedExperienceYears < 5) {
+      counselor.experienceLevel = 'Intermediate';
+    } else if (request.requestedExperienceYears < 10) {
+      counselor.experienceLevel = 'Experienced';
+    } else {
+      counselor.experienceLevel = 'Specialist';
+    }
+
+    await counselor.save();
+  }
+
+  // Update request record
+  request.status = status;
+  request.isChecked = true;
+  request.adminResponse = adminResponse?.trim() || '';
+  request.reviewedBy = adminId;
+  request.reviewedAt = new Date();
+
+  await request.save();
+
+  const populatedRequest = await CounselorProfileRequest.findById(requestId)
+    .populate('counselor', 'fullName email phone profilePicture username specialization experienceYears experienceLevel')
+    .populate('reviewedBy', 'fullName email')
+    .lean();
+
+  return res.status(200).json({
+    success: true,
+    message: `Request has been ${status} successfully`,
+    data: populatedRequest,
+  });
+});
+
 // ✅ ==================== EXPORTS ====================
 
 export {
@@ -1648,4 +1863,18 @@ export {
   toggleClientBlock,
   getClientDetails,
   getAllClients,
+  getAllCounselors,
+  getCounselorDetails,
+  toggleCounselorBlock,
+  getAllPayments,
+  getPaymentDetails,
+  getPaymentAnalytics,
+  getAllBookings,
+  getBookingDetails,
+  getBookingAnalytics,
+  getAllCounselorRequests,
+  getCounselorRequestDetails,
+  toggleCounselorRequestCheck,
+  reviewCounselorRequest,
 };
+

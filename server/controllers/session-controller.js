@@ -11,6 +11,8 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { stat } from 'fs';
 
+import { slotDuration } from '../constants.js';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -81,7 +83,7 @@ export const getSessionDetails = wrapper(async (req, res) => {
   const slotDate = dayjs(slot.date).tz('Asia/Kolkata');
   const startTimeString = `${slotDate.format('YYYY-MM-DD')} ${slot.startTime}`;
   const sessionDateTime = dayjs.tz(startTimeString, 'YYYY-MM-DD hh:mm A', 'Asia/Kolkata');
-  const endDateTime = sessionDateTime.add(45, 'minute');
+  const endDateTime = sessionDateTime.add(slotDuration, 'minute');
 
   const now = new Date();
   const startWithGrace = new Date(sessionDateTime.toDate().getTime() - 10 * 60 * 1000);
@@ -103,7 +105,7 @@ export const getSessionDetails = wrapper(async (req, res) => {
           ...booking.toObject(),
           startTime: sessionDateTime.toDate(), // ✅ Add computed start time
           endTime: endDateTime.toDate(), // ✅ Add computed end time
-          duration: 45, // ✅ Standard duration
+          duration: slotDuration, // ✅ Standard duration
           timezone: 'Asia/Kolkata', // ✅ Add timezone
         },
         userRole: finalUserRole, // ONLY CHANGE: use finalUserRole
