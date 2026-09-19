@@ -1863,5 +1863,18 @@ export {
   toggleClientBlock,
   getClientDetails,
   getAllClients,
+  getAllCounselors,
+  getCounselorDetails,
+  toggleCounselorBlock,
+  getAllPayments,
+  getPaymentDetails,
+  getPaymentAnalytics,
+  getAllBookings,
+  getBookingDetails,
+  getBookingAnalytics,
+  getAllCounselorRequests,
+  getCounselorRequestDetails,
+  toggleCounselorRequestCheck,
+  reviewCounselorRequest,
 };
 
