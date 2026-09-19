@@ -427,6 +427,65 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Get all counselor profile change requests
+   */
+  const getAllCounselorRequests = async (page = 1, limit = 20, search = '', status = '', isChecked = '') => {
+    try {
+      const response = await api.get(API_ENDPOINTS.ADMIN_COUNSELOR_REQUESTS, {
+        params: { page, limit, search, status, isChecked },
+      });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch counselor change requests');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Get single counselor profile request details
+   */
+  const getCounselorRequestDetails = async (requestId) => {
+    try {
+      const response = await api.get(API_ENDPOINTS.ADMIN_COUNSELOR_REQUEST_DETAILS(requestId));
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch request details');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Toggle isChecked for a counselor request
+   */
+  const toggleCounselorRequestCheck = async (requestId, isChecked) => {
+    try {
+      const response = await api.patch(API_ENDPOINTS.ADMIN_COUNSELOR_REQUEST_CHECK(requestId), {
+        isChecked,
+      });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to update request check status');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Review (approve / reject) a counselor request
+   */
+  const reviewCounselorRequest = async (requestId, status, adminResponse = '') => {
+    try {
+      const response = await api.put(API_ENDPOINTS.ADMIN_COUNSELOR_REQUEST_REVIEW(requestId), {
+        status,
+        adminResponse,
+      });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, `Failed to ${status} request`);
+      return { success: false, error: message };
+    }
+  };
+
   const value = useMemo(
     () => ({
       admin,
@@ -452,6 +511,10 @@ export const AdminAuthProvider = ({ children }) => {
       getAllBookings,
       getBookingDetails,
       getBookingAnalytics,
+      getAllCounselorRequests,
+      getCounselorRequestDetails,
+      toggleCounselorRequestCheck,
+      reviewCounselorRequest,
     }),
     [admin, adminLoading]
   );

@@ -84,6 +84,10 @@ export const API_ENDPOINTS = {
   COUNSELOR_APPLICATION_SUBMIT: '/counselor/dashboard/application/submit',
   COUNSELOR_APPLICATION_STATUS: '/counselor/dashboard/application/status',
 
+  // Counselor Profile Change Request Endpoints
+  COUNSELOR_PROFILE_REQUEST_SUBMIT: '/counselor/dashboard/profile/change-request',
+  COUNSELOR_PROFILE_REQUESTS_GET: '/counselor/dashboard/profile/change-requests',
+
   //Counselor Dashboard My Sessions Endpoints
   COUNSELOR_BOOKINGS: '/counselor/dashboard/bookings',
 
@@ -119,4 +123,10 @@ export const API_ENDPOINTS = {
 
   // ✅ ADD BOOKING ENDPOINTS
   ADMIN_BOOKINGS: '/admin/bookings',
+
+  // Counselor Change Requests (Admin)
+  ADMIN_COUNSELOR_REQUESTS: '/admin/counselor-requests',
+  ADMIN_COUNSELOR_REQUEST_DETAILS: (requestId) => `/admin/counselor-requests/${requestId}`,
+  ADMIN_COUNSELOR_REQUEST_CHECK: (requestId) => `/admin/counselor-requests/${requestId}/check`,
+  ADMIN_COUNSELOR_REQUEST_REVIEW: (requestId) => `/admin/counselor-requests/${requestId}/review`,
 };
