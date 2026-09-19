@@ -135,41 +135,52 @@ export const getBlogCategories = wrapper(async (req, res) => {
 // ✅ UPDATED: Like/Unlike blog - Works with verifyJWTAny middleware
 export const toggleBlogLike = wrapper(async (req, res) => {
   const { blogId } = req.params;
-  let userId;
 
-  // ✅ Use userType set by verifyJWTAny middleware
+  // Extract clean ObjectId
+  const rawUserId =
+    req.userType === 'client'
+      ? req.verifiedClientId?._id
+      : req.verifiedCounselorId?._id || req.verifiedCounselorId;
+
+  if (!rawUserId) {
+    throw new ApiError(401, 'Please login to like this blog');
+  }
+
+  const userIdStr = rawUserId.toString();
   const userType = req.userType === 'client' ? 'Client' : 'Counselor';
-  userType === 'Client' ? (userId = req.verifiedClientId._id) : (userId = req.verifiedCounselorId);
 
   const blog = await Blog.findById(blogId);
   if (!blog) {
     throw new ApiError(404, 'Blog not found');
   }
 
-  const existingLike = blog.likes.find(
-    (like) => like.user.toString() === userId.toString() && like.userType === userType
-  );
+  // Check if user already liked this blog
+  const isAlreadyLiked = blog.likes.some((like) => {
+    const likeUserId = (like.user?._id || like.user)?.toString();
+    return likeUserId === userIdStr && like.userType === userType;
+  });
 
-  if (existingLike) {
-    // Remove like
-    blog.likes = blog.likes.filter(
-      (like) => !(like.user.toString() === userId.toString() && like.userType === userType)
-    );
+  if (isAlreadyLiked) {
+    // Unlike: remove all matching like entries (also cleans up any legacy duplicate entries)
+    blog.likes = blog.likes.filter((like) => {
+      const likeUserId = (like.user?._id || like.user)?.toString();
+      return !(likeUserId === userIdStr && like.userType === userType);
+    });
   } else {
-    // Add like
-    blog.likes.push({ user: userId, userType });
+    // Like: add new unique like entry
+    blog.likes.push({ user: rawUserId, userType });
   }
 
   await blog.save();
 
-  res.status(200).json(
+  return res.status(200).json(
     new ApiResponse(
       200,
       {
-        liked: !existingLike,
+        liked: !isAlreadyLiked,
         likesCount: blog.likes.length,
       },
-      existingLike ? 'Blog unliked' : 'Blog liked'
+      !isAlreadyLiked ? 'Blog liked successfully' : 'Blog unliked successfully'
     )
   );
 });
@@ -178,12 +189,17 @@ export const toggleBlogLike = wrapper(async (req, res) => {
 export const addBlogComment = wrapper(async (req, res) => {
   const { blogId } = req.params;
   const { content } = req.body;
-  let userId;
 
-  // ✅ Use userType set by verifyJWTAny middleware
+  const rawUserId =
+    req.userType === 'client'
+      ? req.verifiedClientId?._id
+      : req.verifiedCounselorId?._id || req.verifiedCounselorId;
 
   const userType = req.userType === 'client' ? 'Client' : 'Counselor';
-  userType === 'Client' ? (userId = req.verifiedClientId._id) : (userId = req.verifiedCounselorId);
+
+  if (!rawUserId) {
+    throw new ApiError(401, 'Please login to comment on this blog');
+  }
 
   if (!content?.trim()) {
     throw new ApiError(400, 'Comment content is required');
@@ -195,7 +211,7 @@ export const addBlogComment = wrapper(async (req, res) => {
   }
 
   blog.comments.push({
-    user: userId,
+    user: rawUserId,
     userType,
     content: content.trim(),
   });
@@ -210,7 +226,7 @@ export const addBlogComment = wrapper(async (req, res) => {
 
   const newComment = blog.comments[blog.comments.length - 1];
 
-  res.status(201).json(new ApiResponse(201, newComment, 'Comment added successfully'));
+  return res.status(201).json(new ApiResponse(201, newComment, 'Comment added successfully'));
 });
 
 // Create blog (Counselors only)
