@@ -243,11 +243,13 @@ npm run pm2:start
 
 ---
 
-### 📝 Clinical Documentation, Content Suite & Navigation
+### 📝 Clinical Documentation, Content Suite & Platform Governance
+* **Counselor Profile & Credential Change Requests:** Secure multi-stage audit system allowing counselors to request edits to sensitive profile fields (phone, pricing, education, license, bank accounts) with admin diff review and approval workflows.
+* **50-Minute Standardized Consultation Windows:** Platform-wide synchronization of 50-minute slot increments, automatic end-time calculation in recurring schedule managers, WebRTC auto-termination, and confirmation email templates.
 * **Counselor Clinical Notes Modal (`ClinicalNotesModal.jsx`):** HIPAA-compliant clinical documentation suite accessible directly from Counselor Dashboard session cards. Allows practitioners to view, create, and edit private SOAP observations, topic tags, and scheduled follow-ups anytime.
 * **Session Documentation Status Badges:** Dynamic visual indicators (`📝 Notes Saved` vs `⚠️ Notes Pending`) embedded into session cards powered by a single-roundtrip MongoDB `$lookup` aggregation pipeline.
 * **Post-Consultation Feedback Suite:** Role-adaptive leave screen with 1–5 star ratings, experience tags, and audio/video quality scores for clients, and one-click clinical note saving for counselors.
-* **Counselor Blog Publishing & Feature Management:** Integrated blog creator and manager with real-time toggle switches, categorized Shadcn dropdowns, and centered public discovery filters.
+* **Counselor Blog Publishing & Engagement Suite:** Integrated blog creator and manager with real-time toggle switches, categorized Shadcn dropdowns, centered public discovery filters, and single-user like/unlike toggle protection.
 * **Role-Adaptive Navigation & Directory Protection:** Dynamic Navbar showing "Blogs" directly to counselors while clients and guests have access to both "Counselors" and "Blogs", backed by active route guards.
 * **Seamless Visual Assets & 30MB+ Footprint Optimization:** Watermark-free, high-resolution photography on Browse Counselors and About pages with dual-axis gradient edge blending, and elimination of unreferenced asset files.
 
@@ -256,8 +258,8 @@ npm run pm2:start
 ## 📚 Comprehensive Documentation
 
 For complete technical deep dives, architecture specifications, and logs, refer to the `Docs/` directory:
-* **[UI & Bug Fixes Log](file:///Docs/UI_AND_BUG_FIXES_LOG.md)**: Exhaustive 32-section record of all UI polishes, bug fixes, and verification matrix.
-* **[New Features Implemented](file:///Docs/NEW_FEATURES_IMPLEMENTED_BY_ME.md)**: In-depth technical architecture of the Post-Session Feedback & Counselor Clinical Notes Suite.
+* **[UI & Bug Fixes Log](file:///Docs/UI_AND_BUG_FIXES_LOG.md)**: Exhaustive 35-section record of all UI polishes, bug fixes, and verification matrix.
+* **[New Features Implemented](file:///Docs/NEW_FEATURES_IMPLEMENTED_BY_ME.md)**: In-depth technical architecture of the Counselor Credential Change Request Suite, 50-Minute Consultation Synchronization, and Clinical Notes Suite.
 * **[Client Scalability & Audit Report](file:///Docs/CLIENT_SCALABILITY_AUDIT_REPORT.md)**: Detailed audit of frontend bundle size, state management, and memory optimization.
 * **[Server Scalability & Audit Report](file:///Docs/SERVER_SCALABILITY_AUDIT_REPORT.md)**: Database connection pooling, indexing, PM2 cluster scaling, and security benchmarks.
 
