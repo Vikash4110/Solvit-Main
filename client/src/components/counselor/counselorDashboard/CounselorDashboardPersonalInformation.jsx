@@ -45,7 +45,9 @@ import {
   Send,
   ShieldCheck,
   Layers,
+  Share2,
 } from 'lucide-react';
+import ShareProfileModal from '@/components/common/ShareProfileModal.jsx';
 import { toast } from 'sonner';
 import { DEFAULT_LANGUAGES } from '../../../constants/constants';
 
@@ -168,6 +170,7 @@ const staggerContainer = {
 const CounselorDashboardPersonalInfo = () => {
   // Dialog states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
   const [isViewPhotoDialogOpen, setIsViewPhotoDialogOpen] = useState(false);
@@ -350,6 +353,7 @@ const CounselorDashboardPersonalInfo = () => {
       const data = response.data?.data || response.data;
 
       const transformedData = {
+        _id: data._id || data.id || '',
         fullName: data.fullName || '',
         username: data.username || '',
         email: data.email || '',
@@ -1024,86 +1028,101 @@ const CounselorDashboardPersonalInfo = () => {
       {/* Profile Header Card */}
       <motion.div variants={fadeInUp}>
         <Card className="overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-primary-500 to-primary-700" />
-          <CardContent className="relative pt-0 pb-8">
-            <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-16 md:-mt-20">
-              {/* Profile Picture */}
-              <div className="relative group">
-                <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-white dark:border-neutral-900 shadow-xl">
-                  <AvatarImage src={counselorData.profilePicture} alt={counselorData.fullName} />
-                  <AvatarFallback className="text-3xl md:text-4xl bg-primary-100 dark:bg-primary-900/30">
-                    {counselorData.fullName?.charAt(0) || 'C'}
-                  </AvatarFallback>
-                </Avatar>
+          <div className="h-32 sm:h-36 lg:h-40 bg-gradient-to-r from-primary-500 to-primary-700" />
+          <CardContent className="relative pt-0 pb-6 sm:pb-8">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-5 sm:gap-6 -mt-16 sm:-mt-18 lg:-mt-20">
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-6 flex-1 min-w-0">
+                {/* Profile Picture */}
+                <div className="relative group shrink-0">
+                  <Avatar className="h-28 w-28 sm:h-36 sm:w-36 lg:h-40 lg:w-40 border-4 border-white dark:border-neutral-900 shadow-xl ring-4 ring-primary-500/10">
+                    <AvatarImage src={counselorData.profilePicture} alt={counselorData.fullName} />
+                    <AvatarFallback className="text-3xl md:text-4xl bg-primary-100 dark:bg-primary-900/30">
+                      {counselorData.fullName?.charAt(0) || 'C'}
+                    </AvatarFallback>
+                  </Avatar>
 
-                {/* Edit Photo Button */}
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="absolute bottom-0 right-0 h-10 w-10 rounded-full shadow-lg p-0"
-                  onClick={() => setIsPhotoDialogOpen(true)}
-                >
-                  <Camera className="h-5 w-5" />
-                </Button>
-
-                {/* View Photo Button */}
-                {counselorData.profilePicture && (
+                  {/* Edit Photo Button */}
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="absolute top-0 right-0 h-8 w-8 rounded-full shadow-md p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => setIsViewPhotoDialogOpen(true)}
+                    variant="default"
+                    className="absolute bottom-0 right-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-lg p-0 cursor-pointer"
+                    onClick={() => setIsPhotoDialogOpen(true)}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
-                )}
-              </div>
 
-              {/* Profile Info */}
-              <div className="flex-1 space-y-3">
-                <div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h2 className="text-2xl md:text-3xl font-bold text-neutral-100">
-                      {counselorData.fullName}
-                    </h2>
-                    {counselorData.application.applicationStatus === 'approved' && (
-                      <BadgeCheck className="h-6 w-6 text-neutral-100" />
-                    )}
+                  {/* View Photo Button */}
+                  {counselorData.profilePicture && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-0 right-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full shadow-md p-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      onClick={() => setIsViewPhotoDialogOpen(true)}
+                    >
+                      <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Profile Info */}
+                <div className="flex-1 space-y-2 sm:space-y-2.5 min-w-0">
+                  <div>
+                    <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap min-w-0">
+                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+                        {counselorData.fullName}
+                      </h2>
+                      {counselorData.application?.applicationStatus === 'approved' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-xs shrink-0 whitespace-nowrap" title="Verified Counselor">
+                          <BadgeCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 fill-blue-500/20 shrink-0" />
+                          <span>Verified</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-neutral-600 dark:text-neutral-400 mt-0.5 font-medium text-xs sm:text-sm">
+                      @{counselorData.username}
+                    </p>
                   </div>
-                  <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-                    @{counselorData.username}
-                  </p>
-                </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Badge className={experienceBadge.color}>
-                    {experienceBadge.icon && <experienceBadge.icon className="h-3 w-3 mr-1" />}
-                    {counselorData.experienceLevel} (
-                    {counselorData.experienceYears <= 1 ? (
-                      <span>{counselorData.experienceYears}year</span>
-                    ) : (
-                      <span>{counselorData.experienceYears}years</span>
-                    )}{' '}
-                    )
-                  </Badge>
-                </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className={experienceBadge.color}>
+                      {experienceBadge.icon && <experienceBadge.icon className="h-3.5 w-3.5 mr-1" />}
+                      {counselorData.experienceLevel} ({counselorData.experienceYears}{' '}
+                      {counselorData.experienceYears <= 1 ? 'year' : 'years'})
+                    </Badge>
+                  </div>
 
-                {counselorData.application.professionalSummary && (
-                  <p className="text-neutral-700 dark:text-neutral-300 text-sm md:text-base max-w-3xl">
-                    {counselorData.application.professionalSummary}
-                  </p>
-                )}
+                  {counselorData.application?.professionalSummary &&
+                    !['na', 'n/a', 'none', 'null', 'undefined', '-'].includes(
+                      counselorData.application.professionalSummary.trim().toLowerCase()
+                    ) && (
+                      <p className="text-neutral-700 dark:text-neutral-300 text-xs sm:text-sm md:text-base max-w-3xl leading-relaxed">
+                        {counselorData.application.professionalSummary}
+                      </p>
+                  )}
+                </div>
               </div>
 
-              {/* Edit Button */}
-              <Button
-                onClick={handleOpenEditModal}
-                size="lg"
-                className="gap-2 mt-4 md:mt-0"
-              >
-                <Edit className="h-4 w-4" />
-                Edit Profile
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 mt-3 md:mt-0 w-full md:w-auto shrink-0 self-stretch sm:self-start md:self-end">
+                <Button
+                  onClick={() => setIsShareModalOpen(true)}
+                  variant="outline"
+                  size="default"
+                  className="gap-2 border-primary-500/40 hover:bg-primary-50 dark:hover:bg-primary-950/50 text-primary-700 dark:text-primary-300 font-medium shadow-sm flex-1 md:flex-initial justify-center whitespace-nowrap cursor-pointer"
+                >
+                  <Share2 className="h-4 w-4 shrink-0" />
+                  <span>Share Profile</span>
+                </Button>
+
+                <Button
+                  onClick={handleOpenEditModal}
+                  size="default"
+                  className="gap-2 flex-1 md:flex-initial justify-center whitespace-nowrap cursor-pointer"
+                >
+                  <Edit className="h-4 w-4 shrink-0" />
+                  <span>Edit Profile</span>
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1287,31 +1306,31 @@ const CounselorDashboardPersonalInfo = () => {
           {/* Professional Details */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Briefcase className="h-5 w-5 text-primary-600" />
-                  Professional Details
+                  <Briefcase className="h-5 w-5 text-primary-600 shrink-0" />
+                  <span>Professional Details</span>
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {counselorData.application?.applicationStatus === 'approved' && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleOpenRequestChangeModal}
-                      className="h-8 gap-1.5 text-xs text-blue-700 border-blue-200 bg-blue-50/60 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900"
+                      className="h-8 gap-1.5 text-xs text-blue-700 border-blue-200 bg-blue-50/60 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900 whitespace-nowrap shrink-0"
                     >
-                      <FileQuestion className="h-3.5 w-3.5" />
-                      Request Change
+                      <FileQuestion className="h-3.5 w-3.5 shrink-0" />
+                      <span>Request Change</span>
                     </Button>
                   )}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleOpenEditModal('professional')}
-                    className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                    className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50 whitespace-nowrap shrink-0"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Edit
+                    <Pencil className="h-3.5 w-3.5 shrink-0" />
+                    <span>Edit</span>
                   </Button>
                 </div>
               </CardHeader>
@@ -1631,29 +1650,31 @@ const CounselorDashboardPersonalInfo = () => {
 
                 {/* Specialization Selection */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="specialization" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
-                      <Award className="h-3.5 w-3.5 text-neutral-500" />
-                      Areas of Specialization <span className="text-red-500">*</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Label htmlFor="specialization" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                        <Award className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                        <span>Areas of Specialization</span> <span className="text-red-500">*</span>
+                      </Label>
                       {counselorData.application?.applicationStatus === 'approved' && (
-                        <Badge variant="outline" className="text-[10px] gap-1 text-neutral-500 ml-1">
+                        <Badge variant="outline" className="text-[10px] gap-1 text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 font-normal shrink-0">
                           <Lock className="h-2.5 w-2.5" /> Verified
                         </Badge>
                       )}
-                    </Label>
+                    </div>
                     {counselorData.application?.applicationStatus === 'approved' ? (
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         onClick={handleOpenRequestChangeModal}
-                        className="h-7 text-xs gap-1.5 text-blue-700 border-blue-300 bg-blue-50/60 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
+                        className="h-7 text-xs gap-1.5 text-blue-700 border-blue-300 bg-blue-50/60 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 whitespace-nowrap shrink-0"
                       >
-                        <FileQuestion className="h-3 w-3" />
-                        Request Change
+                        <FileQuestion className="h-3 w-3 shrink-0" />
+                        <span>Request Change</span>
                       </Button>
                     ) : (
-                      <span className="text-[11px] text-neutral-500 font-medium">
+                      <span className="text-[11px] text-neutral-500 font-medium shrink-0">
                         {formData?.specialization?.length || 0} selected
                       </span>
                     )}
@@ -1728,16 +1749,18 @@ const CounselorDashboardPersonalInfo = () => {
 
                 {/* Experience Years */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="experienceYears" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
-                      <Briefcase className="h-3.5 w-3.5 text-neutral-500" />
-                      Years of Experience <span className="text-red-500">*</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Label htmlFor="experienceYears" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                        <Briefcase className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+                        <span>Years of Experience</span> <span className="text-red-500">*</span>
+                      </Label>
                       {counselorData.application?.applicationStatus === 'approved' && (
-                        <Badge variant="outline" className="text-[10px] gap-1 text-neutral-500 ml-1">
+                        <Badge variant="outline" className="text-[10px] gap-1 text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 font-normal shrink-0">
                           <Lock className="h-2.5 w-2.5" /> Verified
                         </Badge>
                       )}
-                    </Label>
+                    </div>
                   </div>
                   <Input
                     id="experienceYears"
@@ -2821,6 +2844,13 @@ const CounselorDashboardPersonalInfo = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Share Profile Modal */}
+      <ShareProfileModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        counselor={counselorData}
+      />
     </motion.div>
   );
 };

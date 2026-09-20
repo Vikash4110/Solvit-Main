@@ -20,6 +20,7 @@ import {
   Info,
   FileText,
   AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -225,6 +226,22 @@ const CounselorDashboardMySessions = () => {
     return map[booking?.status] || map.confirmed;
   };
 
+  const getStatusBorderClass = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'border-emerald-400/80 dark:border-emerald-500/70 hover:border-emerald-500 dark:hover:border-emerald-400 shadow-[0_4px_20px_-10px_rgba(16,185,129,0.25)]';
+      case 'dispute_window_open':
+        return 'border-violet-400/80 dark:border-violet-500/70 hover:border-violet-500 dark:hover:border-violet-400 shadow-[0_4px_20px_-10px_rgba(139,92,246,0.25)]';
+      case 'disputed':
+        return 'border-amber-400/80 dark:border-amber-500/70 hover:border-amber-500 dark:hover:border-amber-400 shadow-[0_4px_20px_-10px_rgba(245,158,11,0.25)]';
+      case 'cancelled':
+        return 'border-red-400/80 dark:border-red-500/70 hover:border-red-400 dark:hover:border-red-400 shadow-[0_4px_20px_-10px_rgba(239,68,68,0.25)]';
+      case 'confirmed':
+      default:
+        return 'border-blue-400/80 dark:border-blue-500/70 hover:border-blue-500 dark:hover:border-blue-400 shadow-[0_4px_20px_-10px_rgba(59,130,246,0.25)]';
+    }
+  };
+
   const formatSession = (startTime, endTime) => {
     const start = dayjs.utc(startTime).tz(TIMEZONE);
     const end = dayjs.utc(endTime).tz(TIMEZONE);
@@ -349,17 +366,8 @@ const CounselorDashboardMySessions = () => {
         .map((w) => w[0]?.toUpperCase()).join('') || 'CL';
 
     return (
-      <motion.div variants={fadeInUp} initial="hidden" animate="visible">
-        <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/20 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/20 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-500 overflow-hidden">
-
-          {/* Coloured left accent per status */}
-          <div className={`absolute inset-y-0 left-0 w-1 ${
-            booking.status === 'dispute_window_open' ? 'bg-violet-400' :
-            booking.status === 'disputed'            ? 'bg-amber-400'  :
-            booking.status === 'completed'           ? 'bg-emerald-400':
-            booking.status === 'cancelled'           ? 'bg-red-400'    :
-            'bg-primary-400'
-          }`} />
+      <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full">
+        <Card className={`group relative bg-white/80 dark:bg-neutral-900/70 backdrop-blur-xl rounded-2xl border ${getStatusBorderClass(booking?.status)} shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden w-full`}>
 
           {alert.show && (
             <Alert className={`rounded-none border-0 border-b ${alert.className}`}>
@@ -368,73 +376,48 @@ const CounselorDashboardMySessions = () => {
             </Alert>
           )}
 
-          <CardContent className="p-6 sm:p-7 space-y-5">
+          <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-5">
             {/* Header */}
-            <div className="flex items-start justify-between gap-4 pb-1">
-              <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                <Avatar className="h-12 w-12 sm:h-14 sm:w-14 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <Avatar className="h-11 w-11 sm:h-13 sm:w-13 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
                   <AvatarImage src={booking.clientPhoto} alt={clientName} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary-500 to-primary-600 text-white font-semibold text-sm sm:text-base">
+                  <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold text-xs sm:text-sm">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                    {clientName}
-                  </h3>
-                  <button
-                    onClick={() => copyBookingId(booking.bookingId)}
-                    className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-[11px] font-mono text-neutral-600 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-neutral-200/70 dark:hover:bg-neutral-700 transition-colors"
-                    title="Copy booking ID"
-                  >
-                    <Copy className="w-3 h-3" />
-                    <span>{String(booking.bookingId || '').slice(-8)}</span>
-                  </button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-50 truncate">
+                      {clientName}
+                    </h3>
+                  </div>
+
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                    <span className="truncate max-w-[180px] sm:max-w-none font-medium">
+                      Client
+                    </span>
+                    {booking.hasNotes && (
+                      <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                        Notes Saved
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                {booking.hasNotes ? (
-                  <Badge
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setNotesModalState({ show: true, booking });
-                    }}
-                    className="px-2.5 py-1 text-xs font-medium rounded-lg bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/80 flex items-center gap-1 shadow-xs cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
-                    title="Click to view saved clinical notes"
-                  >
-                    <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Notes Saved</span>
-                  </Badge>
-                ) : (
-                  (booking.status === 'completed' || booking.status === 'dispute_window_open' || booking.status === 'disputed') && (
-                    <Badge
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setNotesModalState({ show: true, booking });
-                      }}
-                      className="px-2.5 py-1 text-xs font-medium rounded-lg bg-amber-50/90 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800/80 flex items-center gap-1 shadow-xs cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
-                      title="Click to add clinical notes"
-                    >
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                      <span>Notes Pending</span>
-                    </Badge>
-                  )
-                )}
-
-                <Badge className={`px-3 py-1 text-xs font-semibold rounded-lg shadow-sm ${statusUI.className}`}>
+              <div className="self-start sm:self-center shrink-0">
+                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}>
                   {statusUI.label}
-                </Badge>
+                </span>
               </div>
             </div>
 
             <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
             {/* Session meta in clean structured tiles with generous breathing room */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-3.5 pt-1">
               <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                   <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
@@ -523,32 +506,31 @@ const CounselorDashboardMySessions = () => {
                   <Hourglass className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
                   <p className="text-xs font-semibold text-violet-900 dark:text-violet-200">Review window is open</p>
                 </div>
-                <p className="text-[10px] text-violet-700 dark:text-violet-400 pl-6">
+                <p className="text-xs text-violet-700 dark:text-violet-400 pl-6">
                   Client has up to 24 hours to raise an issue. No action is needed from you right now.
                 </p>
               </div>
             )}
 
-            <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
-
-            {/* Actions with generous breathing room */}
-            <div className="pt-1 space-y-2.5">
-              {booking.canJoin ? (
+            {/* Actions */}
+            <div className="pt-1 flex flex-col sm:flex-row gap-2">
+              {booking.canJoin && (
                 <Button
                   onClick={() => handleJoinSession(booking)}
-                  className="w-full rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold py-3 shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all"
-                  size="lg"
+                  className="w-full sm:flex-1 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold py-3 shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all"
                 >
                   <Video className="w-4 h-4 mr-2" />
                   Join Session
                 </Button>
-              ) : booking.status === 'confirmed' && s && s.minutesToStart > 0 ? (
-                <div className="py-3 px-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 text-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
+              )}
+
+              {booking.status === 'confirmed' && !booking.canJoin && s && s.minutesToStart > 0 && (
+                <div className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 text-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
                   {`Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES
                       ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
                       : `in ${s.minutesToStart} min`}`}
                 </div>
-              ) : null}
+              )}
 
               <Button
                 variant="outline"
@@ -557,11 +539,36 @@ const CounselorDashboardMySessions = () => {
                   e.stopPropagation();
                   setNotesModalState({ show: true, booking });
                 }}
-                className="w-full rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-semibold py-2.5 shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full sm:flex-1 rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-semibold py-3 shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <FileText className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                <span>{booking.hasNotes ? 'View Clinical Notes' : 'Clinical Notes'}</span>
+                <span>{booking.hasNotes ? 'View Clinical Notes' : 'Add Clinical Notes'}</span>
               </Button>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800/60 flex items-center justify-between gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+              <button
+                className="inline-flex items-center gap-1.5 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                onClick={() => navigate('/contact')}
+              >
+                <HelpCircle className="h-4 w-4" />
+                Need help
+              </button>
+
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-neutral-400">Booking:</span>
+                <code className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-[11px] font-mono text-neutral-700 dark:text-neutral-300">
+                  {String(booking.bookingId || '').slice(-8)}
+                </code>
+                <button
+                  onClick={() => copyBookingId(booking.bookingId)}
+                  className="p-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors cursor-pointer"
+                  title="Copy booking ID"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -579,38 +586,40 @@ const CounselorDashboardMySessions = () => {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30 py-12 px-4">
+    <section className="relative min-h-full w-full max-w-full overflow-x-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30 py-6 sm:py-10 px-3 sm:px-6">
       <motion.div
         className="relative z-10 max-w-6xl mx-auto w-full"
         initial="hidden"
         animate="visible"
         variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
       >
-        <motion.div className="text-center mb-10" variants={fadeInUp}>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-3">
+        <motion.div className="text-center mb-6 sm:mb-8" variants={fadeInUp}>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-2 sm:mb-3">
             <span className="text-neutral-900 dark:text-white">My </span>
             <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-400 dark:via-primary-300 dark:to-secondary-400 bg-clip-text text-transparent">
               Sessions
             </span>
           </h2>
-          <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
+          <p className="text-xs sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
             Manage your counseling sessions and track their progress
           </p>
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 max-w-3xl mx-auto mb-8 bg-white/50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 p-1 rounded-xl">
-            {TABS.map((tab) => (
-              <TabsTrigger
-                key={tab.key}
-                value={tab.key}
-                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary-600 data-[state=active]:to-primary-700 data-[state=active]:text-white rounded-lg transition-all"
-              >
-                <tab.icon className="w-4 h-4 shrink-0" />
-                <span className="hidden sm:inline text-xs font-medium">{tab.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="pb-1 max-w-3xl mx-auto mb-6 sm:mb-8">
+            <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex h-auto p-1.5 rounded-2xl bg-white/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800/60 shadow-sm gap-1">
+              {TABS.map((tab) => (
+                <TabsTrigger
+                  key={tab.key}
+                  value={tab.key}
+                  className="flex items-center justify-center gap-1.5 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary-600 data-[state=active]:to-primary-700 data-[state=active]:text-white data-[state=active]:shadow-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
+                >
+                  <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="truncate">{tab.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           {TABS.map((tab) => (
             <TabsContent key={tab.key} value={tab.key} className="space-y-6">
@@ -636,7 +645,7 @@ const CounselorDashboardMySessions = () => {
                 </Card>
               ) : (
                 <>
-                  <div className="grid gap-6 md:grid-cols-2">
+                  <div className="grid grid-cols-1 w-full gap-5 sm:gap-6">
                     <AnimatePresence mode="wait">
                       {bookings.map((booking) => (
                         <SessionCard key={booking.bookingId} booking={booking} />

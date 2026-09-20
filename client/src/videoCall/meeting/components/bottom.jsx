@@ -12,6 +12,7 @@ import {
   MonitorUp,
   MessageSquare,
   Users,
+  FileText,
   PhoneOff,
   Hand,
   PictureInPicture2,
@@ -461,8 +462,13 @@ const WebCamBTN = () => {
   );
 };
 
-export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
+export function BottomBar({ bottomBarHeight, setIsMeetingLeft, participantId, sessionData }) {
   const { sideBarMode, setSideBarMode } = useMeetingAppContext();
+
+  const isCounselor =
+    participantId?.startsWith('counselor') ||
+    sessionData?.userType === 'counselor' ||
+    Boolean(localStorage.getItem('counselorAccessToken'));
   
   const RaiseHandBTN = ({ isMobile, isTab }) => {
     const { publish } = usePubSub('RAISE_HAND');
@@ -628,6 +634,30 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
     );
   };
 
+  const NotesBTN = ({ isMobile, isTab }) => {
+    return isMobile || isTab ? (
+      <MobileIconButton
+        tooltipTitle={'Clinical Notes'}
+        buttonText={'Notes'}
+        Icon={FileText}
+        isFocused={sideBarMode === sideBarModes.NOTES}
+        onClick={() => {
+          setSideBarMode((s) => (s === sideBarModes.NOTES ? null : sideBarModes.NOTES));
+          setOpen(false);
+        }}
+      />
+    ) : (
+      <OutlinedButton
+        Icon={FileText}
+        onClick={() => {
+          setSideBarMode((s) => (s === sideBarModes.NOTES ? null : sideBarModes.NOTES));
+        }}
+        isFocused={sideBarMode === sideBarModes.NOTES}
+        tooltip="Clinical Notes"
+      />
+    );
+  };
+
   const ChatBTN = ({ isMobile, isTab }) => {
     return isMobile || isTab ? (
       <MobileIconButton
@@ -729,6 +759,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
     () => ({
       END_CALL: 'END_CALL',
       CHAT: 'CHAT',
+      NOTES: 'NOTES',
       PARTICIPANTS: 'PARTICIPANTS',
       SCREEN_SHARE: 'SCREEN_SHARE',
       WEBCAM: 'WEBCAM',
@@ -745,6 +776,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
     { icon: BottomBarButtonTypes.RAISE_HAND },
     { icon: BottomBarButtonTypes.PIP },
     { icon: BottomBarButtonTypes.SCREEN_SHARE },
+    ...(isCounselor ? [{ icon: BottomBarButtonTypes.NOTES }] : []),
     { icon: BottomBarButtonTypes.CHAT },
     { icon: BottomBarButtonTypes.PARTICIPANTS },
     { icon: BottomBarButtonTypes.MEETING_ID_COPY },
@@ -799,6 +831,8 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
                               <RaiseHandBTN isMobile={isMobile} isTab={isTab} />
                             ) : icon === BottomBarButtonTypes.SCREEN_SHARE ? (
                               <ScreenShareBTN isMobile={isMobile} isTab={isTab} />
+                            ) : icon === BottomBarButtonTypes.NOTES ? (
+                              <NotesBTN isMobile={isMobile} isTab={isTab} />
                             ) : icon === BottomBarButtonTypes.CHAT ? (
                               <ChatBTN isMobile={isMobile} isTab={isTab} />
                             ) : icon === BottomBarButtonTypes.PARTICIPANTS ? (
@@ -834,6 +868,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
         <LeaveBTN />
       </div>
       <div className="flex items-center justify-center gap-3">
+        {isCounselor && <NotesBTN isMobile={isMobile} isTab={isTab} />}
         <ChatBTN isMobile={isMobile} isTab={isTab} />
         <ParticipantsBTN isMobile={isMobile} isTab={isTab} />
       </div>

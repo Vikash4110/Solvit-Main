@@ -727,25 +727,26 @@ const ClientDashboardPersonalInfo = () => {
                     </div>
                   )}
 
-                  {/* Quick Stats with Modern Pill Boxes */}
-                  <div className="w-full space-y-2 mb-5">
-                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs">
-                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2 font-medium">
-                        <Calendar className="h-3.5 w-3.5 text-blue-500" />
-                        Joined
-                      </span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {formatDate(clientData.createdAt)}
-                      </span>
+                  {/* Quick Stats with Modern Cards */}
+                  <div className="grid grid-cols-2 gap-2.5 w-full mb-5">
+                    <div className="p-3 rounded-xl bg-slate-50/90 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        <Calendar className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                        <span>Joined</span>
+                      </div>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" title={formatDate(clientData.createdAt)}>
+                        {dayjs.utc(clientData.createdAt).tz(TIMEZONE).format('DD MMM YYYY')}
+                      </p>
                     </div>
-                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs">
-                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2 font-medium">
-                        <Clock className="h-3.5 w-3.5 text-emerald-500" />
-                        Last Active
-                      </span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {formatSmartDate(clientData.lastLogin)}
-                      </span>
+
+                    <div className="p-3 rounded-xl bg-slate-50/90 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        <Clock className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                        <span>Last Active</span>
+                      </div>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" title={formatSmartDate(clientData.lastLogin)}>
+                        {clientData.lastLogin ? dayjs.utc(clientData.lastLogin).tz(TIMEZONE).format('DD MMM, hh:mm A') : 'Recently'}
+                      </p>
                     </div>
                   </div>
 

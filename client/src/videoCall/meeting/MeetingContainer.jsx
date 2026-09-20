@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, createRef, memo, useCallback, useMemo } from 'react';
 import { Constants, useMeeting, useParticipant, usePubSub } from '@videosdk.live/react-sdk';
-import { Clock } from 'lucide-react';
+import { Clock, PictureInPicture2 } from 'lucide-react';
 import { BottomBar } from './components/BottomBar';
 import { SidebarConatiner } from '../components/sidebar/SidebarContainer';
 import MemorizedParticipantView from './components/ParticipantView';
@@ -57,8 +57,14 @@ export function MeetingContainer({
   sessionData,
   setLeaveReason,
 }) {
-  const { setSelectedMic, setSelectedWebcam, setSelectedSpeaker, useRaisedHandParticipants } =
-    useMeetingAppContext();
+  const {
+    setSelectedMic,
+    setSelectedWebcam,
+    setSelectedSpeaker,
+    useRaisedHandParticipants,
+    pipMode,
+    setPipMode,
+  } = useMeetingAppContext();
 
   // State
   const [participantsData, setParticipantsData] = useState([]);
@@ -464,27 +470,74 @@ export function MeetingContainer({
             </div>
           )}
 
-          <div className="flex flex-1 overflow-hidden">
-            {isPresenting && <PresenterView height={containerHeight - BOTTOM_BAR_HEIGHT} />}
+          <div className="relative flex flex-1 overflow-hidden">
+            {/* Main Video Stream Grid with smooth blur transition when PiP is active */}
+            <div
+              className={`flex flex-1 overflow-hidden transition-all duration-500 ease-in-out ${
+                pipMode ? 'filter blur-2xl opacity-20 scale-95 pointer-events-none' : 'filter-none opacity-100 scale-100'
+              }`}
+            >
+              {isPresenting && <PresenterView height={containerHeight - BOTTOM_BAR_HEIGHT} />}
 
-            {isPresenting && isMobile ? (
-              participantsData.map((participantId) => (
-                <ParticipantMicStream key={participantId} participantId={participantId} />
-              ))
-            ) : (
-              <MemorizedParticipantView isPresenting={isPresenting} />
+              {isPresenting && isMobile ? (
+                participantsData.map((participantId) => (
+                  <ParticipantMicStream key={participantId} participantId={participantId} />
+                ))
+              ) : (
+                <MemorizedParticipantView isPresenting={isPresenting} />
+              )}
+            </div>
+
+            {/* Picture-in-Picture Active Overlay Indicator */}
+            {pipMode && (
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
+                <div className="p-6 sm:p-8 rounded-3xl bg-neutral-900/90 border border-neutral-700/60 shadow-2xl backdrop-blur-xl flex flex-col items-center max-w-sm w-full mx-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-600/30 to-primary-700/20 border border-primary-500/40 flex items-center justify-center text-primary-400 shadow-xl shadow-primary-900/30 mb-4 animate-pulse">
+                    <PictureInPicture2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-white tracking-tight mb-1.5">
+                    Picture-in-Picture Active
+                  </h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed mb-5">
+                    Your session video is playing in the floating mini window to optimize network bandwidth and device performance.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (document.pictureInPictureElement) {
+                        try {
+                          await document.exitPictureInPicture();
+                        } catch (e) {
+                          console.error('Error exiting PiP:', e);
+                        }
+                      }
+                      setPipMode(false);
+                    }}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-primary-900/40 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <PictureInPicture2 className="w-4 h-4" />
+                    Return to Full Screen
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
           <SidebarConatiner
             height={containerHeight - BOTTOM_BAR_HEIGHT}
             sideBarContainerWidth={sideBarContainerWidth}
+            bookingId={sessionData?.booking?._id || sessionData?._id}
           />
         </div>
 
         {/* Bottom Bar - Fixed height with theme colors */}
         <div className="flex-shrink-0 border-t border-neutral-800">
-          <BottomBar bottomBarHeight={BOTTOM_BAR_HEIGHT} setIsMeetingLeft={setIsMeetingLeft} />
+          <BottomBar
+            bottomBarHeight={BOTTOM_BAR_HEIGHT}
+            setIsMeetingLeft={setIsMeetingLeft}
+            participantId={participantId}
+            sessionData={sessionData}
+          />
         </div>
       </>
     );

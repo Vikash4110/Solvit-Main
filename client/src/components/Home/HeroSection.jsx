@@ -33,33 +33,44 @@ const HeroSection = () => {
 
   return (
     <section
-      className="relative min-h-0 lg:min-h-screen flex flex-col lg:flex-row items-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
+      className="relative flex flex-col justify-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
       aria-labelledby="hero-heading"
     >
-      {/* MOBILE BACKGROUND IMAGE - Matches content height */}
+      {/* MOBILE BACKGROUND IMAGE */}
       <div 
-        className="absolute inset-0 z-0 lg:hidden"
+        className="absolute inset-0 z-0 md:hidden"
         style={{
           backgroundImage: `url(${HeroImg})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center 70%',
+          backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }}
       />
 
       {/* MOBILE OVERLAY */}
-      <div className="absolute inset-0 z-[1] lg:hidden bg-gradient-to-b from-primary-700/90 via-primary-600/85 to-primary-500/90" aria-hidden="true" />
+      <div className="absolute inset-0 z-[1] md:hidden bg-gradient-to-b from-primary-700/95 via-primary-600/90 to-primary-500/95" aria-hidden="true" />
 
-      {/* DESKTOP Background Image - RIGHT SIDE */}
-      <div className="absolute right-0 top-0 bottom-0 w-2/3 max-w-4xl h-full z-0 hidden lg:flex items-center justify-end">
-        <img src={HeroImg} alt="" className="h-full w-full object-contain object-right" loading="eager" />
+      {/* TABLET & DESKTOP Background Image - RIGHT SIDE */}
+      <div 
+        className="absolute right-0 top-0 bottom-0 w-1/2 max-w-3xl h-full z-0 hidden md:flex items-center justify-end pointer-events-none pr-4 lg:pr-8 overflow-hidden"
+        style={{
+          maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.8) 35%, rgba(0,0,0,1) 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.8) 35%, rgba(0,0,0,1) 100%)'
+        }}
+      >
+        <img 
+          src={HeroImg} 
+          alt="Counseling" 
+          className="h-full w-auto max-h-[85%] object-contain object-right drop-shadow-2xl rounded-3xl" 
+          loading="eager" 
+        />
       </div>
 
-      {/* DESKTOP GRADIENT OVERLAY */}
-      <div className="absolute inset-0 z-[1] hidden lg:block bg-gradient-to-r from-primary-700 via-primary-600/80 via-primary-500/40 to-transparent dark:from-primary-900 dark:via-primary-800/80 dark:via-primary-700/40 dark:to-transparent" aria-hidden="true" />
+      {/* TABLET & DESKTOP GRADIENT OVERLAY */}
+      <div className="absolute inset-0 z-[1] hidden md:block bg-gradient-to-r from-primary-700 via-primary-700/85 md:via-primary-600/60 to-transparent dark:from-primary-900 dark:via-primary-900/85 dark:to-transparent pointer-events-none" aria-hidden="true" />
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-10 lg:px-12 pt-24 pb-16 sm:py-24 lg:py-28">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-10 sm:py-12 md:py-14 lg:py-16">
         <div className="max-w-2xl lg:max-w-3xl mx-auto lg:mx-0">
           <motion.div className="space-y-4 sm:space-y-6 lg:space-y-7 text-center lg:text-left" variants={staggerContainer} initial="initial" animate="animate">
             

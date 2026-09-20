@@ -262,46 +262,44 @@ const CounselorDashboardBlogManager = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center gap-3.5">
             {currentView !== 'list' && (
               <button
                 onClick={() => {
                   resetForm();
                   setCurrentView('list');
                 }}
-                className="p-2.5 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm hover:shadow-md transition-all text-indigo-600 hover:bg-gray-50"
+                className="p-2.5 rounded-xl bg-white/90 backdrop-blur-sm border border-gray-200 shadow-sm hover:shadow-md transition-all text-indigo-600 hover:bg-gray-50 shrink-0"
               >
                 <FaArrowLeft className="text-indigo-600" />
               </button>
             )}
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0">
-                <FileText className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-                  {currentView === 'list'
-                    ? 'Blog Management'
-                    : currentView === 'create'
-                      ? 'Create New Blog'
-                      : currentView === 'edit'
-                        ? 'Edit Blog'
-                        : 'View Blog'}
-                </h1>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {currentView === 'list'
-                    ? 'Manage your published insights and build your professional presence'
-                    : currentView === 'create'
-                      ? 'Share your clinical expertise with your audience'
-                      : currentView === 'edit'
-                        ? 'Update and refine your blog content'
-                        : 'Review your blog post'}
-                </p>
-              </div>
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0">
+              <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+                {currentView === 'list'
+                  ? 'Blog Management'
+                  : currentView === 'create'
+                    ? 'Create New Blog'
+                    : currentView === 'edit'
+                      ? 'Edit Blog'
+                      : 'View Blog'}
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                {currentView === 'list'
+                  ? 'Manage your published insights and build your professional presence'
+                  : currentView === 'create'
+                    ? 'Share your clinical expertise with your audience'
+                    : currentView === 'edit'
+                      ? 'Update and refine your blog content'
+                      : 'Review your blog post'}
+              </p>
             </div>
           </div>
 
@@ -311,9 +309,9 @@ const CounselorDashboardBlogManager = () => {
                 resetForm();
                 setCurrentView('create');
               }}
-              className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold shadow-md hover:shadow-lg text-sm"
+              className="inline-flex items-center justify-center px-4 py-2.5 sm:px-5 sm:py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold shadow-md hover:shadow-lg text-sm shrink-0 whitespace-nowrap self-start sm:self-auto"
             >
-              <FaPlus className="mr-2 text-xs" />
+              <FaPlus className="mr-2 text-xs shrink-0" />
               Create New Post
             </button>
           )}
@@ -796,24 +794,26 @@ const CounselorDashboardBlogManager = () => {
                   </div>
 
                   {/* Submit Buttons */}
-                  <div className="flex gap-4 pt-6">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
                     <button
                       type="submit"
                       disabled={formLoading}
-                      className="flex-1 px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 inline-flex items-center justify-center px-6 py-3.5 sm:px-8 sm:py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg text-sm sm:text-base whitespace-nowrap"
                     >
                       {formLoading ? (
                         <>
-                          <FaSpinner className="animate-spin inline mr-2" /> Processing...
+                          <FaSpinner className="animate-spin inline mr-2 shrink-0" /> Processing...
                         </>
                       ) : (
                         <>
-                          <FaSave className="inline mr-2" />
-                          {currentView === 'create'
-                            ? blogData.status === 'published'
-                              ? 'Publish Blog'
-                              : 'Save Draft'
-                            : 'Update Blog'}
+                          <FaSave className="inline mr-2 shrink-0 text-sm" />
+                          <span>
+                            {currentView === 'create'
+                              ? blogData.status === 'published'
+                                ? 'Publish Blog'
+                                : 'Save Draft'
+                              : 'Update Blog'}
+                          </span>
                         </>
                       )}
                     </button>
@@ -823,10 +823,10 @@ const CounselorDashboardBlogManager = () => {
                         resetForm();
                         setCurrentView('list');
                       }}
-                      className="px-8 py-4 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all font-semibold"
+                      className="inline-flex items-center justify-center px-6 py-3.5 sm:px-8 sm:py-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-300 rounded-xl transition-all font-semibold text-sm sm:text-base whitespace-nowrap border border-gray-200 dark:border-neutral-700"
                     >
-                      <FaTimes className="inline mr-2" />
-                      Cancel
+                      <FaTimes className="inline mr-2 shrink-0 text-sm" />
+                      <span>Cancel</span>
                     </button>
                   </div>
                 </form>

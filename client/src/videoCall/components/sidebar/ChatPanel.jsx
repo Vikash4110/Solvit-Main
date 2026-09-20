@@ -48,23 +48,32 @@ const ChatMessage = ({ senderId, senderName, message, timestamp }) => {
   if (!text) return null;
 
   return (
-    <div className={`flex ${isLocal ? 'justify-end' : 'justify-start'} mt-3 max-w-full`}>
+    <div className={`flex ${isLocal ? 'justify-end' : 'justify-start'} my-2.5 max-w-full`}>
       <div
-        className={`flex flex-col py-2 px-3.5 rounded-2xl max-w-[85%] sm:max-w-md shadow-md transition-all hover:shadow-lg ${
+        className={`group relative flex flex-col py-2 px-3.5 max-w-[82%] sm:max-w-[75%] transition-all ${
           isLocal
-            ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-br-sm'
-            : 'bg-neutral-800 text-white border border-neutral-700 rounded-bl-sm'
+            ? 'bg-gradient-to-br from-primary-600 via-primary-600 to-primary-700 text-white rounded-2xl rounded-tr-xs shadow-md shadow-primary-950/40 border border-primary-500/20'
+            : 'bg-neutral-800/90 text-neutral-100 border border-neutral-700/70 rounded-2xl rounded-tl-xs shadow-md backdrop-blur-sm'
         }`}
       >
-        <p className="text-xs font-semibold opacity-85 mb-1 select-none">
-          {isLocal ? 'You' : cleanDisplayName(senderName)}
-        </p>
-        <p className="whitespace-pre-wrap break-words font-medium text-sm leading-relaxed">
+        {/* Only show sender name for incoming messages */}
+        {!isLocal && (
+          <p className="text-[11px] font-semibold text-primary-400 mb-0.5 tracking-wide select-none">
+            {cleanDisplayName(senderName)}
+          </p>
+        )}
+
+        {/* Message body */}
+        <p className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed select-text font-normal">
           {text}
         </p>
-        <p className="text-[11px] font-normal mt-1 opacity-75 self-end select-none">
-          {formatAMPM(new Date(timestamp || Date.now()))}
-        </p>
+
+        {/* Timestamp */}
+        <div className={`flex items-center gap-1 mt-0.5 select-none ${isLocal ? 'justify-end text-primary-200/80' : 'justify-end text-neutral-400'}`}>
+          <span className="text-[10px] font-medium tracking-tight">
+            {formatAMPM(new Date(timestamp || Date.now()))}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -93,35 +102,38 @@ const ChatInput = () => {
   };
 
   return (
-    <div className="w-full flex items-center gap-2.5 px-3.5 py-3 bg-neutral-900 border-t border-neutral-800 shrink-0">
-      <input
-        type="text"
-        className="flex-1 py-2.5 px-3.5 text-white bg-neutral-800/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 border border-neutral-700 placeholder-neutral-400 text-sm transition-all"
-        placeholder="Write your message..."
-        autoComplete="off"
-        ref={inputRef}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-          }
-        }}
-      />
-      <button
-        type="button"
-        disabled={!message.trim()}
-        onClick={sendMessage}
-        className={`rounded-xl p-2.5 transition-all duration-200 shadow-md shrink-0 ${
-          message.trim()
-            ? 'bg-gradient-to-br from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 hover:scale-105 hover:shadow-primary-500/30 cursor-pointer'
-            : 'bg-neutral-800 text-neutral-500 border border-neutral-700/50 cursor-not-allowed opacity-50'
-        }`}
-        aria-label="Send message"
-      >
-        <Send className="w-4 h-4 text-white" />
-      </button>
+    <div className="w-full p-3 bg-neutral-950/80 border-t border-neutral-800/80 shrink-0 backdrop-blur-md">
+      <div className="flex items-center gap-2 bg-neutral-900/90 rounded-2xl border border-neutral-700/70 focus-within:border-primary-500/80 focus-within:ring-1 focus-within:ring-primary-500/40 px-3 py-1.5 transition-all shadow-inner">
+        <input
+          type="text"
+          className="flex-1 bg-transparent text-white placeholder-neutral-500 text-xs sm:text-sm py-1.5 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none focus-visible:outline-none focus-visible:ring-0"
+          style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
+          placeholder="Type a message..."
+          autoComplete="off"
+          ref={inputRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          }}
+        />
+        <button
+          type="button"
+          disabled={!message.trim()}
+          onClick={sendMessage}
+          className={`rounded-xl p-2 transition-all duration-200 flex items-center justify-center shrink-0 ${
+            message.trim()
+              ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-500 hover:to-primary-600 shadow-md shadow-primary-900/30 active:scale-95 cursor-pointer'
+              : 'bg-neutral-800 text-neutral-500 cursor-not-allowed opacity-40'
+          }`}
+          aria-label="Send message"
+        >
+          <Send className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </div>
   );
 };

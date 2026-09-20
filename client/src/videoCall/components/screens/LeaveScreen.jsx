@@ -43,8 +43,16 @@ export function LeaveScreen({
   const [selectedClientTags, setSelectedClientTags] = useState([]);
   const [callQuality, setCallQuality] = useState(5);
 
-  // Counselor Notes Form State
-  const [counselorNotes, setCounselorNotes] = useState('');
+  // Counselor Notes Form State - Pre-filled from in-session live notes draft
+  const [counselorNotes, setCounselorNotes] = useState(() => {
+    if (bookingId) {
+      try {
+        const savedDraft = sessionStorage.getItem(`live_session_notes_${bookingId}`);
+        if (savedDraft) return savedDraft;
+      } catch (err) {}
+    }
+    return '';
+  });
   const [selectedCounselorTags, setSelectedCounselorTags] = useState([]);
   const [followUpRequired, setFollowUpRequired] = useState(false);
   const [followUpDate, setFollowUpDate] = useState('');
@@ -129,6 +137,11 @@ export function LeaveScreen({
         followUpDate: followUpRequired && followUpDate ? followUpDate : undefined,
       });
       setIsSubmitted(true);
+      if (bookingId) {
+        try {
+          sessionStorage.removeItem(`live_session_notes_${bookingId}`);
+        } catch (err) {}
+      }
       toast.success('Clinical notes saved securely.');
       setTimeout(() => {
         navigate('/counselor/dashboard');
@@ -330,16 +343,24 @@ export function LeaveScreen({
               <form onSubmit={handleCounselorNotesSubmit} className="space-y-4">
                 {/* Notes Input */}
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">
-                    Summary, Observations & Homework / Action Items *
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                    <label className="block text-xs font-medium text-neutral-400">
+                      Summary, Observations & Homework / Action Items *
+                    </label>
+                    {counselorNotes && (
+                      <span className="text-[10.5px] text-primary-400 bg-primary-500/10 px-2 py-0.5 rounded-full border border-primary-500/20 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-primary-400" />
+                        In-Session Draft Restored
+                      </span>
+                    )}
+                  </div>
                   <textarea
                     value={counselorNotes}
                     onChange={(e) => setCounselorNotes(e.target.value)}
                     placeholder="E.g., Client discussed coping mechanisms for exam anxiety. Recommended 10-min daily mindfulness. Follow-up on progress in 2 weeks."
-                    rows={4}
+                    rows={5}
                     required
-                    className="w-full text-xs sm:text-sm bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none"
+                    className="w-full text-xs sm:text-sm bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none leading-relaxed"
                   />
                 </div>
 

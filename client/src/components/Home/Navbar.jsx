@@ -19,6 +19,9 @@ import {
   Rocket,
   GraduationCap,
   Sparkles,
+  LayoutDashboard,
+  Calendar,
+  Clock,
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -465,115 +468,201 @@ const Navbar = () => {
               <SheetContent
                 side="right"
                 className="
-                            w-[300px] sm:w-[400px]
-                            bg-white/95 dark:bg-neutral-900/95
-                            backdrop-blur-xl
-                            border-neutral-200 dark:border-neutral-800
-                            flex flex-col
-                            p-0
-                          "
+                  w-[310px] sm:w-[380px]
+                  bg-white/95 dark:bg-neutral-900/95
+                  backdrop-blur-2xl
+                  border-l border-neutral-200/80 dark:border-neutral-800/80
+                  flex flex-col
+                  p-0
+                  shadow-2xl
+                "
               >
-                {/* Fixed Header - Won't Scroll */}
-                <div className="px-6 pt-6 pb-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
-                  <SheetTitle className="text-primary-800 dark:text-primary-200 text-lg font-semibold">
-                    Menu
-                  </SheetTitle>
+                {/* Fixed Header */}
+                <div className="px-5 pt-5 pb-3.5 border-b border-neutral-200/70 dark:border-neutral-800/70 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <img src={logo} alt="Solvit Logo" className="h-7 w-auto object-contain" />
+                    <SheetTitle className="text-sm font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+                      Solvit Navigation
+                    </SheetTitle>
+                  </div>
                 </div>
 
-                {/* Scrollable Content Area */}
-                <ScrollArea className="flex-1 px-2">
-                  <div className="py-4 flex flex-col gap-4">
-                    {/* Mobile User Info */}
+                {/* Scrollable Navigation Body */}
+                <ScrollArea className="flex-1 px-3">
+                  <div className="py-3.5 flex flex-col gap-4">
+                    {/* User Identity Card for Logged-in Users */}
                     {(counselor || client) && (
-                      <>
-                        <div className="mx-4 flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary-50/50 to-blue-50/50 dark:from-primary-900/20 dark:to-blue-900/20">
-                          <Avatar className="h-12 w-12 ring-2 ring-primary-200 dark:ring-primary-800">
-                            <AvatarImage
-                              src={(counselor || client)?.profilePicture}
-                              alt={(counselor || client)?.fullName}
-                            />
-                            <AvatarFallback className="bg-gradient-to-r from-primary-700 to-primary-600 text-white font-semibold">
-                              {(counselor || client)?.fullName?.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm text-neutral-800 dark:text-neutral-200 truncate">
-                              {(counselor || client)?.fullName}
-                            </p>
-                            <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                              {counselor ? 'Counselor' : 'Client'}
-                            </p>
-                          </div>
+                      <div className="p-3.5 rounded-2xl bg-gradient-to-br from-primary-500/10 via-primary-500/5 to-blue-500/10 dark:from-primary-950/40 dark:to-neutral-900 border border-primary-200/60 dark:border-primary-800/40 flex items-center gap-3 shadow-xs">
+                        <Avatar className="h-11 w-11 ring-2 ring-primary-300/80 dark:ring-primary-700/80 shrink-0">
+                          <AvatarImage
+                            src={(counselor || client)?.profilePicture}
+                            alt={(counselor || client)?.fullName}
+                          />
+                          <AvatarFallback className="bg-gradient-to-br from-primary-600 to-primary-700 text-white font-semibold text-sm">
+                            {(counselor || client)?.fullName?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate">
+                            {(counselor || client)?.fullName}
+                          </p>
+                          <span className="inline-block mt-0.5 text-[10.5px] font-semibold px-2 py-0.2 rounded-full bg-primary-600/15 text-primary-700 dark:text-primary-300 border border-primary-500/20">
+                            {counselor ? 'Counselor Account' : 'Client Account'}
+                          </span>
                         </div>
-                        <Separator className="mx-4" />
-                      </>
-                    )}
-                    {/* User Actions */}
-                    {(counselor || client) && (
-                      <>
-                        <div className="space-y-2 px-4">
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              navigate(counselor ? '/counselor/profile' : '/client/profile');
-                              setIsOpen(false);
-                            }}
-                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
-                          >
-                            <User className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                            <span className="font-medium">Profile</span>
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              navigate(counselor ? '/counselor/dashboard' : '/client/dashboard');
-                              setIsOpen(false);
-                            }}
-                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
-                          >
-                            <Home className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                            <span className="font-medium">Dashboard</span>
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            onClick={counselor ? handleLogoutCounselor : handleLogoutClient}
-                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
-                          >
-                            <LogOut className="h-5 w-5" />
-                            <span className="font-medium">Logout</span>
-                          </Button>
-                        </div>
-                        <Separator className="mx-4" />
-                      </>
+                      </div>
                     )}
 
-                    {/* Mobile Navigation Links */}
-                    <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
-                      {/* Services Dropdown */}
-                      <div className="px-4">
+                    {/* Role-Specific Portal Navigation */}
+                    {counselor && (
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 px-3 pb-1">
+                          Counselor Workspace
+                        </p>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/counselor/dashboard');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                        >
+                          <LayoutDashboard className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>Dashboard & Profile</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/counselor/dashboard/my-sessions');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                        >
+                          <Calendar className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>My Sessions</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/counselor/dashboard/slots-manager');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                        >
+                          <Clock className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>Availability & Slots</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/counselor/dashboard/blogs-manager');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                        >
+                          <BookOpen className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>Blogs Manager</span>
+                        </Button>
+                      </div>
+                    )}
+
+                    {client && (
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 px-3 pb-1">
+                          Client Portal
+                        </p>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/client/dashboard');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                        >
+                          <LayoutDashboard className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>Dashboard & Profile</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/client/dashboard/bookings');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                        >
+                          <Calendar className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>My Bookings</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/browse-counselors');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                        >
+                          <Users className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>Find Counselors</span>
+                        </Button>
+                      </div>
+                    )}
+
+                    <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
+
+                    {/* Main Explore Navigation */}
+                    <div className="space-y-1" aria-label="Mobile exploration links">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 px-3 pb-1">
+                        Explore
+                      </p>
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          navigate('/');
+                          setIsOpen(false);
+                        }}
+                        className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition cursor-pointer"
+                      >
+                        <Home className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                        <span>Home</span>
+                      </Button>
+
+                      {/* Browse Counselors for Guests */}
+                      {!counselor && !client && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate('/browse-counselors');
+                            setIsOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition cursor-pointer"
+                        >
+                          <Users className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>Browse Counselors</span>
+                        </Button>
+                      )}
+
+                      {/* Services Collapsible Accordion */}
+                      <div>
                         <button
                           onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
-                          className="
-              w-full flex items-center justify-between gap-3 px-4 py-4
-              rounded-xl
-              hover:bg-primary-50 dark:hover:bg-primary-900/30
-              transition-colors duration-200
-            "
+                          className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
                           aria-expanded={mobileServicesOpen}
                         >
                           <div className="flex items-center gap-3">
-                            <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                            <span className="font-medium text-neutral-800 dark:text-neutral-200">
-                              Services
-                            </span>
+                            <Sparkles className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                            <span>Specialized Services</span>
                           </div>
                           <motion.div
                             animate={{ rotate: mobileServicesOpen ? 180 : 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <ChevronDown className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
+                            <ChevronDown className="h-4 w-4 text-neutral-500" />
                           </motion.div>
                         </button>
 
@@ -583,33 +672,26 @@ const Navbar = () => {
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.3 }}
-                              className="mt-2 space-y-1 overflow-hidden"
+                              transition={{ duration: 0.25 }}
+                              className="mt-1 ml-4 pl-2.5 border-l-2 border-primary-200 dark:border-primary-800 space-y-1 overflow-hidden"
                             >
                               {servicesLinks.map((service, index) => {
                                 const Icon = service.icon;
                                 return (
                                   <motion.button
                                     key={service.to}
-                                    initial={{ opacity: 0, x: -20 }}
+                                    initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                                    transition={{ duration: 0.15, delay: index * 0.03 }}
                                     onClick={() => {
                                       navigate(service.to);
                                       setIsOpen(false);
                                       setMobileServicesOpen(false);
                                     }}
-                                    className="
-                        w-full flex items-center gap-3 px-6 py-3 
-                        rounded-xl
-                        hover:bg-primary-50 dark:hover:bg-primary-900/30 
-                        transition-colors duration-200 text-left
-                      "
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-primary-100/50 dark:hover:bg-primary-900/30 text-left transition"
                                   >
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
-                                      <Icon className="h-4 w-4 text-primary-700 dark:text-primary-400" />
-                                    </div>
-                                    <span className="font-medium text-sm text-neutral-800 dark:text-neutral-200">
+                                    <Icon className="h-3.5 w-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                                    <span className="font-normal text-xs text-neutral-700 dark:text-neutral-300">
                                       {service.text}
                                     </span>
                                   </motion.button>
@@ -621,106 +703,100 @@ const Navbar = () => {
                       </div>
 
                       {/* About Link */}
-                      <div className="px-4">
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            navigate('/about');
-                            setIsOpen(false);
-                          }}
-                          className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
-                        >
-                          <Info className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                          <span className="font-medium">About</span>
-                        </Button>
-                      </div>
-
-                      {/* Counselors Link (Clients & Guests only) */}
-                      {!counselor && (
-                        <div className="px-4">
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              navigate('/browse-counselors');
-                              setIsOpen(false);
-                            }}
-                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
-                          >
-                            <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                            <span className="font-medium">Counselors</span>
-                          </Button>
-                        </div>
-                      )}
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          navigate('/about');
+                          setIsOpen(false);
+                        }}
+                        className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition cursor-pointer"
+                      >
+                        <Info className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                        <span>About Solvit</span>
+                      </Button>
 
                       {/* Blogs Link */}
-                      <div className="px-4">
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          navigate('/blogs');
+                          setIsOpen(false);
+                        }}
+                        className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition cursor-pointer"
+                      >
+                        <BookOpen className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                        <span>Articles & Blogs</span>
+                      </Button>
+
+                      {/* Contact Link */}
+                      {isAuthenticated ? (
                         <Button
                           variant="ghost"
                           onClick={() => {
-                            navigate('/blogs');
+                            navigate('/contact');
                             setIsOpen(false);
                           }}
-                          className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition cursor-pointer"
                         >
-                          <BookOpen className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                          <span className="font-medium">Blogs</span>
+                          <MessageCircle className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                          <span>Support & Contact</span>
                         </Button>
-                      </div>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          onClick={handleContactClick}
+                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl opacity-75 hover:opacity-100 transition cursor-pointer"
+                        >
+                          <MessageCircle className="h-4 w-4 text-neutral-500 shrink-0" />
+                          <span className="text-neutral-700 dark:text-neutral-300">Support & Contact</span>
+                          <Lock className="h-3.5 w-3.5 ml-auto text-amber-500" />
+                        </Button>
+                      )}
+                    </div>
 
-                      {/* Contact Link */}
-                      <div className="px-4">
-                        {isAuthenticated ? (
+                    {/* Authenticated Logout */}
+                    {(counselor || client) && (
+                      <>
+                        <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
+                        <div className="pt-1 pb-2">
                           <Button
                             variant="ghost"
-                            onClick={() => {
-                              navigate('/contact');
-                              setIsOpen(false);
-                            }}
-                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl cursor-pointer"
+                            onClick={counselor ? handleLogoutCounselor : handleLogoutClient}
+                            className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-semibold text-sm transition cursor-pointer"
                           >
-                            <MessageCircle className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                            <span className="font-medium">Contact</span>
+                            <LogOut className="h-4 w-4 shrink-0" />
+                            <span>Sign Out</span>
                           </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            onClick={handleContactClick}
-                            className="w-full justify-start gap-3 px-4 py-4 h-auto rounded-xl opacity-60 cursor-pointer"
-                          >
-                            <MessageCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                            <span className="font-medium">Contact</span>
-                            <Lock className="h-4 w-4 ml-auto text-red-600 dark:text-red-400" />
-                          </Button>
-                        )}
-                      </div>
-                    </nav>
+                        </div>
+                      </>
+                    )}
 
-                    {/* Login Buttons */}
+                    {/* Guest Call to Action */}
                     {!counselor && !client && (
                       <>
-                        <Separator className="mx-4" />
-                        <div className="space-y-3 px-4 pb-4">
+                        <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
+                        <div className="space-y-2.5 pt-1 pb-3">
+                          <Button
+                            onClick={() => {
+                              navigate('/login');
+                              setIsOpen(false);
+                            }}
+                            className="w-full justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white font-semibold text-sm shadow-md transition cursor-pointer"
+                          >
+                            <UserCircle className="h-4 w-4" />
+                            <span>Client Sign In</span>
+                          </Button>
+
                           <Button
                             variant="outline"
                             onClick={() => {
                               navigate('/counselor/login');
                               setIsOpen(false);
                             }}
-                            className="w-full justify-center gap-2 py-6 rounded-xl border-primary-200 dark:border-primary-800 cursor-pointer"
+                            className="w-full justify-center gap-2 py-2.5 rounded-xl border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-950/30 font-medium text-xs transition cursor-pointer"
                           >
                             <Briefcase className="h-4 w-4" />
-                            Counselor Login
-                          </Button>
-
-                          <Button
-                            onClick={() => {
-                              navigate('/login');
-                              setIsOpen(false);
-                            }}
-                            className="w-full justify-center gap-2 py-6 rounded-xl bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 cursor-pointer"
-                          >
-                            <UserCircle className="h-4 w-4" />
-                            User Login
+                            <span>Counselor Portal</span>
                           </Button>
                         </div>
                       </>

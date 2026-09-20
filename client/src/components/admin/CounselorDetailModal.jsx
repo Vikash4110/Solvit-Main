@@ -27,7 +27,9 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Share2,
 } from 'lucide-react';
+import ShareProfileModal from '@/components/common/ShareProfileModal.jsx';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +49,7 @@ const CounselorDetailModal = ({ counselorId, isOpen, onClose, onCounselorUpdated
   const [counselor, setCounselor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [blocking, setBlocking] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && counselorId) {
@@ -634,30 +637,51 @@ const CounselorDetailModal = ({ counselorId, isOpen, onClose, onCounselorUpdated
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {counselor && (
-            <Button
-              variant={counselor.isBlocked ? 'default' : 'destructive'}
-              onClick={handleToggleBlock}
-              disabled={blocking}
-              size="lg"
-            >
-              {blocking ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : counselor.isBlocked ? (
-                <>
-                  <UserCheck className="w-4 h-4 mr-2" />
-                  Unblock Counselor
-                </>
-              ) : (
-                <>
-                  <UserX className="w-4 h-4 mr-2" />
-                  Block Counselor
-                </>
-              )}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {counselor && (
+              <Button
+                variant="outline"
+                onClick={() => setIsShareModalOpen(true)}
+                className="gap-2 border-primary-500/40 text-primary-700 hover:bg-primary-50"
+              >
+                <Share2 className="w-4 h-4" />
+                Share Profile
+              </Button>
+            )}
+            {counselor && (
+              <Button
+                variant={counselor.isBlocked ? 'default' : 'destructive'}
+                onClick={handleToggleBlock}
+                disabled={blocking}
+                size="lg"
+              >
+                {blocking ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : counselor.isBlocked ? (
+                  <>
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Unblock Counselor
+                  </>
+                ) : (
+                  <>
+                    <UserX className="w-4 h-4 mr-2" />
+                    Block Counselor
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
+
+      {/* Share Profile Modal */}
+      {counselor && (
+        <ShareProfileModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          counselor={counselor}
+        />
+      )}
     </Dialog>
   );
 };

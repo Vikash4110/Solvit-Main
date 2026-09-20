@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { toast } from 'sonner';
@@ -58,6 +58,10 @@ const ClientLogin = () => {
 
   const { clientLogin, forgotPassword, resetPassword } = useClientAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectTo = location.state?.redirectTo || '/client/dashboard/personal-info';
+  const redirectMessage = location.state?.message;
 
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -97,7 +101,7 @@ const ClientLogin = () => {
       const result = await clientLogin(formData.email, formData.password);
       if (result.success) {
         toast.success('Login successful!');
-        navigate('/client/dashboard/personal-info');
+        navigate(redirectTo, { replace: true });
       } else {
         toast.error(result.error || 'Invalid email or password');
       }
@@ -319,6 +323,13 @@ const ClientLogin = () => {
                           </p>
                         </div>
 
+                        {redirectMessage && (
+                          <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/60 flex items-start gap-2.5 text-blue-800 dark:text-blue-300 text-xs sm:text-sm">
+                            <Shield className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                            <span>{redirectMessage}</span>
+                          </div>
+                        )}
+
                         <div className="space-y-2">
                           <Label
                             htmlFor="email"
@@ -423,7 +434,7 @@ const ClientLogin = () => {
                           Don't have an account?{' '}
                           <button
                             type="button"
-                            onClick={() => navigate('/register')}
+                            onClick={() => navigate('/register', { state: location.state })}
                             className="font-medium text-primary-700 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors"
                           >
                             Sign up here
