@@ -417,7 +417,7 @@ const CounselorDashboardMySessions = () => {
             <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
             {/* Session meta in clean structured tiles with generous breathing room */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-3.5 pt-1">
               <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                   <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
@@ -645,13 +645,7 @@ const CounselorDashboardMySessions = () => {
                 </Card>
               ) : (
                 <>
-                  <div
-                    className={`grid gap-5 sm:gap-6 ${
-                      tab.key === 'reviewWindow' || tab.key === 'disputed'
-                        ? 'grid-cols-1 w-full'
-                        : 'grid-cols-1 lg:grid-cols-2'
-                    }`}
-                  >
+                  <div className="grid grid-cols-1 w-full gap-5 sm:gap-6">
                     <AnimatePresence mode="wait">
                       {bookings.map((booking) => (
                         <SessionCard key={booking.bookingId} booking={booking} />

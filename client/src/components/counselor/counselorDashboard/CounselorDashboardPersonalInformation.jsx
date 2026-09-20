@@ -1030,11 +1030,11 @@ const CounselorDashboardPersonalInfo = () => {
         <Card className="overflow-hidden">
           <div className="h-32 sm:h-36 lg:h-40 bg-gradient-to-r from-primary-500 to-primary-700" />
           <CardContent className="relative pt-0 pb-6 sm:pb-8">
-            <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4 sm:gap-6 -mt-16 sm:-mt-18 lg:-mt-20">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-5 sm:gap-6 -mt-16 sm:-mt-18 lg:-mt-20">
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-6 flex-1 min-w-0">
                 {/* Profile Picture */}
                 <div className="relative group shrink-0">
-                  <Avatar className="h-32 w-32 sm:h-36 sm:w-36 lg:h-40 lg:w-40 border-4 border-white dark:border-neutral-900 shadow-xl">
+                  <Avatar className="h-28 w-28 sm:h-36 sm:w-36 lg:h-40 lg:w-40 border-4 border-white dark:border-neutral-900 shadow-xl ring-4 ring-primary-500/10">
                     <AvatarImage src={counselorData.profilePicture} alt={counselorData.fullName} />
                     <AvatarFallback className="text-3xl md:text-4xl bg-primary-100 dark:bg-primary-900/30">
                       {counselorData.fullName?.charAt(0) || 'C'}
@@ -1045,7 +1045,7 @@ const CounselorDashboardPersonalInfo = () => {
                   <Button
                     size="sm"
                     variant="default"
-                    className="absolute bottom-0 right-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-lg p-0"
+                    className="absolute bottom-0 right-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-lg p-0 cursor-pointer"
                     onClick={() => setIsPhotoDialogOpen(true)}
                   >
                     <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -1056,7 +1056,7 @@ const CounselorDashboardPersonalInfo = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="absolute top-0 right-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full shadow-md p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-0 right-0 h-7 w-7 sm:h-8 sm:w-8 rounded-full shadow-md p-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                       onClick={() => setIsViewPhotoDialogOpen(true)}
                     >
                       <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -1103,12 +1103,12 @@ const CounselorDashboardPersonalInfo = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 mt-2 lg:mt-0 w-full lg:w-auto shrink-0 self-start lg:self-end">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 mt-3 md:mt-0 w-full md:w-auto shrink-0 self-stretch sm:self-start md:self-end">
                 <Button
                   onClick={() => setIsShareModalOpen(true)}
                   variant="outline"
                   size="default"
-                  className="gap-2 border-primary-500/40 hover:bg-primary-50 dark:hover:bg-primary-950/50 text-primary-700 dark:text-primary-300 font-medium shadow-sm flex-1 lg:flex-initial justify-center whitespace-nowrap"
+                  className="gap-2 border-primary-500/40 hover:bg-primary-50 dark:hover:bg-primary-950/50 text-primary-700 dark:text-primary-300 font-medium shadow-sm flex-1 md:flex-initial justify-center whitespace-nowrap cursor-pointer"
                 >
                   <Share2 className="h-4 w-4 shrink-0" />
                   <span>Share Profile</span>
@@ -1117,7 +1117,7 @@ const CounselorDashboardPersonalInfo = () => {
                 <Button
                   onClick={handleOpenEditModal}
                   size="default"
-                  className="gap-2 flex-1 lg:flex-initial justify-center whitespace-nowrap"
+                  className="gap-2 flex-1 md:flex-initial justify-center whitespace-nowrap cursor-pointer"
                 >
                   <Edit className="h-4 w-4 shrink-0" />
                   <span>Edit Profile</span>
