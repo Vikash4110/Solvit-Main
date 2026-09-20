@@ -61,7 +61,7 @@ const CounselorDashboard = () => {
   }
 
   return (
-    <div className="relative h-[calc(100vh-80px)] bg-gradient-to-br from-neutral-50 via-primary-50/30 to-blue-50/20 dark:from-neutral-950 dark:via-primary-950/20 dark:to-blue-950/10 flex overflow-hidden mt-[80px] fixed w-full">
+    <div className="fixed inset-x-0 top-[80px] bottom-0 bg-gradient-to-br from-neutral-50 via-primary-50/30 to-blue-50/20 dark:from-neutral-950 dark:via-primary-950/20 dark:to-blue-950/10 flex overflow-hidden w-full max-w-full">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-96 h-96 bg-primary-200/10 dark:bg-primary-600/5 rounded-full blur-3xl" />
@@ -77,6 +77,7 @@ const CounselorDashboard = () => {
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent
           side="left"
+          showCloseButton={false}
           className="w-72 p-0 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-primary-200/50 dark:border-primary-800/30"
         >
           <CounselorDashboardSidebar

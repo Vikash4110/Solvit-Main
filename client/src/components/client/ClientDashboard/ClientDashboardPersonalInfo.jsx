@@ -729,21 +729,21 @@ const ClientDashboardPersonalInfo = () => {
 
                   {/* Quick Stats with Modern Pill Boxes */}
                   <div className="w-full space-y-2 mb-5">
-                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs">
-                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2 font-medium">
-                        <Calendar className="h-3.5 w-3.5 text-blue-500" />
+                    <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium shrink-0">
+                        <Calendar className="h-3.5 w-3.5 text-blue-500 shrink-0" />
                         Joined
                       </span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 text-right whitespace-nowrap text-[11px] sm:text-xs">
                         {formatDate(clientData.createdAt)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs">
-                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2 font-medium">
-                        <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                    <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium shrink-0">
+                        <Clock className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                         Last Active
                       </span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 text-right whitespace-nowrap text-[11px] sm:text-xs">
                         {formatSmartDate(clientData.lastLogin)}
                       </span>
                     </div>

@@ -259,6 +259,22 @@ const ClientDashboardMyBookings = () => {
     return map[booking?.status] || map.confirmed;
   };
 
+  const getStatusBorderClass = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'border-emerald-400/80 dark:border-emerald-500/70 hover:border-emerald-500 dark:hover:border-emerald-400 shadow-[0_4px_20px_-10px_rgba(16,185,129,0.25)]';
+      case 'dispute_window_open':
+        return 'border-violet-400/80 dark:border-violet-500/70 hover:border-violet-500 dark:hover:border-violet-400 shadow-[0_4px_20px_-10px_rgba(139,92,246,0.25)]';
+      case 'disputed':
+        return 'border-amber-400/80 dark:border-amber-500/70 hover:border-amber-500 dark:hover:border-amber-400 shadow-[0_4px_20px_-10px_rgba(245,158,11,0.25)]';
+      case 'cancelled':
+        return 'border-red-400/80 dark:border-red-500/70 hover:border-red-400 dark:hover:border-red-400 shadow-[0_4px_20px_-10px_rgba(239,68,68,0.25)]';
+      case 'confirmed':
+      default:
+        return 'border-blue-400/80 dark:border-blue-500/70 hover:border-blue-500 dark:hover:border-blue-400 shadow-[0_4px_20px_-10px_rgba(59,130,246,0.25)]';
+    }
+  };
+
   const formatSession = (startTime, endTime) => {
     const start = dayjs.utc(startTime).tz(TIMEZONE);
     const end = dayjs.utc(endTime).tz(TIMEZONE);
@@ -331,42 +347,35 @@ const ClientDashboardMyBookings = () => {
     return (
       <motion.div variants={fadeInUp} layout>
         <Card
-          className={
-            'relative overflow-hidden rounded-2xl border border-neutral-200/70 dark:border-neutral-800/80 ' +
-            'bg-white/70 dark:bg-neutral-900/55 backdrop-blur-xl ' +
-            'shadow-[0_10px_30px_-18px_rgba(2,132,199,0.35)] dark:shadow-none ' +
-            'transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_-24px_rgba(2,132,199,0.45)]'
-          }
+          className={`relative overflow-hidden rounded-2xl border ${getStatusBorderClass(booking?.status)} bg-white/80 dark:bg-neutral-900/70 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`}
         >
-          {/* top accent */}
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500/70 via-sky-500/60 to-primary-700/70" />
-          <CardContent className="p-6 sm:p-7 space-y-5">
+          <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-5">
             {/* Header */}
-            <div className="flex items-start justify-between gap-4 pb-1">
-              <div className="flex items-start gap-3.5 min-w-0">
-                <Avatar className="h-12 w-12 sm:h-14 sm:w-14 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+              <div className="flex items-center gap-3 min-w-0">
+                <Avatar className="h-11 w-11 sm:h-13 sm:w-13 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
                   <AvatarImage src={booking.counselorPhoto} alt={name} />
-                  <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold text-sm sm:text-base">
+                  <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold text-xs sm:text-sm">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-50 truncate">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-50 truncate">
                       {name}
                     </h3>
                     <BadgeCheck className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
                   </div>
 
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
                     {specialization?.[0] && (
-                      <span className="truncate max-w-[220px] sm:max-w-none font-medium">
+                      <span className="truncate max-w-[180px] sm:max-w-none font-medium">
                         {specialization[0]}
                       </span>
                     )}
                     {specialization.length > 1 && (
-                      <Badge variant="secondary" className="px-2 py-0.5 text-[10px] font-medium">
+                      <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
                         +{specialization.length - 1}
                       </Badge>
                     )}
@@ -374,8 +383,8 @@ const ClientDashboardMyBookings = () => {
                 </div>
               </div>
 
-              <div className="flex-shrink-0">
-                <span className={`px-3 py-1 text-xs font-semibold rounded-lg shadow-sm shrink-0 inline-block ${statusUI.className}`}>
+              <div className="self-start sm:self-center shrink-0">
+                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}>
                   {statusUI.label}
                 </span>
               </div>
@@ -384,7 +393,7 @@ const ClientDashboardMyBookings = () => {
             <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
             {/* Session Meta in structured tiles with generous breathing room */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5 pt-1">
               <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                   <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
@@ -421,26 +430,32 @@ const ClientDashboardMyBookings = () => {
                 </p>
               </div>
 
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 flex items-center justify-between gap-2">
-                <div className="space-y-1">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5 flex flex-col justify-between">
+                <div>
                   <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                     <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span className="font-medium">Total Paid</span>
                   </div>
-                  <p className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                  <p className="text-base font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">
                     ₹{booking.price}
                   </p>
                 </div>
-                {!!booking.invoice && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 rounded-lg text-xs font-medium border-primary-200 text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300"
-                    onClick={() => window.open(booking.invoice, '_blank')}
-                  >
-                    <Receipt className="h-3.5 w-3.5 mr-1" />
-                    Invoice
-                  </Button>
+                {!!booking.invoice ? (
+                  <div className="pt-0.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 rounded-lg text-[11px] font-medium border-primary-200 text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 px-2.5"
+                      onClick={() => window.open(booking.invoice, '_blank')}
+                    >
+                      <Receipt className="h-3 w-3 mr-1 shrink-0" />
+                      Invoice
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-neutral-400 dark:text-neutral-500 pt-0.5">
+                    Payment complete
+                  </p>
                 )}
               </div>
             </div>
@@ -585,7 +600,11 @@ const ClientDashboardMyBookings = () => {
                     initial="hidden"
                     animate="visible"
                     variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-                    className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+                    className={`grid gap-4 sm:gap-5 ${
+                      tab.key === 'raiseIssue' || tab.key === 'issuesRaised'
+                        ? 'grid-cols-1 w-full'
+                        : 'grid-cols-1 lg:grid-cols-2'
+                    }`}
                   >
                     {bookings.map((booking) => (
                       <BookingCard key={booking.bookingId} booking={booking} />
