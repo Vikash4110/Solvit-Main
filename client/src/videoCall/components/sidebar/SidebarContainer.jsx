@@ -5,6 +5,7 @@ import useIsTab from '../../hooks/useIsTab';
 import { X } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
 import { ParticipantPanel } from './ParticipantPanel';
+import { NotesPanel } from './NotesPanel';
 import { Dialog, Transition } from '@headlessui/react';
 import { useMediaQuery } from 'react-responsive';
 import { useMeetingAppContext } from '../../MeetingAppContextDef';
@@ -13,6 +14,7 @@ const SideBarTabView = ({
   height,
   sideBarContainerWidth,
   handleClose,
+  bookingId,
 }) => {
   const { participants } = useMeeting();
   const { sideBarMode } = useMeetingAppContext();
@@ -31,7 +33,9 @@ const SideBarTabView = ({
           <p className="text-sm font-bold text-white select-none">
             {sideBarMode === 'PARTICIPANTS'
               ? `Participants (${new Map(participants).size})`
-              : sideBarMode.charAt(0).toUpperCase() + sideBarMode.slice(1).toLowerCase()}
+              : sideBarMode === 'NOTES'
+                ? 'Clinical Notes'
+                : sideBarMode.charAt(0).toUpperCase() + sideBarMode.slice(1).toLowerCase()}
           </p>
           <button
             className="text-neutral-400 hover:text-white hover:bg-neutral-700/60 rounded-lg p-1.5 transition-all duration-200"
@@ -49,13 +53,15 @@ const SideBarTabView = ({
           <ParticipantPanel />
         ) : sideBarMode === 'CHAT' ? (
           <ChatPanel />
+        ) : sideBarMode === 'NOTES' ? (
+          <NotesPanel bookingId={bookingId} />
         ) : null}
       </div>
     </div>
   );
 };
 
-export function SidebarConatiner({ height, sideBarContainerWidth }) {
+export function SidebarConatiner({ height, sideBarContainerWidth, bookingId }) {
   const { sideBarMode, setSideBarMode } = useMeetingAppContext();
   const isMobile = useIsMobile();
   const isTab = useIsTab();
@@ -85,18 +91,23 @@ export function SidebarConatiner({ height, sideBarContainerWidth }) {
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
-            enterFrom="translate-y-full opacity-0 scale-95"
-            enterTo="translate-y-0 opacity-100 scale-100"
+            enterFrom="translate-y-full opacity-0 sm:scale-95"
+            enterTo="translate-y-0 opacity-100 sm:scale-100"
             leave="ease-in duration-200"
-            leaveFrom="translate-y-0 opacity-100 scale-100"
-            leaveTo="translate-y-full opacity-0 scale-95"
+            leaveFrom="translate-y-0 opacity-100 sm:scale-100"
+            leaveTo="translate-y-full opacity-0 sm:scale-95"
           >
-            <div className="fixed inset-0 flex items-center justify-center p-3 sm:p-4">
-              <Dialog.Panel className="w-full max-w-md h-[80vh] transform overflow-hidden rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl transition-all">
+            <div className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+              <Dialog.Panel className="w-full sm:max-w-md h-[88vh] sm:h-[80vh] transform overflow-hidden rounded-t-3xl sm:rounded-2xl bg-neutral-900 border-t sm:border border-neutral-800 shadow-2xl transition-all flex flex-col">
+                {/* Mobile Drag Indicator */}
+                <div className="sm:hidden flex items-center justify-center pt-2.5 pb-1 bg-neutral-800/60 shrink-0">
+                  <div className="w-12 h-1.5 rounded-full bg-neutral-600" />
+                </div>
                 <SideBarTabView
                   height="100%"
                   sideBarContainerWidth="100%"
                   handleClose={handleClose}
+                  bookingId={bookingId}
                 />
               </Dialog.Panel>
             </div>
@@ -108,6 +119,7 @@ export function SidebarConatiner({ height, sideBarContainerWidth }) {
         height={desktopHeight}
         sideBarContainerWidth={sideBarContainerWidth}
         handleClose={handleClose}
+        bookingId={bookingId}
       />
     )
   ) : null;

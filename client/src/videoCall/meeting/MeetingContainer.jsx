@@ -479,12 +479,18 @@ export function MeetingContainer({
           <SidebarConatiner
             height={containerHeight - BOTTOM_BAR_HEIGHT}
             sideBarContainerWidth={sideBarContainerWidth}
+            bookingId={sessionData?.booking?._id || sessionData?._id}
           />
         </div>
 
         {/* Bottom Bar - Fixed height with theme colors */}
         <div className="flex-shrink-0 border-t border-neutral-800">
-          <BottomBar bottomBarHeight={BOTTOM_BAR_HEIGHT} setIsMeetingLeft={setIsMeetingLeft} />
+          <BottomBar
+            bottomBarHeight={BOTTOM_BAR_HEIGHT}
+            setIsMeetingLeft={setIsMeetingLeft}
+            participantId={participantId}
+            sessionData={sessionData}
+          />
         </div>
       </>
     );
