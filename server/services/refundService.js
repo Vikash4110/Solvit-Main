@@ -1,6 +1,6 @@
 // services/refundService.js
 
-import { instance } from '../server.js';
+import { instance } from '../config/razorpay.js';
 import { Payment } from '../models/payment-model.js';
 import { PaymentRefund } from '../models/paymentRefund.model.js';
 import { Client } from '../models/client-model.js';
