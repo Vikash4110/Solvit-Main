@@ -29,7 +29,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Verify transporter configuration on startup
-transporter.verify((error, success) => {
+transporter.verify((error) => {
   if (error) {
     console.error('Email configuration error:', error);
   } else {

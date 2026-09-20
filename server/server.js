@@ -142,10 +142,7 @@ app.use('/api/v1/counselors/login-counselor', authLimiter);
 app.use('/api/v1', apiLimiter);
 
 // Razorpay Instance
-export const instance = new Razorpay({
-  key_id: process.env.RAZORPAY_API_KEY,
-  key_secret: process.env.RAZORPAY_API_SECRET,
-});
+export { instance } from './config/razorpay.js';
 
 //cron error handlers
 // Add this route (before error handlers)

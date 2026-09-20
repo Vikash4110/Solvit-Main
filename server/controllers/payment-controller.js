@@ -2,7 +2,7 @@
 
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import { instance } from '../server.js';
+import { instance } from '../config/razorpay.js';
 import { Payment } from '../models/payment-model.js';
 import { Booking } from '../models/booking-model.js';
 import { Counselor } from '../models/counselor-model.js';

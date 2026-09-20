@@ -12,4 +12,4 @@ const otpSchema = new mongoose.Schema(
 
 otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const OTP = mongoose.model('OTP', otpSchema);
+export const OTP = mongoose.models.OTP || mongoose.model('OTP', otpSchema);

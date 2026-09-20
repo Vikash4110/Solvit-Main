@@ -1,16 +1,23 @@
 import express from 'express';
 import { verifyJWTUser } from '../middlewares/userAuth.middleware.js';
 import {
-  getSessionToken,
-  updateSessionAttendance,
-  getBookingDetails,
-} from '../controllers/payment-controller.js';
+  getSessionDetails,
+  logJoinIntent,
+  redirectToMeeting,
+  sendHeartbeat,
+  markLeft,
+  getAttendanceSummary,
+  getDashboardSessions,
+} from '../controllers/session-controller.js';
 
 const sessionRouter = express.Router();
 
-// Session management routes
-sessionRouter.route('/:bookingId/session-token').get(verifyJWTUser, getSessionToken);
-sessionRouter.route('/:bookingId/attendance').post(verifyJWTUser, updateSessionAttendance);
-sessionRouter.route('/:bookingId').get(verifyJWTUser, getBookingDetails);
+sessionRouter.route('/:bookingId/details').get(verifyJWTUser, getSessionDetails);
+sessionRouter.route('/:bookingId/intent').post(verifyJWTUser, logJoinIntent);
+sessionRouter.route('/:bookingId/redirect').get(redirectToMeeting);
+sessionRouter.route('/:bookingId/heartbeat').post(verifyJWTUser, sendHeartbeat);
+sessionRouter.route('/:bookingId/left').post(verifyJWTUser, markLeft);
+sessionRouter.route('/:bookingId/attendance-summary').get(verifyJWTUser, getAttendanceSummary);
+sessionRouter.route('/dashboard/sessions').get(verifyJWTUser, getDashboardSessions);
 
 export { sessionRouter };
