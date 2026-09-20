@@ -45,7 +45,9 @@ import {
   Send,
   ShieldCheck,
   Layers,
+  Share2,
 } from 'lucide-react';
+import ShareProfileModal from '@/components/common/ShareProfileModal.jsx';
 import { toast } from 'sonner';
 import { DEFAULT_LANGUAGES } from '../../../constants/constants';
 
@@ -168,6 +170,7 @@ const staggerContainer = {
 const CounselorDashboardPersonalInfo = () => {
   // Dialog states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
   const [isViewPhotoDialogOpen, setIsViewPhotoDialogOpen] = useState(false);
@@ -350,6 +353,7 @@ const CounselorDashboardPersonalInfo = () => {
       const data = response.data?.data || response.data;
 
       const transformedData = {
+        _id: data._id || data.id || '',
         fullName: data.fullName || '',
         username: data.username || '',
         email: data.email || '',
@@ -1095,15 +1099,27 @@ const CounselorDashboardPersonalInfo = () => {
                 )}
               </div>
 
-              {/* Edit Button */}
-              <Button
-                onClick={handleOpenEditModal}
-                size="lg"
-                className="gap-2 mt-4 md:mt-0"
-              >
-                <Edit className="h-4 w-4" />
-                Edit Profile
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 mt-4 md:mt-0 flex-wrap">
+                <Button
+                  onClick={() => setIsShareModalOpen(true)}
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 border-primary-500/40 hover:bg-primary-50 dark:hover:bg-primary-950/50 text-primary-700 dark:text-primary-300 font-medium shadow-sm"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share Profile
+                </Button>
+
+                <Button
+                  onClick={handleOpenEditModal}
+                  size="lg"
+                  className="gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit Profile
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -2821,6 +2837,13 @@ const CounselorDashboardPersonalInfo = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Share Profile Modal */}
+      <ShareProfileModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        counselor={counselorData}
+      />
     </motion.div>
   );
 };

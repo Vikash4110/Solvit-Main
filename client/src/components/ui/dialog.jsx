@@ -86,7 +86,7 @@ const DialogContent = React.forwardRef(
             <DialogPrimitive.Close
               data-slot="dialog-close"
               className={cn(
-                "absolute top-3 right-3 sm:top-4 sm:right-4 rounded-full p-2 w-9 h-9 sm:w-10 sm:h-10",
+                "absolute top-3 right-3 sm:top-4 sm:right-4 z-50 rounded-full p-2 w-9 h-9 sm:w-10 sm:h-10 cursor-pointer",
                 "bg-white/90 border border-neutral-200 shadow-md hover:shadow-lg",
                 "text-neutral-500 hover:text-neutral-700",
                 "hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500/20",

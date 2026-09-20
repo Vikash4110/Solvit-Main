@@ -365,9 +365,14 @@ const BookCounselorCalendar = () => {
     }
 
     if (!currentAccessToken || !currentUser) {
-      toast.error('Please log in to book a session.');
+      toast.info('Login or register to proceed with the payment for the session', {
+        duration: 5000,
+      });
       navigate('/login', {
-        state: { redirectTo: `/book-counselor/${counselorId}` },
+        state: {
+          redirectTo: `/book-counselor/${counselorId}`,
+          message: 'Login or register to proceed with the payment for the session',
+        },
       });
       return;
     }
@@ -448,9 +453,14 @@ const BookCounselorCalendar = () => {
       const accessToken = currentAccessToken;
 
       if (!userData || !accessToken) {
-        toast.error('Please log in to proceed.');
+        toast.info('Login or register to proceed with the payment for the session', {
+          duration: 5000,
+        });
         navigate('/login', {
-          state: { redirectTo: `/book-counselor/${counselorId}` },
+          state: {
+            redirectTo: `/book-counselor/${counselorId}`,
+            message: 'Login or register to proceed with the payment for the session',
+          },
         });
         setBookingLoading(false);
         return;
