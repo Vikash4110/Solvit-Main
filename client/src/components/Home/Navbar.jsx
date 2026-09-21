@@ -784,7 +784,7 @@ const Navbar = () => {
                             className="w-full justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white font-semibold text-sm shadow-md transition cursor-pointer"
                           >
                             <UserCircle className="h-4 w-4" />
-                            <span>Client Sign In</span>
+                            <span>Sign In</span>
                           </Button>
 
                           <Button
