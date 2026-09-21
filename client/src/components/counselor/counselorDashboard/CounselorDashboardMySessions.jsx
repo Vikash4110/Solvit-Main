@@ -29,7 +29,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { API_ENDPOINTS } from '../../../config/api';
 import api from '@/lib/axios';
 import { TIMEZONE } from '../../../constants/constants';
@@ -366,8 +365,8 @@ const CounselorDashboardMySessions = () => {
         .map((w) => w[0]?.toUpperCase()).join('') || 'CL';
 
     return (
-      <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full">
-        <Card className={`group relative bg-white/80 dark:bg-neutral-900/70 backdrop-blur-xl rounded-2xl border ${getStatusBorderClass(booking?.status)} shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden w-full`}>
+      <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full h-full">
+        <Card className={`group relative bg-white/80 dark:bg-neutral-900/70 backdrop-blur-xl rounded-2xl border ${getStatusBorderClass(booking?.status)} shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden w-full h-full flex flex-col`}>
 
           {alert.show && (
             <Alert className={`rounded-none border-0 border-b ${alert.className}`}>
@@ -376,174 +375,174 @@ const CounselorDashboardMySessions = () => {
             </Alert>
           )}
 
-          <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-5">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 min-w-0">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <Avatar className="h-11 w-11 sm:h-13 sm:w-13 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
-                  <AvatarImage src={booking.clientPhoto} alt={clientName} />
-                  <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold text-xs sm:text-sm">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+          <CardContent className="p-4 sm:p-6 flex-1 flex flex-col justify-between space-y-4 sm:space-y-5">
+            <div className="space-y-4 sm:space-y-5">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Avatar className="h-11 w-11 sm:h-13 sm:w-13 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
+                    <AvatarImage src={booking.clientPhoto} alt={clientName} />
+                    <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold text-xs sm:text-sm">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-50 truncate">
-                      {clientName}
-                    </h3>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-50 truncate">
+                        {clientName}
+                      </h3>
+                    </div>
+
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                      <span className="truncate max-w-[180px] sm:max-w-none font-medium">
+                        Client
+                      </span>
+                      {booking.hasNotes && (
+                        <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                          Notes Saved
+                        </Badge>
+                      )}
+                    </div>
                   </div>
+                </div>
 
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
-                    <span className="truncate max-w-[180px] sm:max-w-none font-medium">
-                      Client
-                    </span>
-                    {booking.hasNotes && (
-                      <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
-                        Notes Saved
-                      </Badge>
+                <div className="self-start sm:self-center shrink-0">
+                  <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}>
+                    {statusUI.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Session meta in clean structured tiles with generous breathing room */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3 sm:gap-3.5 pt-1">
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                    <span className="font-medium">Date</span>
+                  </div>
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    {s ? s.date : 'N/A'}
+                  </p>
+                </div>
+
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    <Clock className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                    <span className="font-medium">Time</span>
+                  </div>
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    {s ? s.time : 'N/A'}
+                  </p>
+                  {s && (
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
+                      {s.duration} • <Video className="w-3 h-3 inline text-primary-500" /> Video session
+                    </p>
+                  )}
+                </div>
+
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-medium">Your Earnings</span>
+                  </div>
+                  <p className={`text-base font-bold ${
+                    booking.status === 'disputed'
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  }`}>
+                    ₹{booking.earnings ?? 0}
+                    {booking.status === 'disputed' && (
+                      <span className="ml-1.5 text-[10px] font-medium text-amber-500 dark:text-amber-400">(on hold)</span>
                     )}
+                    {booking.status === 'dispute_window_open' && (
+                      <span className="ml-1.5 text-[10px] font-medium text-violet-500 dark:text-violet-400">(pending)</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5 min-w-0">
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    <Mail className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                    <span className="font-medium">Email</span>
                   </div>
-                </div>
-              </div>
-
-              <div className="self-start sm:self-center shrink-0">
-                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}>
-                  {statusUI.label}
-                </span>
-              </div>
-            </div>
-
-            <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
-
-            {/* Session meta in clean structured tiles with generous breathing room */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-3.5 pt-1">
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
-                  <span className="font-medium">Date</span>
-                </div>
-                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {s ? s.date : 'N/A'}
-                </p>
-              </div>
-
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Clock className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
-                  <span className="font-medium">Time</span>
-                </div>
-                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {s ? s.time : 'N/A'}
-                </p>
-                {s && (
-                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
-                    {s.duration} • <Video className="w-3 h-3 inline text-primary-500" /> Video session
+                  <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate" title={booking.clientEmail}>
+                    {booking.clientEmail || 'N/A'}
                   </p>
-                )}
+                </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="font-medium">Your Earnings</span>
-                </div>
-                <p className={`text-base font-bold ${
-                  booking.status === 'disputed'
-                    ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-emerald-600 dark:text-emerald-400'
-                }`}>
-                  ₹{booking.earnings ?? 0}
-                  {booking.status === 'disputed' && (
-                    <span className="ml-1.5 text-[10px] font-medium text-amber-500 dark:text-amber-400">(on hold)</span>
+              {/* Dispute detail block (only when disputed) */}
+              {booking.status === 'disputed' && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Issue raised by client</p>
+                  </div>
+                  {booking.dispute?.issueType && (
+                    <p className="text-xs text-amber-800 dark:text-amber-300 pl-6">
+                      <span className="font-medium">Type: </span>
+                      {booking.dispute.issueType.replace(/_/g, ' ')}
+                    </p>
                   )}
-                  {booking.status === 'dispute_window_open' && (
-                    <span className="ml-1.5 text-[10px] font-medium text-violet-500 dark:text-violet-400">(pending)</span>
+                  {booking.dispute?.description && (
+                    <p className="text-xs text-amber-800 dark:text-amber-300 pl-6 line-clamp-2">
+                      <span className="font-medium">Details: </span>
+                      {booking.dispute.description}
+                    </p>
                   )}
-                </p>
-              </div>
-
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5 min-w-0">
-                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Mail className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
-                  <span className="font-medium">Email</span>
-                </div>
-                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate" title={booking.clientEmail}>
-                  {booking.clientEmail || 'N/A'}
-                </p>
-              </div>
-            </div>
-
-            {/* Dispute detail block (only when disputed) */}
-            {booking.status === 'disputed' && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Issue raised by client</p>
-                </div>
-                {booking.dispute?.issueType && (
-                  <p className="text-xs text-amber-800 dark:text-amber-300 pl-6">
-                    <span className="font-medium">Type: </span>
-                    {booking.dispute.issueType.replace(/_/g, ' ')}
+                  <p className="text-[10px] text-amber-700 dark:text-amber-400 pl-6 pt-0.5">
+                    Admin is reviewing this. Your earnings are on hold until resolved.
                   </p>
-                )}
-                {booking.dispute?.description && (
-                  <p className="text-xs text-amber-800 dark:text-amber-300 pl-6 line-clamp-2">
-                    <span className="font-medium">Details: </span>
-                    {booking.dispute.description}
-                  </p>
-                )}
-                <p className="text-[10px] text-amber-700 dark:text-amber-400 pl-6 pt-0.5">
-                  Admin is reviewing this. Your earnings are on hold until resolved.
-                </p>
-              </div>
-            )}
-
-            {/* Review-window info block */}
-            {booking.status === 'dispute_window_open' && (
-              <div className="rounded-xl border border-violet-200 bg-violet-50 dark:border-violet-900/60 dark:bg-violet-950/20 p-4 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Hourglass className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
-                  <p className="text-xs font-semibold text-violet-900 dark:text-violet-200">Review window is open</p>
                 </div>
-                <p className="text-xs text-violet-700 dark:text-violet-400 pl-6">
-                  Client has up to 24 hours to raise an issue. No action is needed from you right now.
-                </p>
-              </div>
-            )}
+              )}
 
-            {/* Actions */}
-            <div className="pt-1 flex flex-col sm:flex-row gap-2">
-              {booking.canJoin && (
+              {/* Review-window info block */}
+              {booking.status === 'dispute_window_open' && (
+                <div className="rounded-xl border border-violet-200 bg-violet-50 dark:border-violet-900/60 dark:bg-violet-950/20 p-4 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Hourglass className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
+                    <p className="text-xs font-semibold text-violet-900 dark:text-violet-200">Review window is open</p>
+                  </div>
+                  <p className="text-xs text-violet-700 dark:text-violet-400 pl-6">
+                    Client has up to 24 hours to raise an issue. No action is needed from you right now.
+                  </p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="pt-1 flex flex-col sm:flex-row gap-2">
+                {booking.canJoin && (
+                  <Button
+                    onClick={() => handleJoinSession(booking)}
+                    className="w-full sm:flex-1 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold py-3 shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all"
+                  >
+                    <Video className="w-4 h-4 mr-2" />
+                    Join Session
+                  </Button>
+                )}
+
+                {booking.status === 'confirmed' && !booking.canJoin && s && s.minutesToStart > 0 && (
+                  <div className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 text-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                    {`Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES
+                        ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
+                        : `in ${s.minutesToStart} min`}`}
+                  </div>
+                )}
+
                 <Button
-                  onClick={() => handleJoinSession(booking)}
-                  className="w-full sm:flex-1 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold py-3 shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all"
+                  variant="outline"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNotesModalState({ show: true, booking });
+                  }}
+                  className="w-full sm:flex-1 rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-semibold py-3 shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <Video className="w-4 h-4 mr-2" />
-                  Join Session
+                  <FileText className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  <span>{booking.hasNotes ? 'View Clinical Notes' : 'Add Clinical Notes'}</span>
                 </Button>
-              )}
-
-              {booking.status === 'confirmed' && !booking.canJoin && s && s.minutesToStart > 0 && (
-                <div className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 text-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                  {`Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES
-                      ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
-                      : `in ${s.minutesToStart} min`}`}
-                </div>
-              )}
-
-              <Button
-                variant="outline"
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setNotesModalState({ show: true, booking });
-                }}
-                className="w-full sm:flex-1 rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-semibold py-3 shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <FileText className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                <span>{booking.hasNotes ? 'View Clinical Notes' : 'Add Clinical Notes'}</span>
-              </Button>
+              </div>
             </div>
 
             {/* Footer */}
@@ -588,7 +587,7 @@ const CounselorDashboardMySessions = () => {
   return (
     <section className="relative min-h-full w-full max-w-full overflow-x-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30 py-6 sm:py-10 px-3 sm:px-6">
       <motion.div
-        className="relative z-10 max-w-6xl mx-auto w-full"
+        className="relative z-10 max-w-7xl mx-auto w-full"
         initial="hidden"
         animate="visible"
         variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
@@ -645,7 +644,7 @@ const CounselorDashboardMySessions = () => {
                 </Card>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 w-full gap-5 sm:gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 w-full gap-5 sm:gap-6 items-start">
                     <AnimatePresence mode="wait">
                       {bookings.map((booking) => (
                         <SessionCard key={booking.bookingId} booking={booking} />

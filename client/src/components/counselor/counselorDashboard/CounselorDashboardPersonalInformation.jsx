@@ -1030,10 +1030,10 @@ const CounselorDashboardPersonalInfo = () => {
         <Card className="overflow-hidden">
           <div className="h-32 sm:h-36 lg:h-40 bg-gradient-to-r from-primary-500 to-primary-700" />
           <CardContent className="relative pt-0 pb-6 sm:pb-8">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-5 sm:gap-6 -mt-16 sm:-mt-18 lg:-mt-20">
-              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-6 flex-1 min-w-0">
+            <div className="flex flex-col md:flex-row items-start justify-between gap-5 sm:gap-6 -mt-16 sm:mt-0">
+              <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 flex-1 min-w-0">
                 {/* Profile Picture */}
-                <div className="relative group shrink-0">
+                <div className="relative group shrink-0 sm:-mt-18 lg:-mt-20">
                   <Avatar className="h-28 w-28 sm:h-36 sm:w-36 lg:h-40 lg:w-40 border-4 border-white dark:border-neutral-900 shadow-xl ring-4 ring-primary-500/10">
                     <AvatarImage src={counselorData.profilePicture} alt={counselorData.fullName} />
                     <AvatarFallback className="text-3xl md:text-4xl bg-primary-100 dark:bg-primary-900/30">
@@ -1065,7 +1065,7 @@ const CounselorDashboardPersonalInfo = () => {
                 </div>
 
                 {/* Profile Info */}
-                <div className="flex-1 space-y-2 sm:space-y-2.5 min-w-0">
+                <div className="flex-1 space-y-2 sm:space-y-2.5 min-w-0 sm:pt-3 lg:pt-4">
                   <div>
                     <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap min-w-0">
                       <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
@@ -1103,7 +1103,7 @@ const CounselorDashboardPersonalInfo = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 mt-3 md:mt-0 w-full md:w-auto shrink-0 self-stretch sm:self-start md:self-end">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 mt-3 md:mt-0 w-full md:w-auto shrink-0 self-stretch sm:self-start md:self-start md:pt-3 lg:pt-4">
                 <Button
                   onClick={() => setIsShareModalOpen(true)}
                   variant="outline"
