@@ -29,7 +29,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { API_ENDPOINTS } from '../../../config/api';
 import api from '@/lib/axios';
 import { TIMEZONE } from '../../../constants/constants';
@@ -414,8 +413,6 @@ const CounselorDashboardMySessions = () => {
                   </span>
                 </div>
               </div>
-
-              <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
               {/* Session meta in clean structured tiles with generous breathing room */}
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3 sm:gap-3.5 pt-1">

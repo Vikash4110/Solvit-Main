@@ -28,7 +28,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -390,8 +389,6 @@ const ClientDashboardMyBookings = () => {
                   </span>
                 </div>
               </div>
-
-              <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
               {/* Session Meta in structured tiles with generous breathing room */}
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3 sm:gap-3.5 pt-1">
