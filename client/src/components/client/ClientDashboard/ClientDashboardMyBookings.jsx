@@ -345,164 +345,166 @@ const ClientDashboardMyBookings = () => {
         : [];
 
     return (
-      <motion.div variants={fadeInUp} layout>
+      <motion.div variants={fadeInUp} layout className="h-full">
         <Card
-          className={`relative overflow-hidden rounded-2xl border ${getStatusBorderClass(booking?.status)} bg-white/80 dark:bg-neutral-900/70 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`}
+          className={`relative overflow-hidden rounded-2xl border ${getStatusBorderClass(booking?.status)} bg-white/80 dark:bg-neutral-900/70 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 h-full flex flex-col`}
         >
-          <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-5">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
-              <div className="flex items-center gap-3 min-w-0">
-                <Avatar className="h-11 w-11 sm:h-13 sm:w-13 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
-                  <AvatarImage src={booking.counselorPhoto} alt={name} />
-                  <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold text-xs sm:text-sm">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+          <CardContent className="p-4 sm:p-6 flex-1 flex flex-col justify-between space-y-4 sm:space-y-5">
+            <div className="space-y-4 sm:space-y-5">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-11 w-11 sm:h-13 sm:w-13 ring-2 ring-primary-100 dark:ring-primary-900/30 border border-primary-200/60 dark:border-primary-800/60 shrink-0">
+                    <AvatarImage src={booking.counselorPhoto} alt={name} />
+                    <AvatarFallback className="bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 font-semibold text-xs sm:text-sm">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-50 truncate">
-                      {name}
-                    </h3>
-                    <BadgeCheck className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-50 truncate">
+                        {name}
+                      </h3>
+                      <BadgeCheck className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                    </div>
+
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                      {specialization?.[0] && (
+                        <span className="truncate max-w-[180px] sm:max-w-none font-medium">
+                          {specialization[0]}
+                        </span>
+                      )}
+                      {specialization.length > 1 && (
+                        <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
+                          +{specialization.length - 1}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
+                </div>
 
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
-                    {specialization?.[0] && (
-                      <span className="truncate max-w-[180px] sm:max-w-none font-medium">
-                        {specialization[0]}
-                      </span>
-                    )}
-                    {specialization.length > 1 && (
-                      <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
-                        +{specialization.length - 1}
-                      </Badge>
-                    )}
-                  </div>
+                <div className="self-start sm:self-center shrink-0">
+                  <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}>
+                    {statusUI.label}
+                  </span>
                 </div>
               </div>
 
-              <div className="self-start sm:self-center shrink-0">
-                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}>
-                  {statusUI.label}
-                </span>
-              </div>
-            </div>
+              <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
 
-            <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
-
-            {/* Session Meta in structured tiles with generous breathing room */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-3.5 pt-1">
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
-                  <span className="font-medium">Date</span>
-                </div>
-                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {s.date}
-                </p>
-              </div>
-
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Clock className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
-                  <span className="font-medium">Time</span>
-                </div>
-                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {s.time}
-                </p>
-                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
-                  {s.duration} • <Globe className="h-3 w-3 inline text-primary-500" /> {s.tz}
-                </p>
-              </div>
-
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  <Video className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
-                  <span className="font-medium">Session Mode</span>
-                </div>
-                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  Video Session
-                </p>
-                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
-                  Live 1-on-1 counseling
-                </p>
-              </div>
-
-              <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5 flex flex-col justify-between">
-                <div>
+              {/* Session Meta in structured tiles with generous breathing room */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3 sm:gap-3.5 pt-1">
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
                   <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                    <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <span className="font-medium">Total Paid</span>
+                    <Calendar className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                    <span className="font-medium">Date</span>
                   </div>
-                  <p className="text-base font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">
-                    ₹{booking.price}
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    {s.date}
                   </p>
                 </div>
-                {!!booking.invoice ? (
-                  <div className="pt-0.5">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 rounded-lg text-[11px] font-medium border-primary-200 text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 px-2.5"
-                      onClick={() => window.open(booking.invoice, '_blank')}
-                    >
-                      <Receipt className="h-3 w-3 mr-1 shrink-0" />
-                      Invoice
-                    </Button>
+
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    <Clock className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                    <span className="font-medium">Time</span>
                   </div>
-                ) : (
-                  <p className="text-[11px] text-neutral-400 dark:text-neutral-500 pt-0.5">
-                    Payment complete
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    {s.time}
                   </p>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
+                    {s.duration} • <Globe className="h-3 w-3 inline text-primary-500" /> {s.tz}
+                  </p>
+                </div>
+
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                    <Video className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                    <span className="font-medium">Session Mode</span>
+                  </div>
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    Video Session
+                  </p>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
+                    Live 1-on-1 counseling
+                  </p>
+                </div>
+
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/60 dark:border-neutral-800/60 space-y-1.5 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                      <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span className="font-medium">Total Paid</span>
+                    </div>
+                    <p className="text-base font-bold text-neutral-900 dark:text-neutral-100 mt-0.5">
+                      ₹{booking.price}
+                    </p>
+                  </div>
+                  {!!booking.invoice ? (
+                    <div className="pt-0.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 rounded-lg text-[11px] font-medium border-primary-200 text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 px-2.5"
+                        onClick={() => window.open(booking.invoice, '_blank')}
+                      >
+                        <Receipt className="h-3 w-3 mr-1 shrink-0" />
+                        Invoice
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-neutral-400 dark:text-neutral-500 pt-0.5">
+                      Payment complete
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Alert strip */}
+              {alert.show && (
+                <div className="mt-3.5">
+                  <Alert className={`py-2.5 ${alert.className}`}>
+                    <alert.icon className="h-4 w-4" />
+                    <AlertDescription className="text-xs font-medium">
+                      {alert.message}
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+
+              {/* Actions with clean breathing room */}
+              <div className="pt-1 flex flex-col sm:flex-row gap-2">
+                {booking.status === 'confirmed' && (
+                  <>
+                    <Button
+                      className={
+                        'w-full sm:flex-1 rounded-xl text-white font-semibold py-3 ' +
+                        'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 ' +
+                        'shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all ' +
+                        (!booking.canJoin ? 'opacity-70 cursor-not-allowed' : '')
+                      }
+                      disabled={!booking.canJoin}
+                      onClick={() => handleJoinSession(booking)}
+                    >
+                      <Video className="h-4 w-4 mr-2" />
+                      {booking.canJoin ? 'Join Session' : 'Join available soon'}
+                    </Button>
+                  </>
+                )}
+
+                {booking.status === 'dispute_window_open' && booking.canRaiseIssue && (
+                  <Button
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-white font-semibold py-3 shadow-md shadow-violet-500/20 transition-all"
+                    onClick={() =>
+                      navigate(`/client/dashboard/bookings/raiseIssue/${booking.bookingId}`)
+                    }
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Raise issue
+                  </Button>
                 )}
               </div>
-            </div>
-
-            {/* Alert strip */}
-            {alert.show && (
-              <div className="mt-3.5">
-                <Alert className={`py-2.5 ${alert.className}`}>
-                  <alert.icon className="h-4 w-4" />
-                  <AlertDescription className="text-xs font-medium">
-                    {alert.message}
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
-
-            {/* Actions with clean breathing room */}
-            <div className="pt-1 flex flex-col sm:flex-row gap-2">
-              {booking.status === 'confirmed' && (
-                <>
-                  <Button
-                    className={
-                      'w-full sm:flex-1 rounded-xl text-white font-semibold py-3 ' +
-                      'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 ' +
-                      'shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all ' +
-                      (!booking.canJoin ? 'opacity-70 cursor-not-allowed' : '')
-                    }
-                    disabled={!booking.canJoin}
-                    onClick={() => handleJoinSession(booking)}
-                  >
-                    <Video className="h-4 w-4 mr-2" />
-                    {booking.canJoin ? 'Join Session' : 'Join available soon'}
-                  </Button>
-                </>
-              )}
-
-              {booking.status === 'dispute_window_open' && booking.canRaiseIssue && (
-                <Button
-                  className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800 text-white font-semibold py-3 shadow-md shadow-violet-500/20 transition-all"
-                  onClick={() =>
-                    navigate(`/client/dashboard/bookings/raiseIssue/${booking.bookingId}`)
-                  }
-                >
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Raise issue
-                </Button>
-              )}
             </div>
 
             {/* Footer */}
@@ -538,7 +540,7 @@ const ClientDashboardMyBookings = () => {
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[radial-gradient(1200px_circle_at_20%_10%,rgba(14,165,233,0.10),transparent_55%),radial-gradient(900px_circle_at_80%_30%,rgba(99,102,241,0.08),transparent_45%)] dark:bg-[radial-gradient(1200px_circle_at_20%_10%,rgba(14,165,233,0.12),transparent_55%),radial-gradient(900px_circle_at_80%_30%,rgba(99,102,241,0.10),transparent_45%)]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary-700 to-primary-900 bg-clip-text text-transparent">
             My bookings
@@ -600,7 +602,7 @@ const ClientDashboardMyBookings = () => {
                     initial="hidden"
                     animate="visible"
                     variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-                    className="grid grid-cols-1 w-full gap-4 sm:gap-5"
+                    className="grid grid-cols-1 lg:grid-cols-2 w-full gap-5 sm:gap-6 items-start"
                   >
                     {bookings.map((booking) => (
                       <BookingCard key={booking.bookingId} booking={booking} />
