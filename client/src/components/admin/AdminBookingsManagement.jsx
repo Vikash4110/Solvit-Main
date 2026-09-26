@@ -1144,9 +1144,9 @@ export default function BookingsManagement() {
                           selectedBooking.payout?.counselorBankDetails?.accountNo) && (
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-[10px] text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                            className="h-5 px-1.5 py-0 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/40 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/60 border-indigo-200/60 dark:border-indigo-800/60 whitespace-nowrap shrink-0 flex items-center gap-1 shadow-none transition-all"
                             onClick={() => {
                               const counselor = selectedBooking.slotId?.counselorId;
                               const bank =
@@ -1159,8 +1159,8 @@ export default function BookingsManagement() {
                               toast.success('Counselor bank & payout details copied to clipboard');
                             }}
                           >
-                            <Copy className="h-3 w-3 mr-1" />
-                            Copy All Details
+                            <Copy className="h-2.5 w-2.5 shrink-0" />
+                            <span>Copy All Details</span>
                           </Button>
                         )}
                       </div>
