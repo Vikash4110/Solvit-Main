@@ -843,7 +843,7 @@ const getAllPayments = async (req, res) => {
         select: 'startTime endTime basePrice totalPriceAfterPlatformFee status',
         populate: {
           path: 'counselorId',
-          select: 'fullName email experienceLevel profilePicture specialization',
+          select: 'fullName email phone experienceLevel profilePicture specialization application',
         },
       })
       .sort({ createdAt: -1 })

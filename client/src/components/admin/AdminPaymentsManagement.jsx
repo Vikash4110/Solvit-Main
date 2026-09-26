@@ -21,8 +21,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -43,8 +50,99 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Copy,
+  Check,
+  Receipt,
+  User,
+  UserCheck,
+  ShieldCheck,
+  FileText,
+  RotateCcw,
+  Sparkles,
+  ArrowRight,
+  ExternalLink,
+  Info,
+  BadgePercent,
+  Hash,
+  Activity,
+  Layers,
+  Shield,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+
+// Helper component for clean, copyable metadata fields
+function CopyableField({ label, value, mono = true, truncate = false, className = '' }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    if (value === undefined || value === null || value === '') return;
+    navigator.clipboard.writeText(String(value));
+    setCopied(true);
+    toast.success(`${label || 'Value'} copied to clipboard`);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const isAvailable = value !== undefined && value !== null && value !== '';
+  const displayValue = isAvailable ? String(value) : 'N/A';
+
+  return (
+    <div className={`min-w-0 ${className}`}>
+      {label && (
+        <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+          {label}
+        </p>
+      )}
+      <div className="flex items-center justify-between gap-1.5 bg-slate-50 hover:bg-slate-100/90 dark:bg-neutral-900/90 dark:hover:bg-neutral-900 px-2.5 py-1.5 rounded-lg border border-slate-200/80 dark:border-neutral-800 transition-colors group">
+        <span
+          className={`text-xs select-all text-slate-800 dark:text-neutral-200 ${
+            mono ? 'font-mono' : ''
+          } ${truncate ? 'truncate' : 'break-all'} min-w-0 flex-1`}
+          title={isAvailable ? String(value) : undefined}
+        >
+          {displayValue}
+        </span>
+        {isAvailable && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="shrink-0 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-neutral-800 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary-500"
+            title={`Copy ${label || ''}`}
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Currency formatter
+const formatINR = (val) => {
+  if (val === undefined || val === null || isNaN(val)) return '₹0.00';
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(val);
+};
+
+// Avatar initials helper
+const getInitials = (name) => {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
 
 export default function PaymentManagement() {
   const { getAllPayments, getPaymentDetails } = useAdminAuth();
@@ -52,6 +150,7 @@ export default function PaymentManagement() {
   const [payments, setPayments] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(false);
+  const [loadingPaymentId, setLoadingPaymentId] = useState(null);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -110,6 +209,7 @@ export default function PaymentManagement() {
   // Get payment details
   const handleViewDetails = async (paymentId) => {
     try {
+      setLoadingPaymentId(paymentId);
       const result = await getPaymentDetails(paymentId);
 
       if (result.success) {
@@ -121,6 +221,8 @@ export default function PaymentManagement() {
     } catch (error) {
       console.error('Error fetching payment details:', error);
       toast.error('Failed to fetch payment details');
+    } finally {
+      setLoadingPaymentId(null);
     }
   };
 
@@ -549,9 +651,15 @@ export default function PaymentManagement() {
                         <Button
                           size="sm"
                           variant="outline"
+                          disabled={loadingPaymentId === payment._id}
                           onClick={() => handleViewDetails(payment._id)}
+                          className="h-8 px-2.5 text-xs font-medium hover:bg-primary-50 hover:text-primary-700 dark:hover:bg-primary-950/50"
                         >
-                          <Eye className="h-4 w-4 mr-1" />
+                          {loadingPaymentId === payment._id ? (
+                            <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin text-primary-600" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5 mr-1.5" />
+                          )}
                           View
                         </Button>
                       </TableCell>
@@ -595,394 +703,841 @@ export default function PaymentManagement() {
       {/* Payment Details Modal */}
       {selectedPayment && (
         <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-          <DialogContent className="max-w-5xl max-h-[90vh]">
-            <DialogHeader>
-              <DialogTitle className="text-xl">Complete Payment Details</DialogTitle>
+          <DialogContent
+            size="xl"
+            className="w-[96vw] sm:w-[92vw] sm:max-w-2xl md:max-w-4xl lg:max-w-5xl max-h-[94vh] sm:max-h-[90vh] p-0 flex flex-col overflow-hidden bg-slate-50/90 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 shadow-2xl rounded-2xl"
+          >
+            {/* Modal Header */}
+            <DialogHeader className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+                    <Receipt className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 dark:text-neutral-100 flex items-center gap-2">
+                      Complete Payment Details
+                    </DialogTitle>
+                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                      Processed on{' '}
+                      {selectedPayment.createdAt
+                        ? dayjs(selectedPayment.createdAt).format('MMM DD, YYYY • hh:mm A')
+                        : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {getStatusBadge(selectedPayment.status)}
+                  {selectedPayment.refund_status && getRefundBadge(selectedPayment.refund_status)}
+                </div>
+              </div>
             </DialogHeader>
-            <ScrollArea className="h-[700px] pr-4">
-              <div className="space-y-6">
-                {/* Basic Payment Info */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Payment Information</CardTitle>
+
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto px-3.5 py-4 sm:px-6 sm:py-5 space-y-4 sm:space-y-5">
+              <div className="space-y-4 sm:space-y-5 pb-4">
+                {/* 1. Quick Financial Summary / Hero Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+                  {/* Total Paid */}
+                  <div className="p-3.5 rounded-xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 shadow-sm col-span-2 sm:col-span-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-400">
+                        Total Paid
+                      </span>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300">
+                        {selectedPayment.currency || 'INR'}
+                      </Badge>
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-2 tracking-tight">
+                      {formatINR(selectedPayment.amount)}
+                    </p>
+                    <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">
+                      Client Gross Amount
+                    </p>
+                  </div>
+
+                  {/* Counselor Fee */}
+                  <div className="p-3.5 rounded-xl bg-white dark:bg-neutral-900 border border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                    <span className="text-xs font-semibold text-slate-600 dark:text-neutral-400">
+                      Counselor Base
+                    </span>
+                    <p className="text-xl font-bold text-slate-900 dark:text-neutral-100 mt-2">
+                      {formatINR(selectedPayment.slotId?.basePrice || 0)}
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-neutral-500 mt-0.5">
+                      Counselor Rate
+                    </p>
+                  </div>
+
+                  {/* Platform Fee */}
+                  <div className="p-3.5 rounded-xl bg-white dark:bg-neutral-900 border border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                      Solvit Platform Fee
+                    </span>
+                    <p className="text-xl font-bold text-blue-700 dark:text-blue-400 mt-2">
+                      {formatINR(
+                        selectedPayment.calculated?.platformFeeOfSolvit ??
+                          (selectedPayment.amount && selectedPayment.slotId?.basePrice
+                            ? selectedPayment.amount - selectedPayment.slotId.basePrice
+                            : 0)
+                      )}
+                    </p>
+                    <p className="text-[11px] text-blue-500/80 dark:text-blue-400/70 mt-0.5">
+                      Platform Margin
+                    </p>
+                  </div>
+
+                  {/* Razorpay Fee */}
+                  <div className="p-3.5 rounded-xl bg-white dark:bg-neutral-900 border border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                    <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                      Razorpay Fee
+                    </span>
+                    <p className="text-xl font-bold text-orange-700 dark:text-orange-400 mt-2">
+                      -{formatINR(selectedPayment.fee || 0)}
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-neutral-500 mt-0.5">
+                      incl. ₹{Number(selectedPayment.tax || 0).toFixed(2)} GST
+                    </p>
+                  </div>
+
+                  {/* Net Solvit Settlement */}
+                  <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 shadow-sm col-span-2 sm:col-span-2 lg:col-span-1">
+                    <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">
+                      Net Settlement
+                    </span>
+                    <p className="text-xl font-bold text-indigo-700 dark:text-indigo-400 mt-2">
+                      {formatINR(
+                        selectedPayment.calculated?.netAmountReceivedAfterRazorpayFee ??
+                          selectedPayment.netAmount ??
+                          (selectedPayment.amount || 0) - (selectedPayment.fee || 0)
+                      )}
+                    </p>
+                    <p className="text-[11px] text-indigo-600/80 dark:text-indigo-400/70 mt-0.5">
+                      After Razorpay Fee
+                    </p>
+                  </div>
+                </div>
+
+                {/* If Refund Exists - Summary Alert */}
+                {selectedPayment.amount_refunded > 0 && (
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 dark:text-amber-200">
+                    <div className="flex items-center gap-2.5">
+                      <RotateCcw className="h-4 w-4 text-amber-600 shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          Refund Processed:
+                        </span>
+                        <span className="ml-2 text-sm font-semibold">
+                          -{formatINR(selectedPayment.amount_refunded)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-medium">
+                      Remaining Net Balance:{' '}
+                      <span className="font-bold text-sm text-emerald-700 dark:text-emerald-400">
+                        {formatINR(
+                          selectedPayment.calculated
+                            ?.remainingAmountToBeRecivedAfterRefundAndRazorPayFee ??
+                            (selectedPayment.netAmount || 0) - (selectedPayment.amount_refunded || 0)
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Core Identifiers & Metadata Grid */}
+                <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                  <CardHeader className="py-3.5 px-5 border-b border-slate-100 dark:border-neutral-800">
+                    <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                      <Hash className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                      Transaction & Gateway Identifiers
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Payment ID in Database</p>
-                      <p className="font-mono text-sm">{selectedPayment._id}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Razorpay Payment ID</p>
-                      <p className="font-mono text-sm">{selectedPayment.razorpay_payment_id}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Razorpay Order ID</p>
-                      <p className="font-mono text-sm">{selectedPayment.razorpay_order_id}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Payment Status</p>
-                      <div className="mt-1">{getStatusBadge(selectedPayment.status)}</div>
-                    </div>
-                    
-                      <div className="col-span-3">
-                        <p className="text-sm font-medium text-muted-foreground">Signature</p>
-                        <p className="font-mono text-xs break-all">
-                          {selectedPayment.razorpay_signature}
+                  <CardContent className="p-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      <CopyableField
+                        label="Database Payment ID"
+                        value={selectedPayment._id}
+                      />
+                      <CopyableField
+                        label="Razorpay Payment ID"
+                        value={selectedPayment.razorpay_payment_id}
+                      />
+                      <CopyableField
+                        label="Razorpay Order ID"
+                        value={selectedPayment.razorpay_order_id}
+                      />
+                      <CopyableField
+                        label="Booking ID Reference"
+                        value={
+                          selectedPayment.slotId?.bookingId ||
+                          selectedPayment.bookingId?._id ||
+                          selectedPayment.bookingId ||
+                          'N/A'
+                        }
+                      />
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                          Booking Status
+                        </p>
+                        <div className="pt-0.5">
+                          {getBookingStatusBadge(selectedPayment.bookingStatus)}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                          Captured Status
+                        </p>
+                        <Badge
+                          variant={selectedPayment.captured ? 'success' : 'destructive'}
+                          className="font-medium text-xs mt-0.5"
+                        >
+                          {selectedPayment.captured ? 'Yes (Captured)' : 'No (Uncaptured)'}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                          Payment Method
+                        </p>
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-neutral-200 capitalize mt-1">
+                          {getPaymentMethodIcon(selectedPayment.method)}
+                          <span>{selectedPayment.method || 'Unknown'}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                          Transaction Region
+                        </p>
+                        <p className="text-xs font-medium text-slate-700 dark:text-neutral-300 mt-1">
+                          {selectedPayment.international
+                            ? '🌐 International Transaction'
+                            : '🇮🇳 Domestic (India)'}
                         </p>
                       </div>
-                 
-                   
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Booking Status Of Payment Model</p>
-                      <div className="mt-1">
-                        {getBookingStatusBadge(selectedPayment.bookingStatus)}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Currency</p>
-                      <p className="text-sm">{selectedPayment.currency}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Captured</p>
-                      <Badge variant={selectedPayment.captured ? 'success' : 'destructive'}>
-                        {selectedPayment.captured ? 'Yes' : 'No'}
-                      </Badge>
+                      {selectedPayment.idempotencyKey && (
+                        <CopyableField
+                          label="Idempotency Key"
+                          value={selectedPayment.idempotencyKey}
+                          truncate
+                        />
+                      )}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Customer & Counselor Details */}
-                <div className="grid grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Client Information</CardTitle>
+                {/* 3. Customer & Counselor Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Client Info */}
+                  <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                    <CardHeader className="py-3 px-4 border-b border-slate-100 dark:border-neutral-800">
+                      <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                        <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                        Client Information
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="p-4 space-y-3">
                       <div className="flex items-center gap-3">
-                        {selectedPayment.clientId?.profilePicture && (
-                          <img
-                            src={selectedPayment.clientId.profilePicture}
-                            alt={selectedPayment.clientId.fullName}
-                            className="h-12 w-12 rounded-full object-cover"
-                          />
-                        )}
-                        <div>
-                          <p className="font-medium">{selectedPayment.clientId?.fullName}</p>
+                        <Avatar size="lg" className="h-11 w-11 border border-slate-200 dark:border-neutral-700">
+                          {selectedPayment.clientId?.profilePicture && (
+                            <AvatarImage
+                              src={selectedPayment.clientId.profilePicture}
+                              alt={selectedPayment.clientId?.fullName || 'Client'}
+                            />
+                          )}
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold text-sm">
+                            {getInitials(selectedPayment.clientId?.fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm text-slate-900 dark:text-neutral-100 truncate">
+                            {selectedPayment.clientId?.fullName || 'Unknown Client'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border-blue-200">
+                              Client
+                            </Badge>
+                            {selectedPayment.clientId?.email && (
+                              <span className="text-xs text-slate-500 dark:text-neutral-400 truncate">
+                                {selectedPayment.clientId.email}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <Separator />
-                      <div className="space-y-1 text-sm">
-                        <p>
-                          <strong>Id:</strong> {selectedPayment.clientId?._id}
-                        </p>
-                       
+
+                      <Separator className="bg-slate-100 dark:bg-neutral-800" />
+
+                      <div className="space-y-2">
+                        <CopyableField
+                          label="Client Database ID"
+                          value={selectedPayment.clientId?._id}
+                        />
+                        {selectedPayment.clientId?.phone && (
+                          <div className="flex items-center justify-between text-xs pt-1">
+                            <span className="text-slate-500 dark:text-neutral-400">Phone:</span>
+                            <span className="font-medium text-slate-800 dark:text-neutral-200 font-mono">
+                              {selectedPayment.clientId.phone}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Counselor Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        {selectedPayment.slotId?.counselorId?.profilePicture && (
-                          <img
-                            src={selectedPayment.slotId.counselorId.profilePicture}
-                            alt={selectedPayment.slotId.counselorId.fullName}
-                            className="h-12 w-12 rounded-full object-cover"
-                          />
+                  {/* Counselor Info & Direct Bank Payout */}
+                  <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm flex flex-col justify-between">
+                    <CardHeader className="py-3 px-4 border-b border-slate-100 dark:border-neutral-800">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                          <UserCheck className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                          Counselor & Bank Payout Details
+                        </CardTitle>
+                        {selectedPayment.slotId?.basePrice && (
+                          <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-bold border-indigo-200 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                            Share: {formatINR(selectedPayment.slotId.basePrice)}
+                          </Badge>
                         )}
-                        <div>
-                          <p className="font-medium">
-                            {selectedPayment.slotId?.counselorId?.fullName}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-3.5">
+                      <div className="flex items-center gap-3">
+                        <Avatar size="lg" className="h-11 w-11 border border-slate-200 dark:border-neutral-700">
+                          {selectedPayment.slotId?.counselorId?.profilePicture && (
+                            <AvatarImage
+                              src={selectedPayment.slotId.counselorId.profilePicture}
+                              alt={selectedPayment.slotId?.counselorId?.fullName || 'Counselor'}
+                            />
+                          )}
+                          <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold text-sm">
+                            {getInitials(selectedPayment.slotId?.counselorId?.fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm text-slate-900 dark:text-neutral-100 truncate">
+                            {selectedPayment.slotId?.counselorId?.fullName || 'Unassigned / N/A'}
                           </p>
-                          
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border-indigo-200">
+                              Counselor
+                            </Badge>
+                            {selectedPayment.slotId?.counselorId?.email && (
+                              <span className="text-xs text-slate-500 dark:text-neutral-400 truncate">
+                                {selectedPayment.slotId.counselorId.email}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <Separator />
-                      <div className="space-y-1 text-sm">
-                        <p>
-                          <strong>Id:</strong> {selectedPayment.slotId?.counselorId?._id}
-                        </p>
-                       
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <CopyableField
+                          label="Counselor ID"
+                          value={selectedPayment.slotId?.counselorId?._id}
+                          truncate
+                        />
+                        {selectedPayment.slotId?.counselorId?.phone ? (
+                          <CopyableField
+                            label="Phone / Mobile"
+                            value={selectedPayment.slotId.counselorId.phone}
+                          />
+                        ) : (
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">Phone</p>
+                            <span className="text-xs text-slate-400">Not provided</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Counselor Bank Account & Payout Section */}
+                      <div className="mt-2 pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <Building2 className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                            Direct Payout Bank Account
+                          </span>
+                          {(selectedPayment.slotId?.counselorId?.application?.bankDetails?.accountNo ||
+                            selectedPayment.slotId?.counselorId?.bankDetails?.accountNo) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                              onClick={() => {
+                                const counselor = selectedPayment.slotId?.counselorId;
+                                const bank =
+                                  counselor?.application?.bankDetails || counselor?.bankDetails || {};
+                                const bankText = `Beneficiary Name: ${counselor?.fullName || 'N/A'}\nAccount Number: ${bank.accountNo || 'N/A'}\nIFSC Code: ${bank.ifscCode || 'N/A'}\nBranch Name: ${bank.branchName || 'N/A'}\nPayout Share: ₹${selectedPayment.slotId?.basePrice || 0}`;
+                                navigator.clipboard.writeText(bankText);
+                                toast.success('Counselor bank & payout details copied to clipboard');
+                              }}
+                            >
+                              <Copy className="h-3 w-3 mr-1" />
+                              Copy All Details
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Bank Details Content */}
+                        {selectedPayment.slotId?.counselorId?.application?.bankDetails?.accountNo ||
+                        selectedPayment.slotId?.counselorId?.bankDetails?.accountNo ? (
+                          (() => {
+                            const bank =
+                              selectedPayment.slotId?.counselorId?.application?.bankDetails ||
+                              selectedPayment.slotId?.counselorId?.bankDetails ||
+                              {};
+                            const isRefunded =
+                              selectedPayment.amount_refunded > 0 ||
+                              selectedPayment.refund_status === 'full' ||
+                              selectedPayment.refund_status === 'partial';
+                            const isCancelled = selectedPayment.bookingStatus === 'CANCELLED';
+
+                            return (
+                              <div className="p-2.5 rounded-lg bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <CopyableField
+                                    label="Bank Account No."
+                                    value={bank.accountNo}
+                                  />
+                                  <CopyableField
+                                    label="IFSC Code"
+                                    value={bank.ifscCode}
+                                  />
+                                </div>
+                                {bank.branchName && (
+                                  <div className="flex items-center justify-between text-xs pt-1 border-t border-indigo-100/70 dark:border-indigo-900/30">
+                                    <span className="text-slate-500 dark:text-neutral-400">Branch Name:</span>
+                                    <span className="font-medium text-slate-800 dark:text-neutral-200">
+                                      {bank.branchName}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Payout Readiness Status Notice */}
+                                <div className="pt-1.5 border-t border-indigo-100/70 dark:border-indigo-900/30">
+                                  {isRefunded ? (
+                                    <div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-300 font-medium bg-amber-100/60 dark:bg-amber-950/40 px-2 py-1 rounded">
+                                      <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                                      <span>Payment was refunded/disputed. Verify before transferring.</span>
+                                    </div>
+                                  ) : isCancelled ? (
+                                    <div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-300 font-medium bg-amber-100/60 dark:bg-amber-950/40 px-2 py-1 rounded">
+                                      <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                                      <span>Booking was cancelled. Check session policy.</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-between text-[11px] text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-100/60 dark:bg-emerald-950/40 px-2 py-1 rounded">
+                                      <span className="flex items-center gap-1.5">
+                                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                        Clean Transaction: Ready for Direct Payout
+                                      </span>
+                                      <span className="font-bold">
+                                        {formatINR(selectedPayment.slotId?.basePrice || 0)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-800/50 border border-slate-200/60 dark:border-neutral-700/60 flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-400">
+                            <Info className="h-4 w-4 text-slate-400 shrink-0" />
+                            <span>Bank account details not submitted yet in counselor profile.</span>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Session Details */}
+                {/* 4. Consultation Slot Details */}
                 {selectedPayment.slotId && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Slot Details</CardTitle>
+                  <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                    <CardHeader className="py-3 px-5 border-b border-slate-100 dark:border-neutral-800">
+                      <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                        Session / Slot Details
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Start Time</p>
-                        <p className="text-sm">
-                          {selectedPayment.slotId.startTime
-                            ? dayjs(selectedPayment.slotId.startTime).format('MMM DD, YYYY hh:mm A')
-                            : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">End Time</p>
-                        <p className="text-sm">
-                          {selectedPayment.slotId.endTime
-                            ? dayjs(selectedPayment.slotId.endTime).format('MMM DD, YYYY hh:mm A')
-                            : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Base Price</p>
-                        <p className="text-sm font-semibold">
-                          ₹{selectedPayment.slotId.basePrice?.toLocaleString('en-IN')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Price After Solvit Platform Fee</p>
-                        <p className="text-sm font-semibold">
-                          ₹{selectedPayment.slotId.totalPriceAfterPlatformFee?.toLocaleString('en-IN')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Status</p>
-                        <p className="text-sm font-semibold">
-                          {selectedPayment.slotId.status}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Booking ID</p>
-                        <p className="text-sm font-semibold">
-                          {selectedPayment.slotId?.bookingId}
-                        </p>
+                    <CardContent className="p-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400">
+                            Start Time
+                          </p>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-800 dark:text-neutral-200 font-medium">
+                            <Clock className="h-3.5 w-3.5 text-slate-400" />
+                            {selectedPayment.slotId.startTime
+                              ? dayjs(selectedPayment.slotId.startTime).format(
+                                  'MMM DD, YYYY hh:mm A'
+                                )
+                              : 'N/A'}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400">
+                            End Time
+                          </p>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-800 dark:text-neutral-200 font-medium">
+                            <Clock className="h-3.5 w-3.5 text-slate-400" />
+                            {selectedPayment.slotId.endTime
+                              ? dayjs(selectedPayment.slotId.endTime).format(
+                                  'MMM DD, YYYY hh:mm A'
+                                )
+                              : 'N/A'}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400">
+                            Base Counselor Price
+                          </p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-neutral-100">
+                            ₹{selectedPayment.slotId.basePrice?.toLocaleString('en-IN') || 0}
+                          </p>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400">
+                            Slot Status
+                          </p>
+                          <Badge variant="outline" className="capitalize text-xs">
+                            {selectedPayment.slotId.status || 'Active'}
+                          </Badge>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
-                {/* Payment Method Details */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Payment Method Details</CardTitle>
+                {/* 5. Payment Method & Acquirer Data */}
+                <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                  <CardHeader className="py-3 px-5 border-b border-slate-100 dark:border-neutral-800">
+                    <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                      <CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      Payment Method & Gateway Telemetry
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
+                  <CardContent className="p-5 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                          Selected Method
+                        </p>
+                        <div className="flex items-center gap-2 bg-slate-100 dark:bg-neutral-800/60 px-3 py-2 rounded-lg border border-slate-200/60 dark:border-neutral-700/60">
                           {getPaymentMethodIcon(selectedPayment.method)}
-                          <span className="font-semibold capitalize text-lg">
-                            {selectedPayment.method}
+                          <span className="font-semibold capitalize text-xs text-slate-800 dark:text-neutral-200">
+                            {selectedPayment.method || 'N/A'}
                           </span>
                         </div>
-                        <div className="space-y-2 text-sm">
-                          {selectedPayment.bank && (
-                            <p>
-                              <strong>Bank:</strong> {selectedPayment.bank}
-                            </p>
-                          )}
-                          {selectedPayment.wallet && (
-                            <p>
-                              <strong>Wallet:</strong>{' '}
-                              <span className="capitalize">{selectedPayment.wallet}</span>
-                            </p>
-                          )}
-                          {selectedPayment.vpa && (
-                            <p>
-                              <strong>UPI ID:</strong>{' '}
-                              <span className="font-mono text-xs">{selectedPayment.vpa}</span>
-                            </p>
-                          )}
-                          {selectedPayment.card_id && (
-                            <p>
-                              <strong>Card ID:</strong> {selectedPayment.card_id}
-                            </p>
-                          )}
-                          {selectedPayment.upiDetails && (
-                            <>
-                              {selectedPayment.upiDetails.payer_account_type && (
-                                <p>
-                                  <strong>Payer Account Type:</strong>{' '}
-                                  {selectedPayment.upiDetails.payer_account_type}
-                                </p>
-                              )}
-                              {selectedPayment.upiDetails.flow && (
-                                <p>
-                                  <strong>UPI Flow:</strong> {selectedPayment.upiDetails.flow}
-                                </p>
-                              )}
-                            </>
-                          )}
-                          <p>
-                            <strong>International:</strong>{' '}
-                            {selectedPayment.international ? 'Yes' : 'No'}
+                      </div>
+
+                      {selectedPayment.bank && (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                            Bank
+                          </p>
+                          <p className="text-xs font-medium text-slate-800 dark:text-neutral-200 bg-slate-50 dark:bg-neutral-900 px-3 py-2 rounded-lg border border-slate-200/60">
+                            {selectedPayment.bank}
                           </p>
                         </div>
-                      </div>
+                      )}
 
-                      {selectedPayment.acquirer_data && (
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-sm">Acquirer Data</h4>
-                          <div className="space-y-2 text-sm">
+                      {selectedPayment.wallet && (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                            Wallet Provider
+                          </p>
+                          <p className="text-xs font-medium capitalize text-slate-800 dark:text-neutral-200 bg-slate-50 dark:bg-neutral-900 px-3 py-2 rounded-lg border border-slate-200/60">
+                            {selectedPayment.wallet}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedPayment.vpa && (
+                        <CopyableField
+                          label="UPI Virtual Private Address (VPA)"
+                          value={selectedPayment.vpa}
+                        />
+                      )}
+
+                      {selectedPayment.card_id && (
+                        <CopyableField
+                          label="Card Reference ID"
+                          value={selectedPayment.card_id}
+                        />
+                      )}
+
+                      {selectedPayment.upiDetails?.payer_account_type && (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                            UPI Account Type
+                          </p>
+                          <p className="text-xs font-medium capitalize text-slate-800 dark:text-neutral-200 bg-slate-50 dark:bg-neutral-900 px-3 py-2 rounded-lg border border-slate-200/60">
+                            {selectedPayment.upiDetails.payer_account_type}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedPayment.upiDetails?.flow && (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 dark:text-neutral-400 mb-1">
+                            UPI Flow
+                          </p>
+                          <p className="text-xs font-medium capitalize text-slate-800 dark:text-neutral-200 bg-slate-50 dark:bg-neutral-900 px-3 py-2 rounded-lg border border-slate-200/60">
+                            {selectedPayment.upiDetails.flow}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Acquirer Data Sub-Section */}
+                    {selectedPayment.acquirer_data && Object.keys(selectedPayment.acquirer_data).length > 0 && (
+                      <>
+                        <Separator className="bg-slate-100 dark:bg-neutral-800" />
+                        <div>
+                          <p className="text-xs font-bold text-slate-600 dark:text-neutral-400 uppercase tracking-wider mb-2.5">
+                            Bank & Gateway Acquirer Data
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {selectedPayment.acquirer_data.bank_transaction_id && (
-                              <p>
-                                <strong>Bank Txn ID:</strong>{' '}
-                                <span className="font-mono text-xs">
-                                  {selectedPayment.acquirer_data.bank_transaction_id}
-                                </span>
-                              </p>
+                              <CopyableField
+                                label="Bank Transaction ID"
+                                value={selectedPayment.acquirer_data.bank_transaction_id}
+                              />
                             )}
                             {selectedPayment.acquirer_data.rrn && (
-                              <p>
-                                <strong>RRN:</strong>{' '}
-                                <span className="font-mono text-xs">
-                                  {selectedPayment.acquirer_data.rrn}
-                                </span>
-                              </p>
+                              <CopyableField
+                                label="RRN (Reference No.)"
+                                value={selectedPayment.acquirer_data.rrn}
+                              />
                             )}
                             {selectedPayment.acquirer_data.auth_code && (
-                              <p>
-                                <strong>Auth Code:</strong>{' '}
-                                {selectedPayment.acquirer_data.auth_code}
-                              </p>
+                              <CopyableField
+                                label="Authorization Code"
+                                value={selectedPayment.acquirer_data.auth_code}
+                              />
                             )}
                             {selectedPayment.acquirer_data.arn && (
-                              <p>
-                                <strong>ARN:</strong>{' '}
-                                <span className="font-mono text-xs">
-                                  {selectedPayment.acquirer_data.arn}
-                                </span>
-                              </p>
+                              <CopyableField
+                                label="ARN (Acquirer Reference No.)"
+                                value={selectedPayment.acquirer_data.arn}
+                              />
                             )}
                             {selectedPayment.acquirer_data.transaction_id && (
-                              <p>
-                                <strong>Transaction ID:</strong>{' '}
-                                {selectedPayment.acquirer_data.transaction_id}
-                              </p>
+                              <CopyableField
+                                label="Gateway Transaction ID"
+                                value={selectedPayment.acquirer_data.transaction_id}
+                              />
                             )}
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 
-                {/* Financial Breakdown */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Financial Breakdown</CardTitle>
+                {/* 6. Complete Itemized Financial Breakdown / Receipt */}
+                <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm overflow-hidden">
+                  <CardHeader className="py-3 px-5 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900/50">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                        <Receipt className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                        Financial Breakdown & Settlement Summary
+                      </CardTitle>
+                      <Badge variant="outline" className="text-[10px] font-mono border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 bg-amber-50/50 dark:bg-amber-950/30">
+                        INR (₹)
+                      </Badge>
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Total Amount Paid:</span>
-                        <span className="font-bold text-xl">
-                          ₹{selectedPayment.amount?.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <Separator />
-
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Counselor Base Price:</span>
-                          <span>₹{selectedPayment.slotId?.basePrice?.toLocaleString('en-IN')}</span>
-                        </div>
-                        <div className="flex justify-between text-blue-600">
-                          <span>Platform Fee of Solvit:</span>
-                          <span className="font-semibold">
-                            ₹{selectedPayment.calculated?.platformFeeOfSolvit?.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Razorpay Fee including GST:</span>
-                          <span className="text-red-600">
-                            -₹{selectedPayment.fee?.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">GST on Razorpay Fee:</span>
-                          <span className="text-red-600">
-                            -₹{selectedPayment.tax?.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="flex justify-between items-center font-semibold">
-                        <span>Net Amount To Be Received After Razorpay Fee:</span>
-                        <span className="text-green-600 text-xl">
-                          ₹{selectedPayment.calculated?.netAmountReceivedAfterRazorpayFee?.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-
-                      {selectedPayment.amount_refunded > 0 && (
-                        <>
-                          <Separator />
-                          <div className="flex justify-between text-red-600">
-                            <span>Amount Refunded:</span>
-                            <span className="font-semibold">
-                              -₹{selectedPayment.amount_refunded?.toLocaleString('en-IN')}
+                  <CardContent className="p-5 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                      {/* 1. Client Payment Stage */}
+                      <div className="p-4 rounded-xl border border-slate-200/80 dark:border-neutral-800 bg-slate-50/60 dark:bg-neutral-950/40 flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs pb-1.5 border-b border-slate-200/60 dark:border-neutral-800">
+                            <span className="font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider text-[11px]">
+                              1. Client Charge
+                            </span>
+                            <span className="text-[10px] text-slate-400">Gross</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-600 dark:text-neutral-400">
+                            <span>Counselor Rate:</span>
+                            <span className="font-medium text-slate-900 dark:text-neutral-200">
+                              {formatINR(selectedPayment.slotId?.basePrice || 0)}
                             </span>
                           </div>
-                          <div className="flex justify-between font-semibold items-center">
-                            <span>Remaining Amount To Be Recieved After Refund And Razorpay Fee:</span>
-                            <span className="text-green-600 text-lg">
-                              ₹
-                              {selectedPayment.calculated?.remainingAmountToBeRecivedAfterRefundAndRazorPayFee?.toLocaleString('en-IN')}
+                          <div className="flex justify-between text-xs text-blue-600 dark:text-blue-400">
+                            <span>Solvit Platform Fee:</span>
+                            <span className="font-medium">
+                              +{formatINR(
+                                selectedPayment.calculated?.platformFeeOfSolvit ??
+                                  (selectedPayment.amount && selectedPayment.slotId?.basePrice
+                                    ? selectedPayment.amount - selectedPayment.slotId.basePrice
+                                    : 0)
+                              )}
                             </span>
                           </div>
-                        </>
-                      )}
+                        </div>
+                        <div className="pt-3 mt-3 border-t border-slate-200 dark:border-neutral-800 flex justify-between items-baseline">
+                          <span className="text-xs font-bold text-slate-900 dark:text-neutral-100">Total Charged:</span>
+                          <span className="text-base font-bold text-slate-900 dark:text-neutral-100">
+                            {formatINR(selectedPayment.amount)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 2. Gateway Deductions Stage */}
+                      <div className="p-4 rounded-xl border border-orange-200/70 dark:border-orange-900/40 bg-orange-50/30 dark:bg-orange-950/20 flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs pb-1.5 border-b border-orange-200/60 dark:border-orange-900/40">
+                            <span className="font-bold text-orange-800 dark:text-orange-300 uppercase tracking-wider text-[11px]">
+                              2. Gateway Cost
+                            </span>
+                            <span className="text-[10px] text-orange-600/70 dark:text-orange-400/70">Razorpay</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-600 dark:text-neutral-400">
+                            <span>Base Gateway Fee:</span>
+                            <span className="font-mono text-red-600 dark:text-red-400">
+                              -{formatINR((selectedPayment.fee || 0) - (selectedPayment.tax || 0))}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-600 dark:text-neutral-400">
+                            <span>GST on Fee (18%):</span>
+                            <span className="font-mono text-red-600 dark:text-red-400">
+                              -{formatINR(selectedPayment.tax || 0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="pt-3 mt-3 border-t border-orange-200/60 dark:border-orange-900/40 flex justify-between items-baseline">
+                          <span className="text-xs font-bold text-orange-900 dark:text-orange-200">Total Gateway Fee:</span>
+                          <span className="text-base font-bold text-red-600 dark:text-red-400">
+                            -{formatINR(selectedPayment.fee || 0)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 3. Net Settlement & Distribution Stage */}
+                      <div className="p-4 rounded-xl border border-emerald-300/80 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/30 flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs pb-1.5 border-b border-emerald-200/60 dark:border-emerald-900/50">
+                            <span className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider text-[11px]">
+                              3. Net Settlement
+                            </span>
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-400 text-emerald-700 dark:text-emerald-300 bg-white/60 dark:bg-neutral-900/60">
+                              Settled
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-600 dark:text-neutral-400">
+                            <span>Counselor Share:</span>
+                            <span className="font-semibold text-slate-900 dark:text-neutral-200">
+                              {formatINR(selectedPayment.slotId?.basePrice || 0)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                            <span>Solvit Net Margin:</span>
+                            <span className="font-bold">
+                              +{formatINR(
+                                (selectedPayment.calculated?.platformFeeOfSolvit ??
+                                  (selectedPayment.amount && selectedPayment.slotId?.basePrice
+                                    ? selectedPayment.amount - selectedPayment.slotId.basePrice
+                                    : 0)) - (selectedPayment.fee || 0)
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="pt-3 mt-3 border-t border-emerald-200/60 dark:border-emerald-900/50 flex justify-between items-baseline">
+                          <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">Total Net Received:</span>
+                          <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                            {formatINR(
+                              selectedPayment.calculated?.netAmountReceivedAfterRazorpayFee ??
+                                selectedPayment.netAmount ??
+                                (selectedPayment.amount || 0) - (selectedPayment.fee || 0)
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Refund Calculation (if applicable) */}
+                    {selectedPayment.amount_refunded > 0 && (
+                      <div className="p-3.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+                        <div className="flex items-center gap-2">
+                          <RotateCcw className="h-4 w-4 text-amber-600 shrink-0" />
+                          <span className="text-slate-700 dark:text-neutral-300">
+                            <strong>Refund Deducted from Transaction:</strong>{' '}
+                            <span className="text-red-600 font-bold">-{formatINR(selectedPayment.amount_refunded)}</span>
+                          </span>
+                        </div>
+                        <div className="text-slate-700 dark:text-neutral-300">
+                          <strong>Remaining Retained Revenue:</strong>{' '}
+                          <span className="text-emerald-700 dark:text-emerald-400 font-bold text-sm ml-1">
+                            {formatINR(
+                              selectedPayment.calculated
+                                ?.remainingAmountToBeRecivedAfterRefundAndRazorPayFee ??
+                                (selectedPayment.netAmount || 0) - (selectedPayment.amount_refunded || 0)
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
-                {/* Error Details (if payment failed) */}
+                {/* 7. Error Details (if payment failed) */}
                 {selectedPayment.status === 'failed' && selectedPayment.error_code && (
-                  <Card className="border-red-300 bg-red-50 dark:bg-red-950/20">
-                    <CardHeader>
-                      <CardTitle className="text-sm text-red-900 dark:text-red-100 flex items-center gap-2">
-                        <XCircle className="h-4 w-4" />
-                        Payment Failure Details
+                  <Card className="border-red-300 dark:border-red-900 bg-red-50/70 dark:bg-red-950/30 shadow-sm">
+                    <CardHeader className="py-3 px-5 border-b border-red-200 dark:border-red-900/60">
+                      <CardTitle className="text-xs font-bold text-red-900 dark:text-red-100 flex items-center gap-2 uppercase tracking-wider">
+                        <XCircle className="h-4 w-4 text-red-600" />
+                        Payment Failure Diagnostics
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                    <CardContent className="p-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                         {selectedPayment.error_code && (
-                          <div>
-                            <p className="font-medium">Error Code</p>
-                            <p className="font-mono">{selectedPayment.error_code}</p>
-                          </div>
+                          <CopyableField
+                            label="Error Code"
+                            value={selectedPayment.error_code}
+                          />
                         )}
                         {selectedPayment.error_source && (
                           <div>
-                            <p className="font-medium">Error Source</p>
-                            <p>{selectedPayment.error_source}</p>
+                            <p className="font-semibold text-slate-600 dark:text-neutral-400 mb-1">
+                              Error Source
+                            </p>
+                            <p className="bg-white dark:bg-neutral-900 p-2 rounded-lg border text-red-700 dark:text-red-300">
+                              {selectedPayment.error_source}
+                            </p>
                           </div>
                         )}
                         {selectedPayment.error_step && (
                           <div>
-                            <p className="font-medium">Error Step</p>
-                            <p>{selectedPayment.error_step}</p>
+                            <p className="font-semibold text-slate-600 dark:text-neutral-400 mb-1">
+                              Error Step
+                            </p>
+                            <p className="bg-white dark:bg-neutral-900 p-2 rounded-lg border text-red-700 dark:text-red-300">
+                              {selectedPayment.error_step}
+                            </p>
                           </div>
                         )}
                         {selectedPayment.error_reason && (
                           <div>
-                            <p className="font-medium">Error Reason</p>
-                            <p>{selectedPayment.error_reason}</p>
+                            <p className="font-semibold text-slate-600 dark:text-neutral-400 mb-1">
+                              Error Reason
+                            </p>
+                            <p className="bg-white dark:bg-neutral-900 p-2 rounded-lg border text-red-700 dark:text-red-300">
+                              {selectedPayment.error_reason}
+                            </p>
                           </div>
                         )}
                         {selectedPayment.error_description && (
-                          <div className="col-span-2">
-                            <p className="font-medium">Description</p>
-                            <p className="bg-white dark:bg-gray-900 p-2 rounded border mt-1">
+                          <div className="col-span-1 sm:col-span-2">
+                            <p className="font-semibold text-slate-600 dark:text-neutral-400 mb-1">
+                              Error Description
+                            </p>
+                            <p className="bg-white dark:bg-neutral-900 p-3 rounded-lg border text-red-800 dark:text-red-200 font-medium">
                               {selectedPayment.error_description}
                             </p>
                           </div>
@@ -992,75 +1547,87 @@ export default function PaymentManagement() {
                   </Card>
                 )}
 
-                {/* Refund History */}
+                {/* 8. Refund History (if refunds exist) */}
                 {selectedPayment.refunds && selectedPayment.refunds.length > 0 && (
-                  <Card className="border-blue-300 bg-blue-50 dark:bg-blue-950/20">
-                    <CardHeader>
-                      <CardTitle className="text-sm text-blue-900 dark:text-blue-100">
+                  <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                    <CardHeader className="py-3 px-5 border-b border-slate-100 dark:border-neutral-800">
+                      <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                        <RotateCcw className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                         Refund History ({selectedPayment.refunds.length})
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       <div className="space-y-3">
                         {selectedPayment.refunds.map((refund, idx) => (
                           <div
                             key={idx}
-                            className="bg-white dark:bg-gray-900 p-4 rounded-lg border"
+                            className="bg-slate-50 dark:bg-neutral-950 p-4 rounded-xl border border-slate-200 dark:border-neutral-800 space-y-3"
                           >
-                            <div className="grid grid-cols-4 gap-4 text-sm mb-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                              <CopyableField
+                                label="Refund ID"
+                                value={refund.razorpay_refund_id}
+                              />
                               <div>
-                                <p className="text-muted-foreground">Refund ID</p>
-                                <p className="font-mono text-xs">{refund.razorpay_refund_id}</p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground">Amount</p>
-                                <p className="font-semibold text-red-600">
-                                  -₹{refund.amount?.toLocaleString('en-IN')}
+                                <p className="text-slate-500 dark:text-neutral-400 font-semibold mb-1">
+                                  Refund Amount
+                                </p>
+                                <p className="font-bold text-sm text-red-600 dark:text-red-400 mt-1.5">
+                                  -{formatINR(refund.amount)}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-muted-foreground">Reason</p>
-                                <p className="capitalize">{refund.reason?.replace(/_/g, ' ')}</p>
+                                <p className="text-slate-500 dark:text-neutral-400 font-semibold mb-1">
+                                  Reason
+                                </p>
+                                <p className="capitalize font-medium text-slate-800 dark:text-neutral-200 mt-1.5">
+                                  {refund.reason?.replace(/_/g, ' ') || 'Customer Request'}
+                                </p>
                               </div>
                               <div>
-                                <p className="text-muted-foreground">Status</p>
-                                <Badge
-                                  variant={
-                                    refund.status === 'processed' ? 'success' : 'destructive'
-                                  }
-                                >
-                                  {refund.status?.toUpperCase()}
-                                </Badge>
+                                <p className="text-slate-500 dark:text-neutral-400 font-semibold mb-1">
+                                  Status
+                                </p>
+                                <div className="mt-1">
+                                  <Badge
+                                    variant={
+                                      refund.status === 'processed' ? 'success' : 'destructive'
+                                    }
+                                    className="text-[11px]"
+                                  >
+                                    {refund.status?.toUpperCase() || 'PROCESSED'}
+                                  </Badge>
+                                </div>
                               </div>
                             </div>
 
                             {(refund.refundSpeedRequested || refund.refundSpeedProcessed) && (
-                              <div className="grid grid-cols-2 gap-4 text-sm mt-2">
+                              <div className="grid grid-cols-2 gap-3 text-xs pt-1 border-t border-slate-200/60 dark:border-neutral-800">
                                 {refund.refundSpeedRequested && (
                                   <div>
-                                    <p className="text-muted-foreground">Speed Requested</p>
-                                    <p className="capitalize">{refund.refundSpeedRequested}</p>
+                                    <span className="text-slate-500 dark:text-neutral-400">
+                                      Speed Requested:
+                                    </span>{' '}
+                                    <span className="capitalize font-medium text-slate-700 dark:text-neutral-300">
+                                      {refund.refundSpeedRequested}
+                                    </span>
                                   </div>
                                 )}
                                 {refund.refundSpeedProcessed && (
                                   <div>
-                                    <p className="text-muted-foreground">Speed Processed</p>
-                                    <p className="capitalize">{refund.refundSpeedProcessed}</p>
+                                    <span className="text-slate-500 dark:text-neutral-400">
+                                      Speed Processed:
+                                    </span>{' '}
+                                    <span className="capitalize font-medium text-slate-700 dark:text-neutral-300">
+                                      {refund.refundSpeedProcessed}
+                                    </span>
                                   </div>
                                 )}
                               </div>
                             )}
 
-                            {refund.errorDetails && (
-                              <div className="mt-2">
-                                <p className="text-xs text-muted-foreground">
-                                  <strong>Details:</strong> {refund.errorDetails}
-                                </p>
-                              </div>
-                            )}
-
                             {refund.createdAt && (
-                              <p className="text-xs text-muted-foreground mt-2">
+                              <p className="text-[11px] text-slate-400 dark:text-neutral-500">
                                 Processed on{' '}
                                 {dayjs(refund.createdAt).format('MMM DD, YYYY hh:mm A')}
                               </p>
@@ -1072,29 +1639,88 @@ export default function PaymentManagement() {
                   </Card>
                 )}
 
-                
-
-                {/* Timestamps */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Timestamps</CardTitle>
+                {/* 9. Security Audit & Cryptographic Signature */}
+                <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                  <CardHeader className="py-3 px-5 border-b border-slate-100 dark:border-neutral-800">
+                    <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                      <ShieldCheck className="h-3.5 w-3.5 text-slate-600 dark:text-neutral-400" />
+                      Verification Audit & Timestamps
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-3 gap-4 text-sm">
-                    
-                    {selectedPayment.razorpay_created_at && (
+                  <CardContent className="p-5 space-y-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div>
-                        <p className="text-muted-foreground">Razorpay Created At:</p>
-                        <p>
-                          {dayjs(selectedPayment.razorpay_created_at * 1000).format(
-                            'MMM DD, YYYY hh:mm A'
-                          )}
+                        <p className="text-slate-500 dark:text-neutral-400 font-semibold mb-1">
+                          Solvit Record Created
                         </p>
+                        <p className="font-medium text-slate-800 dark:text-neutral-200">
+                          {selectedPayment.createdAt
+                            ? dayjs(selectedPayment.createdAt).format('MMM DD, YYYY • hh:mm:ss A')
+                            : 'N/A'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-slate-500 dark:text-neutral-400 font-semibold mb-1">
+                          Solvit Record Updated
+                        </p>
+                        <p className="font-medium text-slate-800 dark:text-neutral-200">
+                          {selectedPayment.updatedAt
+                            ? dayjs(selectedPayment.updatedAt).format('MMM DD, YYYY • hh:mm:ss A')
+                            : 'N/A'}
+                        </p>
+                      </div>
+
+                      {selectedPayment.razorpay_created_at && (
+                        <div>
+                          <p className="text-slate-500 dark:text-neutral-400 font-semibold mb-1">
+                            Razorpay Epoch Created
+                          </p>
+                          <p className="font-medium text-slate-800 dark:text-neutral-200">
+                            {dayjs(selectedPayment.razorpay_created_at * 1000).format(
+                              'MMM DD, YYYY • hh:mm:ss A'
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedPayment.razorpay_signature && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-neutral-800">
+                        <CopyableField
+                          label="Razorpay Cryptographic Signature"
+                          value={selectedPayment.razorpay_signature}
+                        />
                       </div>
                     )}
                   </CardContent>
                 </Card>
               </div>
-            </ScrollArea>
+            </div>
+
+            {/* Modal Footer */}
+            <DialogFooter className="px-6 py-3 border-t border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0 flex items-center justify-between sm:justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-8 text-slate-600 dark:text-neutral-300"
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(selectedPayment, null, 2));
+                  toast.success('Complete transaction JSON copied to clipboard');
+                }}
+              >
+                <Copy className="h-3.5 w-3.5 mr-1.5" />
+                Copy Full Data (JSON)
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="text-xs h-8 px-5 font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900"
+                onClick={() => setShowDetailsModal(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
