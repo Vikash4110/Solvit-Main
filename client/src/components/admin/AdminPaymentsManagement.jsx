@@ -928,14 +928,14 @@ export default function PaymentManagement() {
                 {/* 3. Customer & Counselor Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Client Info */}
-                  <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm">
+                  <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm flex flex-col justify-start">
                     <CardHeader className="py-3 px-4 border-b border-slate-100 dark:border-neutral-800">
                       <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-2">
                         <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                         Client Information
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 space-y-3">
+                    <CardContent className="p-4 space-y-3.5 flex-1 flex flex-col justify-start">
                       <div className="flex items-center gap-3">
                         <Avatar size="lg" className="h-11 w-11 border border-slate-200 dark:border-neutral-700">
                           {selectedPayment.clientId?.profilePicture && (
@@ -954,7 +954,7 @@ export default function PaymentManagement() {
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border-blue-200">
-                              Client
+                              @{selectedPayment.clientId?.username || 'client'}
                             </Badge>
                             {selectedPayment.clientId?.email && (
                               <span className="text-xs text-slate-500 dark:text-neutral-400 truncate">
@@ -965,21 +965,50 @@ export default function PaymentManagement() {
                         </div>
                       </div>
 
-                      <Separator className="bg-slate-100 dark:bg-neutral-800" />
-
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                         <CopyableField
                           label="Client Database ID"
                           value={selectedPayment.clientId?._id}
+                          truncate
                         />
-                        {selectedPayment.clientId?.phone && (
-                          <div className="flex items-center justify-between text-xs pt-1">
-                            <span className="text-slate-500 dark:text-neutral-400">Phone:</span>
-                            <span className="font-medium text-slate-800 dark:text-neutral-200 font-mono">
-                              {selectedPayment.clientId.phone}
-                            </span>
+                        {selectedPayment.clientId?.phone ? (
+                          <CopyableField
+                            label="Phone / Mobile"
+                            value={selectedPayment.clientId.phone}
+                          />
+                        ) : (
+                          <div>
+                            <p className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 mb-1">Phone</p>
+                            <span className="text-xs text-slate-400">Not provided</span>
                           </div>
                         )}
+                      </div>
+
+                      {/* Client Additional Details */}
+                      <div className="mt-2 pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-2">
+                        <span className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <ShieldCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                          Client Profile & Status
+                        </span>
+                        <div className="p-2.5 rounded-lg bg-slate-50/70 dark:bg-neutral-950/40 border border-slate-200/60 dark:border-neutral-800 space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500 dark:text-neutral-400">Account Status:</span>
+                            <Badge
+                              variant={selectedPayment.clientId?.isBlocked ? 'destructive' : 'success'}
+                              className="text-[10px] px-2 py-0"
+                            >
+                              {selectedPayment.clientId?.isBlocked ? 'Blocked' : 'Active Client'}
+                            </Badge>
+                          </div>
+                          {selectedPayment.clientId?.gender && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500 dark:text-neutral-400">Gender:</span>
+                              <span className="font-medium text-slate-800 dark:text-neutral-200 capitalize">
+                                {selectedPayment.clientId.gender}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

@@ -1269,7 +1269,7 @@ const getAllBookings = wrapper(async (req, res) => {
         select: 'startTime endTime basePrice totalPriceAfterPlatformFee status',
         populate: {
           path: 'counselorId',
-          select: 'fullName email phone profilePicture specialization experienceLevel isBlocked',
+          select: 'fullName email phone profilePicture specialization experienceLevel isBlocked application',
         },
       })
       .populate({
