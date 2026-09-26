@@ -6,8 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Shield, Search, Briefcase, Calendar, Users, Clock, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import HeroImg from '../../assets/homePage/image.png';
-import HeroImg1 from '../../assets/homePage/image1.png';
+import HeroImg from '../../assets/homePage/counseling_hero.jpg';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 
@@ -33,7 +32,7 @@ const HeroSection = () => {
 
   return (
     <section
-      className="relative flex flex-col justify-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
+      className="relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
       aria-labelledby="hero-heading"
     >
       {/* MOBILE BACKGROUND IMAGE */}
@@ -42,32 +41,34 @@ const HeroSection = () => {
         style={{
           backgroundImage: `url(${HeroImg})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center 20%',
           backgroundRepeat: 'no-repeat'
         }}
       />
 
       {/* MOBILE OVERLAY */}
-      <div className="absolute inset-0 z-[1] md:hidden bg-gradient-to-b from-primary-700/95 via-primary-600/90 to-primary-500/95" aria-hidden="true" />
+      <div className="absolute inset-0 z-[1] md:hidden bg-gradient-to-b from-primary-800/90 via-primary-700/80 to-primary-900/95 backdrop-blur-[1px]" aria-hidden="true" />
 
       {/* TABLET & DESKTOP Background Image - RIGHT SIDE */}
       <div 
-        className="absolute right-0 top-0 bottom-0 w-1/2 max-w-3xl h-full z-0 hidden md:flex items-center justify-end pointer-events-none pr-4 lg:pr-8 overflow-hidden"
+        className="absolute right-0 top-0 bottom-0 w-full md:w-1/2 lg:w-[52%] h-full z-0 hidden md:block overflow-hidden pointer-events-none"
         style={{
-          maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.8) 35%, rgba(0,0,0,1) 100%)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.8) 35%, rgba(0,0,0,1) 100%)'
+          maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,1) 50%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,1) 50%)'
         }}
       >
         <img 
           src={HeroImg} 
-          alt="Counseling" 
-          className="h-full w-auto max-h-[85%] object-contain object-right drop-shadow-2xl rounded-3xl" 
+          alt="Compassionate one-on-one counseling session" 
+          className="h-full w-full object-cover object-[center_35%]" 
           loading="eager" 
         />
+        {/* Subtle atmospheric ambient glow */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary-700/40 via-transparent to-primary-700/20 pointer-events-none" />
       </div>
 
       {/* TABLET & DESKTOP GRADIENT OVERLAY */}
-      <div className="absolute inset-0 z-[1] hidden md:block bg-gradient-to-r from-primary-700 via-primary-700/85 md:via-primary-600/60 to-transparent dark:from-primary-900 dark:via-primary-900/85 dark:to-transparent pointer-events-none" aria-hidden="true" />
+      <div className="absolute inset-0 z-[1] hidden md:block bg-gradient-to-r from-primary-700 via-primary-700/60 md:via-primary-600/30 to-transparent dark:from-primary-900 dark:via-primary-900/60 dark:to-transparent pointer-events-none" aria-hidden="true" />
 
       {/* Content Container */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-10 sm:py-12 md:py-14 lg:py-16">
