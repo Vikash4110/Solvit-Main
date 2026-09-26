@@ -1,4 +1,5 @@
-// components/admin/DisputeDetailModal.jsx
+// components/admin/DisputeDetailModal.jsx - Modern, Responsive Dispute Arbitration Dossier
+
 import { useState, useEffect } from 'react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { toast } from 'sonner';
@@ -27,6 +28,14 @@ import {
   Globe,
   Video,
   CreditCard,
+  Building2,
+  Copy,
+  Check,
+  Paperclip,
+  ShieldAlert,
+  Send,
+  HelpCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,13 +60,75 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import EvidenceFileViewer from './EvidenceFileViewer';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
+import { TIMEZONE } from '@/constants/constants';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
-import { TIMEZONE } from '@/constants/constants';
+
+// Helper component for clean copyable field
+function CopyableField({ label, value, mono = true, truncate = false, className = '' }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!value && value !== 0) return null;
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(String(value));
+    setCopied(true);
+    toast.success(`${label || 'Value'} copied to clipboard`);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className={`space-y-1 ${className}`}>
+      {label && (
+        <p className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 tracking-wider uppercase">
+          {label}
+        </p>
+      )}
+      <div
+        onClick={handleCopy}
+        title="Click to copy"
+        className="group flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50/80 hover:bg-slate-100/90 dark:bg-neutral-800/60 dark:hover:bg-neutral-800 border border-slate-200/80 dark:border-neutral-700/60 transition-all cursor-pointer select-all"
+      >
+        <span
+          className={`text-xs text-slate-800 dark:text-neutral-200 ${
+            mono ? 'font-mono' : 'font-medium'
+          } ${truncate ? 'truncate max-w-[170px]' : 'break-all'}`}
+        >
+          {String(value)}
+        </span>
+        <button
+          type="button"
+          className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0 transition-colors p-0.5"
+        >
+          {copied ? (
+            <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Helper for initials
+const getInitials = (name) => {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+};
 
 const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) => {
   const { getDisputeDetail, updateDisputeStatus, addDisputeNote } = useAdminAuth();
@@ -89,15 +160,16 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
 
     if (result.success) {
       setDispute(result.data);
-      console.log(result.data);
-      // Pre-fill payout amounts
+      const totalAmount = result.data.slotId?.totalPriceAfterPlatformFee || result.data.amount || 0;
+      const counselorBase = result.data.slotId?.basePrice || 0;
+
       setResolutionData((prev) => ({
         ...prev,
-        refundAmount: result.data.payout?.amountToPayToCounselor || 0,
-        payoutAmount: result.data.payout?.amountToPayToCounselor || 0,
+        refundAmount: totalAmount,
+        payoutAmount: counselorBase,
       }));
     } else {
-      toast.error(result.error);
+      toast.error(result.error || 'Failed to fetch dispute details');
       onClose();
     }
     setLoading(false);
@@ -105,12 +177,12 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
 
   const handleUpdateStatus = async () => {
     if (!resolutionData.status) {
-      toast.error('Please select a status');
+      toast.error('Please select a resolution status');
       return;
     }
 
     if (!resolutionData.resolution.trim()) {
-      toast.error('Please provide a resolution comment');
+      toast.error('Please provide a resolution explanation');
       return;
     }
 
@@ -124,11 +196,11 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
     );
 
     if (result.success) {
-      toast.success('Dispute status updated successfully');
+      toast.success('Dispute arbitrated and updated successfully');
       setShowResolutionForm(false);
       onDisputeUpdated();
     } else {
-      toast.error(result.error);
+      toast.error(result.error || 'Failed to update dispute');
     }
     setUpdating(false);
   };
@@ -143,11 +215,11 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
     const result = await addDisputeNote(bookingId, note);
 
     if (result.success) {
-      toast.success('Note added successfully');
+      toast.success('Note recorded successfully');
       setNote('');
       fetchDisputeDetail();
     } else {
-      toast.error(result.error);
+      toast.error(result.error || 'Failed to add note');
     }
     setAddingNote(false);
   };
@@ -155,15 +227,15 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
   const getStatusColor = (status) => {
     switch (status) {
       case 'under_review':
-        return 'bg-amber-50 text-amber-700 border-amber-200/80 shadow-xs';
+        return 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800';
       case 'resolved_valid':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200/80 shadow-xs';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
       case 'resolved_invalid':
-        return 'bg-rose-50 text-rose-700 border-rose-200/80 shadow-xs';
+        return 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800';
       case 'closed':
-        return 'bg-slate-100 text-slate-700 border-slate-200 shadow-xs';
+        return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700';
       default:
-        return 'bg-slate-100 text-slate-700 border-slate-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-neutral-800 dark:text-neutral-300';
     }
   };
 
@@ -199,33 +271,27 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
       session_ended_early: 'Session ended early',
       session_quality_poor: 'Poor session quality',
       counselor_not_proper_guidance: 'Improper guidance',
-      counselor_rude_unprofessional: 'Rude/Unprofessional',
+      counselor_rude_unprofessional: 'Rude / Unprofessional',
       counselor_made_uncomfortable: 'Made uncomfortable',
       audio_problem: 'Audio problem',
       video_problem: 'Video problem',
       internet_disconnection: 'Internet disconnection',
       other: 'Other',
     };
-    return labels[issueType] || issueType;
+    return labels[issueType] || issueType || 'Unspecified';
   };
 
-  // ✅ FIXED: Updated formatDate function using dayjs with timezone
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return dayjs(dateString).tz(TIMEZONE).format('MMM DD, YYYY hh:mm A');
+    return dayjs(dateString).tz(TIMEZONE).format('MMM DD, YYYY • hh:mm A');
   };
 
-  const getFileIcon = (fileType) => {
+  const getFileIcon = (fileType = '') => {
     if (fileType.startsWith('image/')) return '🖼️';
     if (fileType.startsWith('video/')) return '🎥';
     if (fileType.startsWith('audio/')) return '🎵';
     if (fileType === 'application/pdf') return '📄';
     return '📎';
-  };
-
-  const calculateDuration = (start, end) => {
-    const duration = Math.round((new Date(end) - new Date(start)) / (1000 * 60));
-    return `${duration} minutes`;
   };
 
   if (!isOpen) return null;
@@ -235,673 +301,473 @@ const DisputeDetailModal = ({ bookingId, isOpen, onClose, onDisputeUpdated }) =>
   const videoSDKRoomId = dispute?.videoSDKRoomId;
   const slot = dispute?.slotId;
   const payment = dispute?.paymentId;
+  const disputeObj = dispute?.dispute || {};
+  const evidenceList = disputeObj.evidence || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[95vh] p-0 overflow-hidden flex flex-col">
-        {/* Header - Fixed at top */}
-        <DialogHeader className="px-6 py-4 border-b bg-white flex-shrink-0">
-          <DialogTitle className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-blue-600" />
-            Complete Dispute Analysis
+      <DialogContent
+        size="xl"
+        className="w-[96vw] sm:w-[92vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[94vh] sm:max-h-[90vh] p-0 flex flex-col overflow-hidden bg-slate-50/80 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 shadow-2xl rounded-2xl"
+      >
+        {/* Header */}
+        <DialogHeader className="px-5 py-4 sm:px-6 sm:py-4.5 border-b border-slate-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-rose-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20 shrink-0">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-neutral-100 flex items-center gap-2">
+                  Complete Dispute Analysis
+                </DialogTitle>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                  Arbitration dossier for Booking #{dispute?._id ? dispute._id.substring(0, 10) : 'N/A'}
+                </p>
+              </div>
+            </div>
+
             {dispute && (
               <Badge
                 variant="outline"
-                className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border ${getStatusColor(
-                  dispute.dispute?.status
+                className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border ${getStatusColor(
+                  disputeObj.status || dispute.status
                 )}`}
               >
-                {getStatusIcon(dispute.dispute?.status)}
-                <span>{getStatusLabel(dispute.dispute?.status)}</span>
+                {getStatusIcon(disputeObj.status || dispute.status)}
+                <span>{getStatusLabel(disputeObj.status || dispute.status)}</span>
               </Badge>
             )}
-          </DialogTitle>
-          <DialogDescription>
-            Comprehensive view of dispute, client, counselor, session, and payment details
-          </DialogDescription>
+          </div>
         </DialogHeader>
 
-        {/* Main Content - Scrollable */}
+        {/* Scrollable Body */}
         {loading ? (
-          <div className="flex items-center justify-center py-12 flex-1">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <div className="flex flex-col items-center justify-center py-24 flex-1 text-slate-500 dark:text-neutral-400">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-600 mb-2.5" />
+            <span className="text-sm font-medium">Loading dispute dossier...</span>
+          </div>
+        ) : !dispute ? (
+          <div className="flex flex-col items-center justify-center py-20 flex-1 text-slate-500">
+            <AlertTriangle className="w-10 h-10 text-slate-400 mb-2" />
+            <p className="text-sm font-semibold">Dispute record could not be found</p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="space-y-6 pb-6">
-              {/* Quick Summary Card */}
-              <Card className="border-blue-200 bg-blue-50/50">
-                <CardContent className="pt-6">
-                
-                  <div className="grid grid-cols-5 gap-4 text-center">
-                    <div>
-                      <p className="text-sm text-slate-600">Booking ID</p>
-                      <code className="text-xs bg-white px-2 py-1 rounded mt-1 inline-block font-mono">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            {/* Top Quick Summary Hero Banner */}
+            <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-xs">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400">
+                        Booking ID:
+                      </span>
+                      <code className="text-xs bg-slate-100 dark:bg-neutral-800 px-2.5 py-0.5 rounded-md font-mono text-slate-800 dark:text-neutral-200 font-semibold">
                         {dispute._id}
                       </code>
                     </div>
-                    <div>
-                      <p className="text-sm text-slate-600">Status</p>
-                      <Badge
-                        variant="outline"
-                        className={`mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-full border ${getStatusColor(
-                          dispute.dispute?.status || dispute.status
-                        )}`}
-                      >
-                        {getStatusIcon(dispute.dispute?.status || dispute.status)}
-                        <span>{getStatusLabel(dispute.dispute?.status || dispute.status)}</span>
+
+                    <div className="flex items-center gap-2 flex-wrap text-xs text-slate-600 dark:text-neutral-400">
+                      <Badge variant="secondary" className="font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950/40 border-amber-200/80">
+                        Issue: {getIssueTypeLabel(disputeObj.issueType)}
                       </Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600">Disputed At</p>
-                      <p className="text-sm font-medium mt-1">
-                        {formatDate(dispute.dispute.disputedAt)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600">Evidence Files</p>
-                      <p className="text-sm font-medium mt-1">
-                        {dispute.dispute?.evidence?.length || 0} files
-                      </p>
-                    </div>
-                    {/* Jump to Evidence Button */}
-                    <div className="flex items-center justify-center">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-full"
-                        onClick={() => {
-                          document.getElementById('evidence-section')?.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center',
-                          });
-                        }}
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View Evidence
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Client & Counselor Side by Side */}
-              <div className="grid grid-cols-2 gap-6">
-                {/* Client Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <User className="w-5 h-5 text-blue-600" />
-                      Client Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      {client?.profilePicture ? (
-                        <img
-                          src={client.profilePicture}
-                          alt={client.fullName}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-blue-200"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="w-8 h-8 text-blue-600" />
-                        </div>
+                      <span className="text-slate-300 dark:text-neutral-700">•</span>
+                      <span>Disputed on: <strong className="text-slate-800 dark:text-neutral-200">{formatDate(disputeObj.disputedAt || dispute.createdAt)}</strong></span>
+                      {disputeObj.needFollowUpCall && (
+                        <>
+                          <span className="text-slate-300 dark:text-neutral-700">•</span>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            Follow-up Requested
+                          </Badge>
+                        </>
                       )}
-                      <div>
-                        <p className="font-semibold text-lg text-slate-900">{client?.fullName}</p>
-                        <Badge variant="secondary">Client Id : {client?._id}</Badge>
-                      </div>
-                    </div>
-
-                   
-                  </CardContent>
-                </Card>
-
-                {/* Counselor Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Briefcase className="w-5 h-5 text-purple-600" />
-                      Counselor Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      {counselor?.profilePicture ? (
-                        <img
-                          src={counselor.profilePicture}
-                          alt={counselor.fullName}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-purple-200"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center">
-                          <User className="w-8 h-8 text-purple-600" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-semibold text-lg text-slate-900">
-                          {counselor?.fullName}
-                        </p>
-                        <Badge variant="secondary">{counselor?.experienceLevel}</Badge>
-                        <Badge variant="secondary">CounselorID : {counselor?._id}</Badge>
-                      </div>
-                    </div>
-
-                   
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Session & Slot Details */}
-              <div className="grid grid-cols-1">
-                {/* Session Details */}
-                
-
-                {/* Slot Details */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-orange-600" />
-                      Slot Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label className="text-xs text-slate-600">Slot ID</Label>
-                        <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1">
-                          {slot?._id || 'N/A'}
-                        </code>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-slate-600">Video SDK Room ID</Label>
-                        <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1">
-                          {videoSDKRoomId || 'N/A'}
-                        </code>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {slot && (
-                      <>
-                        <div>
-                          <Label className="text-xs text-slate-600">Slot Time</Label>
-                          <div className="text-sm text-slate-700 mt-1">
-                            <p>{formatDate(slot.startTime)}</p>
-                            <p>to</p>
-                            <p>{formatDate(slot.endTime)}</p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs text-slate-600">
-                              Base Price As Set By Counselor
-                            </Label>
-                            <p className="text-lg font-semibold text-green-600 mt-1">
-                              ₹{slot.basePrice}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-xs text-slate-600">
-                              Total Price After The Platform Fee
-                            </Label>
-                            <p className="text-lg font-semibold text-blue-600 mt-1">
-                              ₹{slot.totalPriceAfterPlatformFee}
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-slate-600">Platform Fee</Label>
-                          <p className="text-lg font-semibold text-slate-700 mt-1">
-                            ₹
-                            {slot?.totalPriceAfterPlatformFee && slot?.basePrice
-                              ? slot.totalPriceAfterPlatformFee - slot.basePrice
-                              : 0}
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Payment Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-indigo-600" />
-                    Payment Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-4 gap-4">
-                    {payment && (
-                      <>
-                        <div>
-                          <Label className="text-xs text-slate-600">Payment ID</Label>
-                          <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1 truncate">
-                            {payment.razorpay_payment_id}
-                          </code>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-slate-600">Order ID</Label>
-                          <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1 truncate">
-                            {payment.razorpay_order_id}
-                          </code>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-slate-600">Payment Created At</Label>
-                          <code className="block text-xs bg-slate-100 px-2 py-1 rounded mt-1 truncate">
-                            {formatDate(payment.createdAt)}
-                          </code>
-                        </div>
-                      </>
-                    )}
-
-                    
-                  </div>
-
-                  
-
-                  
-
-                  
-                </CardContent>
-              </Card>
-
-              {/* Payout Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-indigo-600" />
-                    Payout Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div>
-                    <Label className="text-xs text-slate-600">Payout Status</Label>
-                    <Badge variant="outline" className="mt-1 capitalize">
-                      {dispute.payout?.status || 'N/A'}
-                    </Badge>
-                  </div>
-
-                  <Separator className="my-4" />
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                      <Label className="text-xs text-green-700">Counselor Payout</Label>
-                      <p className="text-2xl font-bold text-green-700 mt-1">
-                        ₹{dispute.payout?.amountToPayToCounselor || 0}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <Label className="text-xs text-blue-700">Client Refund</Label>
-                      <p className="text-2xl font-bold text-blue-700 mt-1">
-                        ₹{dispute.payout?.amountToRefundToClient || 0}
-                      </p>
                     </div>
                   </div>
 
-                  {(dispute.payout?.releasedAt || dispute.payout?.refundedAt) && (
-                    <div className="mt-4 p-3 bg-slate-50 rounded-lg text-xs">
-                      {dispute.payout.releasedAt && (
-                        <p className="text-slate-600">
-                          Payout released on: {formatDate(dispute.payout.releasedAt)}
-                        </p>
-                      )}
-                      {dispute.payout.refundedAt && (
-                        <p className="text-slate-600">
-                          Refund processed on: {formatDate(dispute.payout.refundedAt)}
-                        </p>
-                      )}
-                    </div>
+                  {evidenceList.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedFileIndex(0);
+                        setShowFileViewer(true);
+                      }}
+                      className="text-xs h-8 px-3 font-medium border-slate-200 dark:border-neutral-700 hover:bg-slate-100 shrink-0"
+                    >
+                      <Paperclip className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
+                      View Evidence ({evidenceList.length})
+                    </Button>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Client & Counselor Profile Cards (2-Column Grid) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Client Card */}
+              <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-xs">
+                <CardHeader className="py-2.5 px-4 border-b border-slate-100 dark:border-neutral-800">
+                  <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    Complainant (Client)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 rounded-xl border border-blue-100 dark:border-blue-900 shadow-xs shrink-0">
+                      <AvatarImage src={client?.profilePicture} alt={client?.fullName} />
+                      <AvatarFallback className="rounded-xl bg-blue-50 text-blue-700 font-bold text-sm">
+                        {getInitials(client?.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 dark:text-neutral-100 truncate">
+                        {client?.fullName || 'Client Name Unavailable'}
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                        @{client?.username || 'client'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <CopyableField label="Email" value={client?.email} mono={false} />
+                      <CopyableField label="Phone" value={client?.phone} />
+                    </div>
+                    {client?._id && (
+                      <CopyableField label="Client ID" value={client._id} />
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Dispute Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-orange-600" />
-                    Dispute Details
+              {/* Counselor Card */}
+              <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-xs">
+                <CardHeader className="py-2.5 px-4 border-b border-slate-100 dark:border-neutral-800">
+                  <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Briefcase className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                    Assigned Counselor
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label className="text-slate-600">Issue Type</Label>
-                      <p className="mt-1 font-medium text-slate-900">
-                        {getIssueTypeLabel(dispute.dispute?.issueType)}
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 rounded-xl border border-purple-100 dark:border-purple-900 shadow-xs shrink-0">
+                      <AvatarImage src={counselor?.profilePicture} alt={counselor?.fullName} />
+                      <AvatarFallback className="rounded-xl bg-purple-50 text-purple-700 font-bold text-sm">
+                        {getInitials(counselor?.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 dark:text-neutral-100 truncate">
+                        {counselor?.fullName || 'Counselor Name Unavailable'}
                       </p>
+                      <span className="inline-block text-[11px] px-2 py-0.5 rounded font-semibold text-purple-700 bg-purple-50 dark:bg-purple-950/50">
+                        {counselor?.experienceLevel || 'Professional Counselor'}
+                      </span>
                     </div>
-                    <div>
-                      <Label className="text-slate-600">Disputed At</Label>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-slate-700">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(dispute.dispute?.disputedAt)}
-                      </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-neutral-800">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <CopyableField label="Email" value={counselor?.email} mono={false} />
+                      <CopyableField label="Phone" value={counselor?.phone} />
                     </div>
-                    <div>
-                      <Label className="text-slate-600">Follow-up Call</Label>
-                      <Badge
-                        variant={dispute.dispute?.needFollowUpCall ? 'default' : 'secondary'}
-                        className="mt-1"
+                    {counselor?._id && (
+                      <CopyableField label="Counselor ID" value={counselor._id} />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Session, Slot & Financial Details */}
+            <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-xs">
+              <CardHeader className="py-2.5 px-4 border-b border-slate-100 dark:border-neutral-800">
+                <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                  Session & Financial Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <CopyableField label="Slot ID" value={slot?._id} />
+                  <CopyableField label="Video SDK Room ID" value={videoSDKRoomId || slot?.videoSDKRoomId || 'N/A'} />
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400 tracking-wider uppercase">
+                      Scheduled Session Time
+                    </p>
+                    <p className="text-xs font-medium text-slate-800 dark:text-neutral-200 mt-1.5">
+                      {slot?.startTime ? formatDate(slot.startTime) : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3-Stage Financial Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 dark:border-neutral-800">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-800/50 border border-slate-200/70 dark:border-neutral-700/70">
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      Counselor Base Fee
+                    </p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-neutral-100 mt-0.5">
+                      ₹{slot?.basePrice || 0}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Counselor's share</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/60">
+                    <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                      Platform Fee
+                    </p>
+                    <p className="text-lg font-bold text-indigo-700 dark:text-indigo-300 mt-0.5">
+                      ₹
+                      {slot?.totalPriceAfterPlatformFee && slot?.basePrice
+                        ? slot.totalPriceAfterPlatformFee - slot.basePrice
+                        : 0}
+                    </p>
+                    <p className="text-[10px] text-indigo-600/70 dark:text-indigo-400/70 mt-0.5">Solvit Commission</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/60">
+                    <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                      Total Client Paid
+                    </p>
+                    <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                      ₹{slot?.totalPriceAfterPlatformFee || dispute.amount || 0}
+                    </p>
+                    <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">Total transaction value</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Client Grievance Statement */}
+            <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-xs">
+              <CardHeader className="py-2.5 px-4 border-b border-slate-100 dark:border-neutral-800">
+                <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  Client Grievance & Description
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                <div className="p-3.5 rounded-xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs sm:text-sm text-slate-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed">
+                  {disputeObj.description || 'No detailed written description provided by client.'}
+                </div>
+
+                {/* Evidence Thumbnails */}
+                {evidenceList.length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Evidence Attachments ({evidenceList.length})
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                      {evidenceList.map((file, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            setSelectedFileIndex(idx);
+                            setShowFileViewer(true);
+                          }}
+                          className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 dark:border-neutral-700 bg-slate-50 hover:bg-slate-100 dark:bg-neutral-800/50 cursor-pointer transition-colors group"
+                        >
+                          <span className="text-xl shrink-0">{getFileIcon(file.fileType)}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-slate-800 dark:text-neutral-200 truncate group-hover:text-blue-600">
+                              {file.fileName || `Evidence #${idx + 1}`}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              {(file.fileSize / 1024).toFixed(1)} KB • {file.fileType?.split('/')[1] || 'file'}
+                            </p>
+                          </div>
+                          <Eye className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 shrink-0" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Arbitration Actions or Resolution Result */}
+            {disputeObj.status === 'under_review' ? (
+              <Card className="bg-gradient-to-br from-amber-50/50 via-white to-amber-50/30 dark:from-neutral-900 dark:to-neutral-900 border-amber-200/80 dark:border-neutral-800 shadow-sm">
+                <CardHeader className="py-2.5 px-4 border-b border-amber-100 dark:border-neutral-800">
+                  <CardTitle className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
+                    Admin Arbitration Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                  {/* Internal Notes Section */}
+                  <div>
+                    <Label htmlFor="admin-note" className="text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                      Record Internal Audit Note
+                    </Label>
+                    <div className="flex gap-2 mt-1.5">
+                      <Input
+                        id="admin-note"
+                        placeholder="Add internal observation or verification note..."
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        className="text-xs bg-white dark:bg-neutral-900 border-slate-200"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddNote}
+                        disabled={addingNote || !note.trim()}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-9 px-3 shrink-0"
                       >
-                        {dispute.dispute?.needFollowUpCall ? 'Requested' : 'Not Requested'}
-                      </Badge>
+                        {addingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      </Button>
                     </div>
                   </div>
 
                   <Separator />
 
-                  <div>
-                    <Label className="text-slate-600">Client's Description of Issue</Label>
-                    <div className="mt-2 p-4 bg-slate-50 rounded-lg border max-h-32 overflow-y-auto">
-                      <p className="text-slate-800 whitespace-pre-wrap">
-                        {dispute.dispute?.description}
-                      </p>
-                    </div>
-                  </div>
+                  {/* Resolution Form Toggle */}
+                  {!showResolutionForm ? (
+                    <Button
+                      type="button"
+                      onClick={() => setShowResolutionForm(true)}
+                      className="w-full h-9 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-xs"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                      Arbitrate & Submit Resolution
+                    </Button>
+                  ) : (
+                    <div className="space-y-3 p-4 bg-white dark:bg-neutral-900 rounded-xl border border-amber-200 dark:border-neutral-800">
+                      <div>
+                        <Label className="text-xs font-semibold text-slate-700">Resolution Decision *</Label>
+                        <Select
+                          value={resolutionData.status}
+                          onValueChange={(val) => setResolutionData({ ...resolutionData, status: val })}
+                        >
+                          <SelectTrigger className="mt-1 h-9 text-xs">
+                            <SelectValue placeholder="Select outcome..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="resolved_valid">
+                              Resolved (Valid) — Refund Client ₹{slot?.totalPriceAfterPlatformFee || dispute.amount || 0}
+                            </SelectItem>
+                            <SelectItem value="resolved_invalid">
+                              Resolved (Invalid) — Release Counselor Payout ₹{slot?.basePrice || 0}
+                            </SelectItem>
+                            <SelectItem value="closed">Close Dispute Without Financial Action</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  {/* Evidence Files - Enhanced */}
-                  {dispute.dispute?.evidence && dispute.dispute.evidence.length > 0 && (
-                    <div id="evidence-section">
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-slate-600 text-base font-semibold">
-                          📎 Evidence Files ({dispute.dispute.evidence.length})
-                        </Label>
-                        <Badge variant="secondary" className="text-xs">
-                          Click to preview
-                        </Badge>
+                      {resolutionData.status === 'resolved_valid' && (
+                        <div>
+                          <Label className="text-xs font-semibold text-slate-700">Refund Amount (₹)</Label>
+                          <Input
+                            type="number"
+                            value={resolutionData.refundAmount}
+                            onChange={(e) => setResolutionData({ ...resolutionData, refundAmount: parseFloat(e.target.value) || 0 })}
+                            className="mt-1 h-8 text-xs"
+                          />
+                        </div>
+                      )}
+
+                      {resolutionData.status === 'resolved_invalid' && (
+                        <div>
+                          <Label className="text-xs font-semibold text-slate-700">Counselor Payout Amount (₹)</Label>
+                          <Input
+                            type="number"
+                            value={resolutionData.payoutAmount}
+                            onChange={(e) => setResolutionData({ ...resolutionData, payoutAmount: parseFloat(e.target.value) || 0 })}
+                            className="mt-1 h-8 text-xs"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <Label className="text-xs font-semibold text-slate-700">Resolution Explanation / Decision Notes *</Label>
+                        <Textarea
+                          placeholder="Document the arbitration reasoning for client and counselor records..."
+                          value={resolutionData.resolution}
+                          onChange={(e) => setResolutionData({ ...resolutionData, resolution: e.target.value })}
+                          rows={3}
+                          className="mt-1 text-xs"
+                        />
                       </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        {dispute.dispute.evidence.map((file, index) => (
-                          <div
-                            key={index}
-                            className="group flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer"
-                            onClick={() => {
-                              setSelectedFileIndex(index);
-                              setShowFileViewer(true);
-                            }}
-                          >
-                            <div className="text-3xl">{getFileIcon(file.fileType)}</div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-                                {file.fileName}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {(file.fileSize / 1024).toFixed(2)} KB
-                              </p>
-                              <Badge variant="outline" className="text-xs mt-1">
-                                {file.fileType.split('/')[0]}
-                              </Badge>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedFileIndex(index);
-                                setShowFileViewer(true);
-                              }}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <Button
+                          type="button"
+                          onClick={handleUpdateStatus}
+                          disabled={updating}
+                          size="sm"
+                          className="flex-1 h-9 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          {updating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <CheckCircle className="w-3.5 h-3.5 mr-1.5" />}
+                          Confirm & Apply Resolution
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowResolutionForm(false)}
+                          className="h-9 px-3 text-xs"
+                        >
+                          Cancel
+                        </Button>
                       </div>
-                      <Alert className="mt-3">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          Click on any file card to preview. Supported: Images, Videos, Audio, PDFs.
-                          DOCX files will prompt download.
-                        </AlertDescription>
-                      </Alert>
                     </div>
                   )}
                 </CardContent>
               </Card>
-
-              {/* Activity Timeline */}
-              {dispute.dispute?.activityLogs && dispute.dispute.activityLogs.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-purple-600" />
-                      Activity Timeline
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
-                      {dispute.dispute.activityLogs.map((log, index) => (
-                        <div key={index} className="flex gap-3 pb-3 border-b last:border-0">
-                          <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 flex-shrink-0" />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="capitalize">
-                                {log.role}
-                              </Badge>
-                              <span className="text-xs text-slate-500">
-                                {formatDate(log.timestamp)}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium text-slate-900 mt-1 capitalize">
-                              {log.action.replace('_', ' ')}
-                            </p>
-                            {log.comment && (
-                              <p className="text-sm text-slate-600 mt-1">{log.comment}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Admin Actions */}
-              {dispute.dispute?.status === 'under_review' && (
-                <Card className="border-blue-200 bg-blue-50/50">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-blue-600" />
-                      Admin Actions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Add Note Section */}
-                    <div>
-                      <Label htmlFor="admin-note">Add Internal Note</Label>
-                      <div className="flex gap-2 mt-2">
-                        <Textarea
-                          id="admin-note"
-                          placeholder="Add a note for internal tracking..."
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                          rows={2}
-                          className="flex-1"
-                        />
-                        <Button
-                          onClick={handleAddNote}
-                          disabled={addingNote || !note.trim()}
-                          variant="outline"
-                        >
-                          {addingNote ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <MessageSquare className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Resolution Form */}
-                    {!showResolutionForm ? (
-                      <Button
-                        onClick={() => setShowResolutionForm(true)}
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Resolve Dispute
-                      </Button>
-                    ) : (
-                      <div className="space-y-4 p-4 bg-white rounded-lg border">
-                        <div>
-                          <Label htmlFor="status">Resolution Status *</Label>
-                          <Select
-                            value={resolutionData.status}
-                            onValueChange={(value) =>
-                              setResolutionData({ ...resolutionData, status: value })
-                            }
-                          >
-                            <SelectTrigger id="status" className="mt-1">
-                              <SelectValue placeholder="Select resolution status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="resolved_valid">
-                                Resolved - Valid (Refund Client)
-                              </SelectItem>
-                              <SelectItem value="resolved_invalid">
-                                Resolved - Invalid (Release Payout)
-                              </SelectItem>
-                              <SelectItem value="closed">Close Without Action</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {resolutionData.status === 'resolved_valid' && (
-                          <div>
-                            <Label htmlFor="refundAmount">Refund Amount (₹)</Label>
-                            <Input
-                              id="refundAmount"
-                              type="number"
-                              placeholder="Enter refund amount"
-                              value={resolutionData.refundAmount}
-                              onChange={(e) =>
-                                setResolutionData({
-                                  ...resolutionData,
-                                  refundAmount: parseFloat(e.target.value) || 0,
-                                })
-                              }
-                              className="mt-1"
-                            />
-                          </div>
-                        )}
-
-                        {resolutionData.status === 'resolved_invalid' && (
-                          <div>
-                            <Label htmlFor="payoutAmount">Payout Amount (₹)</Label>
-                            <Input
-                              id="payoutAmount"
-                              type="number"
-                              placeholder="Enter payout amount"
-                              value={resolutionData.payoutAmount}
-                              onChange={(e) =>
-                                setResolutionData({
-                                  ...resolutionData,
-                                  payoutAmount: parseFloat(e.target.value) || 0,
-                                })
-                              }
-                              className="mt-1"
-                            />
-                          </div>
-                        )}
-
-                        <div>
-                          <Label htmlFor="resolution">Resolution Comment *</Label>
-                          <Textarea
-                            id="resolution"
-                            placeholder="Explain the resolution decision..."
-                            value={resolutionData.resolution}
-                            onChange={(e) =>
-                              setResolutionData({ ...resolutionData, resolution: e.target.value })
-                            }
-                            rows={4}
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <Alert>
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertTitle>Important</AlertTitle>
-                          <AlertDescription>
-                            This action cannot be undone. Make sure all details are correct before
-                            proceeding.
-                          </AlertDescription>
-                        </Alert>
-
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={handleUpdateStatus}
-                            disabled={updating}
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                          >
-                            {updating ? (
-                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                            )}
-                            Submit Resolution
-                          </Button>
-                          <Button
-                            onClick={() => setShowResolutionForm(false)}
-                            variant="outline"
-                            disabled={updating}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Resolution Display (if already resolved) */}
-              {dispute.dispute?.resolution && dispute.dispute.status !== 'under_review' && (
-                <Card className="border-green-200 bg-green-50/50">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      Final Resolution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="p-4 bg-white rounded-lg border">
-                      <p className="text-slate-800 whitespace-pre-wrap">
-                        {dispute.dispute.resolution}
+            ) : (
+              /* Already Resolved Card */
+              <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-xs">
+                <CardHeader className="py-2.5 px-4 border-b border-slate-100 dark:border-neutral-800">
+                  <CardTitle className="text-xs font-bold text-slate-700 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                    Final Arbitration Outcome
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-2 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-800/50 border border-slate-200/70 dark:border-neutral-700/70 text-slate-800 dark:text-neutral-200">
+                    <p className="font-semibold text-slate-900 dark:text-neutral-100">
+                      Outcome: <span className="capitalize">{getStatusLabel(disputeObj.status)}</span>
+                    </p>
+                    <p className="mt-1 text-slate-700 dark:text-neutral-300 leading-relaxed">
+                      {disputeObj.resolution || 'Dispute was formally resolved and closed.'}
+                    </p>
+                    {disputeObj.resolvedAt && (
+                      <p className="text-[11px] text-slate-400 mt-2">
+                        Arbitrated on: {formatDate(disputeObj.resolvedAt)}
                       </p>
-                      {dispute.dispute.resolvedAt && (
-                        <p className="text-sm text-slate-500 mt-2">
-                          Resolved on: {formatDate(dispute.dispute.resolvedAt)}
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
-        {/* Footer - Fixed at bottom */}
-        <DialogFooter className="border-t px-6 py-4 bg-white flex-shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        {/* Footer */}
+        <DialogFooter className="px-5 py-3 sm:px-6 sm:py-3.5 border-t border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0 flex items-center justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="text-xs h-8 px-4 font-medium border-slate-300 dark:border-neutral-700"
+          >
             Close
           </Button>
         </DialogFooter>
       </DialogContent>
 
-      {/* File Viewer Modal */}
-      {showFileViewer && dispute.dispute?.evidence && (
+      {/* Evidence File Viewer Modal */}
+      {showFileViewer && evidenceList.length > 0 && (
         <EvidenceFileViewer
-          files={dispute.dispute.evidence}
+          files={evidenceList}
           initialIndex={selectedFileIndex}
           isOpen={showFileViewer}
           onClose={() => setShowFileViewer(false)}

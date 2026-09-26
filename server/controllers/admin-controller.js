@@ -213,8 +213,15 @@ const getAllDisputes = wrapper(async (req, res) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   let disputes = await Booking.find(filter)
-    .populate('clientId', 'fullName email phone profilePicture')
-    .populate('slotId')
+    .populate('clientId', 'fullName username email phone profilePicture')
+    .populate({
+      path: 'slotId',
+      populate: {
+        path: 'counselorId',
+        select: 'fullName username email phone profilePicture experienceLevel',
+      },
+    })
+    .populate('paymentId')
     .select(
       '_id clientId slotId dispute completion status payout createdAt updatedAt paymentId videoSDKRoomId'
     )
@@ -223,13 +230,16 @@ const getAllDisputes = wrapper(async (req, res) => {
     .limit(parseInt(limit))
     .lean();
 
-  // Search by client name or email
-  if (search) {
+  // Search by client/counselor name, email, or booking ID
+  if (search && search.trim()) {
+    const q = search.trim().toLowerCase();
     disputes = disputes.filter(
       (dispute) =>
-        dispute.clientId?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-        dispute.clientId?.email?.toLowerCase().includes(search.toLowerCase()) ||
-        dispute._id?.toString().includes(search.trim())
+        dispute.clientId?.fullName?.toLowerCase().includes(q) ||
+        dispute.clientId?.email?.toLowerCase().includes(q) ||
+        dispute.clientId?.username?.toLowerCase().includes(q) ||
+        dispute.slotId?.counselorId?.fullName?.toLowerCase().includes(q) ||
+        dispute._id?.toString().toLowerCase().includes(q)
     );
   }
 
@@ -590,9 +600,27 @@ const getClientDetails = wrapper(async (req, res) => {
     });
   }
 
+  // Aggregate client engagement and booking statistics
+  const [totalBookings, completedBookings, cancelledBookings, payments] = await Promise.all([
+    Booking.countDocuments({ clientId }),
+    Booking.countDocuments({ clientId, status: 'completed' }),
+    Booking.countDocuments({ clientId, status: 'cancelled' }),
+    Payment.find({ clientId, status: 'paid' }).select('amount'),
+  ]);
+
+  const totalSpent = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
+
   return res.status(200).json({
     success: true,
-    data: client,
+    data: {
+      ...client.toObject(),
+      stats: {
+        totalBookings,
+        completedBookings,
+        cancelledBookings,
+        totalSpent,
+      },
+    },
   });
 });
 
@@ -843,7 +871,7 @@ const getAllPayments = async (req, res) => {
         select: 'startTime endTime basePrice totalPriceAfterPlatformFee status',
         populate: {
           path: 'counselorId',
-          select: 'fullName email experienceLevel profilePicture specialization',
+          select: 'fullName email phone experienceLevel profilePicture specialization application',
         },
       })
       .sort({ createdAt: -1 })
@@ -1269,7 +1297,7 @@ const getAllBookings = wrapper(async (req, res) => {
         select: 'startTime endTime basePrice totalPriceAfterPlatformFee status',
         populate: {
           path: 'counselorId',
-          select: 'fullName email phone profilePicture specialization experienceLevel isBlocked',
+          select: 'fullName email phone profilePicture specialization experienceLevel isBlocked application',
         },
       })
       .populate({
