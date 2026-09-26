@@ -612,7 +612,10 @@ const Navbar = () => {
                       </div>
                     )}
 
-                    <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
+                    {/* Separator only when user identity/workspace is shown */}
+                    {(counselor || client) && (
+                      <Separator className="bg-neutral-200/70 dark:bg-neutral-800/70" />
+                    )}
 
                     {/* Main Explore Navigation */}
                     <div className="space-y-1" aria-label="Mobile exploration links">
