@@ -41,7 +41,7 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { TIMEZONE, DEFAULT_LANGUAGES } from '../../constants/constants';
 import { toast } from 'sonner';
-import HeroImage from '../../assets/browseCounselors/heroImage.png';
+import HeroImage from '../../assets/browseCounselors/counselor_hero.jpg';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 import useSmartRefresh from '../../hooks/useSmartRefresh';
@@ -786,29 +786,43 @@ const BrowseCounselor = () => {
           className="relative min-h-0 lg:min-h-[60vh] flex items-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
           aria-labelledby="hero-heading"
         >
+          {/* MOBILE BACKGROUND IMAGE */}
           <div
-            className="absolute inset-0 z-0 lg:hidden"
+            className="absolute inset-0 z-0 md:hidden"
             style={{
               backgroundImage: `url(${HeroImage})`,
               backgroundSize: 'cover',
-              backgroundPosition: 'center 70%',
+              backgroundPosition: 'center 20%',
               backgroundRepeat: 'no-repeat',
             }}
           />
+          {/* MOBILE OVERLAY */}
           <div
-            className="absolute inset-0 z-[1] lg:hidden bg-gradient-to-b from-primary-700/90 via-primary-600/85 to-primary-500/90"
+            className="absolute inset-0 z-[1] md:hidden bg-gradient-to-b from-primary-800/90 via-primary-700/80 to-primary-900/95 backdrop-blur-[1px]"
             aria-hidden="true"
           />
-          <div className="absolute right-0 top-0 bottom-0 w-2/3 max-w-4xl h-full z-0 hidden lg:flex items-center justify-end">
+
+          {/* TABLET & DESKTOP Background Image - RIGHT SIDE */}
+          <div 
+            className="absolute right-0 top-0 bottom-0 w-full md:w-1/2 lg:w-[52%] h-full z-0 hidden md:block overflow-hidden pointer-events-none"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,1) 50%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,1) 50%)'
+            }}
+          >
             <img
               src={HeroImage}
-              alt=""
-              className="h-full w-full object-contain object-right"
+              alt="Find verified counseling professionals"
+              className="h-full w-full object-cover object-[center_25%]"
               loading="eager"
             />
+            {/* Subtle atmospheric ambient glow */}
+            <div className="absolute inset-0 bg-gradient-to-t from-primary-700/40 via-transparent to-primary-700/20 pointer-events-none" />
           </div>
+
+          {/* TABLET & DESKTOP GRADIENT OVERLAY */}
           <div
-            className="absolute inset-0 z-[1] hidden lg:block bg-gradient-to-r from-primary-700 via-primary-600/80 via-primary-500/40 to-transparent dark:from-primary-900 dark:via-primary-800/80 dark:via-primary-700/40 dark:to-transparent"
+            className="absolute inset-0 z-[1] hidden md:block bg-gradient-to-r from-primary-700 via-primary-700/60 md:via-primary-600/30 to-transparent dark:from-primary-900 dark:via-primary-900/60 dark:to-transparent pointer-events-none"
             aria-hidden="true"
           />
 
