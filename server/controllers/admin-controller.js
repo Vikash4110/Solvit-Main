@@ -590,9 +590,27 @@ const getClientDetails = wrapper(async (req, res) => {
     });
   }
 
+  // Aggregate client engagement and booking statistics
+  const [totalBookings, completedBookings, cancelledBookings, payments] = await Promise.all([
+    Booking.countDocuments({ clientId }),
+    Booking.countDocuments({ clientId, status: 'completed' }),
+    Booking.countDocuments({ clientId, status: 'cancelled' }),
+    Payment.find({ clientId, status: 'paid' }).select('amount'),
+  ]);
+
+  const totalSpent = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
+
   return res.status(200).json({
     success: true,
-    data: client,
+    data: {
+      ...client.toObject(),
+      stats: {
+        totalBookings,
+        completedBookings,
+        cancelledBookings,
+        totalSpent,
+      },
+    },
   });
 });
 
