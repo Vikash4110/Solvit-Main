@@ -33,7 +33,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-const AdminSidebar = ({ collapsed, setCollapsed, onItemClick }) => {
+const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }) => {
   const { adminLogout, admin } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -160,34 +160,37 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick }) => {
   return (
     <div
       className={`${
-        collapsed ? 'w-20' : 'w-64'
-      } bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out`}
+        isMobile
+          ? 'w-full h-full'
+          : `${collapsed ? 'w-20' : 'w-64'} h-full border-r border-slate-200`
+      } bg-white flex flex-col transition-all duration-300 ease-in-out`}
     >
       {/* Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+      <div className={`h-16 flex items-center justify-between px-4 ${isMobile ? 'pr-14' : ''} border-b border-slate-200`}>
+        {(!collapsed || isMobile) && (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+              <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900">Admin Panel</h1>
-           
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">Admin Panel</h1>
             </div>
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCollapsed(!collapsed)}
-          className="hover:bg-slate-100"
-        >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-        </Button>
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCollapsed(!collapsed)}
+            className="hover:bg-slate-100"
+          >
+            {collapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </Button>
+        )}
       </div>
 
       {/* Navigation */}
