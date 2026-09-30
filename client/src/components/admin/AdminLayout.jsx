@@ -13,7 +13,7 @@ const AdminLayout = () => {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen lg:max-h-screen bg-slate-50 overflow-x-hidden pt-[80px]">
+    <div className="flex flex-col lg:flex-row min-h-screen lg:h-screen bg-slate-50 overflow-x-hidden">
       {/* Mobile Admin Header Bar */}
       <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 z-30">
         <div className="flex items-center gap-2">
@@ -40,12 +40,12 @@ const AdminLayout = () => {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex h-[calc(100vh-80px)] flex-shrink-0">
+      <div className="hidden lg:flex h-screen flex-shrink-0">
         <AdminSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-x-hidden overflow-y-auto lg:h-[calc(100vh-80px)]">
+      <div className="flex-1 overflow-x-hidden overflow-y-auto lg:h-screen">
         <Outlet />
       </div>
     </div>
