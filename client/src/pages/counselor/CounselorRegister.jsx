@@ -394,9 +394,9 @@ const CounselorRegister = () => {
   };
 
   const steps = [
-    { number: 1, title: 'Email Verification', icon: Mail },
-    { number: 2, title: 'OTP Confirmation', icon: Shield },
-    { number: 3, title: 'Profile Setup', icon: User },
+    { number: 1, title: 'Email\nVerification', icon: Mail },
+    { number: 2, title: 'OTP\nConfirmation', icon: Shield },
+    { number: 3, title: 'Profile\nSetup', icon: User },
   ];
 
   const progress = (step / 3) * 100;
@@ -430,49 +430,50 @@ const CounselorRegister = () => {
         >
           <div className="bg-gradient-to-br from-[#f5f7fa]/98 to-white/98 dark:bg-neutral-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-[#c5cbd4]/30 dark:border-neutral-800/50 p-4 sm:p-6 lg:p-8 max-h-[85vh] lg:h-[calc(100vh-100px)] flex flex-col">
             {/* Header - Fixed at top */}
-            <div className="flex-shrink-0">
-              <div className="flex mb-2 justify-between">
+            <div className="flex-shrink-0 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 {/* Logo/Brand */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 flex items-center justify-center shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 flex items-center justify-center shadow-md shrink-0">
                     <Briefcase className="h-5 w-5 text-white" aria-hidden="true" />
                   </div>
                   <div>
-                    <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">Counselor Registration</h1>
-                   
+                    <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+                      Counselor Registration
+                    </h1>
                   </div>
                 </div>
 
                 {/* Step Indicators */}
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex items-start gap-4 sm:gap-6 justify-end shrink-0">
                   {steps.map((item, index) => {
                     const Icon = item.icon;
                     const isActive = step === item.number;
                     const isCompleted = step > item.number;
 
                     return (
-                      <div key={item.number} className="flex flex-col items-center flex-1 relative">
+                      <div key={item.number} className="flex flex-col items-center relative w-12 sm:w-14">
                         <motion.div
                           initial={false}
                           animate={{
                             scale: isActive ? 1.05 : 1,
                           }}
-                          className={`relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-300 ${
+                          className={`relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-all duration-300 ${
                             isCompleted
-                              ? 'bg-green-500 dark:bg-green-600 shadow-md shadow-green-500/20'
+                              ? 'bg-green-500 dark:bg-green-600 shadow-sm shadow-green-500/20'
                               : isActive
-                              ? 'bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 ring-3 ring-primary-100 dark:ring-primary-900/30 shadow-md shadow-primary-500/20'
+                              ? 'bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 ring-2 ring-primary-100 dark:ring-primary-900/30 shadow-sm shadow-primary-500/20'
                               : 'bg-neutral-200 dark:bg-neutral-800'
                           }`}
                         >
                           {isCompleted ? (
                             <CheckCircle
-                              className="h-4 w-4 sm:h-5 sm:w-5 text-white"
+                              className="h-4 w-4 text-white"
                               aria-hidden="true"
                             />
                           ) : (
                             <Icon
-                              className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                              className={`h-4 w-4 ${
                                 isActive ? 'text-white' : 'text-neutral-500 dark:text-neutral-400'
                               }`}
                               aria-hidden="true"
@@ -480,7 +481,7 @@ const CounselorRegister = () => {
                           )}
                         </motion.div>
                         <span
-                          className={`mt-1.5 text-[9px] sm:text-[10px] font-medium text-center hidden sm:block ${
+                          className={`mt-1.5 text-[9px] sm:text-[10px] font-medium text-center leading-tight whitespace-pre-line hidden sm:block ${
                             isActive
                               ? 'text-primary-700 dark:text-primary-400'
                               : 'text-neutral-500 dark:text-neutral-400'
@@ -490,7 +491,7 @@ const CounselorRegister = () => {
                         </span>
                         {index < steps.length - 1 && (
                           <div
-                            className={`absolute top-4 sm:top-5 left-1/2 w-full h-0.5 -z-10 ${
+                            className={`absolute top-[16px] sm:top-[18px] left-[65%] w-[calc(100%+16px)] sm:w-[calc(100%+24px)] h-0.5 -z-10 ${
                               isCompleted ? 'bg-green-500 dark:bg-green-600' : 'bg-neutral-200 dark:bg-neutral-800'
                             }`}
                           />
@@ -517,19 +518,19 @@ const CounselorRegister = () => {
                         exit="exit"
                         transition={{ duration: 0.3 }}
                         onSubmit={handleSendOtp}
-                        className="space-y-5 p-3 sm:p-4"
+                        className="space-y-4 p-2 sm:p-4"
                       >
-                        <div className="text-center space-y-2">
-                          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-950/30 dark:to-primary-900/30 mb-3 shadow-md">
+                        <div className="text-center space-y-1.5">
+                          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-950/30 dark:to-primary-900/30 mb-2 shadow-sm">
                             <Mail
-                              className="h-7 w-7 sm:h-8 sm:w-8 text-primary-700 dark:text-primary-400"
+                              className="h-6 w-6 sm:h-7 sm:w-7 text-primary-700 dark:text-primary-400"
                               aria-hidden="true"
                             />
                           </div>
                           <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white">
                             Verify Your Email
                           </h3>
-                          <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400">
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
                             We'll send a verification code to your email
                           </p>
                         </div>
