@@ -66,13 +66,15 @@ const AdminCounselorRequestsManagement = lazy(() => import('./components/admin/A
 function App() {
   const location = useLocation();
   const isMeetingRoute = location.pathname.startsWith('/meeting');
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const hideNavbar = isMeetingRoute || isAdminRoute;
 
   return (
     <ClientAuthProvider>
       <CounselorAuthProvider>
         <AdminAuthProvider>
           <div className="min-h-screen bg-gray-100">
-            {!isMeetingRoute && <Navbar />}
+            {!hideNavbar && <Navbar />}
             <ScrollToTop />
             <ErrorBoundary>
               <Suspense fallback={<PageLoader />}>

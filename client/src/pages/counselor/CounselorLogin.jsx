@@ -177,11 +177,10 @@ const CounselorLogin = () => {
     setFormData({ email: '', password: '', otp: '', newPassword: '' });
   };
 
-  const steps =
-    [
-          { number: 1, title: 'Email Verification', icon: Mail },
-          { number: 2, title: 'Reset Password', icon: Shield },
-        ];
+  const steps = [
+    { number: 1, title: 'Email\nVerification', icon: Mail },
+    { number: 2, title: 'Reset\nPassword', icon: Shield },
+  ];
 
   return (
     <section className="relative min-h-screen pt-[80px] py-6 sm:py-10 flex items-center overflow-x-hidden justify-center">
@@ -211,92 +210,90 @@ const CounselorLogin = () => {
         >
           <div className="bg-gradient-to-br from-[#f5f7fa]/98 to-white/98 dark:bg-neutral-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-[#c5cbd4]/30 dark:border-neutral-800/50 p-4 sm:p-6 lg:p-8 max-h-[85vh] lg:h-[calc(100vh-100px)] flex flex-col">
             {/* Header - Fixed at top */}
-            <div className="flex-shrink-0">
-              <div className="flex mb-2 justify-between">
+            <div className="flex-shrink-0 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 {/* Logo/Brand */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 flex items-center justify-center shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 flex items-center justify-center shadow-md shrink-0">
                     <Briefcase className="h-5 w-5 text-white" aria-hidden="true" />
                   </div>
                   <div>
-                    <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-                       Counselor Login
+                    <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+                      Counselor Login
                     </h1>
-                    
                   </div>
                 </div>
                 {/* Step Indicators */}
-              {mode === 'login' ? (
-                <></>
-              ) : (
-                <div className="flex justify-between items-center mb-1">
-                  {steps.map((item, index) => {
-                    const Icon = item.icon;
-                    const isActive = step === item.number;
-                    const isCompleted = step > item.number;
-                    console.log(Icon);
+                {mode === 'login' ? (
+                  <></>
+                ) : (
+                  <div className="flex items-start gap-4 sm:gap-6 justify-end shrink-0">
+                    {steps.map((item, index) => {
+                      const Icon = item.icon;
+                      const isActive = step === item.number;
+                      const isCompleted = step > item.number;
 
-                    return (
-                      <div key={item.number} className="flex flex-col items-center flex-1 relative">
-                        <motion.div
-                          initial={false}
-                          animate={{
-                            scale: isActive ? 1.05 : 1,
-                          }}
-                          className={`relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-300 ${
-                            isCompleted
-                              ? 'bg-green-500 dark:bg-green-600 shadow-md shadow-green-500/20'
-                              : isActive
-                                ? 'bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 ring-3 ring-primary-100 dark:ring-primary-900/30 shadow-md shadow-primary-500/20'
-                                : 'bg-neutral-200 dark:bg-neutral-800'
-                          }`}
+                      return (
+                        <div
+                          key={item.number}
+                          className="flex flex-col items-center relative w-12 sm:w-14"
                         >
-                          {isCompleted ? (
-                            <CheckCircle
-                              className="h-4 w-4 sm:h-5 sm:w-5 text-white"
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <Icon
-                              className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                                isActive ? 'text-white' : 'text-neutral-500 dark:text-neutral-400'
+                          <motion.div
+                            initial={false}
+                            animate={{
+                              scale: isActive ? 1.05 : 1,
+                            }}
+                            className={`relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-all duration-300 ${
+                              isCompleted
+                                ? 'bg-green-500 dark:bg-green-600 shadow-sm shadow-green-500/20'
+                                : isActive
+                                  ? 'bg-gradient-to-br from-primary-700 to-primary-600 dark:from-primary-600 dark:to-primary-500 ring-2 ring-primary-100 dark:ring-primary-900/30 shadow-sm shadow-primary-500/20'
+                                  : 'bg-neutral-200 dark:bg-neutral-800'
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle
+                                className="h-4 w-4 text-white"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Icon
+                                className={`h-4 w-4 ${
+                                  isActive ? 'text-white' : 'text-neutral-500 dark:text-neutral-400'
+                                }`}
+                                aria-hidden="true"
+                              />
+                            )}
+                          </motion.div>
+                          <span
+                            className={`mt-1.5 text-[9px] sm:text-[10px] font-medium text-center leading-tight whitespace-pre-line hidden sm:block ${
+                              isActive
+                                ? 'text-primary-700 dark:text-primary-400'
+                                : 'text-neutral-500 dark:text-neutral-400'
+                            }`}
+                          >
+                            {item.title}
+                          </span>
+
+                          {index < steps.length - 1 && (
+                            <div
+                              className={`absolute top-[16px] sm:top-[18px] left-[65%] w-[calc(100%+16px)] sm:w-[calc(100%+24px)] h-0.5 -z-10 ${
+                                isCompleted
+                                  ? 'bg-green-500 dark:bg-green-600'
+                                  : 'bg-neutral-200 dark:bg-neutral-800'
                               }`}
-                              aria-hidden="true"
                             />
                           )}
-                        </motion.div>
-                        <span
-                          className={`mt-1.5 text-[9px] sm:text-[10px] font-medium text-center hidden sm:block ${
-                            isActive
-                              ? 'text-primary-700 dark:text-primary-400'
-                              : 'text-neutral-500 dark:text-neutral-400'
-                          }`}
-                        >
-                          {item.title}
-                        </span>
-
-                        {index < steps.length - 1 && (
-                          <div
-                            className={`absolute top-4 sm:top-5 left-12 w-full h-0.5 -z-10 ${
-                              isCompleted
-                                ? 'bg-green-500 dark:bg-green-600'
-                                : 'bg-neutral-200 dark:bg-neutral-800'
-                            }`}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-
-              
             </div>
 
             {/* Scrollable Form Content - Using custom scrollbar */}
-            <div className="flex-1  space-y-3 pr-1 ">
+            <div className="flex-1 space-y-3 pr-1">
               <Card className="border-none shadow-3xl bg-transparent">
                 <CardContent className="p-0">
                   <AnimatePresence mode="wait">
