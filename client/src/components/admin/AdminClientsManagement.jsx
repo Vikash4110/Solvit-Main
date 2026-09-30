@@ -358,7 +358,7 @@ const AdminClientsManagement = () => {
           </div>
 
           {/* Quick filter pills */}
-          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-neutral-800 overflow-x-auto text-xs">
+          <div className="hidden sm:flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-neutral-800 overflow-x-auto text-xs">
             <span className="text-slate-400 font-medium mr-1 text-[11px]">Quick Filters:</span>
             <button
               onClick={() => {
