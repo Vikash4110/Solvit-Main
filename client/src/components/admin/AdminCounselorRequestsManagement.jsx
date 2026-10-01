@@ -392,7 +392,7 @@ const AdminCounselorRequestsManagement = () => {
               <CheckSquare className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Checked / Done</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Checked</p>
               <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{stats.checked}</p>
             </div>
           </CardContent>
@@ -510,22 +510,13 @@ const AdminCounselorRequestsManagement = () => {
               <div
                 key={request._id}
                 className={`relative rounded-2xl bg-white dark:bg-neutral-900 border transition-all duration-200 shadow-sm hover:shadow-md flex flex-col justify-between overflow-hidden ${
-                  isUnchecked
-                    ? 'border-purple-300 dark:border-purple-800/70 ring-1 ring-purple-400/20'
-                    : 'border-slate-200 dark:border-neutral-800'
+                  request.status === 'approved'
+                    ? 'border-emerald-200/90 dark:border-emerald-900/50 hover:border-emerald-300 dark:hover:border-emerald-700'
+                    : request.status === 'rejected'
+                    ? 'border-rose-200/90 dark:border-rose-900/50 hover:border-rose-300 dark:hover:border-rose-700'
+                    : 'border-amber-200/90 dark:border-amber-900/50 hover:border-amber-300 dark:hover:border-amber-700'
                 }`}
               >
-                {/* Top Status Accent Bar */}
-                <div
-                  className={`h-1.5 w-full ${
-                    request.status === 'approved'
-                      ? 'bg-emerald-500'
-                      : request.status === 'rejected'
-                      ? 'bg-rose-500'
-                      : 'bg-amber-500'
-                  }`}
-                />
-
                 <div className="p-5 space-y-4 flex-1">
                   {/* Card Header: Counselor + Triage Check Badge */}
                   <div className="flex items-start justify-between gap-2">
@@ -589,8 +580,6 @@ const AdminCounselorRequestsManagement = () => {
                     <Calendar className="h-3 w-3" />
                     <span>Submitted {dayjs(request.createdAt).fromNow()}</span>
                   </div>
-
-                  <Separator className="bg-slate-100 dark:bg-neutral-800" />
 
                   {/* Dynamic Request Type Summary */}
                   {request.requestType === 'education' ? (
