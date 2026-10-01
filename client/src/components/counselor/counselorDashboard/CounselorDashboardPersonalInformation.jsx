@@ -46,6 +46,9 @@ import {
   ShieldCheck,
   Layers,
   Share2,
+  ExternalLink,
+  FileCheck,
+  FileUp,
 } from 'lucide-react';
 import ShareProfileModal from '@/components/common/ShareProfileModal.jsx';
 import { toast } from 'sonner';
@@ -230,6 +233,32 @@ const CounselorDashboardPersonalInfo = () => {
   const [requestMessage, setRequestMessage] = useState('');
   const [isSubmittingChangeRequest, setIsSubmittingChangeRequest] = useState(false);
 
+  // Education Requests state
+  const [isEducationRequestModalOpen, setIsEducationRequestModalOpen] = useState(false);
+  const [requestedGraduation, setRequestedGraduation] = useState({
+    university: '',
+    degree: '',
+    year: '',
+  });
+  const [requestedPostGraduation, setRequestedPostGraduation] = useState({
+    university: '',
+    degree: '',
+    year: '',
+  });
+  const [educationRequestMessage, setEducationRequestMessage] = useState('');
+  const [isSubmittingEducationRequest, setIsSubmittingEducationRequest] = useState(false);
+
+  // Document Requests state
+  const [isDocumentRequestModalOpen, setIsDocumentRequestModalOpen] = useState(false);
+  const [selectedDocFiles, setSelectedDocFiles] = useState({
+    resume: null,
+    degreeCertificate: null,
+    licenseCertificate: null,
+    governmentId: null,
+  });
+  const [documentRequestMessage, setDocumentRequestMessage] = useState('');
+  const [isSubmittingDocumentRequest, setIsSubmittingDocumentRequest] = useState(false);
+
   const fetchProfileRequests = async () => {
     try {
       const res = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_REQUESTS_GET);
@@ -240,9 +269,11 @@ const CounselorDashboardPersonalInfo = () => {
   };
 
   const handleOpenRequestChangeModal = () => {
-    const pendingReq = profileRequests.find((r) => r.status === 'pending');
+    const pendingReq = profileRequests.find(
+      (r) => (!r.requestType || r.requestType === 'specialization_and_experience') && r.status === 'pending'
+    );
     if (pendingReq) {
-      toast.info('You already have a change request pending admin review');
+      toast.info('You already have a specialization/experience change request pending admin review');
       return;
     }
     setRequestedSpecialization(
@@ -255,6 +286,60 @@ const CounselorDashboardPersonalInfo = () => {
     setRequestedExperienceYears(counselorData?.experienceYears ?? 0);
     setRequestMessage('');
     setIsRequestChangeModalOpen(true);
+  };
+
+  const handleOpenEducationRequestModal = () => {
+    const pendingReq = profileRequests.find((r) => r.requestType === 'education' && r.status === 'pending');
+    if (pendingReq) {
+      toast.info('You already have an education change request pending admin review');
+      return;
+    }
+    const edu = counselorData?.application?.education || {};
+    setRequestedGraduation({
+      university: edu.graduation?.university || '',
+      degree: edu.graduation?.degree || '',
+      year: edu.graduation?.year || '',
+    });
+    setRequestedPostGraduation({
+      university: edu.postGraduation?.university || '',
+      degree: edu.postGraduation?.degree || '',
+      year: edu.postGraduation?.year || '',
+    });
+    setEducationRequestMessage('');
+    setIsEducationRequestModalOpen(true);
+  };
+
+  const handleOpenDocumentRequestModal = () => {
+    const pendingReq = profileRequests.find((r) => r.requestType === 'documents' && r.status === 'pending');
+    if (pendingReq) {
+      toast.info('You already have a document update request pending admin review');
+      return;
+    }
+    setSelectedDocFiles({
+      resume: null,
+      degreeCertificate: null,
+      licenseCertificate: null,
+      governmentId: null,
+    });
+    setDocumentRequestMessage('');
+    setIsDocumentRequestModalOpen(true);
+  };
+
+  const handleDocFileChange = (field, file) => {
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('Invalid File Type', { description: 'Only PDF documents are allowed (Max 5MB).' });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File Too Large', { description: 'Document must be less than 5MB.' });
+        return;
+      }
+    }
+    setSelectedDocFiles((prev) => ({
+      ...prev,
+      [field]: file,
+    }));
   };
 
   const handleToggleRequestedSpec = (val) => {
@@ -338,6 +423,116 @@ const CounselorDashboardPersonalInfo = () => {
     }
   };
 
+  const handleSubmitEducationRequest = async (e) => {
+    if (e) e.preventDefault();
+    if (!requestedGraduation.university?.trim() || !requestedGraduation.degree?.trim() || !requestedGraduation.year) {
+      toast.error('Validation Error', {
+        description: 'Please provide Graduation University, Degree, and Passing Year.',
+      });
+      return;
+    }
+    const gradYear = parseInt(requestedGraduation.year, 10);
+    const curYear = new Date().getFullYear();
+    if (isNaN(gradYear) || gradYear < 1960 || gradYear > curYear) {
+      toast.error('Validation Error', {
+        description: `Graduation year must be between 1960 and ${curYear}.`,
+      });
+      return;
+    }
+    if (requestedPostGraduation.year) {
+      const pgYear = parseInt(requestedPostGraduation.year, 10);
+      if (isNaN(pgYear) || pgYear < 1960 || pgYear > curYear) {
+        toast.error('Validation Error', {
+          description: `Post Graduation year must be between 1960 and ${curYear}.`,
+        });
+        return;
+      }
+    }
+    if (!educationRequestMessage.trim()) {
+      toast.error('Validation Error', {
+        description: 'Please provide a message / reason explaining your education update for admin.',
+      });
+      return;
+    }
+
+    setIsSubmittingEducationRequest(true);
+    try {
+      await api.post(API_ENDPOINTS.COUNSELOR_EDUCATION_REQUEST_SUBMIT, {
+        graduation: {
+          university: requestedGraduation.university.trim(),
+          degree: requestedGraduation.degree.trim(),
+          year: gradYear,
+        },
+        postGraduation: {
+          university: requestedPostGraduation.university?.trim() || '',
+          degree: requestedPostGraduation.degree?.trim() || '',
+          year: requestedPostGraduation.year ? parseInt(requestedPostGraduation.year, 10) : null,
+        },
+        message: educationRequestMessage.trim(),
+      });
+      toast.success('Education Update Request Submitted', {
+        description: 'Your request has been submitted and is pending review by Solvit Admin.',
+      });
+      setIsEducationRequestModalOpen(false);
+      await fetchProfileRequests();
+    } catch (err) {
+      toast.error('Submission Failed', {
+        description: err.response?.data?.message || err.message || 'Failed to submit education change request',
+      });
+    } finally {
+      setIsSubmittingEducationRequest(false);
+    }
+  };
+
+  const handleSubmitDocumentRequest = async (e) => {
+    if (e) e.preventDefault();
+    const hasFiles =
+      selectedDocFiles.resume ||
+      selectedDocFiles.degreeCertificate ||
+      selectedDocFiles.licenseCertificate ||
+      selectedDocFiles.governmentId;
+
+    if (!hasFiles) {
+      toast.error('No Documents Selected', {
+        description: 'Please select at least one document (Resume, Degree, License, or Govt ID) to update/replace.',
+      });
+      return;
+    }
+
+    if (!documentRequestMessage.trim()) {
+      toast.error('Validation Error', {
+        description: 'Please provide a message/reason explaining this document update for admin.',
+      });
+      return;
+    }
+
+    setIsSubmittingDocumentRequest(true);
+    try {
+      const formDataToSend = new FormData();
+      if (selectedDocFiles.resume) formDataToSend.append('resume', selectedDocFiles.resume);
+      if (selectedDocFiles.degreeCertificate) formDataToSend.append('degreeCertificate', selectedDocFiles.degreeCertificate);
+      if (selectedDocFiles.licenseCertificate) formDataToSend.append('licenseCertificate', selectedDocFiles.licenseCertificate);
+      if (selectedDocFiles.governmentId) formDataToSend.append('governmentId', selectedDocFiles.governmentId);
+      formDataToSend.append('message', documentRequestMessage.trim());
+
+      await api.post(API_ENDPOINTS.COUNSELOR_DOCUMENT_REQUEST_SUBMIT, formDataToSend, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      toast.success('Document Update Request Submitted', {
+        description: 'Your document updates have been uploaded and are pending review by Solvit Admin.',
+      });
+      setIsDocumentRequestModalOpen(false);
+      await fetchProfileRequests();
+    } catch (err) {
+      toast.error('Submission Failed', {
+        description: err.response?.data?.message || err.message || 'Failed to submit document change request',
+      });
+    } finally {
+      setIsSubmittingDocumentRequest(false);
+    }
+  };
+
   // Fetch counselor data on mount
   useEffect(() => {
     fetchCounselorData();
@@ -392,6 +587,15 @@ const CounselorDashboardPersonalInfo = () => {
             ifscCode: data.application?.bankDetails?.ifscCode || '',
             branchName: data.application?.bankDetails?.branchName || '',
             accountType: data.application?.bankDetails?.accountType || 'Savings',
+          },
+          documents: {
+            resume: data.application?.documents?.resume || data.documents?.resume || '',
+            degreeCertificate:
+              data.application?.documents?.degreeCertificate || data.documents?.degreeCertificate || '',
+            licenseCertificate:
+              data.application?.documents?.licenseCertificate || data.documents?.licenseCertificate || '',
+            governmentId:
+              data.application?.documents?.governmentId || data.documents?.governmentId || '',
           },
           applicationStatus: data.application?.applicationStatus || 'not_submitted',
           applicationSubmittedAt: data.application?.applicationSubmittedAt || null,
@@ -1162,30 +1366,45 @@ const CounselorDashboardPersonalInfo = () => {
           {/* Education */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <GraduationCap className="h-5 w-5 text-primary-600" />
-                  Education
+                  <span>Education</span>
                 </CardTitle>
-                {counselorData.application?.applicationStatus === 'approved' ? (
-                  <Badge
-                    variant="outline"
-                    className="h-7 text-xs gap-1.5 px-2.5 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800"
-                  >
-                    <Lock className="h-3 w-3 text-emerald-600" />
-                    Verified & Locked
-                  </Badge>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleOpenEditModal('education')}
-                    className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Edit
-                  </Button>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {profileRequests.some(
+                    (r) => r.requestType === 'education' && r.status === 'pending'
+                  ) && (
+                    <Badge
+                      variant="outline"
+                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium"
+                    >
+                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                      Change Pending
+                    </Badge>
+                  )}
+                  {counselorData.application?.applicationStatus === 'approved' ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenEducationRequestModal}
+                      className="h-8 gap-1.5 text-xs text-blue-700 border-blue-200 bg-blue-50/60 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900 whitespace-nowrap shrink-0"
+                    >
+                      <FileQuestion className="h-3.5 w-3.5 shrink-0" />
+                      <span>Request Change</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenEditModal('education')}
+                      className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Graduation */}
@@ -1258,44 +1477,110 @@ const CounselorDashboardPersonalInfo = () => {
             </Card>
           </motion.div>
 
-          {/* Bank Details */}
+          {/* Documents & Verification */}
           <motion.div variants={fadeInUp}>
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <CreditCard className="h-5 w-5 text-primary-600" />
-                  Bank Details
+                  <FileCheck className="h-5 w-5 text-primary-600 shrink-0" />
+                  <span>Documents & Certificates</span>
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenEditModal('bank')}
-                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                  {profileRequests.some(
+                    (r) => r.requestType === 'documents' && r.status === 'pending'
+                  ) && (
+                    <Badge
+                      variant="outline"
+                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
+                    >
+                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                      Update Pending
+                    </Badge>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenDocumentRequestModal}
+                    className="h-8 gap-1.5 text-xs text-blue-700 border-blue-200 bg-blue-50/60 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900 whitespace-nowrap shrink-0"
+                  >
+                    <Upload className="h-3.5 w-3.5 shrink-0" />
+                    <span>Request Document Update</span>
+                  </Button>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <InfoRow
-                  icon={CreditCard}
-                  label="Account Number"
-                  value={
-                    counselorData.application.bankDetails?.accountNo
-                      ? `${counselorData.application.bankDetails.accountNo}`
-                      : 'Not specified'
-                  }
-                />
-                <InfoRow
-                  icon={FileText}
-                  label="IFSC Code"
-                  value={counselorData.application.bankDetails?.ifscCode || 'Not specified'}
-                />
-                <InfoRow
-                  icon={Building}
-                  label="Branch"
-                  value={counselorData.application.bankDetails?.branchName || 'Not specified'}
-                />
+              <CardContent className="space-y-3">
+                {[
+                  {
+                    key: 'resume',
+                    label: 'Resume / Curriculum Vitae',
+                    url: counselorData.application?.documents?.resume || counselorData.documents?.resume,
+                  },
+                  {
+                    key: 'degreeCertificate',
+                    label: 'Degree Certificate',
+                    url:
+                      counselorData.application?.documents?.degreeCertificate ||
+                      counselorData.documents?.degreeCertificate,
+                  },
+                  {
+                    key: 'licenseCertificate',
+                    label: 'License Certificate',
+                    url:
+                      counselorData.application?.documents?.licenseCertificate ||
+                      counselorData.documents?.licenseCertificate,
+                  },
+                  {
+                    key: 'governmentId',
+                    label: 'Government ID (Aadhaar / Passport)',
+                    url:
+                      counselorData.application?.documents?.governmentId ||
+                      counselorData.documents?.governmentId,
+                  },
+                ].map((doc) => (
+                  <div
+                    key={doc.key}
+                    className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 flex items-center justify-between gap-3 transition-colors hover:border-neutral-300 dark:hover:border-neutral-600"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={`p-2 rounded-lg shrink-0 ${
+                          doc.url
+                            ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400'
+                            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'
+                        }`}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 truncate">
+                          {doc.label}
+                        </p>
+                        <p className="text-[11px] text-neutral-500 truncate">
+                          {doc.url ? 'Uploaded & Verified' : 'No document on file'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {doc.url ? (
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 shadow-xs transition-colors shrink-0"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        <span>View</span>
+                      </a>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-[11px] font-medium text-neutral-400 border-neutral-200 dark:border-neutral-700 bg-neutral-100/60 dark:bg-neutral-800/60 px-2.5 py-0.5 shrink-0"
+                      >
+                        Missing
+                      </Badge>
+                    )}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </motion.div>
@@ -1311,7 +1596,20 @@ const CounselorDashboardPersonalInfo = () => {
                   <Briefcase className="h-5 w-5 text-primary-600 shrink-0" />
                   <span>Professional Details</span>
                 </CardTitle>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {profileRequests.some(
+                    (r) =>
+                      (!r.requestType || r.requestType === 'specialization_and_experience') &&
+                      r.status === 'pending'
+                  ) && (
+                    <Badge
+                      variant="outline"
+                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
+                    >
+                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                      Change Pending
+                    </Badge>
+                  )}
                   {counselorData.application?.applicationStatus === 'approved' && (
                     <Button
                       variant="outline"
@@ -1455,6 +1753,48 @@ const CounselorDashboardPersonalInfo = () => {
                       {counselorData.isBlocked ? 'Blocked' : 'Active'}
                     </Badge>
                   }
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Bank Details */}
+          <motion.div variants={fadeInUp}>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <CreditCard className="h-5 w-5 text-primary-600" />
+                  Bank Details
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEditModal('bank')}
+                  className="h-8 gap-1.5 text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/50"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <InfoRow
+                  icon={CreditCard}
+                  label="Account Number"
+                  value={
+                    counselorData.application.bankDetails?.accountNo
+                      ? `${counselorData.application.bankDetails.accountNo}`
+                      : 'Not specified'
+                  }
+                />
+                <InfoRow
+                  icon={FileText}
+                  label="IFSC Code"
+                  value={counselorData.application.bankDetails?.ifscCode || 'Not specified'}
+                />
+                <InfoRow
+                  icon={Building}
+                  label="Branch"
+                  value={counselorData.application.bankDetails?.branchName || 'Not specified'}
                 />
               </CardContent>
             </Card>
@@ -2833,6 +3173,418 @@ const CounselorDashboardPersonalInfo = () => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Submitting Request...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  <span>Submit Request to Admin</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Education Change Request Modal */}
+      <Dialog open={isEducationRequestModalOpen} onOpenChange={setIsEducationRequestModalOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] p-0 overflow-hidden flex flex-col rounded-2xl shadow-2xl border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+          {/* Header Banner */}
+          <div className="p-5 sm:p-6 pr-14 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-850 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                  Request Education Details Update
+                </DialogTitle>
+                <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Submit revised academic credentials. Solvit Admin will verify and update your verified profile.
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Content */}
+          <div className="overflow-y-auto p-5 sm:p-6 space-y-5 flex-1">
+            <form id="education-change-form" onSubmit={handleSubmitEducationRequest} className="space-y-5">
+              {/* Graduation Section */}
+              <div className="rounded-xl p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-neutral-200 dark:border-neutral-700">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <GraduationCap className="h-4 w-4 text-primary-600" />
+                    Graduation (Required) <span className="text-red-500">*</span>
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-neutral-600 dark:text-neutral-400">University / College Name *</Label>
+                    <Input
+                      value={requestedGraduation.university}
+                      onChange={(e) =>
+                        setRequestedGraduation((prev) => ({ ...prev, university: e.target.value }))
+                      }
+                      placeholder="e.g., Delhi University"
+                      className="mt-1 text-xs sm:text-sm bg-white dark:bg-neutral-800"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">Degree / Major *</Label>
+                      <Input
+                        value={requestedGraduation.degree}
+                        onChange={(e) =>
+                          setRequestedGraduation((prev) => ({ ...prev, degree: e.target.value }))
+                        }
+                        placeholder="e.g., B.A. Psychology (Hons.)"
+                        className="mt-1 text-xs sm:text-sm bg-white dark:bg-neutral-800"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">Passing Year *</Label>
+                      <Input
+                        type="number"
+                        min="1960"
+                        max={new Date().getFullYear()}
+                        value={requestedGraduation.year}
+                        onChange={(e) =>
+                          setRequestedGraduation((prev) => ({ ...prev, year: e.target.value }))
+                        }
+                        placeholder="e.g., 2018"
+                        className="mt-1 text-xs sm:text-sm bg-white dark:bg-neutral-800"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Post Graduation Section */}
+              <div className="rounded-xl p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-neutral-200 dark:border-neutral-700">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <Building className="h-4 w-4 text-primary-600" />
+                    Post Graduation (Optional)
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs text-neutral-600 dark:text-neutral-400">University / College Name</Label>
+                    <Input
+                      value={requestedPostGraduation.university}
+                      onChange={(e) =>
+                        setRequestedPostGraduation((prev) => ({ ...prev, university: e.target.value }))
+                      }
+                      placeholder="e.g., NIMHANS"
+                      className="mt-1 text-xs sm:text-sm bg-white dark:bg-neutral-800"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">Degree / Major</Label>
+                      <Input
+                        value={requestedPostGraduation.degree}
+                        onChange={(e) =>
+                          setRequestedPostGraduation((prev) => ({ ...prev, degree: e.target.value }))
+                        }
+                        placeholder="e.g., M.Sc. Clinical Psychology"
+                        className="mt-1 text-xs sm:text-sm bg-white dark:bg-neutral-800"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">Passing Year</Label>
+                      <Input
+                        type="number"
+                        min="1960"
+                        max={new Date().getFullYear()}
+                        value={requestedPostGraduation.year}
+                        onChange={(e) =>
+                          setRequestedPostGraduation((prev) => ({ ...prev, year: e.target.value }))
+                        }
+                        placeholder="e.g., 2021"
+                        className="mt-1 text-xs sm:text-sm bg-white dark:bg-neutral-800"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message / Reason */}
+              <div className="space-y-2.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edu-req-msg" className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-primary-600" />
+                    Request Reason / Context for Admin <span className="text-red-500">*</span>
+                  </Label>
+                  <span className={`text-[11px] ${educationRequestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}>
+                    {educationRequestMessage.length}/1000
+                  </span>
+                </div>
+
+                {/* Quick Prompts */}
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  <span className="text-[11px] text-neutral-500 mr-1">Quick prompts:</span>
+                  {[
+                    "Completed Master's Degree",
+                    'Corrected Degree Name',
+                    'Updated Passing Year',
+                    'Higher Education Certification',
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => {
+                        setEducationRequestMessage((prev) =>
+                          prev ? `${prev.trim()}\n- ${prompt}` : `Reason for request: ${prompt}`
+                        );
+                      }}
+                      className="text-[11px] px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-primary-50 dark:bg-neutral-800 dark:hover:bg-primary-950/40 text-neutral-600 hover:text-primary-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 transition-colors"
+                    >
+                      + {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <Textarea
+                  id="edu-req-msg"
+                  rows={3}
+                  maxLength={1000}
+                  value={educationRequestMessage}
+                  onChange={(e) => setEducationRequestMessage(e.target.value)}
+                  placeholder="Explain why you are requesting this education update..."
+                  className="bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-xs leading-relaxed resize-none focus-visible:ring-primary-500"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+
+          {/* Sticky Dialog Footer */}
+          <div className="p-4 sm:p-5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/90 dark:bg-neutral-900/90 backdrop-blur shrink-0 flex items-center justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEducationRequestModalOpen(false)}
+              disabled={isSubmittingEducationRequest}
+              className="text-xs h-10 px-4"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="education-change-form"
+              disabled={isSubmittingEducationRequest}
+              className="text-xs h-10 px-5 gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-md transition-all"
+            >
+              {isSubmittingEducationRequest ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Submitting Request...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  <span>Submit Request to Admin</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Change Request Modal */}
+      <Dialog open={isDocumentRequestModalOpen} onOpenChange={setIsDocumentRequestModalOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] p-0 overflow-hidden flex flex-col rounded-2xl shadow-2xl border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+          {/* Header Banner */}
+          <div className="p-5 sm:p-6 pr-14 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-850 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                <FileUp className="h-4 w-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                  Request Document & Certificate Update
+                </DialogTitle>
+                <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Upload new or replacement verification documents (PDF only, max 5MB each). Admin will verify before approving.
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Content */}
+          <div className="overflow-y-auto p-5 sm:p-6 space-y-5 flex-1">
+            <form id="document-change-form" onSubmit={handleSubmitDocumentRequest} className="space-y-5">
+              {/* Document Upload Slots */}
+              <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 block">
+                  Select Documents to Upload / Replace (Choose at least one) <span className="text-red-500">*</span>
+                </Label>
+
+                {[
+                  {
+                    key: 'resume',
+                    label: 'Resume / Curriculum Vitae',
+                    existing: counselorData.application?.documents?.resume,
+                  },
+                  {
+                    key: 'degreeCertificate',
+                    label: 'Degree Certificate',
+                    existing: counselorData.application?.documents?.degreeCertificate,
+                  },
+                  {
+                    key: 'licenseCertificate',
+                    label: 'Professional License Certificate',
+                    existing: counselorData.application?.documents?.licenseCertificate,
+                  },
+                  {
+                    key: 'governmentId',
+                    label: 'Government ID (Aadhaar / Passport)',
+                    existing: counselorData.application?.documents?.governmentId,
+                  },
+                ].map((item) => {
+                  const selectedFile = selectedDocFiles[item.key];
+                  return (
+                    <div
+                      key={item.key}
+                      className="p-3.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/70 dark:bg-neutral-800/40 space-y-2"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                            {item.label}
+                          </p>
+                          <p className="text-[11px] text-neutral-500">
+                            {item.existing ? 'Current file: On record' : 'Current file: None'}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            id={`file-input-${item.key}`}
+                            accept="application/pdf"
+                            className="hidden"
+                            onChange={(e) => handleDocFileChange(item.key, e.target.files?.[0] || null)}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => document.getElementById(`file-input-${item.key}`)?.click()}
+                            className="h-8 gap-1.5 text-xs border-primary-500/40 hover:bg-primary-50 dark:hover:bg-primary-950/40 text-primary-700 dark:text-primary-300"
+                          >
+                            <Upload className="h-3.5 w-3.5" />
+                            <span>{selectedFile ? 'Change File' : 'Select PDF'}</span>
+                          </Button>
+                          {selectedFile && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDocFileChange(item.key, null)}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
+                              title="Remove selected file"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {selectedFile && (
+                        <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
+                          <span className="truncate font-medium flex items-center gap-1.5">
+                            <FileCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            {selectedFile.name}
+                          </span>
+                          <span className="text-[11px] text-emerald-600 shrink-0">
+                            ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Message / Reason */}
+              <div className="space-y-2.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="doc-req-msg" className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-primary-600" />
+                    Request Reason / Context for Admin <span className="text-red-500">*</span>
+                  </Label>
+                  <span className={`text-[11px] ${documentRequestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}>
+                    {documentRequestMessage.length}/1000
+                  </span>
+                </div>
+
+                {/* Quick Prompts */}
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  <span className="text-[11px] text-neutral-500 mr-1">Quick prompts:</span>
+                  {[
+                    'Updated Latest Resume',
+                    'Uploaded Degree Certificate',
+                    'Renewed License Certificate',
+                    'Updated Government ID',
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => {
+                        setDocumentRequestMessage((prev) =>
+                          prev ? `${prev.trim()}\n- ${prompt}` : `Reason for request: ${prompt}`
+                        );
+                      }}
+                      className="text-[11px] px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-primary-50 dark:bg-neutral-800 dark:hover:bg-primary-950/40 text-neutral-600 hover:text-primary-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 transition-colors"
+                    >
+                      + {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <Textarea
+                  id="doc-req-msg"
+                  rows={3}
+                  maxLength={1000}
+                  value={documentRequestMessage}
+                  onChange={(e) => setDocumentRequestMessage(e.target.value)}
+                  placeholder="Explain why you are updating or uploading these documents..."
+                  className="bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-xs leading-relaxed resize-none focus-visible:ring-primary-500"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+
+          {/* Sticky Dialog Footer */}
+          <div className="p-4 sm:p-5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/90 dark:bg-neutral-900/90 backdrop-blur shrink-0 flex items-center justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDocumentRequestModalOpen(false)}
+              disabled={isSubmittingDocumentRequest}
+              className="text-xs h-10 px-4"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="document-change-form"
+              disabled={isSubmittingDocumentRequest}
+              className="text-xs h-10 px-5 gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-md transition-all"
+            >
+              {isSubmittingDocumentRequest ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Uploading & Submitting...</span>
                 </>
               ) : (
                 <>
