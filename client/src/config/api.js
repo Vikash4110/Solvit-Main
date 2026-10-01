@@ -86,6 +86,8 @@ export const API_ENDPOINTS = {
 
   // Counselor Profile Change Request Endpoints
   COUNSELOR_PROFILE_REQUEST_SUBMIT: '/counselor/dashboard/profile/change-request',
+  COUNSELOR_EDUCATION_REQUEST_SUBMIT: '/counselor/dashboard/profile/education-request',
+  COUNSELOR_DOCUMENT_REQUEST_SUBMIT: '/counselor/dashboard/profile/document-request',
   COUNSELOR_PROFILE_REQUESTS_GET: '/counselor/dashboard/profile/change-requests',
 
   //Counselor Dashboard My Sessions Endpoints
