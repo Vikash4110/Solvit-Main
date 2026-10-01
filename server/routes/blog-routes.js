@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { verifyJWTClient } from '../middlewares/clientAuth-middleware.js';
 import { verifyJWTCounselor } from '../middlewares/counselorAuth-middleware.js';
+import { uploadBlogImage } from '../middlewares/multer.middleware.js';
 import {
   getBlogs,
   getBlogBySlug,
@@ -51,8 +52,18 @@ blogsRouter.post('/:blogId/like', verifyJWTAny, toggleBlogLike);
 blogsRouter.post('/:blogId/comments', verifyJWTAny, addBlogComment);
 
 // 👩‍⚕️ COUNSELOR ONLY ROUTES - Content management
-blogsRouter.post('/', verifyJWTCounselor, createBlog);
-blogsRouter.put('/:blogId', verifyJWTCounselor, updateBlog);
+blogsRouter.post(
+  '/',
+  verifyJWTCounselor,
+  uploadBlogImage.single('coverImage'),
+  createBlog
+);
+blogsRouter.put(
+  '/:blogId',
+  verifyJWTCounselor,
+  uploadBlogImage.single('coverImage'),
+  updateBlog
+);
 blogsRouter.delete('/:blogId', verifyJWTCounselor, deleteBlog);
 
 // 📊 COUNSELOR ANALYTICS ROUTES (Optional additions)
