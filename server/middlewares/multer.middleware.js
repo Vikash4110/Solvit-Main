@@ -116,6 +116,14 @@ export const uploadMixed = multer({
   },
 });
 
+export const uploadBlogImage = multer({
+  storage: storage,
+  fileFilter: imageFileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+});
+
 // ✅ FIXED: EVIDENCE UPLOAD
 export const uploadEvidence = multer({
   storage: multer.memoryStorage(),
