@@ -430,10 +430,10 @@ export const AdminAuthProvider = ({ children }) => {
   /**
    * Get all counselor profile change requests
    */
-  const getAllCounselorRequests = async (page = 1, limit = 20, search = '', status = '', isChecked = '') => {
+  const getAllCounselorRequests = async (page = 1, limit = 20, search = '', status = '', isChecked = '', requestType = '') => {
     try {
       const response = await api.get(API_ENDPOINTS.ADMIN_COUNSELOR_REQUESTS, {
-        params: { page, limit, search, status, isChecked },
+        params: { page, limit, search, status, isChecked, requestType },
       });
       return { success: true, data: response.data.data };
     } catch (error) {

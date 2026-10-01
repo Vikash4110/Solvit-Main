@@ -37,6 +37,12 @@ import {
   X,
   Info,
   AlertCircle,
+  GraduationCap,
+  FileCheck,
+  FileUp,
+  ExternalLink,
+  FileText,
+  Building,
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -94,6 +100,7 @@ const AdminCounselorRequestsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedChecked, setSelectedChecked] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -115,19 +122,21 @@ const AdminCounselorRequestsManagement = () => {
   // Fetch on filters change
   useEffect(() => {
     fetchRequests(1);
-  }, [selectedStatus, selectedChecked, debouncedSearch]);
+  }, [selectedStatus, selectedChecked, selectedType, debouncedSearch]);
 
   const fetchRequests = async (page = 1) => {
     setLoading(true);
     const statusParam = selectedStatus === 'all' ? '' : selectedStatus;
     const checkedParam = selectedChecked === 'all' ? '' : selectedChecked;
+    const typeParam = selectedType === 'all' ? '' : selectedType;
 
     const result = await getAllCounselorRequests(
       page,
       20,
       debouncedSearch,
       statusParam,
-      checkedParam
+      checkedParam,
+      typeParam
     );
 
     if (result.success) {
@@ -224,6 +233,30 @@ const AdminCounselorRequestsManagement = () => {
     return 'Specialist';
   };
 
+  const getRequestTypeMeta = (type) => {
+    switch (type) {
+      case 'education':
+        return {
+          label: 'Education Details',
+          icon: GraduationCap,
+          badgeColor: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300',
+        };
+      case 'documents':
+        return {
+          label: 'Documents & Certificates',
+          icon: FileCheck,
+          badgeColor: 'bg-indigo-50 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-300',
+        };
+      case 'specialization_and_experience':
+      default:
+        return {
+          label: 'Specialization & Experience',
+          icon: Briefcase,
+          badgeColor: 'bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300',
+        };
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'pending':
@@ -269,7 +302,7 @@ const AdminCounselorRequestsManagement = () => {
             Counselor Requests
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Review and triage counselor requests for updating Specialization and Years of Experience
+            Review and triage counselor requests for Specialization, Education details, and Document verification
           </p>
         </div>
 
@@ -359,7 +392,7 @@ const AdminCounselorRequestsManagement = () => {
               <CheckSquare className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Checked / Done</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Checked</p>
               <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{stats.checked}</p>
             </div>
           </CardContent>
@@ -371,21 +404,36 @@ const AdminCounselorRequestsManagement = () => {
         <CardContent className="p-4 sm:p-5">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
             {/* Search Input */}
-            <div className="sm:col-span-6 relative">
+            <div className="sm:col-span-5 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Search counselor name, email, specialization, or message..."
+                placeholder="Search counselor, university, degree, or reason..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 bg-slate-50 dark:bg-neutral-800/60 border-slate-200 dark:border-neutral-700 text-sm h-10"
               />
             </div>
 
-            {/* Status Filter */}
+            {/* Request Type Filter */}
             <div className="sm:col-span-3">
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="h-10 bg-slate-50 dark:bg-neutral-800/60 border-slate-200 dark:border-neutral-700 text-sm">
+                  <SelectValue placeholder="Request Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Request Types</SelectItem>
+                  <SelectItem value="specialization_and_experience">Specialization & Exp</SelectItem>
+                  <SelectItem value="education">Education Details</SelectItem>
+                  <SelectItem value="documents">Documents & Verification</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="sm:col-span-2">
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="h-10 bg-slate-50 dark:bg-neutral-800/60 border-slate-200 dark:border-neutral-700 text-sm">
-                  <SelectValue placeholder="Filter by Status" />
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
@@ -397,10 +445,10 @@ const AdminCounselorRequestsManagement = () => {
             </div>
 
             {/* Checked / Unchecked Filter */}
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-2">
               <Select value={selectedChecked} onValueChange={setSelectedChecked}>
                 <SelectTrigger className="h-10 bg-slate-50 dark:bg-neutral-800/60 border-slate-200 dark:border-neutral-700 text-sm">
-                  <SelectValue placeholder="Filter Triage" />
+                  <SelectValue placeholder="Triage" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Requests</SelectItem>
@@ -455,27 +503,20 @@ const AdminCounselorRequestsManagement = () => {
           {requests.map((request) => {
             const counselor = request.counselor || {};
             const isUnchecked = !request.isChecked;
+            const typeMeta = getRequestTypeMeta(request.requestType);
+            const TypeIcon = typeMeta.icon;
 
             return (
               <div
                 key={request._id}
                 className={`relative rounded-2xl bg-white dark:bg-neutral-900 border transition-all duration-200 shadow-sm hover:shadow-md flex flex-col justify-between overflow-hidden ${
-                  isUnchecked
-                    ? 'border-purple-300 dark:border-purple-800/70 ring-1 ring-purple-400/20'
-                    : 'border-slate-200 dark:border-neutral-800'
+                  request.status === 'approved'
+                    ? 'border-emerald-200/90 dark:border-emerald-900/50 hover:border-emerald-300 dark:hover:border-emerald-700'
+                    : request.status === 'rejected'
+                    ? 'border-rose-200/90 dark:border-rose-900/50 hover:border-rose-300 dark:hover:border-rose-700'
+                    : 'border-amber-200/90 dark:border-amber-900/50 hover:border-amber-300 dark:hover:border-amber-700'
                 }`}
               >
-                {/* Top Status Accent Bar */}
-                <div
-                  className={`h-1.5 w-full ${
-                    request.status === 'approved'
-                      ? 'bg-emerald-500'
-                      : request.status === 'rejected'
-                      ? 'bg-rose-500'
-                      : 'bg-amber-500'
-                  }`}
-                />
-
                 <div className="p-5 space-y-4 flex-1">
                   {/* Card Header: Counselor + Triage Check Badge */}
                   <div className="flex items-start justify-between gap-2">
@@ -524,68 +565,130 @@ const AdminCounselorRequestsManagement = () => {
                     </button>
                   </div>
 
-                  {/* Status and Submitted Date */}
-                  <div className="flex items-center justify-between text-xs pt-1">
-                    {getStatusBadge(request.status)}
-                    <span className="text-slate-400 flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {dayjs(request.createdAt).fromNow()}
-                    </span>
+                  {/* Request Type Badge & Status */}
+                  <div className="flex items-center justify-between text-xs pt-1 flex-wrap gap-1.5">
+                    <Badge variant="outline" className={`text-[11px] gap-1 font-medium ${typeMeta.badgeColor}`}>
+                      <TypeIcon className="h-3 w-3" />
+                      {typeMeta.label}
+                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(request.status)}
+                    </div>
                   </div>
 
-                  <Separator className="bg-slate-100 dark:bg-neutral-800" />
+                  <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>Submitted {dayjs(request.createdAt).fromNow()}</span>
+                  </div>
 
-                  {/* Requested Changes Summary */}
-                  <div className="space-y-3 text-xs">
-                    {/* Specialization */}
-                    <div>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
-                        Requested Specializations:
+                  {/* Dynamic Request Type Summary */}
+                  {request.requestType === 'education' ? (
+                    <div className="space-y-2.5 text-xs">
+                      <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
+                        <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 block mb-0.5">
+                          Requested Graduation:
+                        </span>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">
+                          {request.requestedEducation?.graduation?.degree || 'Degree not specified'}
+                        </p>
+                        <p className="text-slate-600 dark:text-slate-400 text-[11px]">
+                          {request.requestedEducation?.graduation?.university} ({request.requestedEducation?.graduation?.year || 'N/A'})
+                        </p>
+                      </div>
+
+                      {request.requestedEducation?.postGraduation?.university && (
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-neutral-800/40 border border-slate-100 dark:border-neutral-800">
+                          <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">
+                            Post Graduation:
+                          </span>
+                          <p className="font-medium text-slate-800 dark:text-slate-200">
+                            {request.requestedEducation?.postGraduation?.degree} - {request.requestedEducation?.postGraduation?.university} ({request.requestedEducation?.postGraduation?.year || 'N/A'})
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : request.requestType === 'documents' ? (
+                    <div className="space-y-2.5 text-xs">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 block">
+                        Included Documents:
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {request.requestedSpecialization?.map((spec) => (
-                          <Badge
-                            key={spec}
-                            variant="secondary"
-                            className="bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 text-[11px] font-medium"
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { key: 'resume', label: 'Resume', hasFile: !!request.requestedDocuments?.resume },
+                          { key: 'degreeCertificate', label: 'Degree Cert', hasFile: !!request.requestedDocuments?.degreeCertificate },
+                          { key: 'licenseCertificate', label: 'License Cert', hasFile: !!request.requestedDocuments?.licenseCertificate },
+                          { key: 'governmentId', label: 'Govt ID', hasFile: !!request.requestedDocuments?.governmentId },
+                        ].map((d) => (
+                          <div
+                            key={d.key}
+                            className={`p-2 rounded-lg border text-[11px] flex items-center justify-between gap-1 ${
+                              d.hasFile
+                                ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900/50 text-indigo-800 dark:text-indigo-300 font-medium'
+                                : 'bg-slate-50 dark:bg-neutral-800/30 border-slate-100 dark:border-neutral-800 text-slate-400'
+                            }`}
                           >
-                            {spec}
-                          </Badge>
+                            <span className="truncate">{d.label}</span>
+                            {d.hasFile ? (
+                              <Check className="h-3 w-3 text-indigo-600 shrink-0" />
+                            ) : (
+                              <span className="text-[9px] text-slate-400">-</span>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
-
-                    {/* Experience Change */}
-                    <div className="bg-slate-50 dark:bg-neutral-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                  ) : (
+                    <div className="space-y-3 text-xs">
+                      {/* Specialization */}
                       <div>
-                        <span className="text-[11px] text-slate-500 block">Current Exp</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {request.currentExperienceYears ?? counselor.experienceYears ?? 0} yrs
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                          Requested Specializations:
                         </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {request.requestedSpecialization?.map((spec) => (
+                            <Badge
+                              key={spec}
+                              variant="secondary"
+                              className="bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 text-[11px] font-medium"
+                            >
+                              {spec}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                      <div className="text-right">
-                        <span className="text-[11px] text-blue-600 dark:text-blue-400 block font-semibold">
-                          Requested Exp
-                        </span>
-                        <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">
-                          {request.requestedExperienceYears} yrs
-                        </span>
+
+                      {/* Experience Change */}
+                      <div className="bg-slate-50 dark:bg-neutral-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+                        <div>
+                          <span className="text-[11px] text-slate-500 block">Current Exp</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {request.currentExperienceYears ?? counselor.experienceYears ?? 0} yrs
+                          </span>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <div className="text-right">
+                          <span className="text-[11px] text-blue-600 dark:text-blue-400 block font-semibold">
+                            Requested Exp
+                          </span>
+                          <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">
+                            {request.requestedExperienceYears} yrs
+                          </span>
+                        </div>
                       </div>
                     </div>
+                  )}
 
-                    {/* Message Preview */}
-                    {request.message && (
-                      <div className="bg-slate-50/70 dark:bg-neutral-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-neutral-800">
-                        <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">
-                          Counselor's Reason:
-                        </span>
-                        <p className="text-slate-700 dark:text-slate-300 line-clamp-2 text-xs italic">
-                          "{request.message}"
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  {/* Message Preview */}
+                  {request.message && (
+                    <div className="bg-slate-50/70 dark:bg-neutral-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-neutral-800 text-xs">
+                      <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">
+                        Counselor's Reason:
+                      </span>
+                      <p className="text-slate-700 dark:text-slate-300 line-clamp-2 text-xs italic">
+                        "{request.message}"
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card Footer: View and Review Button */}
@@ -608,14 +711,19 @@ const AdminCounselorRequestsManagement = () => {
       {/* Detail & Review Action Dialog */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[92vh] p-0 overflow-hidden flex flex-col rounded-2xl shadow-2xl border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-          {/* Header Banner with proper close button spacing (pr-14 avoids collision with close X) */}
+          {/* Header Banner with proper close button spacing */}
           <div className="p-5 sm:p-6 pr-14 border-b border-slate-100 dark:border-neutral-800 bg-slate-50/70 dark:bg-neutral-800/50 shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <DialogTitle className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
-                    Counselor Credential Review
+                    Counselor Request Review
                   </DialogTitle>
+                  {selectedRequest && (
+                    <Badge variant="outline" className={`text-xs gap-1 font-semibold ${getRequestTypeMeta(selectedRequest.requestType).badgeColor}`}>
+                      {getRequestTypeMeta(selectedRequest.requestType).label}
+                    </Badge>
+                  )}
                   {selectedRequest && getStatusBadge(selectedRequest.status)}
                 </div>
                 <DialogDescription className="text-xs text-slate-500 mt-1 flex items-center gap-2">
@@ -699,102 +807,348 @@ const AdminCounselorRequestsManagement = () => {
                 </div>
               </div>
 
-              {/* Side-by-Side Comparison: Current vs Requested */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Current Credentials */}
-                <div className="rounded-xl p-4 bg-white dark:bg-neutral-800/80 border border-slate-200 dark:border-neutral-700 space-y-3 shadow-sm">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-700">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Briefcase className="h-3.5 w-3.5 text-slate-500" />
-                      Current In Profile
-                    </span>
-                    <Badge variant="outline" className="text-[10px] text-slate-500">
-                      {selectedRequest.currentExperienceLevel || 'Beginner'}
-                    </Badge>
-                  </div>
+              {/* Side-by-Side Comparison: Current vs Requested based on requestType */}
+              {selectedRequest.requestType === 'education' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Current Education */}
+                  <div className="rounded-xl p-4 bg-white dark:bg-neutral-800/80 border border-slate-200 dark:border-neutral-700 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-700">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <GraduationCap className="h-3.5 w-3.5 text-slate-500" />
+                        Current Education On Record
+                      </span>
+                    </div>
 
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-500 block mb-1.5">Specializations:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedRequest.currentSpecialization?.length > 0 ? (
-                        selectedRequest.currentSpecialization.map((spec) => (
-                          <Badge key={spec} variant="secondary" className="text-xs py-1 px-2.5 bg-slate-100 dark:bg-neutral-700 text-slate-700 dark:text-slate-300">
-                            {spec}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-slate-400 italic">None specified</span>
-                      )}
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <span className="text-[11px] font-semibold text-slate-500 block">Graduation:</span>
+                        <p className="font-bold text-slate-800 dark:text-slate-200">
+                          {selectedRequest.currentEducation?.graduation?.degree ||
+                            selectedRequest.counselor?.application?.education?.graduation?.degree ||
+                            'Not specified'}
+                        </p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">
+                          {selectedRequest.currentEducation?.graduation?.university ||
+                            selectedRequest.counselor?.application?.education?.graduation?.university ||
+                            'University not specified'}{' '}
+                          (
+                          {selectedRequest.currentEducation?.graduation?.year ||
+                            selectedRequest.counselor?.application?.education?.graduation?.year ||
+                            'N/A'}
+                          )
+                        </p>
+                      </div>
+
+                      <Separator className="bg-slate-100 dark:bg-neutral-700" />
+
+                      <div>
+                        <span className="text-[11px] font-semibold text-slate-500 block">Post Graduation:</span>
+                        <p className="font-medium text-slate-800 dark:text-slate-200">
+                          {selectedRequest.currentEducation?.postGraduation?.degree ||
+                            selectedRequest.counselor?.application?.education?.postGraduation?.degree ||
+                            'None on record'}
+                        </p>
+                        {(selectedRequest.currentEducation?.postGraduation?.university ||
+                          selectedRequest.counselor?.application?.education?.postGraduation?.university) && (
+                          <p className="text-slate-600 dark:text-slate-400 text-xs">
+                            {selectedRequest.currentEducation?.postGraduation?.university ||
+                              selectedRequest.counselor?.application?.education?.postGraduation?.university}{' '}
+                            (
+                            {selectedRequest.currentEducation?.postGraduation?.year ||
+                              selectedRequest.counselor?.application?.education?.postGraduation?.year ||
+                              'N/A'}
+                            )
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-500 block mb-1">Total Experience:</span>
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                      {selectedRequest.currentExperienceYears ?? 0} Years
-                    </p>
+                  {/* Proposed Education */}
+                  <div className="rounded-xl p-4 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-emerald-100 dark:border-emerald-900/40">
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+                        Proposed Education Updates
+                      </span>
+                      <Badge className="bg-emerald-600 text-white text-[10px]">
+                        New Credentials
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <span className="text-[11px] font-semibold text-emerald-700/80 dark:text-emerald-300/80 block">
+                          Graduation Degree:
+                        </span>
+                        <p className="font-bold text-emerald-900 dark:text-emerald-100 text-sm">
+                          {selectedRequest.requestedEducation?.graduation?.degree}
+                        </p>
+                        <p className="text-emerald-800 dark:text-emerald-200 text-xs font-medium">
+                          {selectedRequest.requestedEducation?.graduation?.university} (
+                          {selectedRequest.requestedEducation?.graduation?.year})
+                        </p>
+                      </div>
+
+                      <Separator className="bg-emerald-200/60 dark:bg-emerald-800/40" />
+
+                      <div>
+                        <span className="text-[11px] font-semibold text-emerald-700/80 dark:text-emerald-300/80 block">
+                          Post Graduation:
+                        </span>
+                        {selectedRequest.requestedEducation?.postGraduation?.university ||
+                        selectedRequest.requestedEducation?.postGraduation?.degree ? (
+                          <>
+                            <p className="font-bold text-emerald-900 dark:text-emerald-100">
+                              {selectedRequest.requestedEducation?.postGraduation?.degree || 'Degree specified'}
+                            </p>
+                            <p className="text-emerald-800 dark:text-emerald-200 text-xs font-medium">
+                              {selectedRequest.requestedEducation?.postGraduation?.university}{' '}
+                              {selectedRequest.requestedEducation?.postGraduation?.year &&
+                                `(${selectedRequest.requestedEducation?.postGraduation?.year})`}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-xs text-slate-400 italic">Not specified</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ) : selectedRequest.requestType === 'documents' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Current Documents */}
+                  <div className="rounded-xl p-4 bg-white dark:bg-neutral-800/80 border border-slate-200 dark:border-neutral-700 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-700">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5 text-slate-500" />
+                        Current Documents On Record
+                      </span>
+                    </div>
 
-                {/* Requested Updates */}
-                <div className="rounded-xl p-4 bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 space-y-3 shadow-sm">
-                  <div className="flex items-center justify-between pb-2 border-b border-blue-100 dark:border-blue-900/40">
-                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                      Proposed Updates
-                    </span>
-                    <Badge className="bg-blue-600 text-white text-[10px]">
-                      Tier: {getComputedLevel(selectedRequest.requestedExperienceYears)}
-                    </Badge>
+                    <div className="space-y-2.5 text-xs">
+                      {[
+                        {
+                          label: 'Resume / CV',
+                          url:
+                            selectedRequest.currentDocuments?.resume ||
+                            selectedRequest.counselor?.application?.documents?.resume,
+                        },
+                        {
+                          label: 'Degree Certificate',
+                          url:
+                            selectedRequest.currentDocuments?.degreeCertificate ||
+                            selectedRequest.counselor?.application?.documents?.degreeCertificate,
+                        },
+                        {
+                          label: 'License Certificate',
+                          url:
+                            selectedRequest.currentDocuments?.licenseCertificate ||
+                            selectedRequest.counselor?.application?.documents?.licenseCertificate,
+                        },
+                        {
+                          label: 'Government ID',
+                          url:
+                            selectedRequest.currentDocuments?.governmentId ||
+                            selectedRequest.counselor?.application?.documents?.governmentId,
+                        },
+                      ].map((doc) => (
+                        <div
+                          key={doc.label}
+                          className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-750 border border-slate-100 dark:border-neutral-700 flex items-center justify-between gap-2"
+                        >
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{doc.label}</span>
+                          {doc.url ? (
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline font-semibold"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              View Current
+                            </a>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">None</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div>
-                    <span className="text-[11px] font-semibold text-blue-700/80 dark:text-blue-300/80 block mb-1.5">
-                      Proposed Specializations:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedRequest.requestedSpecialization?.map((spec) => {
-                        const isNew = !selectedRequest.currentSpecialization?.includes(spec);
+                  {/* Proposed Uploaded Documents */}
+                  <div className="rounded-xl p-4 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/50 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-indigo-100 dark:border-indigo-900/40">
+                      <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+                        Proposed Document Updates
+                      </span>
+                      <Badge className="bg-indigo-600 text-white text-[10px]">
+                        Verify Files
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2.5 text-xs">
+                      {[
+                        {
+                          label: 'Resume / CV',
+                          url: selectedRequest.requestedDocuments?.resume,
+                          prevUrl: selectedRequest.currentDocuments?.resume,
+                        },
+                        {
+                          label: 'Degree Certificate',
+                          url: selectedRequest.requestedDocuments?.degreeCertificate,
+                          prevUrl: selectedRequest.currentDocuments?.degreeCertificate,
+                        },
+                        {
+                          label: 'License Certificate',
+                          url: selectedRequest.requestedDocuments?.licenseCertificate,
+                          prevUrl: selectedRequest.currentDocuments?.licenseCertificate,
+                        },
+                        {
+                          label: 'Government ID',
+                          url: selectedRequest.requestedDocuments?.governmentId,
+                          prevUrl: selectedRequest.currentDocuments?.governmentId,
+                        },
+                      ].map((doc) => {
+                        const isUpdated = doc.url && doc.url !== doc.prevUrl;
                         return (
-                          <Badge
-                            key={spec}
-                            className={`text-xs py-1 px-2.5 font-medium transition-all ${
-                              isNew
-                                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm ring-1 ring-emerald-400/30'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                          <div
+                            key={doc.label}
+                            className={`p-2.5 rounded-lg border flex items-center justify-between gap-2 ${
+                              isUpdated
+                                ? 'bg-indigo-100/70 dark:bg-indigo-900/40 border-indigo-300 dark:border-indigo-700'
+                                : 'bg-white/60 dark:bg-neutral-800/40 border-indigo-100 dark:border-indigo-900/30'
                             }`}
                           >
-                            {spec}
-                            {isNew && (
-                              <span className="ml-1 text-[9px] bg-white/20 text-white px-1 py-0.2 rounded font-bold">
-                                + NEW
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                {doc.label}
                               </span>
+                              {isUpdated && (
+                                <Badge className="bg-emerald-600 text-white text-[9px] px-1 py-0 font-bold">
+                                  UPDATED
+                                </Badge>
+                              )}
+                            </div>
+
+                            {doc.url ? (
+                              <a
+                                href={doc.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm shrink-0"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                Inspect PDF
+                              </a>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic">No file</span>
                             )}
-                          </Badge>
+                          </div>
                         );
                       })}
                     </div>
                   </div>
+                </div>
+              ) : (
+                /* Specialization and Experience Comparison */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Current Credentials */}
+                  <div className="rounded-xl p-4 bg-white dark:bg-neutral-800/80 border border-slate-200 dark:border-neutral-700 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-700">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Briefcase className="h-3.5 w-3.5 text-slate-500" />
+                        Current In Profile
+                      </span>
+                      <Badge variant="outline" className="text-[10px] text-slate-500">
+                        {selectedRequest.currentExperienceLevel || 'Beginner'}
+                      </Badge>
+                    </div>
 
-                  <div>
-                    <span className="text-[11px] font-semibold text-blue-700/80 dark:text-blue-300/80 block mb-1">
-                      Proposed Experience:
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-blue-900 dark:text-blue-100">
-                        {selectedRequest.requestedExperienceYears} Years
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-500 block mb-1.5">Specializations:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedRequest.currentSpecialization?.length > 0 ? (
+                          selectedRequest.currentSpecialization.map((spec) => (
+                            <Badge key={spec} variant="secondary" className="text-xs py-1 px-2.5 bg-slate-100 dark:bg-neutral-700 text-slate-700 dark:text-slate-300">
+                              {spec}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">None specified</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-500 block mb-1">Total Experience:</span>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                        {selectedRequest.currentExperienceYears ?? 0} Years
                       </p>
-                      {selectedRequest.requestedExperienceYears !== selectedRequest.currentExperienceYears && (
-                        <Badge variant="outline" className="text-[10px] text-blue-700 border-blue-300 bg-blue-100/50">
-                          {selectedRequest.requestedExperienceYears > (selectedRequest.currentExperienceYears || 0)
-                            ? `+${selectedRequest.requestedExperienceYears - (selectedRequest.currentExperienceYears || 0)} yrs increase`
-                            : `${selectedRequest.requestedExperienceYears - (selectedRequest.currentExperienceYears || 0)} yrs change`}
-                        </Badge>
-                      )}
+                    </div>
+                  </div>
+
+                  {/* Requested Updates */}
+                  <div className="rounded-xl p-4 bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-blue-100 dark:border-blue-900/40">
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                        Proposed Updates
+                      </span>
+                      <Badge className="bg-blue-600 text-white text-[10px]">
+                        Tier: {getComputedLevel(selectedRequest.requestedExperienceYears)}
+                      </Badge>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] font-semibold text-blue-700/80 dark:text-blue-300/80 block mb-1.5">
+                        Proposed Specializations:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedRequest.requestedSpecialization?.map((spec) => {
+                          const isNew = !selectedRequest.currentSpecialization?.includes(spec);
+                          return (
+                            <Badge
+                              key={spec}
+                              className={`text-xs py-1 px-2.5 font-medium transition-all ${
+                                isNew
+                                  ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm ring-1 ring-emerald-400/30'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                            >
+                              {spec}
+                              {isNew && (
+                                <span className="ml-1 text-[9px] bg-white/20 text-white px-1 py-0.2 rounded font-bold">
+                                  + NEW
+                                </span>
+                              )}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] font-semibold text-blue-700/80 dark:text-blue-300/80 block mb-1">
+                        Proposed Experience:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                          {selectedRequest.requestedExperienceYears} Years
+                        </p>
+                        {selectedRequest.requestedExperienceYears !== selectedRequest.currentExperienceYears && (
+                          <Badge variant="outline" className="text-[10px] text-blue-700 border-blue-300 bg-blue-100/50">
+                            {selectedRequest.requestedExperienceYears > (selectedRequest.currentExperienceYears || 0)
+                              ? `+${selectedRequest.requestedExperienceYears - (selectedRequest.currentExperienceYears || 0)} yrs increase`
+                              : `${selectedRequest.requestedExperienceYears - (selectedRequest.currentExperienceYears || 0)} yrs change`}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Counselor Message Card */}
               <div className="rounded-xl p-4 bg-white dark:bg-neutral-800/80 border border-slate-200 dark:border-neutral-700 space-y-2 shadow-sm">

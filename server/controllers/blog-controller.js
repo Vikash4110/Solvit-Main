@@ -2,6 +2,7 @@ import { Blog } from '../models/blog-model.js';
 import { wrapper } from '../utils/wrapper.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
+import { uploadOncloudinary } from '../utils/cloudinary.js';
 
 // Get all published blogs with filtering, pagination, and search
 export const getBlogs = wrapper(async (req, res) => {
@@ -231,7 +232,7 @@ export const addBlogComment = wrapper(async (req, res) => {
 
 // Create blog (Counselors only)
 export const createBlog = wrapper(async (req, res) => {
-  const {
+  let {
     title,
     content,
     excerpt,
@@ -246,13 +247,34 @@ export const createBlog = wrapper(async (req, res) => {
     throw new ApiError(400, 'Title, content, excerpt, and category are required');
   }
 
+  // Parse tags if passed as JSON string or comma-delimited
+  if (typeof tags === 'string') {
+    try {
+      tags = JSON.parse(tags);
+    } catch {
+      tags = tags.split(',').map((t) => t.trim()).filter(Boolean);
+    }
+  }
+
+  if (typeof featured === 'string') {
+    featured = featured === 'true';
+  }
+
+  // Handle direct image file upload
+  if (req.file) {
+    const uploadResult = await uploadOncloudinary(req.file.path, 'blog-covers');
+    if (uploadResult?.secure_url) {
+      featuredImage = uploadResult.secure_url;
+    }
+  }
+
   const blog = await Blog.create({
-    title,
-    content,
-    excerpt,
+    title: title.trim(),
+    content: content.trim(),
+    excerpt: excerpt.trim(),
     category,
     tags: tags || [],
-    featuredImage,
+    featuredImage: featuredImage || '',
     author: req.verifiedCounselorId,
     status,
     featured,
@@ -266,7 +288,27 @@ export const createBlog = wrapper(async (req, res) => {
 // Update blog (Author only)
 export const updateBlog = wrapper(async (req, res) => {
   const { blogId } = req.params;
-  const updates = req.body;
+  const updates = { ...req.body };
+
+  if (typeof updates.tags === 'string') {
+    try {
+      updates.tags = JSON.parse(updates.tags);
+    } catch {
+      updates.tags = updates.tags.split(',').map((t) => t.trim()).filter(Boolean);
+    }
+  }
+
+  if (typeof updates.featured === 'string') {
+    updates.featured = updates.featured === 'true';
+  }
+
+  // Handle direct image file upload
+  if (req.file) {
+    const uploadResult = await uploadOncloudinary(req.file.path, 'blog-covers');
+    if (uploadResult?.secure_url) {
+      updates.featuredImage = uploadResult.secure_url;
+    }
+  }
 
   const blog = await Blog.findById(blogId);
   if (!blog) {
