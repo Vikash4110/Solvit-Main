@@ -1,12 +1,14 @@
 // counselor-dashboard-routes.js
 
 import express from 'express';
-import { uploadProfilePicture } from '../middlewares/multer.middleware.js';
+import { upload, uploadProfilePicture } from '../middlewares/multer.middleware.js';
 import { verifyJWTCounselor } from '../middlewares/counselorAuth-middleware.js';
 import {
   getCounselorProfile,
   updateCounselorProfile,
   createCounselorProfileRequest,
+  createCounselorEducationRequest,
+  createCounselorDocumentsRequest,
   getMyProfileRequests,
   updateCounselorProfilePicture,
   deleteCounselorProfilePicture,
@@ -26,6 +28,17 @@ counselorDashboardRouter.use(verifyJWTCounselor);
 counselorDashboardRouter.get('/profile', getCounselorProfile);
 counselorDashboardRouter.put('/profile', updateCounselorProfile);
 counselorDashboardRouter.post('/profile/change-request', createCounselorProfileRequest);
+counselorDashboardRouter.post('/profile/education-request', createCounselorEducationRequest);
+counselorDashboardRouter.post(
+  '/profile/document-request',
+  upload.fields([
+    { name: 'resume', maxCount: 1 },
+    { name: 'degreeCertificate', maxCount: 1 },
+    { name: 'licenseCertificate', maxCount: 1 },
+    { name: 'governmentId', maxCount: 1 },
+  ]),
+  createCounselorDocumentsRequest
+);
 counselorDashboardRouter.get('/profile/change-requests', getMyProfileRequests);
 counselorDashboardRouter.put(
   '/profile-picture',

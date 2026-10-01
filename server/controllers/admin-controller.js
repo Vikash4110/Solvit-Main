@@ -1671,12 +1671,16 @@ const getBookingAnalytics = wrapper(async (req, res) => {
  * @access Private (Admin only)
  */
 const getAllCounselorRequests = wrapper(async (req, res) => {
-  const { page = 1, limit = 20, search = '', status = '', isChecked = '' } = req.query;
+  const { page = 1, limit = 20, search = '', status = '', isChecked = '', requestType = '' } = req.query;
 
   const filter = {};
 
   if (status && ['pending', 'approved', 'rejected'].includes(status)) {
     filter.status = status;
+  }
+
+  if (requestType && ['specialization_and_experience', 'education', 'documents'].includes(requestType)) {
+    filter.requestType = requestType;
   }
 
   if (isChecked === 'true') {
@@ -1705,6 +1709,9 @@ const getAllCounselorRequests = wrapper(async (req, res) => {
       { counselor: { $in: counselorIds } },
       { message: { $regex: search.trim(), $options: 'i' } },
       { requestedSpecialization: { $in: [new RegExp(search.trim(), 'i')] } },
+      { requestType: { $regex: search.trim(), $options: 'i' } },
+      { 'requestedEducation.graduation.university': { $regex: search.trim(), $options: 'i' } },
+      { 'requestedEducation.graduation.degree': { $regex: search.trim(), $options: 'i' } },
     ];
   }
 
@@ -1835,20 +1842,63 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Associated counselor not found' });
   }
 
-  // If approving, apply requested changes to Counselor profile
+  // If approving, apply requested changes to Counselor profile depending on requestType
   if (status === 'approved') {
-    counselor.specialization = request.requestedSpecialization;
-    counselor.experienceYears = request.requestedExperienceYears;
+    if (request.requestType === 'specialization_and_experience') {
+      if (request.requestedSpecialization && request.requestedSpecialization.length > 0) {
+        counselor.specialization = request.requestedSpecialization;
+      }
+      if (request.requestedExperienceYears !== undefined && request.requestedExperienceYears !== null) {
+        counselor.experienceYears = request.requestedExperienceYears;
 
-    // Recalculate experience level based on years
-    if (request.requestedExperienceYears < 2) {
-      counselor.experienceLevel = 'Beginner';
-    } else if (request.requestedExperienceYears < 5) {
-      counselor.experienceLevel = 'Intermediate';
-    } else if (request.requestedExperienceYears < 10) {
-      counselor.experienceLevel = 'Experienced';
-    } else {
-      counselor.experienceLevel = 'Specialist';
+        // Recalculate experience level based on years
+        if (request.requestedExperienceYears < 2) {
+          counselor.experienceLevel = 'Beginner';
+        } else if (request.requestedExperienceYears < 5) {
+          counselor.experienceLevel = 'Intermediate';
+        } else if (request.requestedExperienceYears < 10) {
+          counselor.experienceLevel = 'Experienced';
+        } else {
+          counselor.experienceLevel = 'Specialist';
+        }
+      }
+    } else if (request.requestType === 'education') {
+      if (!counselor.application) counselor.application = {};
+      if (!counselor.application.education) counselor.application.education = {};
+
+      if (request.requestedEducation?.graduation) {
+        counselor.application.education.graduation = {
+          university: request.requestedEducation.graduation.university || '',
+          degree: request.requestedEducation.graduation.degree || '',
+          year: request.requestedEducation.graduation.year || null,
+        };
+      }
+
+      if (request.requestedEducation?.postGraduation) {
+        counselor.application.education.postGraduation = {
+          university: request.requestedEducation.postGraduation.university || '',
+          degree: request.requestedEducation.postGraduation.degree || '',
+          year: request.requestedEducation.postGraduation.year || null,
+        };
+      }
+      counselor.markModified('application');
+    } else if (request.requestType === 'documents') {
+      if (!counselor.application) counselor.application = {};
+      if (!counselor.application.documents) counselor.application.documents = {};
+
+      if (request.requestedDocuments?.resume) {
+        counselor.application.documents.resume = request.requestedDocuments.resume;
+      }
+      if (request.requestedDocuments?.degreeCertificate) {
+        counselor.application.documents.degreeCertificate = request.requestedDocuments.degreeCertificate;
+      }
+      if (request.requestedDocuments?.licenseCertificate) {
+        counselor.application.documents.licenseCertificate = request.requestedDocuments.licenseCertificate;
+      }
+      if (request.requestedDocuments?.governmentId) {
+        counselor.application.documents.governmentId = request.requestedDocuments.governmentId;
+      }
+      counselor.markModified('application');
     }
 
     await counselor.save();
@@ -1864,7 +1914,7 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
   await request.save();
 
   const populatedRequest = await CounselorProfileRequest.findById(requestId)
-    .populate('counselor', 'fullName email phone profilePicture username specialization experienceYears experienceLevel')
+    .populate('counselor', 'fullName email phone profilePicture username specialization experienceYears experienceLevel application')
     .populate('reviewedBy', 'fullName email')
     .lean();
 

@@ -268,16 +268,17 @@ export const createCounselorProfileRequest = wrapper(async (req, res) => {
     throw new ApiError(404, 'Counselor not found');
   }
 
-  // Check for any pending request
+  // Check for any pending request of this type
   const existingPendingRequest = await CounselorProfileRequest.findOne({
     counselor: counselorId,
+    requestType: 'specialization_and_experience',
     status: 'pending',
   });
 
   if (existingPendingRequest) {
     throw new ApiError(
       400,
-      'You already have a pending profile change request. Please wait for admin review.'
+      'You already have a pending specialization/experience change request. Please wait for admin review.'
     );
   }
 
@@ -298,6 +299,182 @@ export const createCounselorProfileRequest = wrapper(async (req, res) => {
   return res
     .status(201)
     .json(new ApiResponse(201, newRequest, 'Profile change request submitted successfully to admin'));
+});
+
+/**
+ * @desc Submit a request to update education details (requires admin approval)
+ * @route POST /api/v1/counselor/dashboard/profile/education-request
+ * @access Private (Counselor only)
+ */
+export const createCounselorEducationRequest = wrapper(async (req, res) => {
+  const counselorId = req.verifiedCounselorId._id;
+  const { graduation, postGraduation, message } = req.body;
+
+  if (!graduation || !graduation.university?.trim() || !graduation.degree?.trim() || !graduation.year) {
+    throw new ApiError(400, 'Graduation university, degree, and passing year are required');
+  }
+
+  const gradYear = parseInt(graduation.year, 10);
+  const currentYear = new Date().getFullYear();
+  if (isNaN(gradYear) || gradYear < 1960 || gradYear > currentYear) {
+    throw new ApiError(400, `Graduation year must be between 1960 and ${currentYear}`);
+  }
+
+  if (postGraduation?.year) {
+    const postGradYear = parseInt(postGraduation.year, 10);
+    if (isNaN(postGradYear) || postGradYear < 1960 || postGradYear > currentYear) {
+      throw new ApiError(400, `Post graduation year must be between 1960 and ${currentYear}`);
+    }
+  }
+
+  if (!message || !message.trim()) {
+    throw new ApiError(400, 'Please provide a message/reason explaining why you are updating your education details');
+  }
+
+  const counselor = await Counselor.findById(counselorId);
+  if (!counselor) {
+    throw new ApiError(404, 'Counselor not found');
+  }
+
+  // Check for any pending education request
+  const existingPendingRequest = await CounselorProfileRequest.findOne({
+    counselor: counselorId,
+    requestType: 'education',
+    status: 'pending',
+  });
+
+  if (existingPendingRequest) {
+    throw new ApiError(
+      400,
+      'You already have a pending education change request. Please wait for admin review.'
+    );
+  }
+
+  const currentGraduation = counselor.application?.education?.graduation || {};
+  const currentPostGraduation = counselor.application?.education?.postGraduation || {};
+
+  const newRequest = await CounselorProfileRequest.create({
+    counselor: counselorId,
+    requestType: 'education',
+    currentEducation: {
+      graduation: {
+        university: currentGraduation.university || '',
+        degree: currentGraduation.degree || '',
+        year: currentGraduation.year || null,
+      },
+      postGraduation: {
+        university: currentPostGraduation.university || '',
+        degree: currentPostGraduation.degree || '',
+        year: currentPostGraduation.year || null,
+      },
+    },
+    requestedEducation: {
+      graduation: {
+        university: graduation.university.trim(),
+        degree: graduation.degree.trim(),
+        year: gradYear,
+      },
+      postGraduation: {
+        university: postGraduation?.university?.trim() || '',
+        degree: postGraduation?.degree?.trim() || '',
+        year: postGraduation?.year ? parseInt(postGraduation.year, 10) : null,
+      },
+    },
+    message: message.trim(),
+    status: 'pending',
+    isChecked: false,
+  });
+
+  logger.info(`Education change request created for counselor ${counselorId}, requestId: ${newRequest._id}`);
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newRequest, 'Education update request submitted successfully to admin'));
+});
+
+/**
+ * @desc Submit a request to update/replace or add new documents (requires admin approval)
+ * @route POST /api/v1/counselor/dashboard/profile/document-request
+ * @access Private (Counselor only)
+ */
+export const createCounselorDocumentsRequest = wrapper(async (req, res) => {
+  const counselorId = req.verifiedCounselorId._id;
+  const { message } = req.body;
+  const files = req.files || {};
+
+  if (!message || !message.trim()) {
+    throw new ApiError(400, 'Please provide a message/reason explaining this document update');
+  }
+
+  const hasFiles =
+    (files.resume && files.resume.length > 0) ||
+    (files.degreeCertificate && files.degreeCertificate.length > 0) ||
+    (files.licenseCertificate && files.licenseCertificate.length > 0) ||
+    (files.governmentId && files.governmentId.length > 0);
+
+  if (!hasFiles) {
+    throw new ApiError(400, 'Please upload at least one document (Resume, Degree Certificate, License Certificate, or Government ID) to update');
+  }
+
+  const counselor = await Counselor.findById(counselorId);
+  if (!counselor) {
+    throw new ApiError(404, 'Counselor not found');
+  }
+
+  // Check for any pending document request
+  const existingPendingRequest = await CounselorProfileRequest.findOne({
+    counselor: counselorId,
+    requestType: 'documents',
+    status: 'pending',
+  });
+
+  if (existingPendingRequest) {
+    throw new ApiError(
+      400,
+      'You already have a pending document change request. Please wait for admin review.'
+    );
+  }
+
+  const uploadDoc = async (fileObj, folder = 'counselor-documents') => {
+    if (!fileObj) return null;
+    const result = await uploadOncloudinary(fileObj.path, folder);
+    return result?.secure_url || result?.url || null;
+  };
+
+  const newResumeUrl = files.resume?.[0] ? await uploadDoc(files.resume[0]) : null;
+  const newDegreeCertUrl = files.degreeCertificate?.[0] ? await uploadDoc(files.degreeCertificate[0]) : null;
+  const newLicenseCertUrl = files.licenseCertificate?.[0] ? await uploadDoc(files.licenseCertificate[0]) : null;
+  const newGovtIdUrl = files.governmentId?.[0] ? await uploadDoc(files.governmentId[0]) : null;
+
+  const currentDocs = counselor.application?.documents || {};
+
+  const currentDocuments = {
+    resume: currentDocs.resume || '',
+    degreeCertificate: currentDocs.degreeCertificate || '',
+    licenseCertificate: currentDocs.licenseCertificate || '',
+    governmentId: currentDocs.governmentId || '',
+  };
+
+  const requestedDocuments = {
+    resume: newResumeUrl || currentDocuments.resume,
+    degreeCertificate: newDegreeCertUrl || currentDocuments.degreeCertificate,
+    licenseCertificate: newLicenseCertUrl || currentDocuments.licenseCertificate,
+    governmentId: newGovtIdUrl || currentDocuments.governmentId,
+  };
+
+  const newRequest = await CounselorProfileRequest.create({
+    counselor: counselorId,
+    requestType: 'documents',
+    currentDocuments,
+    requestedDocuments,
+    message: message.trim(),
+    status: 'pending',
+    isChecked: false,
+  });
+
+  logger.info(`Document change request created for counselor ${counselorId}, requestId: ${newRequest._id}`);
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newRequest, 'Document update request submitted successfully to admin'));
 });
 
 /**
@@ -895,6 +1072,8 @@ export default {
   getCounselorProfile,
   updateCounselorProfile,
   createCounselorProfileRequest,
+  createCounselorEducationRequest,
+  createCounselorDocumentsRequest,
   getMyProfileRequests,
   updateCounselorProfilePicture,
   deleteCounselorProfilePicture,
