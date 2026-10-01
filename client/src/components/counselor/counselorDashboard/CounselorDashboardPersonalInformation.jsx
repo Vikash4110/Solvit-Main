@@ -49,6 +49,7 @@ import {
   ExternalLink,
   FileCheck,
   FileUp,
+  Info,
 } from 'lucide-react';
 import ShareProfileModal from '@/components/common/ShareProfileModal.jsx';
 import { toast } from 'sonner';
@@ -280,8 +281,8 @@ const CounselorDashboardPersonalInfo = () => {
       Array.isArray(counselorData?.specialization)
         ? [...counselorData.specialization]
         : counselorData?.specialization
-        ? [counselorData.specialization]
-        : []
+          ? [counselorData.specialization]
+          : []
     );
     setRequestedExperienceYears(counselorData?.experienceYears ?? 0);
     setRequestMessage('');
@@ -1208,7 +1209,7 @@ const CounselorDashboardPersonalInfo = () => {
             Professional Profile
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Manage your professional information 
+            Manage your professional information
           </p>
         </div>
 
@@ -1302,7 +1303,7 @@ const CounselorDashboardPersonalInfo = () => {
                       <p className="text-neutral-700 dark:text-neutral-300 text-xs sm:text-sm md:text-base max-w-3xl leading-relaxed">
                         {counselorData.application.professionalSummary}
                       </p>
-                  )}
+                    )}
                 </div>
               </div>
 
@@ -1375,14 +1376,14 @@ const CounselorDashboardPersonalInfo = () => {
                   {profileRequests.some(
                     (r) => r.requestType === 'education' && r.status === 'pending'
                   ) && (
-                    <Badge
-                      variant="outline"
-                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium"
-                    >
-                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
-                      Change Pending
-                    </Badge>
-                  )}
+                      <Badge
+                        variant="outline"
+                        className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium"
+                      >
+                        <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                        Change Pending
+                      </Badge>
+                    )}
                   {counselorData.application?.applicationStatus === 'approved' ? (
                     <Button
                       variant="outline"
@@ -1439,40 +1440,40 @@ const CounselorDashboardPersonalInfo = () => {
                 {/* Post Graduation */}
                 {(counselorData.application.education?.postGraduation?.university ||
                   counselorData.application.education?.postGraduation?.degree) && (
-                  <div className="border-t border-neutral-200/80 dark:border-neutral-800 pt-4">
-                    <Label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block mb-3">
-                      Post Graduation
-                    </Label>
-                    <div className="space-y-2">
-                      <InfoRow
-                        icon={Building}
-                        label="University"
-                        value={
-                          counselorData.application.education?.postGraduation?.university ||
-                          'Not specified'
-                        }
-                        compact
-                      />
-                      <InfoRow
-                        icon={GraduationCap}
-                        label="Degree"
-                        value={
-                          counselorData.application.education?.postGraduation?.degree ||
-                          'Not specified'
-                        }
-                        compact
-                      />
-                      <InfoRow
-                        icon={Calendar}
-                        label="Year"
-                        value={
-                          counselorData.application.education?.postGraduation?.year || 'Not specified'
-                        }
-                        compact
-                      />
+                    <div className="border-t border-neutral-200/80 dark:border-neutral-800 pt-4">
+                      <Label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block mb-3">
+                        Post Graduation
+                      </Label>
+                      <div className="space-y-2">
+                        <InfoRow
+                          icon={Building}
+                          label="University"
+                          value={
+                            counselorData.application.education?.postGraduation?.university ||
+                            'Not specified'
+                          }
+                          compact
+                        />
+                        <InfoRow
+                          icon={GraduationCap}
+                          label="Degree"
+                          value={
+                            counselorData.application.education?.postGraduation?.degree ||
+                            'Not specified'
+                          }
+                          compact
+                        />
+                        <InfoRow
+                          icon={Calendar}
+                          label="Year"
+                          value={
+                            counselorData.application.education?.postGraduation?.year || 'Not specified'
+                          }
+                          compact
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </CardContent>
             </Card>
           </motion.div>
@@ -1489,14 +1490,14 @@ const CounselorDashboardPersonalInfo = () => {
                   {profileRequests.some(
                     (r) => r.requestType === 'documents' && r.status === 'pending'
                   ) && (
-                    <Badge
-                      variant="outline"
-                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
-                    >
-                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
-                      Update Pending
-                    </Badge>
-                  )}
+                      <Badge
+                        variant="outline"
+                        className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
+                      >
+                        <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                        Update Pending
+                      </Badge>
+                    )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -1543,11 +1544,10 @@ const CounselorDashboardPersonalInfo = () => {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`p-2 rounded-lg shrink-0 ${
-                          doc.url
+                        className={`p-2 rounded-lg shrink-0 ${doc.url
                             ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400'
                             : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'
-                        }`}
+                          }`}
                       >
                         <FileText className="h-4 w-4" />
                       </div>
@@ -1602,14 +1602,14 @@ const CounselorDashboardPersonalInfo = () => {
                       (!r.requestType || r.requestType === 'specialization_and_experience') &&
                       r.status === 'pending'
                   ) && (
-                    <Badge
-                      variant="outline"
-                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
-                    >
-                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
-                      Change Pending
-                    </Badge>
-                  )}
+                      <Badge
+                        variant="outline"
+                        className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
+                      >
+                        <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                        Change Pending
+                      </Badge>
+                    )}
                   {counselorData.application?.applicationStatus === 'approved' && (
                     <Button
                       variant="outline"
@@ -2116,11 +2116,10 @@ const CounselorDashboardPersonalInfo = () => {
                       )
                     }
                     placeholder="e.g. 5"
-                    className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
-                      counselorData.application?.applicationStatus === 'approved'
+                    className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                         ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 cursor-not-allowed'
                         : 'bg-white dark:bg-neutral-800 focus-visible:ring-primary-500'
-                    }`}
+                      }`}
                   />
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                     {counselorData.application?.applicationStatus === 'approved'
@@ -2152,11 +2151,10 @@ const CounselorDashboardPersonalInfo = () => {
                           key={lang}
                           type="button"
                           onClick={() => handleLanguageToggle(lang)}
-                          className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left cursor-pointer ${
-                            isChecked
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left cursor-pointer ${isChecked
                               ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-200 shadow-sm ring-1 ring-primary-600/30'
                               : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/60 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
-                          }`}
+                            }`}
                         >
                           <span className="truncate">{lang}</span>
                           {isChecked ? (
@@ -2173,32 +2171,32 @@ const CounselorDashboardPersonalInfo = () => {
                   {normalizeLanguages(formData?.application?.languages).filter(
                     (l) => !LANGUAGES.includes(l)
                   ).length > 0 && (
-                    <div className="pt-2 space-y-1.5">
-                      <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                        Custom Added Languages:
-                      </Label>
-                      <div className="flex flex-wrap gap-2">
-                        {normalizeLanguages(formData?.application?.languages)
-                          .filter((l) => !LANGUAGES.includes(l))
-                          .map((customLang) => (
-                            <Badge
-                              key={customLang}
-                              variant="secondary"
-                              className="bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200 border border-primary-300 dark:border-primary-700 pl-2.5 pr-1 py-1 gap-1 flex items-center text-xs"
-                            >
-                              <span>{customLang}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveCustomLanguage(customLang)}
-                                className="h-4 w-4 rounded-full inline-flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
+                      <div className="pt-2 space-y-1.5">
+                        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                          Custom Added Languages:
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {normalizeLanguages(formData?.application?.languages)
+                            .filter((l) => !LANGUAGES.includes(l))
+                            .map((customLang) => (
+                              <Badge
+                                key={customLang}
+                                variant="secondary"
+                                className="bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200 border border-primary-300 dark:border-primary-700 pl-2.5 pr-1 py-1 gap-1 flex items-center text-xs"
                               >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
+                                <span>{customLang}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveCustomLanguage(customLang)}
+                                  className="h-4 w-4 rounded-full inline-flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Write / Add Custom Language Input */}
                   <div className="pt-1 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
@@ -2247,11 +2245,10 @@ const CounselorDashboardPersonalInfo = () => {
                       Professional Summary
                     </Label>
                     <span
-                      className={`text-[11px] ${
-                        (formData?.application?.professionalSummary?.length || 0) > 900
+                      className={`text-[11px] ${(formData?.application?.professionalSummary?.length || 0) > 900
                           ? 'text-amber-600 font-medium'
                           : 'text-neutral-400'
-                      }`}
+                        }`}
                     >
                       {formData?.application?.professionalSummary?.length || 0}/1000
                     </span>
@@ -2325,11 +2322,10 @@ const CounselorDashboardPersonalInfo = () => {
                           })
                         }
                         placeholder="e.g. University of Delhi"
-                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
-                          counselorData.application?.applicationStatus === 'approved'
+                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                             ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                             : 'bg-white dark:bg-neutral-800'
-                        }`}
+                          }`}
                       />
                     </div>
 
@@ -2349,11 +2345,10 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. B.A. Psychology (Hons)"
-                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
-                            counselorData.application?.applicationStatus === 'approved'
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                               ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                               : 'bg-white dark:bg-neutral-800'
-                          }`}
+                            }`}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -2374,11 +2369,10 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. 2018"
-                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
-                            counselorData.application?.applicationStatus === 'approved'
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                               ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                               : 'bg-white dark:bg-neutral-800'
-                          }`}
+                            }`}
                         />
                       </div>
                     </div>
@@ -2413,11 +2407,10 @@ const CounselorDashboardPersonalInfo = () => {
                           })
                         }
                         placeholder="e.g. Tata Institute of Social Sciences (TISS)"
-                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
-                          counselorData.application?.applicationStatus === 'approved'
+                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                             ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                             : 'bg-white dark:bg-neutral-800'
-                        }`}
+                          }`}
                       />
                     </div>
 
@@ -2437,11 +2430,10 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. M.Sc. Clinical Psychology"
-                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
-                            counselorData.application?.applicationStatus === 'approved'
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                               ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                               : 'bg-white dark:bg-neutral-800'
-                          }`}
+                            }`}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -2462,11 +2454,10 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. 2021"
-                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
-                            counselorData.application?.applicationStatus === 'approved'
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                               ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                               : 'bg-white dark:bg-neutral-800'
-                          }`}
+                            }`}
                         />
                       </div>
                     </div>
@@ -2515,11 +2506,10 @@ const CounselorDashboardPersonalInfo = () => {
                         })
                       }
                       placeholder="e.g. RCI/CRR/2023/12345"
-                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
-                        counselorData.application?.applicationStatus === 'approved'
+                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                           ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                           : 'bg-white dark:bg-neutral-800'
-                      }`}
+                        }`}
                     />
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       Registration number issued by your professional licensing authority or council.
@@ -2542,11 +2532,10 @@ const CounselorDashboardPersonalInfo = () => {
                         })
                       }
                       placeholder="e.g. Rehabilitation Council of India (RCI)"
-                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
-                        counselorData.application?.applicationStatus === 'approved'
+                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
                           ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                           : 'bg-white dark:bg-neutral-800'
-                      }`}
+                        }`}
                     />
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       The official body or state council that issued your practitioner certification.
@@ -2690,16 +2679,16 @@ const CounselorDashboardPersonalInfo = () => {
 
                   {(counselorData.application?.applicationStatus === 'not_submitted' ||
                     counselorData.application?.applicationStatus === 'rejected') && (
-                    <Button
-                      type="button"
-                      onClick={handleSubmitApplication}
-                      disabled={isLoading || (profileCompleteness && profileCompleteness.completionPercentage < 100)}
-                      className="w-full gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs h-10"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Submit Application for Review
-                    </Button>
-                  )}
+                      <Button
+                        type="button"
+                        onClick={handleSubmitApplication}
+                        disabled={isLoading || (profileCompleteness && profileCompleteness.completionPercentage < 100)}
+                        className="w-full gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs h-10"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Submit Application for Review
+                      </Button>
+                    )}
                 </div>
 
                 {/* Platform Standing */}
@@ -2777,11 +2766,10 @@ const CounselorDashboardPersonalInfo = () => {
           </DialogHeader>
 
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-950'
                 : 'border-neutral-300 dark:border-neutral-700'
-            }`}
+              }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -2955,7 +2943,7 @@ const CounselorDashboardPersonalInfo = () => {
           {/* Form Scroll Area */}
           <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-6">
             <form id="credential-change-form" onSubmit={handleSubmitProfileChangeRequest} className="space-y-6">
-              
+
               {/* Live Comparison Preview Card */}
               <div className="rounded-xl p-4 bg-gradient-to-br from-neutral-50 via-slate-50 to-primary-50/30 dark:from-neutral-900/90 dark:via-neutral-900/50 dark:to-primary-950/20 border border-neutral-200 dark:border-neutral-800 shadow-sm">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-200/70 dark:border-neutral-800">
@@ -2979,8 +2967,8 @@ const CounselorDashboardPersonalInfo = () => {
                       {(Array.isArray(counselorData?.specialization)
                         ? counselorData.specialization
                         : counselorData?.specialization
-                        ? [counselorData.specialization]
-                        : []
+                          ? [counselorData.specialization]
+                          : []
                       ).map((s) => (
                         <Badge key={s} variant="secondary" className="text-[10px] py-0.5 px-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
                           {s}
@@ -3037,11 +3025,10 @@ const CounselorDashboardPersonalInfo = () => {
                         key={opt}
                         type="button"
                         onClick={() => handleToggleRequestedSpec(opt)}
-                        className={`flex items-center justify-between p-3 rounded-xl border text-xs font-medium transition-all text-left group ${
-                          isSelected
+                        className={`flex items-center justify-between p-3 rounded-xl border text-xs font-medium transition-all text-left group ${isSelected
                             ? 'bg-primary-50/90 dark:bg-primary-950/40 border-primary-500 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/30'
                             : 'bg-white dark:bg-neutral-800/70 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-50/50'
-                        }`}
+                          }`}
                       >
                         <span className="truncate pr-2">{opt}</span>
                         {isSelected ? (
@@ -3136,6 +3123,14 @@ const CounselorDashboardPersonalInfo = () => {
                       + {prompt}
                     </button>
                   ))}
+                </div>
+
+                {/* Note Banner */}
+                <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 flex items-start gap-2 text-amber-900 dark:text-amber-200">
+                  <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed">
+                    <strong className="font-semibold">Note:</strong> Please provide a clear and valid reason for these changes. Incomplete or unverified request reasons may lead to rejection of your request.
+                  </p>
                 </div>
 
                 <Textarea
@@ -3351,6 +3346,14 @@ const CounselorDashboardPersonalInfo = () => {
                   ))}
                 </div>
 
+                {/* Note Banner */}
+                <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 flex items-start gap-2 text-amber-900 dark:text-amber-200">
+                  <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed">
+                    <strong className="font-semibold">Note:</strong> Please provide a clear and valid reason for this education update. Incomplete or unverified academic details may lead to rejection of your request.
+                  </p>
+                </div>
+
                 <Textarea
                   id="edu-req-msg"
                   rows={3}
@@ -3548,6 +3551,14 @@ const CounselorDashboardPersonalInfo = () => {
                       + {prompt}
                     </button>
                   ))}
+                </div>
+
+                {/* Note Banner */}
+                <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 flex items-start gap-2 text-amber-900 dark:text-amber-200">
+                  <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed">
+                    <strong className="font-semibold">Note:</strong> Please write a proper reason for changing or updating your documents. Ensure uploaded files are authentic and legible, otherwise Solvit may reject your request.
+                  </p>
                 </div>
 
                 <Textarea
