@@ -953,10 +953,10 @@ const BrowseCounselor = () => {
             className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full"
             id="counselors-section"
           >
-            <div className="flex flex-col lg:flex-row gap-8">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
               {/* Desktop Sidebar */}
               <aside className="hidden lg:block w-80 flex-shrink-0">
-                <div className="sticky top-4 space-y-6">
+                <div className="sticky top-6 space-y-6">
                   <Card className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-xl shadow-neutral-900/5 backdrop-blur-xl transition-all duration-300 overflow-hidden">
                     <CardHeader className="py-4 px-5 border-b border-neutral-100 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-900/50">
                       <div className="flex items-center justify-between">
@@ -1053,102 +1053,60 @@ const BrowseCounselor = () => {
               </aside>
 
               {/* Main Content */}
-              <div className="flex-1 space-y-8">
-                {/* Filter Bar */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-primary-600 rounded-full animate-pulse" />
-                    <p className="text-lg font-semibold">
-                      <span className="text-neutral-900 dark:text-white">{visible.length} </span>
-                      <span className="text-neutral-700 dark:text-neutral-300">
-                        counselor{visible.length !== 1 ? 's' : ''} available
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                    <Sheet>
-                      <SheetTrigger asChild className="lg:hidden">
-                        <Button variant="outline" size="sm" className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700">
-                          <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                          Filters
-                          {activeFilterCount > 0 && (
-                            <span className="w-5 h-5 rounded-full bg-primary-600 text-white text-[10px] font-bold flex items-center justify-center">
-                              {activeFilterCount}
-                            </span>
-                          )}
-                        </Button>
-                      </SheetTrigger>
-                      <SheetContent side="left" className="w-[85vw] max-w-sm sm:w-96 p-6 flex flex-col rounded-r-2xl">
-                        <SheetHeader className="text-left pb-3 border-b border-neutral-100 dark:border-neutral-800">
-                          <div className="flex items-center justify-between">
-                            <SheetTitle className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
-                              <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                              Filters
-                            </SheetTitle>
-                            {activeFilterCount > 0 && (
-                              <button
-                                type="button"
-                                onClick={clearFilters}
-                                className="text-xs font-semibold text-neutral-500 hover:text-primary-600 transition-colors flex items-center gap-1 py-1 px-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                              >
-                                <RotateCcw className="w-3 h-3" />
-                                Reset
-                              </button>
-                            )}
-                          </div>
-                          <SheetDescription className="text-xs text-neutral-500">Refine counselors by specialty, budget, and preferences</SheetDescription>
-                        </SheetHeader>
-                        <ScrollArea className="flex-1 mt-3 pr-2">
-                          <FilterSection
-                            search={search}
-                            setSearch={setSearch}
-                            spec={spec}
-                            setSpec={setSpec}
-                            gender={gender}
-                            setGender={setGender}
-                            language={language}
-                            setLanguage={setLanguage}
-                            priceRange={priceRange}
-                            setPriceRange={setPriceRange}
-                            clearFilters={clearFilters}
-                            SPECIALIZATIONS={SPECIALIZATIONS}
-                            LANGUAGES={LANGUAGES}
-                          />
-                        </ScrollArea>
-                      </SheetContent>
-                    </Sheet>
-
-                    {/* <DropdownMenu open={sortOpen} onOpenChange={setSortOpen} modal={false}>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-44 justify-between">
-                          <span>
-                            {/* {sortBy === 'rating' && 'Highest Rated'} */}
-                            {/* {sortBy === 'experience' && 'Most Experience'}
-                            {sortBy === 'price' && 'Lowest Price'}
+              <div className="flex-1 min-w-0">
+                {/* Mobile Filter Trigger (accessible only on mobile where desktop sidebar is hidden) */}
+                <div className="flex lg:hidden mb-4 items-center justify-end">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
+                        <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                        Filters
+                        {activeFilterCount > 0 && (
+                          <span className="w-5 h-5 rounded-full bg-primary-600 text-white text-[10px] font-bold flex items-center justify-center">
+                            {activeFilterCount}
                           </span>
-                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" avoidCollisions>
-                        <DropdownMenuRadioGroup
-                          value={sortBy}
-                          onValueChange={(value) => {
-                            setSortBy(value);
-                            setSortOpen(false);
-                          }} */}
-                        {/* > */} 
-                          {/* <DropdownMenuRadioItem value="rating">
-                            Highest Rated
-                          </DropdownMenuRadioItem> */}
-                          {/* <DropdownMenuRadioItem value="experience">
-                            Most Experience
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="price">Lowest Price</DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu> */}
-                  </div>
+                        )}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-[85vw] max-w-sm sm:w-96 p-6 flex flex-col rounded-r-2xl">
+                      <SheetHeader className="text-left pb-3 border-b border-neutral-100 dark:border-neutral-800">
+                        <div className="flex items-center justify-between">
+                          <SheetTitle className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
+                            <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                            Filters
+                          </SheetTitle>
+                          {activeFilterCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={clearFilters}
+                              className="text-xs font-semibold text-neutral-500 hover:text-primary-600 transition-colors flex items-center gap-1 py-1 px-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <SheetDescription className="text-xs text-neutral-500">Refine counselors by specialty, budget, and preferences</SheetDescription>
+                      </SheetHeader>
+                      <ScrollArea className="flex-1 mt-3 pr-2">
+                        <FilterSection
+                          search={search}
+                          setSearch={setSearch}
+                          spec={spec}
+                          setSpec={setSpec}
+                          gender={gender}
+                          setGender={setGender}
+                          language={language}
+                          setLanguage={setLanguage}
+                          priceRange={priceRange}
+                          setPriceRange={setPriceRange}
+                          clearFilters={clearFilters}
+                          SPECIALIZATIONS={SPECIALIZATIONS}
+                          LANGUAGES={LANGUAGES}
+                        />
+                      </ScrollArea>
+                    </SheetContent>
+                  </Sheet>
                 </div>
 
                 {/* Counselor Cards Grid - COMPACT & STYLED */}
