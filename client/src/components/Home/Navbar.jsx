@@ -503,12 +503,21 @@ const Navbar = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate">
-                            {(counselor || client)?.fullName}
-                          </p>
-                          <span className="inline-block mt-0.5 text-[10.5px] font-semibold px-2 py-0.2 rounded-full bg-primary-600/15 text-primary-700 dark:text-primary-300 border border-primary-500/20">
-                            {counselor ? 'Counselor Account' : 'Client Account'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate">
+                              {(counselor || client)?.fullName}
+                            </p>
+                            {counselor && (
+                              <span className="shrink-0 text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-primary-600/15 text-primary-700 dark:text-primary-300 border border-primary-500/20">
+                                Counselor
+                              </span>
+                            )}
+                          </div>
+                          {(counselor || client)?.email && (
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                              {(counselor || client)?.email}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
