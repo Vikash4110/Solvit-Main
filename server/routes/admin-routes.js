@@ -27,6 +27,9 @@ import {
   getCounselorRequestDetails,
   toggleCounselorRequestCheck,
   reviewCounselorRequest,
+  getAllBlogsAdmin,
+  toggleBlogFeatured,
+  deleteBlogAdmin,
 } from '../controllers/admin-controller.js';
 import { verifyJWTAdmin } from '../middlewares/admin-auth-middleware.js';
 
@@ -91,6 +94,13 @@ adminRouter.route('/payments/:paymentId').get(verifyJWTAdmin, getPaymentDetails)
 adminRouter.route('/bookings').get(verifyJWTAdmin, getAllBookings);
 adminRouter.route('/bookings/:bookingId').get(verifyJWTAdmin, getBookingDetails);
 adminRouter.route('/bookings/analytics').get(verifyJWTAdmin, getBookingAnalytics);
+
+// ====================================
+// BLOG MANAGEMENT ROUTES (ADMIN ONLY)
+// ====================================
+adminRouter.route('/blogs').get(verifyJWTAdmin, getAllBlogsAdmin);
+adminRouter.route('/blogs/:blogId/featured').patch(verifyJWTAdmin, toggleBlogFeatured);
+adminRouter.route('/blogs/:blogId').delete(verifyJWTAdmin, deleteBlogAdmin);
 
 // Test route
 adminRouter.get('/test', (req, res) => {
