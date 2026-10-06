@@ -30,6 +30,7 @@
 
 ### 🛡️ Admin & Platform Governance
 * **Practitioner Verification & KYC:** Rigorous review and verification system for professional licenses, qualifications, and government IDs.
+* **Editorial Curation & Blog Control:** Exclusive admin privilege for promoting featured articles, managing platform publications, and monitoring engagement metrics.
 * **Dispute Arbitration:** Full lifecycle management for client-counselor booking disputes, session verifications, and automated refund processing.
 * **Financial Oversight & Audit Logs:** Platform-wide booking reconciliations, revenue distribution metrics, and detailed audit trails.
 
