@@ -240,7 +240,6 @@ export const createBlog = wrapper(async (req, res) => {
     tags,
     featuredImage,
     status = 'draft',
-    featured = false,
   } = req.body;
 
   if (!title || !content || !excerpt || !category) {
@@ -254,10 +253,6 @@ export const createBlog = wrapper(async (req, res) => {
     } catch {
       tags = tags.split(',').map((t) => t.trim()).filter(Boolean);
     }
-  }
-
-  if (typeof featured === 'string') {
-    featured = featured === 'true';
   }
 
   // Handle direct image file upload
@@ -277,7 +272,7 @@ export const createBlog = wrapper(async (req, res) => {
     featuredImage: featuredImage || '',
     author: req.verifiedCounselorId,
     status,
-    featured,
+    featured: false, // Featured is only controlled by admin
   });
 
   await blog.populate('author', 'fullName profilePicture specialization');
@@ -290,16 +285,15 @@ export const updateBlog = wrapper(async (req, res) => {
   const { blogId } = req.params;
   const updates = { ...req.body };
 
+  // Disallow counselors from toggling featured state directly
+  delete updates.featured;
+
   if (typeof updates.tags === 'string') {
     try {
       updates.tags = JSON.parse(updates.tags);
     } catch {
       updates.tags = updates.tags.split(',').map((t) => t.trim()).filter(Boolean);
     }
-  }
-
-  if (typeof updates.featured === 'string') {
-    updates.featured = updates.featured === 'true';
   }
 
   // Handle direct image file upload

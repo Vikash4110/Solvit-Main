@@ -7,6 +7,7 @@ import { Client } from '../models/client-model.js';
 import { Payment } from '../models/payment-model.js';
 import { PaymentRefund } from '../models/paymentRefund.model.js';
 import { CounselorProfileRequest } from '../models/counselorProfileRequest.model.js';
+import { Blog } from '../models/blog-model.js';
 import {
   sendCounselorApplicationRejected,
   sendCounselorApplicationApproved,
@@ -1925,6 +1926,251 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
   });
 });
 
+// ✅ ==================== ADMIN BLOG MANAGEMENT ====================
+
+// Get all blogs with filters, sorting, search, pagination, and admin engagement analytics
+const getAllBlogsAdmin = wrapper(async (req, res) => {
+  const {
+    page = 1,
+    limit = 12,
+    search = '',
+    category = 'all',
+    status = 'all',
+    featured = 'all',
+    sort = 'latest',
+  } = req.query;
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 12));
+  const skip = (pageNum - 1) * limitNum;
+
+  // Build query
+  const query = {};
+
+  if (category && category !== 'all') {
+    query.category = category;
+  }
+
+  if (status && status !== 'all') {
+    query.status = status;
+  }
+
+  if (featured === 'true') {
+    query.featured = true;
+  } else if (featured === 'false') {
+    query.featured = false;
+  }
+
+  if (search?.trim()) {
+    const searchRegex = new RegExp(search.trim(), 'i');
+    query.$or = [
+      { title: searchRegex },
+      { excerpt: searchRegex },
+      { tags: { $in: [searchRegex] } },
+    ];
+  }
+
+  // Build sort options
+  let sortOptions = {};
+  switch (sort) {
+    case 'latest':
+      sortOptions = { createdAt: -1 };
+      break;
+    case 'oldest':
+      sortOptions = { createdAt: 1 };
+      break;
+    case 'most_liked':
+      // Sorted after fetching or via aggregate
+      sortOptions = { createdAt: -1 };
+      break;
+    case 'most_commented':
+      sortOptions = { createdAt: -1 };
+      break;
+    case 'most_viewed':
+    case 'popular':
+      sortOptions = { views: -1, createdAt: -1 };
+      break;
+    case 'alphabetical':
+      sortOptions = { title: 1 };
+      break;
+    default:
+      sortOptions = { createdAt: -1 };
+  }
+
+  // If sorting by likes or comments count, we use aggregation pipeline
+  let blogs = [];
+  let totalDocs = 0;
+
+  if (sort === 'most_liked' || sort === 'most_commented') {
+    const sortField = sort === 'most_liked' ? 'likesCount' : 'commentsCount';
+    const pipeline = [
+      { $match: query },
+      {
+        $addFields: {
+          likesCount: { $size: { $ifNull: ['$likes', []] } },
+          commentsCount: { $size: { $ifNull: ['$comments', []] } },
+        },
+      },
+      { $sort: { [sortField]: -1, createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limitNum },
+      {
+        $lookup: {
+          from: 'counselors',
+          localField: 'author',
+          foreignField: '_id',
+          as: 'author',
+          pipeline: [
+            {
+              $project: {
+                fullName: 1,
+                email: 1,
+                profilePicture: 1,
+                specialization: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unwind: {
+          path: '$author',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+    ];
+
+    blogs = await Blog.aggregate(pipeline);
+    totalDocs = await Blog.countDocuments(query);
+  } else {
+    totalDocs = await Blog.countDocuments(query);
+    blogs = await Blog.find(query)
+      .populate('author', 'fullName email profilePicture specialization')
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+  }
+
+  const totalPages = Math.ceil(totalDocs / limitNum) || 1;
+
+  // Calculate high-level stats for admin overview
+  const [statsAgg] = await Blog.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalBlogs: { $sum: 1 },
+        publishedBlogs: {
+          $sum: { $cond: [{ $eq: ['$status', 'published'] }, 1, 0] },
+        },
+        draftBlogs: {
+          $sum: { $cond: [{ $eq: ['$status', 'draft'] }, 1, 0] },
+        },
+        featuredBlogs: {
+          $sum: { $cond: [{ $eq: ['$featured', true] }, 1, 0] },
+        },
+        totalViews: { $sum: { $ifNull: ['$views', 0] } },
+        totalLikes: { $sum: { $size: { $ifNull: ['$likes', []] } } },
+        totalComments: { $sum: { $size: { $ifNull: ['$comments', []] } } },
+      },
+    },
+  ]);
+
+  const overviewStats = statsAgg || {
+    totalBlogs: 0,
+    publishedBlogs: 0,
+    draftBlogs: 0,
+    featuredBlogs: 0,
+    totalViews: 0,
+    totalLikes: 0,
+    totalComments: 0,
+  };
+
+  return res.status(200).json({
+    success: true,
+    message: 'Blogs retrieved successfully',
+    data: {
+      blogs,
+      stats: overviewStats,
+      pagination: {
+        totalDocs,
+        totalPages,
+        page: pageNum,
+        limit: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
+      },
+    },
+  });
+});
+
+// Toggle blog featured status (Admin only)
+const toggleBlogFeatured = wrapper(async (req, res) => {
+  const { blogId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(blogId)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid blog ID format',
+    });
+  }
+
+  const blog = await Blog.findById(blogId).populate(
+    'author',
+    'fullName email profilePicture specialization'
+  );
+
+  if (!blog) {
+    return res.status(404).json({
+      success: false,
+      message: 'Blog not found',
+    });
+  }
+
+  // Toggle status
+  blog.featured = !blog.featured;
+  await blog.save();
+
+  return res.status(200).json({
+    success: true,
+    message: blog.featured
+      ? 'Blog successfully marked as Featured'
+      : 'Blog removed from Featured',
+    data: {
+      blogId: blog._id,
+      featured: blog.featured,
+      blog,
+    },
+  });
+});
+
+// Delete a blog (Admin moderation)
+const deleteBlogAdmin = wrapper(async (req, res) => {
+  const { blogId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(blogId)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid blog ID format',
+    });
+  }
+
+  const blog = await Blog.findByIdAndDelete(blogId);
+
+  if (!blog) {
+    return res.status(404).json({
+      success: false,
+      message: 'Blog not found',
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Blog deleted successfully by Admin',
+    data: { blogId },
+  });
+});
+
 // ✅ ==================== EXPORTS ====================
 
 export {
@@ -1954,5 +2200,9 @@ export {
   getCounselorRequestDetails,
   toggleCounselorRequestCheck,
   reviewCounselorRequest,
+  getAllBlogsAdmin,
+  toggleBlogFeatured,
+  deleteBlogAdmin,
 };
+
 

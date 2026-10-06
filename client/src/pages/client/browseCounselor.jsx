@@ -31,6 +31,14 @@ import {
   Users,
   GraduationCap,
   Check,
+  Brain,
+  Briefcase,
+  Heart,
+  Compass,
+  Activity,
+  ArrowDownUp,
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
@@ -122,7 +130,38 @@ const cardVariants = {
 };
 
 // ============================================
-// MEMOIZED FILTER SECTION COMPONENT WITH PRICE
+// DISTINCT PROFESSIONAL ICONS FOR SPECIALIZATIONS
+// ============================================
+const SPECIALIZATION_ICONS = {
+  'Mental Health': Brain,
+  'Career Counselling': Briefcase,
+  'Relationship & Family Therapy': Heart,
+  'Life & Personal Development': Compass,
+  'Academic Counselling': GraduationCap,
+  'Health and Wellness Counselling': Activity,
+};
+
+// ============================================
+// HELPER TO EXTRACT ACCURATE STARTING SESSION PRICE
+// ============================================
+const getCounselorPrice = (c) => {
+  if (Array.isArray(c?.availableSlots) && c.availableSlots.length > 0) {
+    const validPrices = c.availableSlots
+      .map((s) => Number(s?.totalPriceAfterPlatformFee))
+      .filter((p) => typeof p === 'number' && !isNaN(p) && p > 0);
+    if (validPrices.length > 0) {
+      return Math.min(...validPrices);
+    }
+  }
+  if (typeof c?.hourlyRate === 'number' && c.hourlyRate > 0) return c.hourlyRate;
+  if (typeof c?.application?.hourlyRate === 'number' && c.application.hourlyRate > 0) {
+    return c.application.hourlyRate;
+  }
+  return 690;
+};
+
+// ============================================
+// MEMOIZED FILTER SECTION COMPONENT WITH PRICE & SORT
 // ============================================
 const FilterSection = React.memo(
   ({
@@ -136,12 +175,14 @@ const FilterSection = React.memo(
     setLanguage,
     priceRange,
     setPriceRange,
+    sortBy,
+    setSortBy,
     clearFilters,
     SPECIALIZATIONS,
     LANGUAGES,
   }) => {
     const [specOpen, setSpecOpen] = useState(false);
-    const [langOpen, setLangOpen] = useState(false);
+    const [sortOpen, setSortOpen] = useState(false);
 
     const activeFilterCount = useMemo(() => {
       let count = 0;
@@ -150,8 +191,9 @@ const FilterSection = React.memo(
       if (gender && gender !== 'all') count++;
       if (language && language !== 'all') count++;
       if (priceRange && (priceRange[0] > 0 || priceRange[1] < 10000)) count++;
+      if (sortBy && sortBy !== 'rating') count++;
       return count;
-    }, [search, spec, gender, language, priceRange]);
+    }, [search, spec, gender, language, priceRange, sortBy]);
 
     const genderOptions = [
       { id: 'all', label: 'All', icon: Users },
@@ -159,6 +201,8 @@ const FilterSection = React.memo(
       { id: 'Female', label: 'Female', icon: User },
       { id: 'Other', label: 'Other', icon: Sparkles },
     ];
+
+    const CurrentSpecIcon = SPECIALIZATION_ICONS[spec] || GraduationCap;
 
     return (
       <div className="space-y-5 px-1 py-1">
@@ -220,10 +264,17 @@ const FilterSection = React.memo(
                 }`}
               >
                 <span className="truncate flex items-center gap-2">
-                  {spec !== 'all' && (
-                    <span className="w-2 h-2 rounded-full bg-primary-600 animate-pulse shrink-0" />
+                  {spec !== 'all' ? (
+                    <>
+                      <CurrentSpecIcon className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                      <span>{spec}</span>
+                    </>
+                  ) : (
+                    <>
+                      <GraduationCap className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                      <span>All Specializations</span>
+                    </>
                   )}
-                  {spec === 'all' ? 'All Specializations' : spec}
                 </span>
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200" />
               </Button>
@@ -238,20 +289,25 @@ const FilterSection = React.memo(
               >
                 <DropdownMenuRadioItem
                   value="all"
-                  className="rounded-lg py-2 cursor-pointer font-medium"
+                  className="rounded-lg py-2 cursor-pointer font-medium flex items-center gap-2"
                 >
-                  All Specializations
+                  <GraduationCap className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                  <span>All Specializations</span>
                 </DropdownMenuRadioItem>
                 <DropdownMenuSeparator className="my-1" />
-                {SPECIALIZATIONS.map((s) => (
-                  <DropdownMenuRadioItem
-                    key={s}
-                    value={s}
-                    className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer"
-                  >
-                    {s}
-                  </DropdownMenuRadioItem>
-                ))}
+                {SPECIALIZATIONS.map((s) => {
+                  const IconComp = SPECIALIZATION_ICONS[s] || GraduationCap;
+                  return (
+                    <DropdownMenuRadioItem
+                      key={s}
+                      value={s}
+                      className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2"
+                    >
+                      <IconComp className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                      <span>{s}</span>
+                    </DropdownMenuRadioItem>
+                  );
+                })}
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -329,6 +385,82 @@ const FilterSection = React.memo(
             <span>₹0 (Free/Intro)</span>
             <span>₹10,000 max</span>
           </div>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-neutral-800 to-transparent" />
+
+        {/* Sort By Dropdown - Clean & Professional without emojis */}
+        <div className="space-y-2">
+          <Label className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+            <ArrowDownUp className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+            Sort Counselors
+          </Label>
+          <DropdownMenu open={sortOpen} onOpenChange={setSortOpen} modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className={`w-full h-10 px-3.5 justify-between rounded-xl text-sm font-medium transition-all shadow-sm ${
+                  sortBy !== 'rating'
+                    ? 'bg-primary-50/70 border-primary-300 dark:bg-primary-950/40 dark:border-primary-800 text-primary-900 dark:text-primary-100 font-semibold'
+                    : 'bg-neutral-50/80 dark:bg-neutral-800/60 border-neutral-200/80 dark:border-neutral-700/80 hover:bg-white dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200'
+                }`}
+              >
+                <span className="truncate flex items-center gap-2">
+                  {sortBy === 'rating' && (
+                    <>
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                      <span>Top Rated</span>
+                    </>
+                  )}
+                  {(sortBy === 'price_asc' || sortBy === 'price') && (
+                    <>
+                      <ArrowDownWideNarrow className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                      <span>Price: Low to High</span>
+                    </>
+                  )}
+                  {sortBy === 'price_desc' && (
+                    <>
+                      <ArrowUpNarrowWide className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                      <span>Price: High to Low</span>
+                    </>
+                  )}
+                  {sortBy === 'experience' && (
+                    <>
+                      <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                      <span>Most Experienced</span>
+                    </>
+                  )}
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-72 p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl" align="start" avoidCollisions>
+              <DropdownMenuRadioGroup
+                value={sortBy}
+                onValueChange={(value) => {
+                  setSortBy(value);
+                  setSortOpen(false);
+                }}
+              >
+                <DropdownMenuRadioItem value="rating" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                  <span>Top Rated</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_asc" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                  <ArrowDownWideNarrow className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
+                  <span>Price: Low to High</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_desc" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                  <ArrowUpNarrowWide className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
+                  <span>Price: High to Low</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="experience" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                  <Award className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
+                  <span>Most Experienced</span>
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Clear All Filters Button */}
@@ -564,9 +696,7 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
                 </p>
                 <div className="flex items-baseline md:justify-end gap-1">
                   <span className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
-                    ₹
-                    {counselor.availableSlots?.[0]
-                      ?.totalPriceAfterPlatformFee || 690}
+                    ₹{getCounselorPrice(counselor)}
                   </span>
                   <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
                     / session
@@ -700,33 +830,43 @@ const BrowseCounselor = () => {
     setSortBy('rating');
   }, []);
 
-  // WITH PRICE FILTERING
+  // Reset pagination to page 1 whenever any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, spec, gender, language, priceRange, sortBy]);
+
+  // WITH ACCURATE PRICE FILTERING & SORTING
   const visible = useMemo(() => {
     return counselors
       .filter((c) => {
-        const bySearch = c.fullName.toLowerCase().includes(search.toLowerCase());
-        // c.specialization.toLowerCase().includes(search.toLowerCase());
+        const bySearch =
+          !search?.trim() ||
+          c.fullName?.toLowerCase().includes(search.toLowerCase().trim()) ||
+          c.specialization?.some((s) => s.toLowerCase().includes(search.toLowerCase().trim()));
 
         const bySpec = spec === 'all' || c.specialization?.includes(spec);
         const byGender = gender === 'all' || c.gender === gender;
-        console.log(language);
         const byLanguage = language === 'all' || c.application?.languages?.includes(language);
-        const byPrice =
-          !c.availableSlots[0].totalPriceAfterPlatformFee ||
-          (c.availableSlots[0].totalPriceAfterPlatformFee >= priceRange[0] &&
-            c.availableSlots[0].totalPriceAfterPlatformFee <= priceRange[1]);
+        
+        const price = getCounselorPrice(c);
+        const byPrice = price >= priceRange[0] && price <= priceRange[1];
 
         return bySearch && bySpec && byGender && byLanguage && byPrice;
       })
       .sort((a, b) => {
-        if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0); // not implemented yet
+        const priceA = getCounselorPrice(a);
+        const priceB = getCounselorPrice(b);
+
+        if (sortBy === 'price_asc' || sortBy === 'price') return priceA - priceB;
+        if (sortBy === 'price_desc') return priceB - priceA;
         if (sortBy === 'experience') return (b.experienceYears || 0) - (a.experienceYears || 0);
-        if (sortBy === 'price')
-          return (
-            (a.availableSlots[0].totalPriceAfterPlatformFee || 0) -
-            (b.availableSlots[0].totalPriceAfterPlatformFee || 0)
-          );
-        return 0;
+        if (sortBy === 'rating') {
+          const ratingA = Number(a.rating) || 0;
+          const ratingB = Number(b.rating) || 0;
+          if (ratingB !== ratingA) return ratingB - ratingA;
+          return priceA - priceB; // Secondary tie-breaker: price lowest first
+        }
+        return priceA - priceB;
       });
   }, [counselors, search, spec, gender, language, priceRange, sortBy]);
 
@@ -996,6 +1136,8 @@ const BrowseCounselor = () => {
                           setLanguage={setLanguage}
                           priceRange={priceRange}
                           setPriceRange={setPriceRange}
+                          sortBy={sortBy}
+                          setSortBy={setSortBy}
                           clearFilters={clearFilters}
                           SPECIALIZATIONS={SPECIALIZATIONS}
                           LANGUAGES={LANGUAGES}
@@ -1060,7 +1202,7 @@ const BrowseCounselor = () => {
                     <SheetTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
                         <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                        Filters
+                        Filters & Sort
                         {activeFilterCount > 0 && (
                           <span className="w-5 h-5 rounded-full bg-primary-600 text-white text-[10px] font-bold flex items-center justify-center">
                             {activeFilterCount}
@@ -1073,7 +1215,7 @@ const BrowseCounselor = () => {
                         <div className="flex items-center justify-between">
                           <SheetTitle className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
                             <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                            Filters
+                            Filters & Sort
                           </SheetTitle>
                           {activeFilterCount > 0 && (
                             <button
@@ -1086,7 +1228,7 @@ const BrowseCounselor = () => {
                             </button>
                           )}
                         </div>
-                        <SheetDescription className="text-xs text-neutral-500">Refine counselors by specialty, budget, and preferences</SheetDescription>
+                        <SheetDescription className="text-xs text-neutral-500">Refine counselors by specialty, budget, and sort preference</SheetDescription>
                       </SheetHeader>
                       <ScrollArea className="flex-1 mt-3 pr-2">
                         <FilterSection
@@ -1100,6 +1242,8 @@ const BrowseCounselor = () => {
                           setLanguage={setLanguage}
                           priceRange={priceRange}
                           setPriceRange={setPriceRange}
+                          sortBy={sortBy}
+                          setSortBy={setSortBy}
                           clearFilters={clearFilters}
                           SPECIALIZATIONS={SPECIALIZATIONS}
                           LANGUAGES={LANGUAGES}
@@ -1108,6 +1252,33 @@ const BrowseCounselor = () => {
                     </SheetContent>
                   </Sheet>
                 </div>
+
+                {/* Conditional Counselor Count & Active State (Shown only when filtering or sorting is applied) */}
+                {(activeFilterCount > 0 || sortBy !== 'rating') && (
+                  <div className="flex items-center justify-between gap-3 mb-4 p-3 sm:px-4 bg-white dark:bg-neutral-900 rounded-xl border border-primary-200/70 dark:border-primary-900/50 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                      <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                        {visible.length} {visible.length === 1 ? 'counselor found' : 'counselors found'}
+                      </span>
+                      {sortBy !== 'rating' && (
+                        <Badge variant="secondary" className="text-[10px] font-medium bg-primary-50 text-primary-700 dark:bg-primary-950/60 dark:text-primary-300 border-primary-200 dark:border-primary-800">
+                          {sortBy === 'price_asc' && 'Price: Low to High'}
+                          {sortBy === 'price_desc' && 'Price: High to Low'}
+                          {sortBy === 'experience' && 'Most Experienced'}
+                        </Badge>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline flex items-center gap-1"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      Reset filters
+                    </button>
+                  </div>
+                )}
 
                 {/* Counselor Cards Grid - COMPACT & STYLED */}
                 <motion.div

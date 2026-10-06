@@ -21,6 +21,7 @@ import {
   Bell,
   Search,
   FileQuestion,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -98,6 +99,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }
           name: 'Bookings',
           icon: Calendar,
           path: '/admin/bookings',
+          badge: null,
+        },
+        {
+          name: 'Blogs',
+          icon: BookOpen,
+          path: '/admin/blogs',
           badge: null,
         },
       ],

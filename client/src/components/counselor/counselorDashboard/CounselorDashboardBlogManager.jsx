@@ -282,7 +282,6 @@ const CounselorDashboardBlogManager = () => {
       formData.append('excerpt', blogData.excerpt.trim());
       formData.append('category', blogData.category);
       formData.append('status', blogData.status);
-      formData.append('featured', String(Boolean(blogData.featured)));
       formData.append('tags', JSON.stringify(blogData.tags || []));
 
       if (coverImageFile) {
@@ -333,7 +332,6 @@ const CounselorDashboardBlogManager = () => {
       formData.append('excerpt', blogData.excerpt.trim());
       formData.append('category', blogData.category);
       formData.append('status', blogData.status);
-      formData.append('featured', String(Boolean(blogData.featured)));
       formData.append('tags', JSON.stringify(blogData.tags || []));
 
       if (coverImageFile) {
@@ -1319,26 +1317,6 @@ const CounselorDashboardBlogManager = () => {
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-
-                      {/* Featured Switch */}
-                      <div className="pt-2 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between gap-2">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="feat-switch" className="text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer flex items-center gap-1.5">
-                            <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-400" />
-                            Feature this Article
-                          </Label>
-                          <p className="text-[10px] text-slate-400">
-                            Showcase in the hero section
-                          </p>
-                        </div>
-                        <Switch
-                          id="feat-switch"
-                          checked={Boolean(blogData.featured)}
-                          onCheckedChange={(checked) =>
-                            setBlogData((prev) => ({ ...prev, featured: Boolean(checked) }))
-                          }
-                        />
                       </div>
                     </CardContent>
                   </Card>

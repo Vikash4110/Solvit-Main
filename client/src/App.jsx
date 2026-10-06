@@ -62,6 +62,7 @@ const AdminCounselorsManagement = lazy(() => import('./components/admin/AdminCou
 const AdminPaymentsManagement = lazy(() => import('./components/admin/AdminPaymentsManagement'));
 const AdminBookingsManagement = lazy(() => import('./components/admin/AdminBookingsManagement'));
 const AdminCounselorRequestsManagement = lazy(() => import('./components/admin/AdminCounselorRequestsManagement'));
+const AdminBlogsManagement = lazy(() => import('./components/admin/AdminBlogsManagement'));
 
 function App() {
   const location = useLocation();
@@ -226,6 +227,7 @@ function App() {
                     <Route path="counselor-requests" element={<AdminCounselorRequestsManagement />} />
                     <Route path="payments" element={<AdminPaymentsManagement />} />
                     <Route path="bookings" element={<AdminBookingsManagement />} />
+                    <Route path="blogs" element={<AdminBlogsManagement />} />
                   </Route>
 
                   {/* 404 FALLBACK */}
