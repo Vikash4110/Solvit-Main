@@ -131,4 +131,9 @@ export const API_ENDPOINTS = {
   ADMIN_COUNSELOR_REQUEST_DETAILS: (requestId) => `/admin/counselor-requests/${requestId}`,
   ADMIN_COUNSELOR_REQUEST_CHECK: (requestId) => `/admin/counselor-requests/${requestId}/check`,
   ADMIN_COUNSELOR_REQUEST_REVIEW: (requestId) => `/admin/counselor-requests/${requestId}/review`,
+
+  // Blog Management (Admin)
+  ADMIN_BLOGS: '/admin/blogs',
+  ADMIN_BLOG_TOGGLE_FEATURED: (blogId) => `/admin/blogs/${blogId}/featured`,
+  ADMIN_BLOG_DELETE: (blogId) => `/admin/blogs/${blogId}`,
 };

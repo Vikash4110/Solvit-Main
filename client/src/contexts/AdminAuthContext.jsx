@@ -486,6 +486,62 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Fetch all blogs for Admin with filters, search, and sorting
+   */
+  const getAllBlogsAdmin = async ({
+    page = 1,
+    limit = 12,
+    search = '',
+    category = 'all',
+    status = 'all',
+    featured = 'all',
+    sort = 'latest',
+  } = {}) => {
+    try {
+      const params = new URLSearchParams();
+      if (page) params.append('page', page);
+      if (limit) params.append('limit', limit);
+      if (search?.trim()) params.append('search', search.trim());
+      if (category && category !== 'all') params.append('category', category);
+      if (status && status !== 'all') params.append('status', status);
+      if (featured && featured !== 'all') params.append('featured', featured);
+      if (sort) params.append('sort', sort);
+
+      const response = await api.get(`${API_ENDPOINTS.ADMIN_BLOGS}?${params.toString()}`);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch blogs');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Toggle featured status of a blog
+   */
+  const toggleBlogFeaturedAdmin = async (blogId) => {
+    try {
+      const response = await api.patch(API_ENDPOINTS.ADMIN_BLOG_TOGGLE_FEATURED(blogId));
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to toggle blog featured status');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Delete a blog (Admin)
+   */
+  const deleteBlogAdmin = async (blogId) => {
+    try {
+      const response = await api.delete(API_ENDPOINTS.ADMIN_BLOG_DELETE(blogId));
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to delete blog');
+      return { success: false, error: message };
+    }
+  };
+
   const value = useMemo(
     () => ({
       admin,
@@ -515,6 +571,9 @@ export const AdminAuthProvider = ({ children }) => {
       getCounselorRequestDetails,
       toggleCounselorRequestCheck,
       reviewCounselorRequest,
+      getAllBlogsAdmin,
+      toggleBlogFeaturedAdmin,
+      deleteBlogAdmin,
     }),
     [admin, adminLoading]
   );
