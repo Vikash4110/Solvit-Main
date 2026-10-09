@@ -2,6 +2,8 @@ import { wrapper } from '../utils/wrapper.js';
 import { Booking } from '../models/booking-model.js';
 import { Counselor } from '../models/counselor-model.js';
 import { GeneratedSlot } from '../models/generatedSlots-model.js';
+import { SessionFeedback } from '../models/sessionFeedback.model.js';
+import mongoose from 'mongoose';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -53,8 +55,42 @@ const getAvailableCounselors = wrapper(async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: 'sessionfeedbacks',
+          localField: '_id',
+          foreignField: 'counselorId',
+          as: 'feedbacks',
+          pipeline: [
+            {
+              $match: {
+                rating: { $exists: true, $ne: null },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                rating: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          rating: {
+            $cond: {
+              if: { $gt: [{ $size: '$feedbacks' }, 0] },
+              then: { $round: [{ $avg: '$feedbacks.rating' }, 1] },
+              else: null,
+            },
+          },
+          totalReviews: { $size: '$feedbacks' },
+        },
+      },
+      {
         $project: {
           password: 0, // Exclude sensitive data
+          feedbacks: 0,
           'application.bankDetails': 0,
           'application.documents': 0,
         },
@@ -81,15 +117,40 @@ const getCounselorSlots = wrapper(async (req, res) => {
 
   try {
     // Get counselor data
-    const counselor = await Counselor.findById(counselorId).select(
-      '-password -application.bankDetails -application.documents'
-    );
+    const counselor = await Counselor.findById(counselorId)
+      .select('-password -application.bankDetails -application.documents')
+      .lean();
 
     if (!counselor) {
       return res.status(404).json({
         status: 404,
         message: 'Counselor not found',
       });
+    }
+
+    // Get feedback rating summary for this counselor
+    const feedbackStats = await SessionFeedback.aggregate([
+      {
+        $match: {
+          counselorId: new mongoose.Types.ObjectId(counselorId),
+          rating: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$counselorId',
+          avgRating: { $avg: '$rating' },
+          totalReviews: { $sum: 1 },
+        },
+      },
+    ]);
+
+    if (feedbackStats.length > 0 && feedbackStats[0].totalReviews > 0) {
+      counselor.rating = Math.round(feedbackStats[0].avgRating * 10) / 10;
+      counselor.totalReviews = feedbackStats[0].totalReviews;
+    } else {
+      counselor.rating = null;
+      counselor.totalReviews = 0;
     }
 
     // Get available slots for this counselor for the same day and after days

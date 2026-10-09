@@ -61,4 +61,7 @@ const sessionFeedbackSchema = new mongoose.Schema(
 // Prevent duplicate feedback from the same client on the same booking
 sessionFeedbackSchema.index({ bookingId: 1, clientId: 1 }, { unique: true });
 
+// High-concurrency compound index for fast rating calculation & covered aggregation scans
+sessionFeedbackSchema.index({ counselorId: 1, rating: 1 });
+
 export const SessionFeedback = mongoose.model('SessionFeedback', sessionFeedbackSchema);
