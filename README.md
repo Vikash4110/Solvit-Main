@@ -253,6 +253,7 @@ npm run pm2:start
 * **Modernized Counselor Blogs Manager & Direct Media Upload:** Redesigned blog publishing suite with KPI statistics cards, category dropdowns, status pills, dedicated full article reader modal, and direct device file upload (drag-and-drop / file selector) backed by Cloudinary asset storage and memory-safe preview cleanup.
 * **Role-Adaptive Navigation & Directory Protection:** Dynamic Navbar showing "Blogs" directly to counselors while clients and guests have access to both "Counselors" and "Blogs", backed by active route guards.
 * **Seamless Visual Assets & 30MB+ Footprint Optimization:** Watermark-free, high-resolution photography on Browse Counselors and About pages with dual-axis gradient edge blending, and elimination of unreferenced asset files.
+* **12-Column Balanced Counselor Booking Dossier (`bookCounselor.jsx`):** Symmetrical 12-column responsive layout (5/7 grid) replacing fragmented vertical cards with a unified practitioner dossier, dynamic unrated star indicator, clean verified badge pill, and interactive 50-minute slot calendar.
 
 ---
 

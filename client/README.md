@@ -9,6 +9,7 @@ A modern React frontend for the Solvit mental health platform, built with React,
 - ⏳ **Automated Session Timing**: Real-time in-call countdown timer with automatic termination at scheduled end time and 5m/1m warnings
 - 🔄 **Network Resilience**: Seamless rejoining flow for active sessions during accidental disconnects or network dropouts
 - 🕒 **Flexible 5-Minute Slot Scheduling**: Granular slot creation and recurring availability management (5-min intervals, standard 50-min duration)
+- 📅 **12-Column Counselor Booking Dossier**: Symmetrical responsive booking interface with unified practitioner credentials and dynamic rating metrics
 - 👤 **User Profile Management**: Complete profile with editable information
 - 📱 **Responsive Design**: Mobile-first design with Tailwind CSS
 - 🎨 **Modern UI**: Beautiful, accessible interface with smooth animations
