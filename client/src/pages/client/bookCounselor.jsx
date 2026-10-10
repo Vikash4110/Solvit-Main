@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import clsx from 'clsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { v4 as uuidv4 } from 'uuid'; 
+import { v4 as uuidv4 } from 'uuid';
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
@@ -113,20 +113,23 @@ const BookCounselorCalendar = () => {
     if (storedClient) {
       try {
         return { ...JSON.parse(storedClient), role: 'client' };
-      } catch (e) {}
+      } catch {
+        // Ignore JSON parse errors from invalid localStorage
+      }
     }
     const storedCounselor = localStorage.getItem('counselor');
     if (storedCounselor) {
       try {
         return { ...JSON.parse(storedCounselor), role: 'counselor' };
-      } catch (e) {}
+      } catch {
+        // Ignore JSON parse errors from invalid localStorage
+      }
     }
     return null;
   }, [client, loggedInCounselor]);
 
   const currentAccessToken =
-    localStorage.getItem('clientAccessToken') ||
-    localStorage.getItem('counselorAccessToken');
+    localStorage.getItem('clientAccessToken') || localStorage.getItem('counselorAccessToken');
 
   const isSelfBooking = useMemo(() => {
     if (!currentUser?._id || !counselorId) return false;
@@ -315,7 +318,7 @@ const BookCounselorCalendar = () => {
   // ==========================================
   useSmartRefresh(fetchCounselorData, {
     intervalMs: 120000, // 2-min active foreground refresh
-    staleTimeMs: 30000,  // Refetch when returning to tab after 30s
+    staleTimeMs: 30000, // Refetch when returning to tab after 30s
     deps: [counselorId],
   });
 
@@ -640,15 +643,11 @@ const BookCounselorCalendar = () => {
 
       let data;
       try {
-        const response = await api.post(
-          API_ENDPOINTS.PAYMENT_VERIFICATION,
-          paymentData,
-          {
-            headers: {
-              'Idempotency-Key': idempotencyKey,
-            },
-          }
-        );
+        const response = await api.post(API_ENDPOINTS.PAYMENT_VERIFICATION, paymentData, {
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        });
         data = response.data;
       } catch (err) {
         const status = err.response?.status;
@@ -802,16 +801,16 @@ const BookCounselorCalendar = () => {
   // ==========================================
   if (loading) {
     return (
-      <div className="min-h-screen bg-transparent py-20 lg:py-28 px-4">
+      <div className="min-h-screen bg-transparent py-12 lg:py-16 px-4">
         <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-12 w-64" />
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="space-y-4">
-              <Skeleton className="h-96 w-full rounded-xl" />
-              <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-10 w-48 rounded-xl" />
+          <div className="grid lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-5 space-y-6">
+              <Skeleton className="h-64 w-full rounded-2xl" />
+              <Skeleton className="h-96 w-full rounded-2xl" />
             </div>
-            <div className="lg:col-span-2">
-              <Skeleton className="h-[600px] w-full rounded-xl" />
+            <div className="lg:col-span-7">
+              <Skeleton className="h-[620px] w-full rounded-2xl" />
             </div>
           </div>
         </div>
@@ -893,7 +892,7 @@ const BookCounselorCalendar = () => {
                 className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary-700 data-[state=active]:to-primary-600 data-[state=active]:text-white font-semibold transition-all duration-300 gap-2"
               >
                 <Users className="w-4 h-4" />
-                Profile
+                Profile & Details
               </TabsTrigger>
               <TabsTrigger
                 value="availability"
@@ -905,11 +904,11 @@ const BookCounselorCalendar = () => {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
-              <ProfileCard counselor={counselor} imgError={imgError} setImgError={setImgError} />
-              <AboutCard counselor={counselor} />
-              <SpecializationsCard counselor={counselor} />
-              <LanguagesCard counselor={counselor} />
-              <EducationCard counselor={counselor} />
+              <CounselorProfileView
+                counselor={counselor}
+                imgError={imgError}
+                setImgError={setImgError}
+              />
             </TabsContent>
 
             <TabsContent value="availability" className="space-y-4">
@@ -927,25 +926,25 @@ const BookCounselorCalendar = () => {
           </Tabs>
         </div>
 
-        {/* Desktop Layout */}
+        {/* Desktop Layout - Balanced 12-column Grid */}
         <motion.div
-          className="hidden lg:grid lg:grid-cols-3 gap-8"
+          className="hidden lg:grid lg:grid-cols-12 gap-8 items-start"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
         >
-          {/* Left Column - Profile */}
-          <div className="space-y-6">
-            <ProfileCard counselor={counselor} imgError={imgError} setImgError={setImgError} />
-            <AboutCard counselor={counselor} />
-            <SpecializationsCard counselor={counselor} />
-            <LanguagesCard counselor={counselor} />
-            <EducationCard counselor={counselor} />
+          {/* Left Column - Counselor Profile & Credentials (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            <CounselorProfileView
+              counselor={counselor}
+              imgError={imgError}
+              setImgError={setImgError}
+            />
           </div>
 
-          {/* Middle & Right Columns - Calendar */}
-          <div className="lg:col-span-2">
+          {/* Right Column - Booking Calendar & Slots (7 cols) */}
+          <div className="lg:col-span-7">
             <CalendarCard
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
@@ -979,10 +978,10 @@ const BookCounselorCalendar = () => {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-t border-neutral-200 dark:border-neutral-800 p-4 z-30 shadow-lg">
         <Button
           className={clsx(
-            "w-full gap-2 h-12 text-base shadow-lg transition-all duration-300",
+            'w-full gap-2 h-12 text-base shadow-lg transition-all duration-300',
             isSelfBooking
-              ? "opacity-60 bg-neutral-400 text-white cursor-not-allowed"
-              : "bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 hover:shadow-xl hover:scale-105"
+              ? 'opacity-60 bg-neutral-400 text-white cursor-not-allowed'
+              : 'bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 hover:shadow-xl hover:scale-105'
           )}
           size="lg"
           disabled={isSelfBooking}
@@ -1004,137 +1003,7 @@ const BookCounselorCalendar = () => {
 };
 
 // ==========================================
-// COMPONENT: PROFILE CARD
-// ==========================================
-const ProfileCard = ({ counselor, imgError, setImgError }) => (
-  <motion.div variants={cardVariants}>
-    <Card className="group relative overflow-hidden bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500">
-      <CardContent className="pt-6 relative pb-6">
-        <div className="flex flex-col items-center text-center space-y-4 flex-wrap">
-          <Avatar
-            className="ring-4 ring-background shadow-2xl group-hover:scale-110 transition-transform duration-300"
-            size="2xl"
-          >
-            <AvatarImage
-              src={!imgError ? counselor.profilePicture : undefined}
-              alt={counselor.fullName}
-              onError={() => setImgError(true)}
-            />
-            <AvatarFallback className="text-4xl bg-gradient-to-br from-primary-700 to-primary-600 text-white font-bold">
-              {counselor.fullName.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="space-y-2 w-full">
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-400 dark:via-primary-300 dark:to-secondary-400 bg-clip-text text-transparent">
-                {counselor.fullName}
-              </h1>
-            </div>
-          </div>
-
-          <Separator className="w-full" />
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-4 w-full pt-2">
-            <div className="text-center p-3 rounded-lg bg-primary-50 dark:bg-primary-900/30 transition-all duration-300 hover:bg-primary-100 dark:hover:bg-primary-800/30">
-              <div className="text-2xl font-bold text-primary-700 dark:text-primary-400">
-                {counselor.experienceYears}+
-              </div>
-              <div className="text-xs text-neutral-600 dark:text-neutral-400">Years Exp.</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-primary-50 dark:bg-primary-900/30 transition-all duration-300 hover:bg-primary-100 dark:hover:bg-primary-800/30">
-              <div className="text-2xl font-bold text-primary-700 dark:text-primary-400">
-                <Star className="w-6 h-6 inline fill-amber-500 text-amber-500" />
-              </div>
-              <div className="text-xs text-neutral-600 dark:text-neutral-400">Top Rated</div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-primary-50 dark:bg-primary-900/30 transition-all duration-300 hover:bg-primary-100 dark:hover:bg-primary-800/30">
-              <div className="text-2xl font-bold text-primary-700 dark:text-primary-400">
-                <Video className="w-6 h-6 inline" />
-              </div>
-              <div className="text-xs text-neutral-600 dark:text-neutral-400">Video Call</div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
-
-// ==========================================
-// COMPONENT: ABOUT CARD
-// ==========================================
-const AboutCard = ({ counselor }) => {
-  if (!counselor.application?.professionalSummary) return null;
-
-  return (
-    <motion.div variants={cardVariants}>
-      <Card className="group relative h-full bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-        <CardHeader className="relative pb-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-            <Heart className="w-7 h-7 text-white" aria-hidden="true" />
-          </div>
-          <CardTitle className="text-xl font-bold text-neutral-900 dark:text-white leading-tight">
-            About Me
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-            {counselor.application.professionalSummary}
-          </p>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
-
-// ==========================================
-// COMPONENT: SPECIALIZATIONS CARD
-// ==========================================
-const SpecializationsCard = ({ counselor }) => {
-  if (!counselor.specialization) return null;
-
-  const specs = Array.isArray(counselor.specialization)
-    ? counselor.specialization
-    : [counselor.specialization];
-
-  return (
-    <motion.div variants={cardVariants}>
-      <Card className="group relative h-full bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-        <CardHeader className="relative pb-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-            <Sparkles className="w-7 h-7 text-white" aria-hidden="true" />
-          </div>
-          <CardTitle className="text-xl font-bold text-neutral-900 dark:text-white leading-tight">
-            I Can Help You With
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {specs.map((spec, idx) => (
-              <Badge
-                key={idx}
-                variant="outline"
-                className="gap-2 px-3 py-1.5 text-sm border-primary-300 dark:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
-              >
-                <CheckCircle className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                {spec}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
-
-// ==========================================
-// COMPONENT: LANGUAGES CARD
+// HELPER: NORMALIZE LANGUAGES LIST
 // ==========================================
 const normalizeLanguagesList = (raw) => {
   if (!raw) return [];
@@ -1165,109 +1034,242 @@ const normalizeLanguagesList = (raw) => {
   }
 };
 
-const LanguagesCard = ({ counselor }) => {
+// ==========================================
+// COMPONENT: UNIFIED COUNSELOR PROFILE VIEW
+// ==========================================
+const CounselorProfileView = ({ counselor, imgError, setImgError }) => {
   const languages = useMemo(
     () => normalizeLanguagesList(counselor?.application?.languages),
     [counselor?.application?.languages]
   );
 
-  if (languages.length === 0) return null;
+  const specs = useMemo(() => {
+    if (!counselor?.specialization) return [];
+    if (Array.isArray(counselor.specialization)) return counselor.specialization;
+    return [counselor.specialization];
+  }, [counselor?.specialization]);
 
-  return (
-    <motion.div variants={cardVariants}>
-      <Card className="group relative h-full bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-        <CardHeader className="relative pb-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-            <Languages className="w-7 h-7 text-white" aria-hidden="true" />
-          </div>
-          <CardTitle className="text-xl font-bold text-neutral-900 dark:text-white leading-tight">
-            Languages I Speak
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {languages.map((lang) => (
-              <Badge
-                key={lang}
-                className="gap-2 px-4 py-2 text-sm bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-700 hover:bg-primary-200 dark:hover:bg-primary-800/30 transition-colors"
-              >
-                <CheckCircle className="w-3.5 h-3.5" />
-                {lang}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
-
-// ==========================================
-// COMPONENT: EDUCATION CARD
-// ==========================================
-const EducationCard = ({ counselor }) => {
   const hasEducation =
-    counselor.application?.education?.graduation ||
-    counselor.application?.education?.postGraduation;
-
-  if (!hasEducation && !counselor.experienceLevel) return null;
+    counselor?.application?.education?.graduation ||
+    counselor?.application?.education?.postGraduation;
 
   return (
-    <motion.div variants={cardVariants}>
-      <Card className="group relative h-full bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="space-y-6">
+      {/* Primary Identity Card */}
+      <motion.div variants={cardVariants}>
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-full pointer-events-none" />
 
-        <CardHeader className="relative pb-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-            <GraduationCap className="w-7 h-7 text-white" aria-hidden="true" />
-          </div>
-          <CardTitle className="text-xl font-bold text-neutral-900 dark:text-white leading-tight">
-            Professional Background
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Experience Level */}
-          <div className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/20 p-4 rounded-xl">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary-100 dark:bg-primary-900/50 p-3 rounded-full">
-                <Briefcase className="w-6 h-6 text-primary-700 dark:text-primary-400" />
+          <CardContent className="p-5 sm:p-6 space-y-5">
+            {/* Top Row: Avatar & Basic Info */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
+              <div className="relative shrink-0">
+                <Avatar className="w-20 h-20 sm:w-22 sm:h-22 ring-4 ring-primary-100 dark:ring-primary-900/60 shadow-xl group-hover:scale-105 transition-transform duration-300">
+                  <AvatarImage
+                    src={!imgError ? counselor.profilePicture : undefined}
+                    alt={counselor.fullName}
+                    onError={() => setImgError(true)}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-primary-700 to-primary-600 text-white">
+                    {counselor.fullName ? counselor.fullName.charAt(0) : 'C'}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">
-                  {counselor.experienceYears}+ Years
+
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+                  <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">
+                    {counselor.fullName}
+                  </h1>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-0.5">
+                  <Badge className="bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                    Verified Counselor
+                  </Badge>
+                  {counselor.experienceYears && (
+                    <Badge
+                      variant="outline"
+                      className="text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 text-xs px-2.5 py-0.5 rounded-full"
+                    >
+                      {counselor.experienceYears}+ Years Exp.
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-3 gap-2.5 pt-1">
+              <div className="text-center p-2.5 rounded-xl bg-primary-50/70 dark:bg-primary-950/40 border border-primary-100/80 dark:border-primary-900/30 transition-all duration-300 hover:bg-primary-100/70">
+                <div className="text-lg font-black text-primary-700 dark:text-primary-300">
+                  {counselor.experienceYears}+
+                </div>
+                <div className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
+                  Years Exp.
+                </div>
+              </div>
+
+              <div className="text-center p-2.5 rounded-xl bg-primary-50/70 dark:bg-primary-950/40 border border-primary-100/80 dark:border-primary-900/30 transition-all duration-300 hover:bg-primary-100/70 flex flex-col items-center justify-center">
+                {counselor?.rating && Number(counselor.rating) > 0 ? (
+                  <div className="flex items-center justify-center text-lg font-black text-amber-500">
+                    <Star className="w-4 h-4 fill-amber-500 text-amber-500 mr-1" />
+                    <span>{Number(counselor.rating).toFixed(1)}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-7 text-amber-500">
+                    <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
+                  </div>
+                )}
+                <div className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
+                  Top Rated
+                </div>
+              </div>
+
+              <div className="text-center p-2.5 rounded-xl bg-primary-50/70 dark:bg-primary-950/40 border border-primary-100/80 dark:border-primary-900/30 transition-all duration-300 hover:bg-primary-100/70">
+                <div className="flex items-center justify-center text-lg font-black text-primary-700 dark:text-primary-300">
+                  <Video className="w-4 h-4 mr-1 text-primary-600 dark:text-primary-400" />
+                  <span>1-on-1</span>
+                </div>
+                <div className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
+                  Video Session
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Details & Credentials Card */}
+      <motion.div variants={cardVariants}>
+        <Card className="bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 shadow-xl hover:shadow-2xl hover:shadow-primary-500/5 transition-all duration-300 overflow-hidden">
+          <CardContent className="p-5 sm:p-6 space-y-6">
+            {/* About Me Section */}
+            {counselor.application?.professionalSummary && (
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400">
+                    <Heart className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-base font-bold text-neutral-900 dark:text-white">About Me</h2>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed pl-0.5">
+                  {counselor.application.professionalSummary}
                 </p>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Education */}
-          {hasEducation && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Award className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                <p className="font-semibold text-sm text-neutral-900 dark:text-white">Education</p>
+            {/* Specializations Section */}
+            {specs.length > 0 && (
+              <div className="space-y-3 pt-1 border-t border-neutral-100 dark:border-neutral-800/80">
+                <div className="flex items-center gap-2 pt-2">
+                  <div className="p-1.5 rounded-lg bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-base font-bold text-neutral-900 dark:text-white">
+                    I Can Help You With
+                  </h2>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {specs.map((spec, idx) => (
+                    <Badge
+                      key={idx}
+                      variant="outline"
+                      className="gap-1.5 px-3 py-1.5 text-xs font-medium border-primary-200 dark:border-primary-800 bg-white/80 dark:bg-neutral-800/60 hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 rounded-lg transition-colors"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                      <span>{spec}</span>
+                    </Badge>
+                  ))}
+                </div>
               </div>
-              {counselor.application?.education?.graduation && (
-                <div className="pl-4 border-l-2 border-primary-300 dark:border-primary-700">
-                  <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                    {counselor.application.education.graduation.degree}
-                  </p>
+            )}
+
+            {/* Languages Section */}
+            {languages.length > 0 && (
+              <div className="space-y-3 pt-1 border-t border-neutral-100 dark:border-neutral-800/80">
+                <div className="flex items-center gap-2 pt-2">
+                  <div className="p-1.5 rounded-lg bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400">
+                    <Languages className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-base font-bold text-neutral-900 dark:text-white">
+                    Languages I Speak
+                  </h2>
                 </div>
-              )}
-              {counselor.application?.education?.postGraduation && (
-                <div className="pl-4 border-l-2 border-primary-300 dark:border-primary-700">
-                  <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                    {counselor.application.education.postGraduation.degree}
-                  </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {languages.map((lang) => (
+                    <Badge
+                      key={lang}
+                      className="gap-1.5 px-3 py-1 text-xs font-medium bg-primary-50 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-lg"
+                    >
+                      <CheckCircle className="w-3 h-3 text-primary-500" />
+                      {lang}
+                    </Badge>
+                  ))}
                 </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </motion.div>
+              </div>
+            )}
+
+            {/* Professional Background & Education */}
+            {(hasEducation || counselor.experienceYears) && (
+              <div className="space-y-3 pt-1 border-t border-neutral-100 dark:border-neutral-800/80">
+                <div className="flex items-center gap-2 pt-2">
+                  <div className="p-1.5 rounded-lg bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-base font-bold text-neutral-900 dark:text-white">
+                    Education & Credentials
+                  </h2>
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  {counselor.application?.education?.postGraduation?.degree && (
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-neutral-50/80 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800">
+                      <div className="p-1.5 rounded-lg bg-primary-100/80 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5">
+                        <Award className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                          {counselor.application.education.postGraduation.degree}
+                        </p>
+                        {counselor.application.education.postGraduation.university && (
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            {counselor.application.education.postGraduation.university}
+                            {counselor.application.education.postGraduation.year &&
+                              ` • ${counselor.application.education.postGraduation.year}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {counselor.application?.education?.graduation?.degree && (
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-neutral-50/80 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800">
+                      <div className="p-1.5 rounded-lg bg-primary-100/80 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5">
+                        <Award className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                          {counselor.application.education.graduation.degree}
+                        </p>
+                        {counselor.application.education.graduation.university && (
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            {counselor.application.education.graduation.university}
+                            {counselor.application.education.graduation.year &&
+                              ` • ${counselor.application.education.graduation.year}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   );
 };
 
@@ -1344,7 +1346,10 @@ const CalendarCard = ({
                   {selectedDateSlots.length} available
                 </Badge>
               ) : (
-                <Badge variant="outline" className="px-2.5 py-1 text-xs font-medium text-neutral-500 rounded-full border-neutral-200 dark:border-neutral-700">
+                <Badge
+                  variant="outline"
+                  className="px-2.5 py-1 text-xs font-medium text-neutral-500 rounded-full border-neutral-200 dark:border-neutral-700"
+                >
                   0 available
                 </Badge>
               )}
@@ -1413,14 +1418,14 @@ const CalendarCard = ({
                           disabled={isSelfBooking}
                           size="sm"
                           className={clsx(
-                            "h-9 px-4 rounded-xl font-semibold text-xs gap-2 transition-all duration-300 shadow-md",
+                            'h-9 px-4 rounded-xl font-semibold text-xs gap-2 transition-all duration-300 shadow-md',
                             isSelfBooking
-                              ? "opacity-60 bg-neutral-400 text-white cursor-not-allowed hover:bg-neutral-400"
-                              : "bg-gradient-to-r from-primary-700 via-primary-600 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-primary-700/20 hover:shadow-lg hover:shadow-primary-700/30 hover:scale-[1.02]"
+                              ? 'opacity-60 bg-neutral-400 text-white cursor-not-allowed hover:bg-neutral-400'
+                              : 'bg-gradient-to-r from-primary-700 via-primary-600 to-primary-600 hover:from-primary-800 hover:to-primary-700 text-white shadow-primary-700/20 hover:shadow-lg hover:shadow-primary-700/30 hover:scale-[1.02]'
                           )}
                         >
                           <Video className="w-3.5 h-3.5" />
-                          <span>{isSelfBooking ? "Cannot Book Yourself" : "Book Slot"}</span>
+                          <span>{isSelfBooking ? 'Cannot Book Yourself' : 'Book Slot'}</span>
                         </Button>
                       </div>
                     </motion.div>
@@ -1482,7 +1487,11 @@ const BookingModal = ({
           {/* Counselor Info */}
           <div className="flex items-center gap-3.5 p-3.5 sm:p-4 bg-primary-50/60 dark:bg-primary-950/30 rounded-2xl border border-primary-100/80 dark:border-primary-800/40">
             <Avatar className="w-13 h-13 sm:w-14 sm:h-14 shrink-0 ring-2 ring-primary-200/80 dark:ring-primary-800/60 shadow-sm">
-              <AvatarImage src={counselor.profilePicture} alt={counselor.fullName} className="object-cover" />
+              <AvatarImage
+                src={counselor.profilePicture}
+                alt={counselor.fullName}
+                className="object-cover"
+              />
               <AvatarFallback className="text-base font-bold bg-gradient-to-br from-primary-700 to-primary-600 text-white">
                 {counselor.fullName?.charAt(0) || 'C'}
               </AvatarFallback>
@@ -1529,17 +1538,19 @@ const BookingModal = ({
                 <Video className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                 Duration
               </span>
-              <span className="font-semibold text-neutral-900 dark:text-white">
-                50 minutes
-              </span>
+              <span className="font-semibold text-neutral-900 dark:text-white">50 minutes</span>
             </div>
           </div>
 
           {/* Payment Summary */}
           <div className="bg-gradient-to-br from-primary-100/70 via-primary-50/40 to-white dark:from-primary-900/30 dark:via-primary-900/10 dark:to-neutral-900 p-3.5 sm:p-4 rounded-2xl border border-primary-200/60 dark:border-primary-800/40 flex items-center justify-between">
             <div>
-              <span className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 block">Total Amount</span>
-              <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Inclusive of all taxes</p>
+              <span className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 block">
+                Total Amount
+              </span>
+              <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Inclusive of all taxes
+              </p>
             </div>
             <span className="text-xl sm:text-2xl font-bold text-primary-700 dark:text-primary-400">
               ₹{getSlotPrice(selectedSlot)}
