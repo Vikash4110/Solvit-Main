@@ -279,7 +279,7 @@ const FilterSection = React.memo(
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72 p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl" align="start" avoidCollisions>
+            <DropdownMenuContent className="w-72 max-w-[calc(100vw-2.5rem)] p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl" align="start" avoidCollisions>
               <DropdownMenuRadioGroup
                 value={spec}
                 onValueChange={(value) => {
@@ -308,6 +308,82 @@ const FilterSection = React.memo(
                     </DropdownMenuRadioItem>
                   );
                 })}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-neutral-800 to-transparent" />
+
+        {/* Sort By Dropdown - Clean & Professional without emojis */}
+        <div className="space-y-2">
+          <Label className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+            <ArrowDownUp className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+            Sort Counselors
+          </Label>
+          <DropdownMenu open={sortOpen} onOpenChange={setSortOpen} modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className={`w-full h-10 px-3.5 justify-between rounded-xl text-sm font-medium transition-all shadow-sm ${
+                  sortBy !== 'rating'
+                    ? 'bg-primary-50/70 border-primary-300 dark:bg-primary-950/40 dark:border-primary-800 text-primary-900 dark:text-primary-100 font-semibold'
+                    : 'bg-neutral-50/80 dark:bg-neutral-800/60 border-neutral-200/80 dark:border-neutral-700/80 hover:bg-white dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200'
+                }`}
+              >
+                <span className="truncate flex items-center gap-2">
+                  {sortBy === 'rating' && (
+                    <>
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                      <span>Top Rated</span>
+                    </>
+                  )}
+                  {(sortBy === 'price_asc' || sortBy === 'price') && (
+                    <>
+                      <ArrowDownWideNarrow className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                      <span>Price: Low to High</span>
+                    </>
+                  )}
+                  {sortBy === 'price_desc' && (
+                    <>
+                      <ArrowUpNarrowWide className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                      <span>Price: High to Low</span>
+                    </>
+                  )}
+                  {sortBy === 'experience' && (
+                    <>
+                      <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                      <span>Most Experienced</span>
+                    </>
+                  )}
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-72 max-w-[calc(100vw-2.5rem)] p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl" align="start" avoidCollisions>
+              <DropdownMenuRadioGroup
+                value={sortBy}
+                onValueChange={(value) => {
+                  setSortBy(value);
+                  setSortOpen(false);
+                }}
+              >
+                <DropdownMenuRadioItem value="rating" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                  <span>Top Rated</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_asc" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                  <ArrowDownWideNarrow className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
+                  <span>Price: Low to High</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_desc" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                  <ArrowUpNarrowWide className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
+                  <span>Price: High to Low</span>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="experience" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                  <Award className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
+                  <span>Most Experienced</span>
+                </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -385,82 +461,6 @@ const FilterSection = React.memo(
             <span>₹0 (Free/Intro)</span>
             <span>₹10,000 max</span>
           </div>
-        </div>
-
-        <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-neutral-800 to-transparent" />
-
-        {/* Sort By Dropdown - Clean & Professional without emojis */}
-        <div className="space-y-2">
-          <Label className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
-            <ArrowDownUp className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-            Sort Counselors
-          </Label>
-          <DropdownMenu open={sortOpen} onOpenChange={setSortOpen} modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className={`w-full h-10 px-3.5 justify-between rounded-xl text-sm font-medium transition-all shadow-sm ${
-                  sortBy !== 'rating'
-                    ? 'bg-primary-50/70 border-primary-300 dark:bg-primary-950/40 dark:border-primary-800 text-primary-900 dark:text-primary-100 font-semibold'
-                    : 'bg-neutral-50/80 dark:bg-neutral-800/60 border-neutral-200/80 dark:border-neutral-700/80 hover:bg-white dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200'
-                }`}
-              >
-                <span className="truncate flex items-center gap-2">
-                  {sortBy === 'rating' && (
-                    <>
-                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                      <span>Top Rated</span>
-                    </>
-                  )}
-                  {(sortBy === 'price_asc' || sortBy === 'price') && (
-                    <>
-                      <ArrowDownWideNarrow className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                      <span>Price: Low to High</span>
-                    </>
-                  )}
-                  {sortBy === 'price_desc' && (
-                    <>
-                      <ArrowUpNarrowWide className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                      <span>Price: High to Low</span>
-                    </>
-                  )}
-                  {sortBy === 'experience' && (
-                    <>
-                      <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                      <span>Most Experienced</span>
-                    </>
-                  )}
-                </span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72 p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl" align="start" avoidCollisions>
-              <DropdownMenuRadioGroup
-                value={sortBy}
-                onValueChange={(value) => {
-                  setSortBy(value);
-                  setSortOpen(false);
-                }}
-              >
-                <DropdownMenuRadioItem value="rating" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
-                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                  <span>Top Rated</span>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="price_asc" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
-                  <ArrowDownWideNarrow className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
-                  <span>Price: Low to High</span>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="price_desc" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
-                  <ArrowUpNarrowWide className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
-                  <span>Price: High to Low</span>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="experience" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
-                  <Award className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
-                  <span>Most Experienced</span>
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
         {/* Clear All Filters Button */}
@@ -1255,14 +1255,19 @@ const BrowseCounselor = () => {
 
                 {/* Conditional Counselor Count & Active State (Shown only when filtering or sorting is applied) */}
                 {(activeFilterCount > 0 || sortBy !== 'rating') && (
-                  <div className="flex items-center justify-between gap-3 mb-4 p-3 sm:px-4 bg-white dark:bg-neutral-900 rounded-xl border border-primary-200/70 dark:border-primary-900/50 shadow-xs">
-                    <div className="flex items-center gap-2">
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-                      <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                        {visible.length} {visible.length === 1 ? 'counselor found' : 'counselors found'}
-                      </span>
+                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-3 mb-4 p-2.5 sm:p-3 sm:px-4 bg-white dark:bg-neutral-900 rounded-xl border border-primary-200/70 dark:border-primary-900/50 shadow-xs">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <SlidersHorizontal className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                        <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 whitespace-nowrap">
+                          {visible.length} {visible.length === 1 ? 'counselor found' : 'counselors found'}
+                        </span>
+                      </div>
                       {sortBy !== 'rating' && (
-                        <Badge variant="secondary" className="text-[10px] font-medium bg-primary-50 text-primary-700 dark:bg-primary-950/60 dark:text-primary-300 border-primary-200 dark:border-primary-800">
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-medium bg-primary-50 text-primary-700 dark:bg-primary-950/60 dark:text-primary-300 border-primary-200 dark:border-primary-800 whitespace-nowrap shrink-0"
+                        >
                           {sortBy === 'price_asc' && 'Price: Low to High'}
                           {sortBy === 'price_desc' && 'Price: High to Low'}
                           {sortBy === 'experience' && 'Most Experienced'}
@@ -1272,10 +1277,10 @@ const BrowseCounselor = () => {
                     <button
                       type="button"
                       onClick={clearFilters}
-                      className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline flex items-center gap-1"
+                      className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline flex items-center gap-1.5 whitespace-nowrap shrink-0 ml-auto sm:ml-0"
                     >
-                      <RotateCcw className="w-3 h-3" />
-                      Reset filters
+                      <RotateCcw className="w-3 h-3 shrink-0" />
+                      <span>Reset filters</span>
                     </button>
                   </div>
                 )}
