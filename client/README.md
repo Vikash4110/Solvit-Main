@@ -203,6 +203,9 @@ VITE_API_BASE_URL=http://localhost:8000/api/v1
 - 🧭 **Role-Based Navigation**: Configured contextual navigation in `Navbar.jsx` — counselors see "Blogs" directly while clients see both "Counselors" and "Blogs", with route guards preventing counselors from browsing other practitioners.
 - 📞 **Official Contact Synchronization**: Updated official support helpline (`+91 9527542303`) and email (`support@solvitcounselling.com`) across all client views, footers, and legals.
 - 🖼️ **About Page & Hero Imagery Polish**: Replaced awkwardly cropped group counseling and hero photography with full-bleed 16:9 assets featuring dual-axis gradient edge blending, and cleaned up 30MB+ of unused assets.
+- 🎯 **Browse Counselors Above-the-Fold Sort Filter**: Repositioned "Sort Counselors" directly below Specialization and above Gender Preference in `browseCounselor.jsx` so sorting is immediately visible without scrolling.
+- 📱 **Mobile Active Filter Bar Layout Polish**: Resolved awkward 2-line word wrapping (`whitespace-nowrap`) and misaligned reset button on mobile viewports (<390px) with responsive flex-wrapping.
+- 🚀 **Pagination Smooth Auto-Scroll**: Automatically scrolls smoothly directly to the start of the counselor listings upon page navigation (Next, Previous, page numbers), with fixed navbar offset.
 
 ## License
 
