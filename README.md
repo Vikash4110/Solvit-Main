@@ -254,6 +254,7 @@ npm run pm2:start
 * **Role-Adaptive Navigation & Directory Protection:** Dynamic Navbar showing "Blogs" directly to counselors while clients and guests have access to both "Counselors" and "Blogs", backed by active route guards.
 * **Seamless Visual Assets & 30MB+ Footprint Optimization:** Watermark-free, high-resolution photography on Browse Counselors and About pages with dual-axis gradient edge blending, and elimination of unreferenced asset files.
 * **12-Column Balanced Counselor Booking Dossier (`bookCounselor.jsx`):** Symmetrical 12-column responsive layout (5/7 grid) replacing fragmented vertical cards with a unified practitioner dossier, dynamic unrated star indicator, clean verified badge pill, and interactive 50-minute slot calendar.
+* **Browse Counselors Above-the-Fold Sorting & Mobile Filter Polish (`browseCounselor.jsx`):** Reordered filter sidebar positioning the "Sort Counselors" control above the fold directly below Specialization and above Gender Preference, resolved mobile active filter word-wrapping and layout clipping, and added automated smooth scrolling to practitioner listings upon pagination navigation with sticky navbar offset compensation.
 
 ---
 
