@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -279,7 +279,11 @@ const FilterSection = React.memo(
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72 max-w-[calc(100vw-2.5rem)] p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl" align="start" avoidCollisions>
+            <DropdownMenuContent
+              className="w-72 max-w-[calc(100vw-2.5rem)] p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl"
+              align="start"
+              avoidCollisions
+            >
               <DropdownMenuRadioGroup
                 value={spec}
                 onValueChange={(value) => {
@@ -360,7 +364,11 @@ const FilterSection = React.memo(
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72 max-w-[calc(100vw-2.5rem)] p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl" align="start" avoidCollisions>
+            <DropdownMenuContent
+              className="w-72 max-w-[calc(100vw-2.5rem)] p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-xl"
+              align="start"
+              avoidCollisions
+            >
               <DropdownMenuRadioGroup
                 value={sortBy}
                 onValueChange={(value) => {
@@ -368,19 +376,31 @@ const FilterSection = React.memo(
                   setSortOpen(false);
                 }}
               >
-                <DropdownMenuRadioItem value="rating" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                <DropdownMenuRadioItem
+                  value="rating"
+                  className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2"
+                >
                   <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
                   <span>Top Rated</span>
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="price_asc" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                <DropdownMenuRadioItem
+                  value="price_asc"
+                  className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2"
+                >
                   <ArrowDownWideNarrow className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
                   <span>Price: Low to High</span>
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="price_desc" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                <DropdownMenuRadioItem
+                  value="price_desc"
+                  className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2"
+                >
                   <ArrowUpNarrowWide className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
                   <span>Price: High to Low</span>
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="experience" className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2">
+                <DropdownMenuRadioItem
+                  value="experience"
+                  className="rounded-lg py-2 text-xs sm:text-sm cursor-pointer flex items-center gap-2"
+                >
                   <Award className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
                   <span>Most Experienced</span>
                 </DropdownMenuRadioItem>
@@ -412,7 +432,9 @@ const FilterSection = React.memo(
                       : 'bg-neutral-50/80 dark:bg-neutral-800/60 text-neutral-700 dark:text-neutral-300 border-neutral-200/80 dark:border-neutral-700/80 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600'
                   }`}
                 >
-                  <IconComponent className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-neutral-400'}`} />
+                  <IconComponent
+                    className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-neutral-400'}`}
+                  />
                   <span>{g.label}</span>
                 </button>
               );
@@ -503,9 +525,7 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
   const remainingCount = specs.length - initialLimit;
 
   // Next slot calculation
-  const nextSlot = counselor.availableSlots?.find(
-    (slot) => slot.status === 'available'
-  );
+  const nextSlot = counselor.availableSlots?.find((slot) => slot.status === 'available');
 
   let slotDateLabel = null;
   let slotTimeLabel = null;
@@ -640,7 +660,11 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
                         setShowAllSpecs((prev) => !prev);
                       }}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-50 dark:bg-primary-950/50 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
-                      title={showAllSpecs ? 'Collapse specializations' : `Show all ${specs.length} specializations`}
+                      title={
+                        showAllSpecs
+                          ? 'Collapse specializations'
+                          : `Show all ${specs.length} specializations`
+                      }
                     >
                       {showAllSpecs ? (
                         <>
@@ -711,9 +735,7 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
               >
                 <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
                 <span>
-                  {loggedInCounselor?._id === counselor._id
-                    ? 'Your Profile'
-                    : 'Book Consultation'}
+                  {loggedInCounselor?._id === counselor._id ? 'Your Profile' : 'Book Consultation'}
                 </span>
               </Button>
             </div>
@@ -847,7 +869,7 @@ const BrowseCounselor = () => {
         const bySpec = spec === 'all' || c.specialization?.includes(spec);
         const byGender = gender === 'all' || c.gender === gender;
         const byLanguage = language === 'all' || c.application?.languages?.includes(language);
-        
+
         const price = getCounselorPrice(c);
         const byPrice = price >= priceRange[0] && price <= priceRange[1];
 
@@ -880,6 +902,39 @@ const BrowseCounselor = () => {
   }, [visible, currentPage, itemsPerPage]);
 
   const { currentItems, totalPages } = paginationData;
+
+  const counselorsSectionRef = useRef(null);
+
+  const scrollToCounselors = useCallback(() => {
+    const section = counselorsSectionRef.current || document.getElementById('counselors-section');
+    if (section) {
+      const navbarOffset = 90;
+      const elementPosition = section.getBoundingClientRect().top;
+      const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+      const offsetPosition = elementPosition + scrollY - navbarOffset;
+
+      window.scrollTo({
+        top: Math.max(0, offsetPosition),
+        behavior: 'smooth',
+      });
+    }
+  }, []);
+
+  const handlePageChange = useCallback(
+    (pageAction) => {
+      setCurrentPage((prev) => {
+        const targetPage = typeof pageAction === 'function' ? pageAction(prev) : pageAction;
+        if (targetPage !== prev && targetPage >= 1 && targetPage <= totalPages) {
+          requestAnimationFrame(() => {
+            scrollToCounselors();
+          });
+          return targetPage;
+        }
+        return prev;
+      });
+    },
+    [totalPages, scrollToCounselors]
+  );
 
   //not implemented yet so not visible
   const featuredCounselors = useMemo(() => {
@@ -943,11 +998,13 @@ const BrowseCounselor = () => {
           />
 
           {/* TABLET & DESKTOP Background Image - RIGHT SIDE */}
-          <div 
+          <div
             className="absolute right-0 top-0 bottom-0 w-full md:w-1/2 lg:w-[52%] h-full z-0 hidden md:block overflow-hidden pointer-events-none"
             style={{
-              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,1) 50%)',
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,1) 50%)'
+              maskImage:
+                'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,1) 50%)',
+              WebkitMaskImage:
+                'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,1) 50%)',
             }}
           >
             <img
@@ -1090,7 +1147,8 @@ const BrowseCounselor = () => {
           </div>
 
           <div
-            className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full"
+            ref={counselorsSectionRef}
+            className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-24"
             id="counselors-section"
           >
             <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -1106,7 +1164,10 @@ const BrowseCounselor = () => {
                           </div>
                           <span>Filters</span>
                           {activeFilterCount > 0 && (
-                            <Badge variant="secondary" className="px-2 py-0.5 text-[11px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300 rounded-full border border-primary-200 dark:border-primary-800">
+                            <Badge
+                              variant="secondary"
+                              className="px-2 py-0.5 text-[11px] font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300 rounded-full border border-primary-200 dark:border-primary-800"
+                            >
                               {activeFilterCount}
                             </Badge>
                           )}
@@ -1200,7 +1261,11 @@ const BrowseCounselor = () => {
                 <div className="flex lg:hidden mb-4 items-center justify-end">
                   <Sheet>
                     <SheetTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm"
+                      >
                         <SlidersHorizontal className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                         Filters & Sort
                         {activeFilterCount > 0 && (
@@ -1210,7 +1275,10 @@ const BrowseCounselor = () => {
                         )}
                       </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-[85vw] max-w-sm sm:w-96 p-6 flex flex-col rounded-r-2xl">
+                    <SheetContent
+                      side="left"
+                      className="w-[85vw] max-w-sm sm:w-96 p-6 flex flex-col rounded-r-2xl"
+                    >
                       <SheetHeader className="text-left pb-3 border-b border-neutral-100 dark:border-neutral-800">
                         <div className="flex items-center justify-between">
                           <SheetTitle className="flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-white">
@@ -1228,7 +1296,9 @@ const BrowseCounselor = () => {
                             </button>
                           )}
                         </div>
-                        <SheetDescription className="text-xs text-neutral-500">Refine counselors by specialty, budget, and sort preference</SheetDescription>
+                        <SheetDescription className="text-xs text-neutral-500">
+                          Refine counselors by specialty, budget, and sort preference
+                        </SheetDescription>
                       </SheetHeader>
                       <ScrollArea className="flex-1 mt-3 pr-2">
                         <FilterSection
@@ -1260,7 +1330,8 @@ const BrowseCounselor = () => {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <SlidersHorizontal className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
                         <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 whitespace-nowrap">
-                          {visible.length} {visible.length === 1 ? 'counselor found' : 'counselors found'}
+                          {visible.length}{' '}
+                          {visible.length === 1 ? 'counselor found' : 'counselors found'}
                         </span>
                       </div>
                       {sortBy !== 'rating' && (
@@ -1339,7 +1410,7 @@ const BrowseCounselor = () => {
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                            onClick={() => handlePageChange((prev) => Math.max(prev - 1, 1))}
                             className={
                               currentPage === 1
                                 ? 'pointer-events-none opacity-50'
@@ -1358,7 +1429,7 @@ const BrowseCounselor = () => {
                             return (
                               <PaginationItem key={pageNumber}>
                                 <PaginationLink
-                                  onClick={() => setCurrentPage(pageNumber)}
+                                  onClick={() => handlePageChange(pageNumber)}
                                   isActive={currentPage === pageNumber}
                                   className="cursor-pointer"
                                 >
@@ -1381,7 +1452,9 @@ const BrowseCounselor = () => {
 
                         <PaginationItem>
                           <PaginationNext
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                            onClick={() =>
+                              handlePageChange((prev) => Math.min(prev + 1, totalPages))
+                            }
                             className={
                               currentPage === totalPages
                                 ? 'pointer-events-none opacity-50'
