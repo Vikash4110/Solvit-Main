@@ -972,13 +972,13 @@ const BrowseCounselor = () => {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30s">
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30">
         {/* Hero Section */}
         <motion.section
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
-          className="relative min-h-0 lg:min-h-[60vh] flex items-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
+          className="relative flex items-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
           aria-labelledby="hero-heading"
         >
           {/* MOBILE BACKGROUND IMAGE */}
@@ -1023,10 +1023,10 @@ const BrowseCounselor = () => {
             aria-hidden="true"
           />
 
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12 py-20 lg:py-28">
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 pt-24 sm:pt-28 lg:pt-28 pb-8 sm:pb-10 lg:pb-16">
             <div className="max-w-2xl lg:max-w-3xl mx-auto lg:mx-0">
               <motion.div
-                className="space-y-5 lg:space-y-7 text-center lg:text-left"
+                className="space-y-4 sm:space-y-5 lg:space-y-6 text-center lg:text-left"
                 variants={staggerContainer}
                 initial="initial"
                 animate="animate"
@@ -1034,16 +1034,16 @@ const BrowseCounselor = () => {
                 <motion.div variants={fadeInUp} className="flex justify-center lg:justify-start">
                   <Badge
                     variant="outline"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-white/10 backdrop-blur-md text-white border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-white/10 backdrop-blur-md text-white border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all"
                   >
                     <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Over 500 Certified Counselors</span>
+                    <span>Over 300+ Certified Counselors</span>
                   </Badge>
                 </motion.div>
 
                 <motion.h1
                   id="hero-heading"
-                  className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-lg"
+                  className="text-2xl sm:text-4xl md:text-5xl lg:text-5xl font-bold leading-[1.15] tracking-tight text-white drop-shadow-lg"
                   variants={fadeInUp}
                 >
                   Find Your Perfect Counselor
@@ -1069,7 +1069,7 @@ const BrowseCounselor = () => {
                         .getElementById('counselors-section')
                         ?.scrollIntoView({ behavior: 'smooth' })
                     }
-                    className="group relative overflow-hidden bg-white text-primary-900 hover:bg-primary-50 text-sm font-semibold rounded-xl px-7 py-5 shadow-2xl hover:shadow-white/20 transition-all duration-300 hover:scale-105"
+                    className="group relative overflow-hidden bg-white text-primary-900 hover:bg-primary-50 text-sm font-semibold rounded-xl px-6 py-4 shadow-2xl hover:shadow-white/20 transition-all duration-300 hover:scale-105"
                   >
                     <Search
                       className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform"
@@ -1082,7 +1082,7 @@ const BrowseCounselor = () => {
                       variant="secondary"
                       size="lg"
                       onClick={() => navigate('/login')}
-                      className="group bg-white/20 backdrop-blur-md text-white hover:bg-white/30 border border-white/30 hover:border-white/50 text-sm font-semibold rounded-xl px-7 py-5 shadow-xl transition-all duration-300 hover:scale-105"
+                      className="group bg-white/20 backdrop-blur-md text-white hover:bg-white/30 border border-white/30 hover:border-white/50 text-sm font-semibold rounded-xl px-6 py-4 shadow-xl transition-all duration-300 hover:scale-105"
                     >
                       <UserCircle
                         className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform"
@@ -1136,7 +1136,7 @@ const BrowseCounselor = () => {
         </motion.section>
 
         {/* Main Content */}
-        <main className="pt-16 relative min-h-0 lg:min-h-screen flex items-center justify-center overflow-hidden bg-transparent py-20 lg:py-28">
+        <main className="relative min-h-screen overflow-hidden bg-transparent pt-8 pb-20 sm:pt-10 sm:pb-24 lg:pt-12 lg:pb-28">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute top-20 left-12 w-72 h-72 bg-primary-400/10 dark:bg-primary-600/5 rounded-full blur-3xl animate-pulse" />
             <div
