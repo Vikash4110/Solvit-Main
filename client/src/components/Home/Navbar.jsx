@@ -13,7 +13,6 @@ import {
   UserCircle,
   Briefcase,
   BookOpen,
-  Lock,
   Brain,
   Heart,
   Rocket,
@@ -107,18 +106,6 @@ const Navbar = () => {
     navigate('/');
   };
 
-  // Protected contact handler
-  const handleContactClick = () => {
-    if (!isAuthenticated) {
-      showToast.error('Please login to access the contact form', {
-        description: 'Sign in to connect with our support team',
-        duration: 3000,
-      });
-      navigate('/login');
-      return;
-    }
-    navigate('/contact');
-  };
 
   // Services data
   const servicesLinks = [
@@ -296,47 +283,21 @@ const Navbar = () => {
                 Blogs
               </Button>
 
-              {isAuthenticated ? (
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate('/contact')}
-                  className="
-        flex items-center gap-2 px-4 py-2
-        text-neutral-700 dark:text-neutral-300
-        hover:bg-primary-50 dark:hover:bg-primary-900/30
-        hover:text-primary-700 dark:hover:text-primary-300
-        rounded-xl font-medium cursor-pointer
-        transition-all duration-200
-      "
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Contact
-                </Button>
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={handleContactClick}
-                      className="
-            flex items-center gap-2 px-4 py-2
-            text-neutral-500 dark:text-neutral-500
-            hover:bg-red-50 dark:hover:bg-red-900/20
-            hover:text-red-600 dark:hover:text-red-400
-            rounded-xl font-medium cursor-pointer
-            transition-all duration-200 opacity-60
-          "
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Contact
-                      <Lock className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-sm">Login required to contact us</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/contact')}
+                className="
+                  flex items-center gap-2 px-4 py-2
+                  text-neutral-700 dark:text-neutral-300
+                  hover:bg-primary-50 dark:hover:bg-primary-900/30
+                  hover:text-primary-700 dark:hover:text-primary-300
+                  rounded-xl font-medium cursor-pointer
+                  transition-all duration-200
+                "
+              >
+                <MessageCircle className="h-4 w-4" />
+                Contact
+              </Button>
             </nav>
             {/* Right Side Actions (Desktop) */}
             <div className="hidden lg:flex items-center gap-3">
@@ -741,29 +702,17 @@ const Navbar = () => {
                       </Button>
 
                       {/* Contact Link */}
-                      {isAuthenticated ? (
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            navigate('/contact');
-                            setIsOpen(false);
-                          }}
-                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition cursor-pointer"
-                        >
-                          <MessageCircle className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                          <span>Support & Contact</span>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          onClick={handleContactClick}
-                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl opacity-75 hover:opacity-100 transition cursor-pointer"
-                        >
-                          <MessageCircle className="h-4 w-4 text-neutral-500 shrink-0" />
-                          <span className="text-neutral-700 dark:text-neutral-300">Support & Contact</span>
-                          <Lock className="h-3.5 w-3.5 ml-auto text-amber-500" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          navigate('/contact');
+                          setIsOpen(false);
+                        }}
+                        className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition cursor-pointer"
+                      >
+                        <MessageCircle className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                        <span>Support & Contact</span>
+                      </Button>
                     </div>
 
                     {/* Authenticated Logout */}

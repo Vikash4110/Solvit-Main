@@ -17,10 +17,10 @@
 ## 🌟 Product Ecosystem & Portals
 
 ### 🧑‍💼 Client Experience
-* **Specialist Discovery:** Search and filter verified mental health professionals by specialization, languages spoken, price range, and real-time slot availability.
+* **Specialist Discovery:** Search and filter verified mental health professionals by specialization, languages spoken, price range, and real-time slot availability with optimized above-the-fold layout and responsive mobile discovery cards.
 * **Instant Booking & Checkout:** Real-time calendar slot reservation with Razorpay payment processing and automatic confirmation emails.
 * **Encrypted Video Consultations:** Secure 1-on-1 WebRTC video sessions with in-call chat, noise reduction, and automatic hardware resource cleanup.
-* **Client Control Center:** Comprehensive dashboard to view upcoming appointments, session histories, invoices, and file structured support disputes.
+* **Client Control Center & Support:** Comprehensive dashboard to view upcoming appointments, session histories, invoices, and direct public support inquiries without barriers.
 
 ### 👩‍⚕️ Counselor Workspace
 * **Automated Schedule Management:** Recurring weekly availability rules and smart multi-slot generation to maximize booking efficiency.

@@ -554,37 +554,97 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
     >
       <Card className="group relative bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-500/80 shadow-xs hover:shadow-xl hover:shadow-primary-500/5 dark:hover:shadow-primary-500/5 transition-all duration-300 rounded-2xl overflow-hidden">
         <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary-600 to-primary-700 opacity-0 group-hover:opacity-100 transition-opacity rounded-l" />
-
         <div className="p-4 sm:p-5 sm:pl-6">
           <div className="flex flex-col sm:flex-row md:flex-row gap-4 sm:gap-5 items-start">
-            {/* Left: Profile Image & Verified Badge */}
-            <div className="relative flex-shrink-0 self-start sm:self-auto">
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border-2 border-white dark:border-neutral-800 shadow-md">
-                {counselor.profilePicture ? (
-                  <img
-                    src={counselor.profilePicture}
-                    alt={counselor.fullName}
-                    className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-950 dark:to-neutral-900">
-                    <User className="w-10 h-10 sm:w-12 sm:h-12 text-primary-600 dark:text-primary-400" />
-                  </div>
-                )}
+            {/* Top row on Mobile (Avatar + Name/Info beside it), or Left Avatar Column on sm+ */}
+            <div className="flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0 w-full sm:w-auto pb-3 sm:pb-0 border-b border-neutral-100 dark:border-neutral-800 sm:border-0">
+              {/* Profile Image & Verified Badge */}
+              <div className="relative flex-shrink-0 self-start sm:self-auto">
+                <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border-2 border-white dark:border-neutral-800 shadow-md">
+                  {counselor.profilePicture ? (
+                    <img
+                      src={counselor.profilePicture}
+                      alt={counselor.fullName}
+                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-950 dark:to-neutral-900">
+                      <User className="w-10 h-10 sm:w-12 sm:h-12 text-primary-600 dark:text-primary-400" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Verified Badge attached to bottom of image */}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-gradient-to-r from-primary-700 to-primary-600 text-white text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap z-10 border border-white dark:border-neutral-900">
+                  <Shield className="w-3 h-3" />
+                  <span>Verified</span>
+                </div>
               </div>
 
-              {/* Verified Badge attached to bottom of image */}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary-600 text-white text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap z-10 border border-white dark:border-neutral-900">
-                <Shield className="w-3 h-3" />
-                <span>Verified</span>
+              {/* Mobile-Only: Polished Header Card beside Profile Picture */}
+              <div className="flex-1 min-w-0 sm:hidden space-y-1.5 pl-0.5">
+                <div>
+                  <h3 className="text-base font-bold text-neutral-900 dark:text-white leading-tight truncate">
+                    {counselor.fullName}
+                  </h3>
+
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    {counselor.gender && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                        {counselor.gender}
+                      </span>
+                    )}
+
+                    {loggedInCounselor?._id === counselor._id && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-300">
+                        You
+                      </span>
+                    )}
+
+                    {counselor.rating && (
+                      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-full">
+                        <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-500" />
+                        <span className="text-[10px] font-bold text-amber-900 dark:text-amber-200">
+                          {counselor.rating.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 text-xs text-neutral-600 dark:text-neutral-400 pt-0.5">
+                  {counselor.experienceYears && (
+                    <div className="inline-flex items-center gap-1.5 font-medium text-neutral-700 dark:text-neutral-300 text-xs">
+                      <div className="w-5 h-5 rounded-md bg-primary-50 dark:bg-primary-950/60 border border-primary-100 dark:border-primary-900/50 flex items-center justify-center shrink-0">
+                        <Award className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+                      </div>
+                      <span>{counselor.experienceYears}+ yrs exp</span>
+                    </div>
+                  )}
+
+                  {counselor.application?.languages &&
+                    counselor.application.languages.length > 0 && (
+                      <div className="inline-flex items-center gap-1.5 font-medium text-xs">
+                        <div className="w-5 h-5 rounded-md bg-primary-50 dark:bg-primary-950/60 border border-primary-100 dark:border-primary-900/50 flex items-center justify-center shrink-0">
+                          <Languages className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+                        </div>
+                        <span className="truncate">
+                          {counselor.application.languages.slice(0, 3).join(', ')}
+                          {counselor.application.languages.length > 3
+                            ? ` +${counselor.application.languages.length - 3}`
+                            : ''}
+                        </span>
+                      </div>
+                    )}
+                </div>
               </div>
             </div>
 
             {/* Middle: Main Content */}
             <div className="flex-1 min-w-0 space-y-3 w-full">
-              {/* Name, Badges & Experience */}
-              <div>
+              {/* Tablet & Desktop Only: Name, Badges & Experience */}
+              <div className="hidden sm:block">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <h3 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white leading-tight">
                     {counselor.fullName}
@@ -617,8 +677,10 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
 
                 <div className="flex items-center gap-2.5 sm:gap-3 text-xs text-neutral-600 dark:text-neutral-400 flex-wrap">
                   {counselor.experienceYears && (
-                    <div className="flex items-center gap-1 font-medium text-neutral-700 dark:text-neutral-300">
-                      <Award className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                    <div className="flex items-center gap-1.5 font-medium text-neutral-700 dark:text-neutral-300">
+                      <div className="w-5 h-5 rounded-md bg-primary-50 dark:bg-primary-950/60 border border-primary-100 dark:border-primary-900/50 flex items-center justify-center shrink-0">
+                        <Award className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+                      </div>
                       <span>{counselor.experienceYears}+ yrs exp</span>
                     </div>
                   )}
@@ -627,8 +689,10 @@ const CounselorCardItem = React.memo(({ counselor, loggedInCounselor, bookCounse
                     counselor.application.languages.length > 0 && (
                       <>
                         <span className="text-neutral-300 dark:text-neutral-700">•</span>
-                        <div className="flex items-center gap-1 font-medium">
-                          <Languages className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <div className="w-5 h-5 rounded-md bg-primary-50 dark:bg-primary-950/60 border border-primary-100 dark:border-primary-900/50 flex items-center justify-center shrink-0">
+                            <Languages className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+                          </div>
                           <span>
                             {counselor.application.languages.slice(0, 3).join(', ')}
                             {counselor.application.languages.length > 3
@@ -972,13 +1036,13 @@ const BrowseCounselor = () => {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30s">
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-50 via-primary-100 to-primary-200/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/30">
         {/* Hero Section */}
         <motion.section
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
-          className="relative min-h-0 lg:min-h-[60vh] flex items-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
+          className="relative flex items-center overflow-hidden bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 dark:from-primary-900 dark:via-primary-800 dark:to-primary-700"
           aria-labelledby="hero-heading"
         >
           {/* MOBILE BACKGROUND IMAGE */}
@@ -1023,10 +1087,10 @@ const BrowseCounselor = () => {
             aria-hidden="true"
           />
 
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12 py-20 lg:py-28">
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 pt-24 sm:pt-28 lg:pt-28 pb-8 sm:pb-10 lg:pb-16">
             <div className="max-w-2xl lg:max-w-3xl mx-auto lg:mx-0">
               <motion.div
-                className="space-y-5 lg:space-y-7 text-center lg:text-left"
+                className="space-y-4 sm:space-y-5 lg:space-y-6 text-center lg:text-left"
                 variants={staggerContainer}
                 initial="initial"
                 animate="animate"
@@ -1034,16 +1098,16 @@ const BrowseCounselor = () => {
                 <motion.div variants={fadeInUp} className="flex justify-center lg:justify-start">
                   <Badge
                     variant="outline"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-white/10 backdrop-blur-md text-white border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-white/10 backdrop-blur-md text-white border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all"
                   >
                     <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Over 500 Certified Counselors</span>
+                    <span>Over 300+ Certified Counselors</span>
                   </Badge>
                 </motion.div>
 
                 <motion.h1
                   id="hero-heading"
-                  className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-lg"
+                  className="text-2xl sm:text-4xl md:text-5xl lg:text-5xl font-bold leading-[1.15] tracking-tight text-white drop-shadow-lg"
                   variants={fadeInUp}
                 >
                   Find Your Perfect Counselor
@@ -1069,7 +1133,7 @@ const BrowseCounselor = () => {
                         .getElementById('counselors-section')
                         ?.scrollIntoView({ behavior: 'smooth' })
                     }
-                    className="group relative overflow-hidden bg-white text-primary-900 hover:bg-primary-50 text-sm font-semibold rounded-xl px-7 py-5 shadow-2xl hover:shadow-white/20 transition-all duration-300 hover:scale-105"
+                    className="group relative overflow-hidden bg-white text-primary-900 hover:bg-primary-50 text-sm font-semibold rounded-xl px-6 py-4 shadow-2xl hover:shadow-white/20 transition-all duration-300 hover:scale-105"
                   >
                     <Search
                       className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform"
@@ -1082,7 +1146,7 @@ const BrowseCounselor = () => {
                       variant="secondary"
                       size="lg"
                       onClick={() => navigate('/login')}
-                      className="group bg-white/20 backdrop-blur-md text-white hover:bg-white/30 border border-white/30 hover:border-white/50 text-sm font-semibold rounded-xl px-7 py-5 shadow-xl transition-all duration-300 hover:scale-105"
+                      className="group bg-white/20 backdrop-blur-md text-white hover:bg-white/30 border border-white/30 hover:border-white/50 text-sm font-semibold rounded-xl px-6 py-4 shadow-xl transition-all duration-300 hover:scale-105"
                     >
                       <UserCircle
                         className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform"
@@ -1136,7 +1200,7 @@ const BrowseCounselor = () => {
         </motion.section>
 
         {/* Main Content */}
-        <main className="pt-16 relative min-h-0 lg:min-h-screen flex items-center justify-center overflow-hidden bg-transparent py-20 lg:py-28">
+        <main className="relative min-h-screen overflow-hidden bg-transparent pt-8 pb-20 sm:pt-10 sm:pb-24 lg:pt-12 lg:pb-28">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute top-20 left-12 w-72 h-72 bg-primary-400/10 dark:bg-primary-600/5 rounded-full blur-3xl animate-pulse" />
             <div
