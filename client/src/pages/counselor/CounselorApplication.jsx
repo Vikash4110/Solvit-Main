@@ -24,6 +24,8 @@ import {
   Plus,
   X,
   Globe,
+  ArrowLeft,
+  LogOut,
 } from 'lucide-react';
 import { DEFAULT_LANGUAGES } from '../../constants/constants';
 
@@ -93,16 +95,37 @@ const CounselorApplication = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const { submitApplication, counselor } = useCounselorAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { submitApplication, counselor, counselorLogout, counselorLoading } = useCounselorAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (counselor?.applicationStatus === 'approved') {
+    if (!counselor && !counselorLoading) {
+      navigate('/counselor/login', { replace: true });
+    } else if (counselor?.applicationStatus === 'approved') {
       navigate('/counselor/dashboard');
     } else if (counselor?.applicationStatus === 'pending') {
       navigate('/counselor/application-status');
     }
-  }, [counselor, navigate]);
+  }, [counselor, counselorLoading, navigate]);
+
+  const handleExitToLogin = async () => {
+    try {
+      setIsLoggingOut(true);
+      await counselorLogout();
+      toast.info('Logged out', {
+        description: 'You can log in anytime to finish and submit your application.',
+      });
+      navigate('/counselor/login', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      localStorage.removeItem('counselorAccessToken');
+      localStorage.removeItem('counselor');
+      navigate('/counselor/login', { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const handleInputChange = (e, section, subsection) => {
     const { name, value } = e.target;
@@ -411,6 +434,51 @@ const CounselorApplication = () => {
       className="min-h-screen  bg-gradient-to-br from-neutral-50 via-primary-50/30 to-neutral-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-800 mt-[80px] py-8 sm:py-12 px-3 sm:px-6 lg:px-8"
     >
       <div className="max-w-4xl mx-auto">
+        {/* Top Header Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-200/80 dark:border-neutral-800/80"
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleExitToLogin}
+            disabled={isLoggingOut}
+            className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer"
+          >
+            {isLoggingOut ? (
+              <Loader2 className="h-4 w-4 animate-spin text-primary-600" />
+            ) : (
+              <ArrowLeft className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+            )}
+            <span>Back to Login</span>
+          </Button>
+
+          {counselor && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 hidden sm:inline">
+                Signed in as{' '}
+                <strong className="text-neutral-700 dark:text-neutral-200 font-semibold">
+                  {counselor.fullName || counselor.email}
+                </strong>
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExitToLogin}
+                disabled={isLoggingOut}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg cursor-pointer transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Log Out</span>
+              </Button>
+            </div>
+          )}
+        </motion.div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -1106,6 +1174,16 @@ const CounselorApplication = () => {
             <p className="text-xs text-center text-neutral-500 dark:text-neutral-400 mt-3">
               By submitting, you agree to our terms of service and privacy policy
             </p>
+            <div className="text-center mt-3 pt-3 border-t border-neutral-200/60 dark:border-neutral-800/60">
+              <button
+                type="button"
+                onClick={handleExitToLogin}
+                disabled={isLoggingOut}
+                className="text-xs sm:text-sm text-neutral-500 hover:text-primary-700 dark:text-neutral-400 dark:hover:text-primary-300 underline font-medium cursor-pointer transition-colors"
+              >
+                Need to complete your application later? Exit and return to login
+              </button>
+            </div>
           </motion.div>
         </form>
       </div>
