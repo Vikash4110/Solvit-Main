@@ -94,6 +94,18 @@ const counselorSchema = new mongoose.Schema(
       languages: {
         type: [String],
         default: ['English', 'Hindi'],
+        set: (langs) => {
+          if (!langs) return ['English', 'Hindi'];
+          return Array.from(
+            new Set(
+              [langs]
+                .flat(Infinity)
+                .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+                .map((s) => s.trim())
+                .filter(Boolean)
+            )
+          );
+        },
       },
       license: {
         licenseNo: { type: String },

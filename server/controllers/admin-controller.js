@@ -1845,6 +1845,19 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
 
   // If approving, apply requested changes to Counselor profile depending on requestType
   if (status === 'approved') {
+    // Defensively normalize application languages if present
+    if (counselor.application?.languages) {
+      counselor.application.languages = Array.from(
+        new Set(
+          [counselor.application.languages]
+            .flat(Infinity)
+            .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+            .map((s) => s.trim())
+            .filter(Boolean)
+        )
+      );
+    }
+
     if (request.requestType === 'specialization_and_experience') {
       if (request.requestedSpecialization && request.requestedSpecialization.length > 0) {
         counselor.specialization = request.requestedSpecialization;
@@ -1902,7 +1915,7 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
       counselor.markModified('application');
     }
 
-    await counselor.save();
+    await counselor.save({ validateModifiedOnly: true });
   }
 
   // Update request record
