@@ -23,6 +23,7 @@
 * **Client Control Center & Support:** Comprehensive dashboard to view upcoming appointments, session histories, invoices, and direct public support inquiries without barriers.
 
 ### 👩‍⚕️ Counselor Workspace
+* **Streamlined Onboarding & Verification:** Intuitive practitioner registration with HTML5 drag-and-drop document uploading (Resume, Degree, Government ID, License), PDF payload validation, safe onboarding exit navigation, and resilient "Application Under Review" status persistence.
 * **Automated Schedule Management:** Recurring weekly availability rules and smart multi-slot generation to maximize booking efficiency.
 * **Session Workflow:** Live appointment tracking, attendance status verification, client session notes, and direct consultation entry.
 * **Financial Analytics:** Live revenue dashboards, transparent per-session earnings breakdown, and automated payout processing.
