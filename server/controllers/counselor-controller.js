@@ -543,16 +543,17 @@ const submitCounselorApplication = wrapper(async (req, res) => {
 
   console.log('Received application data for counselor:', req.verifiedCounselorId._id);
 
-  // Parse JSON fields with better error handling and fallbacks
+  // Parse JSON fields with robust error handling and type safety
   let parsedEducation, parsedLanguages, parsedBankDetails, parsedLicense;
 
   try {
-    parsedEducation = education
-      ? JSON.parse(education)
-      : {
-          graduation: { university: '', degree: '', year: '' },
-          postGraduation: { university: '', degree: '', year: '' },
-        };
+    parsedEducation =
+      typeof education === 'string'
+        ? JSON.parse(education)
+        : education || {
+            graduation: { university: '', degree: '', year: '' },
+            postGraduation: { university: '', degree: '', year: '' },
+          };
   } catch (error) {
     return res.status(400).json({
       success: false,
@@ -562,7 +563,27 @@ const submitCounselorApplication = wrapper(async (req, res) => {
   }
 
   try {
-    parsedLanguages = languages ? JSON.parse(languages) : [];
+    let rawParsed = [];
+    if (languages) {
+      if (typeof languages === 'string') {
+        try {
+          rawParsed = JSON.parse(languages);
+        } catch {
+          rawParsed = languages.split(',');
+        }
+      } else if (Array.isArray(languages)) {
+        rawParsed = languages;
+      }
+    }
+    parsedLanguages = Array.from(
+      new Set(
+        [rawParsed]
+          .flat(Infinity)
+          .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+          .map((s) => s.trim())
+          .filter(Boolean)
+      )
+    );
   } catch (error) {
     return res.status(400).json({
       success: false,
@@ -572,13 +593,14 @@ const submitCounselorApplication = wrapper(async (req, res) => {
   }
 
   try {
-    parsedBankDetails = bankDetails
-      ? JSON.parse(bankDetails)
-      : {
-          accountNo: '',
-          ifscCode: '',
-          branchName: '',
-        };
+    parsedBankDetails =
+      typeof bankDetails === 'string'
+        ? JSON.parse(bankDetails)
+        : bankDetails || {
+            accountNo: '',
+            ifscCode: '',
+            branchName: '',
+          };
   } catch (error) {
     return res.status(400).json({
       success: false,
@@ -588,12 +610,13 @@ const submitCounselorApplication = wrapper(async (req, res) => {
   }
 
   try {
-    parsedLicense = license
-      ? JSON.parse(license)
-      : {
-          licenseNo: '',
-          issuingAuthority: '',
-        };
+    parsedLicense =
+      typeof license === 'string'
+        ? JSON.parse(license)
+        : license || {
+            licenseNo: '',
+            issuingAuthority: '',
+          };
   } catch (error) {
     return res.status(400).json({
       success: false,
