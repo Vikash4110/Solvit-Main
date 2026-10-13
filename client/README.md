@@ -11,6 +11,8 @@ A modern React frontend for the Solvit mental health platform, built with React,
 - 🕒 **Flexible 5-Minute Slot Scheduling**: Granular slot creation and recurring availability management (5-min intervals, standard 50-min duration)
 - 📅 **12-Column Counselor Booking Dossier**: Symmetrical responsive booking interface with unified practitioner credentials and dynamic rating metrics
 - 🧭 **Optimized Counselor Catalog & Discovery**: Above-the-fold desktop search filters and side-by-side mobile practitioner cards with branded iconography
+- 📑 **Counselor Application Onboarding & Drag-and-Drop**: Interactive HTML5 drag-and-drop document upload (Resume, Degree, ID, License), payload size/MIME validation, and safe "Back to Login" session exit
+- 🔄 **Application Under Review State Persistence**: Automatic full-stack synchronization ensuring submitted counselor applications persist across page reloads without bouncing to empty forms
 - 📞 **Public Contact & Inquiries**: Frictionless, direct public access to Contact Us without requiring prior authentication
 - 👤 **User Profile Management**: Complete profile with editable information
 - 📱 **Responsive Design**: Mobile-first design with Tailwind CSS

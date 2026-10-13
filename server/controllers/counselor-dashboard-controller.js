@@ -53,6 +53,9 @@ export const getCounselorProfile = wrapper(async (req, res) => {
     );
   }
 
+  // Ensure applicationStatus is available at top-level for client parity
+  counselor.applicationStatus = counselor.application?.applicationStatus || 'not_submitted';
+
   logger.info(`Profile retrieved successfully for counselor: ${counselorId}`);
   return res
     .status(200)

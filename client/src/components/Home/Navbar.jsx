@@ -301,40 +301,61 @@ const Navbar = () => {
             </nav>
             {/* Right Side Actions (Desktop) */}
             <div className="hidden lg:flex items-center gap-3">
-              {counselor && !counselorLoading && (
-                <button
-                  onClick={() => {
-                    navigate('/counselor/dashboard');
-                  }}
-                  className="
-                      flex items-center gap-3 px-4 py-2 h-auto
-                      bg-white/80 dark:bg-neutral-800/80
-                      backdrop-blur-sm border border-primary-200 dark:border-primary-800
-                      rounded-full shadow-md
-                      hover:bg-white dark:hover:bg-neutral-800
-                      hover:shadow-xl hover:scale-105
-                      transition-all durationclient
-        "
-                  aria-label={`${counselor?.fullName} account menu`}
-                  aria-expanded={isOpen}
-                  aria-haspopup="true"
-                >
-                  <Avatar className="h-10 w-10 ring-2 ring-primary-200 dark:ring-primary-800">
-                    <AvatarImage src={counselor?.profilePicture} alt={counselor?.fullName} />
-                    <AvatarFallback className="bg-gradient-to-r from-primary-700 to-primary-600 text-white font-semibold">
-                      {counselor?.fullName?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden md:flex flex-col items-start">
-                    <span className="font-semibold text-sm text-neutral-800 dark:text-neutral-200">
-                      {counselor?.fullName}
-                    </span>
-                    <span className="text-xs text-neutral-600 dark:text-neutral-400">
-                      Open Dashboard
-                    </span>
-                  </div>
-                </button>
-              )}
+              {counselor && !counselorLoading && (() => {
+                const appStatus = counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
+                const isUnderReview = appStatus === 'pending';
+                const isRejected = appStatus === 'rejected';
+                const isNotSubmitted = appStatus === 'not_submitted';
+
+                const targetPath = (isUnderReview || isRejected)
+                  ? '/counselor/application-status'
+                  : isNotSubmitted
+                  ? '/counselor/application'
+                  : '/counselor/dashboard';
+
+                const subtitle = isUnderReview
+                  ? 'Application Under Review'
+                  : isRejected
+                  ? 'Application Status'
+                  : isNotSubmitted
+                  ? 'Complete Application'
+                  : 'Open Dashboard';
+
+                return (
+                  <button
+                    onClick={() => {
+                      navigate(targetPath);
+                    }}
+                    className="
+                        flex items-center gap-3 px-4 py-2 h-auto
+                        bg-white/80 dark:bg-neutral-800/80
+                        backdrop-blur-sm border border-primary-200 dark:border-primary-800
+                        rounded-full shadow-md
+                        hover:bg-white dark:hover:bg-neutral-800
+                        hover:shadow-xl hover:scale-105
+                        transition-all duration-300
+                    "
+                    aria-label={`${counselor?.fullName} account menu`}
+                    aria-expanded={isOpen}
+                    aria-haspopup="true"
+                  >
+                    <Avatar className="h-10 w-10 ring-2 ring-primary-200 dark:ring-primary-800">
+                      <AvatarImage src={counselor?.profilePicture} alt={counselor?.fullName} />
+                      <AvatarFallback className="bg-gradient-to-r from-primary-700 to-primary-600 text-white font-semibold">
+                        {counselor?.fullName?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden md:flex flex-col items-start">
+                      <span className="font-semibold text-sm text-neutral-800 dark:text-neutral-200">
+                        {counselor?.fullName}
+                      </span>
+                      <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                        {subtitle}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })()}
 
               {client && !clientLoading && (
                 <button
@@ -489,53 +510,76 @@ const Navbar = () => {
                         <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 px-3 pb-1">
                           Counselor Workspace
                         </p>
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            navigate('/counselor/dashboard');
-                            setIsOpen(false);
-                          }}
-                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
-                        >
-                          <LayoutDashboard className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                          <span>Dashboard & Profile</span>
-                        </Button>
+                        {(() => {
+                          const appStatus = counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
+                          if (appStatus !== 'approved') {
+                            const isReview = appStatus === 'pending' || appStatus === 'rejected';
+                            return (
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  navigate(isReview ? '/counselor/application-status' : '/counselor/application');
+                                  setIsOpen(false);
+                                }}
+                                className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                              >
+                                <LayoutDashboard className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                                <span>{isReview ? 'Application Status' : 'Complete Application'}</span>
+                              </Button>
+                            );
+                          }
+                          return (
+                            <>
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  navigate('/counselor/dashboard');
+                                  setIsOpen(false);
+                                }}
+                                className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                              >
+                                <LayoutDashboard className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                                <span>Dashboard & Profile</span>
+                              </Button>
 
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            navigate('/counselor/dashboard/my-sessions');
-                            setIsOpen(false);
-                          }}
-                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
-                        >
-                          <Calendar className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                          <span>My Sessions</span>
-                        </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  navigate('/counselor/dashboard/my-sessions');
+                                  setIsOpen(false);
+                                }}
+                                className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                              >
+                                <Calendar className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                                <span>My Sessions</span>
+                              </Button>
 
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            navigate('/counselor/dashboard/slots-manager');
-                            setIsOpen(false);
-                          }}
-                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
-                        >
-                          <Clock className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                          <span>Availability & Slots</span>
-                        </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  navigate('/counselor/dashboard/slots-manager');
+                                  setIsOpen(false);
+                                }}
+                                className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                              >
+                                <Clock className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                                <span>Availability & Slots</span>
+                              </Button>
 
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            navigate('/counselor/dashboard/blogs-manager');
-                            setIsOpen(false);
-                          }}
-                          className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
-                        >
-                          <BookOpen className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                          <span>Blogs Manager</span>
-                        </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  navigate('/counselor/dashboard/blogs-manager');
+                                  setIsOpen(false);
+                                }}
+                                className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
+                              >
+                                <BookOpen className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                                <span>Blogs Manager</span>
+                              </Button>
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
 

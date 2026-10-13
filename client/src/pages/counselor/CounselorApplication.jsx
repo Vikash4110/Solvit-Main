@@ -24,6 +24,8 @@ import {
   Plus,
   X,
   Globe,
+  ArrowLeft,
+  LogOut,
 } from 'lucide-react';
 import { DEFAULT_LANGUAGES } from '../../constants/constants';
 
@@ -49,6 +51,13 @@ const cardVariants = {
   initial: { opacity: 0, x: -20 },
   animate: { opacity: 1, x: 0 },
 };
+
+const DOCUMENT_FIELDS = [
+  { id: 'resume', label: 'Resume (PDF) *' },
+  { id: 'degreeCertificate', label: 'Degree Certificate (PDF) *' },
+  { id: 'governmentId', label: 'Government ID (PDF) *' },
+  { id: 'licenseCertificate', label: 'License Certificate (PDF) *' },
+];
 
 const CounselorApplication = () => {
   const [formData, setFormData] = useState({
@@ -86,16 +95,41 @@ const CounselorApplication = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const { submitApplication, counselor } = useCounselorAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { submitApplication, counselor, counselorLogout, counselorLoading } = useCounselorAuth();
   const navigate = useNavigate();
 
+  const applicationStatus = counselor?.applicationStatus || counselor?.application?.applicationStatus;
+
   useEffect(() => {
-    if (counselor?.applicationStatus === 'approved') {
-      navigate('/counselor/dashboard');
-    } else if (counselor?.applicationStatus === 'pending') {
-      navigate('/counselor/application-status');
+    if (counselorLoading) return;
+
+    if (!counselor) {
+      navigate('/counselor/login', { replace: true });
+    } else if (applicationStatus === 'approved') {
+      navigate('/counselor/dashboard', { replace: true });
+    } else if (applicationStatus === 'pending' || applicationStatus === 'rejected') {
+      navigate('/counselor/application-status', { replace: true });
     }
-  }, [counselor, navigate]);
+  }, [counselor, applicationStatus, counselorLoading, navigate]);
+
+  const handleExitToLogin = async () => {
+    try {
+      setIsLoggingOut(true);
+      await counselorLogout();
+      toast.info('Logged out', {
+        description: 'You can log in anytime to finish and submit your application.',
+      });
+      navigate('/counselor/login', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      localStorage.removeItem('counselorAccessToken');
+      localStorage.removeItem('counselor');
+      navigate('/counselor/login', { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const handleInputChange = (e, section, subsection) => {
     const { name, value } = e.target;
@@ -124,13 +158,105 @@ const CounselorApplication = () => {
     }
   };
 
+  const [dragActiveField, setDragActiveField] = useState(null);
+
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
+  const processFileSelection = (file, fieldName) => {
+    if (!file) return;
+
+    // Validate PDF format
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      toast.error('Invalid file type', {
+        description: 'Please upload a PDF document only (.pdf)',
+      });
+      return;
+    }
+
+    // Validate non-empty file
+    if (file.size === 0) {
+      toast.error('Invalid file', {
+        description: 'The selected file is empty (0 bytes).',
+      });
+      return;
+    }
+
+    // Maximum 5MB limit (matches backend server Multer limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File too large', {
+        description: 'Maximum document file size allowed is 5MB',
+      });
+      return;
+    }
+
+    setFiles((prev) => ({
+      ...prev,
+      [fieldName]: file,
+    }));
+    toast.success(`${file.name} selected successfully!`);
+  };
+
   const handleFileChange = (e) => {
     const { name, files: selectedFiles } = e.target;
     if (selectedFiles && selectedFiles[0]) {
-      setFiles((prev) => ({
-        ...prev,
-        [name]: selectedFiles[0],
-      }));
+      processFileSelection(selectedFiles[0], name);
+    }
+  };
+
+  const handleDragEnter = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveField(fieldName);
+  };
+
+  const handleDragOver = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    if (dragActiveField !== fieldName) {
+      setDragActiveField(fieldName);
+    }
+  };
+
+  const handleDragLeave = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragActiveField((current) => (current === fieldName ? null : current));
+    }
+  };
+
+  const handleDrop = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveField(null);
+
+    const droppedFiles = e.dataTransfer?.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      processFileSelection(droppedFiles[0], fieldName);
+    }
+  };
+
+  const handleRemoveFile = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFiles((prev) => ({
+      ...prev,
+      [fieldName]: null,
+    }));
+    const inputEl = document.getElementById(fieldName);
+    if (inputEl) {
+      inputEl.value = '';
     }
   };
 
@@ -286,8 +412,8 @@ const CounselorApplication = () => {
 
   const progressPercentage = calculateProgress();
 
-  // Loading state for checking application status
-  if (counselor?.applicationStatus === 'pending' || counselor?.applicationStatus === 'approved') {
+  // Loading state for checking authentication & application status
+  if (counselorLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-primary-50 dark:from-neutral-900 dark:to-neutral-800">
         <motion.div
@@ -296,7 +422,23 @@ const CounselorApplication = () => {
           className="flex flex-col items-center gap-4"
         >
           <Loader2 className="h-12 w-12 animate-spin text-primary-700 dark:text-primary-400" />
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading application...</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading your profile...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // If application is already submitted (pending) or approved or rejected, redirect away from form
+  if (applicationStatus === 'pending' || applicationStatus === 'approved' || applicationStatus === 'rejected') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-primary-50 dark:from-neutral-900 dark:to-neutral-800">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <Loader2 className="h-12 w-12 animate-spin text-primary-700 dark:text-primary-400" />
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Redirecting to application status...</p>
         </motion.div>
       </div>
     );
@@ -312,6 +454,51 @@ const CounselorApplication = () => {
       className="min-h-screen  bg-gradient-to-br from-neutral-50 via-primary-50/30 to-neutral-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-800 mt-[80px] py-8 sm:py-12 px-3 sm:px-6 lg:px-8"
     >
       <div className="max-w-4xl mx-auto">
+        {/* Top Header Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-200/80 dark:border-neutral-800/80"
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleExitToLogin}
+            disabled={isLoggingOut}
+            className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer"
+          >
+            {isLoggingOut ? (
+              <Loader2 className="h-4 w-4 animate-spin text-primary-600" />
+            ) : (
+              <ArrowLeft className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+            )}
+            <span>Back to Login</span>
+          </Button>
+
+          {counselor && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 hidden sm:inline">
+                Signed in as{' '}
+                <strong className="text-neutral-700 dark:text-neutral-200 font-semibold">
+                  {counselor.fullName || counselor.email}
+                </strong>
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExitToLogin}
+                disabled={isLoggingOut}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg cursor-pointer transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Log Out</span>
+              </Button>
+            </div>
+          )}
+        </motion.div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -866,178 +1053,110 @@ const CounselorApplication = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Resume */}
-                  <div className="space-y-2">
-                    <Label htmlFor="resume" className="text-xs sm:text-sm font-medium">
-                      Resume (PDF) *
-                    </Label>
-                    <div className="relative">
-                      <input
-                        id="resume"
-                        name="resume"
-                        type="file"
-                        required
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor="resume"
-                        className="flex items-center justify-center w-full h-24 sm:h-28 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-neutral-400" />
-                          <div className="text-xs sm:text-sm">
-                            {files.resume ? (
-                              <span className="font-medium text-primary-700 dark:text-primary-400">
-                                {files.resume.name}
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-medium text-neutral-900 dark:text-white">
-                                  Click to upload
-                                </span>
-                                <span className="text-neutral-500 dark:text-neutral-400">
-                                  {' '}
-                                  or drag and drop
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  </div>
+                  {DOCUMENT_FIELDS.map((doc) => {
+                    const currentFile = files[doc.id];
+                    const isDragging = dragActiveField === doc.id;
 
-                  {/* Degree Certificate */}
-                  <div className="space-y-2">
-                    <Label htmlFor="degreeCertificate" className="text-xs sm:text-sm font-medium">
-                      Degree Certificate (PDF) *
-                    </Label>
-                    <div className="relative">
-                      <input
-                        id="degreeCertificate"
-                        name="degreeCertificate"
-                        type="file"
-                        required
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor="degreeCertificate"
-                        className="flex items-center justify-center w-full h-24 sm:h-28 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-neutral-400" />
-                          <div className="text-xs sm:text-sm">
-                            {files.degreeCertificate ? (
-                              <span className="font-medium text-primary-700 dark:text-primary-400">
-                                {files.degreeCertificate.name}
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-medium text-neutral-900 dark:text-white">
-                                  Click to upload
-                                </span>
-                                <span className="text-neutral-500 dark:text-neutral-400">
-                                  {' '}
-                                  or drag and drop
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  </div>
+                    return (
+                      <div key={doc.id} className="space-y-2">
+                        <Label htmlFor={doc.id} className="text-xs sm:text-sm font-medium">
+                          {doc.label}
+                        </Label>
+                        <div
+                          onDragEnter={(e) => handleDragEnter(e, doc.id)}
+                          onDragOver={(e) => handleDragOver(e, doc.id)}
+                          onDragLeave={(e) => handleDragLeave(e, doc.id)}
+                          onDrop={(e) => handleDrop(e, doc.id)}
+                          className={`relative rounded-lg border-2 border-dashed transition-all duration-200 focus-within:ring-2 focus-within:ring-primary-500/40 focus-within:ring-offset-1 ${
+                            isDragging
+                              ? 'border-primary-600 bg-primary-100/70 dark:bg-primary-950/40 ring-2 ring-primary-500/30 scale-[1.01]'
+                              : currentFile
+                              ? 'border-emerald-400 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20'
+                              : 'border-neutral-300 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50/50 dark:hover:bg-primary-900/10'
+                          }`}
+                        >
+                          <input
+                            id={doc.id}
+                            name={doc.id}
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            onChange={handleFileChange}
+                            className="sr-only"
+                          />
 
-                  {/* Government ID */}
-                  <div className="space-y-2">
-                    <Label htmlFor="governmentId" className="text-xs sm:text-sm font-medium">
-                      Government ID (PDF) *
-                    </Label>
-                    <div className="relative">
-                      <input
-                        id="governmentId"
-                        name="governmentId"
-                        type="file"
-                        required
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor="governmentId"
-                        className="flex items-center justify-center w-full h-24 sm:h-28 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-neutral-400" />
-                          <div className="text-xs sm:text-sm">
-                            {files.governmentId ? (
-                              <span className="font-medium text-primary-700 dark:text-primary-400">
-                                {files.governmentId.name}
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-medium text-neutral-900 dark:text-white">
-                                  Click to upload
+                          {currentFile ? (
+                            <div className="flex items-center justify-between p-3 sm:p-4 gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 shrink-0">
+                                  <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-white truncate">
+                                    {currentFile.name}
+                                  </p>
+                                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                    {formatFileSize(currentFile.size)} • PDF
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Label
+                                  htmlFor={doc.id}
+                                  className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline cursor-pointer px-2 py-1"
+                                >
+                                  Change
+                                </Label>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleRemoveFile(e, doc.id)}
+                                  className="p-1 rounded-full text-neutral-400 hover:text-red-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                                  title="Remove file"
+                                  aria-label={`Remove ${doc.label}`}
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <Label
+                              htmlFor={doc.id}
+                              className="flex items-center justify-center w-full h-24 sm:h-28 px-4 cursor-pointer"
+                            >
+                              <div className="flex flex-col items-center justify-center gap-2 text-center pointer-events-none">
+                                <Upload
+                                  className={`h-6 w-6 sm:h-8 sm:w-8 transition-colors ${
+                                    isDragging
+                                      ? 'text-primary-600 dark:text-primary-400 animate-bounce'
+                                      : 'text-neutral-400'
+                                  }`}
+                                />
+                                <div className="text-xs sm:text-sm">
+                                  {isDragging ? (
+                                    <span className="font-semibold text-primary-700 dark:text-primary-400">
+                                      Drop PDF file here
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <span className="font-medium text-neutral-900 dark:text-white">
+                                        Click to upload
+                                      </span>
+                                      <span className="text-neutral-500 dark:text-neutral-400">
+                                        {' '}
+                                        or drag and drop
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                                <span className="text-[10px] sm:text-xs text-neutral-400">
+                                  PDF only (max 5MB)
                                 </span>
-                                <span className="text-neutral-500 dark:text-neutral-400">
-                                  {' '}
-                                  or drag and drop
-                                </span>
-                              </>
-                            )}
-                          </div>
+                              </div>
+                            </Label>
+                          )}
                         </div>
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* License Certificate  */}
-                  <div className="space-y-2">
-                    <Label htmlFor="licenseCertificate" className="text-xs sm:text-sm font-medium">
-                      License Certificate (PDF) *
-                      
-                    </Label>
-                    <div className="relative">
-                      <input
-                        id="licenseCertificate"
-                        name="licenseCertificate"
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        required
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor="licenseCertificate"
-                        className="flex items-center justify-center w-full h-24 sm:h-28 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:border-neutral-400 dark:hover:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-neutral-400" />
-                          <div className="text-xs sm:text-sm">
-                            {files.licenseCertificate ? (
-                              <span className="font-medium text-primary-700 dark:text-primary-400">
-                                {files.licenseCertificate.name}
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-medium text-neutral-900 dark:text-white">
-                                  Click to upload
-                                </span>
-                                <span className="text-neutral-500 dark:text-neutral-400">
-                                  {' '}
-                                  or drag and drop
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -1075,6 +1194,16 @@ const CounselorApplication = () => {
             <p className="text-xs text-center text-neutral-500 dark:text-neutral-400 mt-3">
               By submitting, you agree to our terms of service and privacy policy
             </p>
+            <div className="text-center mt-3 pt-3 border-t border-neutral-200/60 dark:border-neutral-800/60">
+              <button
+                type="button"
+                onClick={handleExitToLogin}
+                disabled={isLoggingOut}
+                className="text-xs sm:text-sm text-neutral-500 hover:text-primary-700 dark:text-neutral-400 dark:hover:text-primary-300 underline font-medium cursor-pointer transition-colors"
+              >
+                Need to complete your application later? Exit and return to login
+              </button>
+            </div>
           </motion.div>
         </form>
       </div>
