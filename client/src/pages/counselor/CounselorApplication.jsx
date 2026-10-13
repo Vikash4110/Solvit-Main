@@ -50,6 +50,13 @@ const cardVariants = {
   animate: { opacity: 1, x: 0 },
 };
 
+const DOCUMENT_FIELDS = [
+  { id: 'resume', label: 'Resume (PDF) *' },
+  { id: 'degreeCertificate', label: 'Degree Certificate (PDF) *' },
+  { id: 'governmentId', label: 'Government ID (PDF) *' },
+  { id: 'licenseCertificate', label: 'License Certificate (PDF) *' },
+];
+
 const CounselorApplication = () => {
   const [formData, setFormData] = useState({
     education: {
@@ -124,13 +131,105 @@ const CounselorApplication = () => {
     }
   };
 
+  const [dragActiveField, setDragActiveField] = useState(null);
+
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
+  const processFileSelection = (file, fieldName) => {
+    if (!file) return;
+
+    // Validate PDF format
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      toast.error('Invalid file type', {
+        description: 'Please upload a PDF document only (.pdf)',
+      });
+      return;
+    }
+
+    // Validate non-empty file
+    if (file.size === 0) {
+      toast.error('Invalid file', {
+        description: 'The selected file is empty (0 bytes).',
+      });
+      return;
+    }
+
+    // Maximum 5MB limit (matches backend server Multer limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File too large', {
+        description: 'Maximum document file size allowed is 5MB',
+      });
+      return;
+    }
+
+    setFiles((prev) => ({
+      ...prev,
+      [fieldName]: file,
+    }));
+    toast.success(`${file.name} selected successfully!`);
+  };
+
   const handleFileChange = (e) => {
     const { name, files: selectedFiles } = e.target;
     if (selectedFiles && selectedFiles[0]) {
-      setFiles((prev) => ({
-        ...prev,
-        [name]: selectedFiles[0],
-      }));
+      processFileSelection(selectedFiles[0], name);
+    }
+  };
+
+  const handleDragEnter = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveField(fieldName);
+  };
+
+  const handleDragOver = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    if (dragActiveField !== fieldName) {
+      setDragActiveField(fieldName);
+    }
+  };
+
+  const handleDragLeave = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragActiveField((current) => (current === fieldName ? null : current));
+    }
+  };
+
+  const handleDrop = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveField(null);
+
+    const droppedFiles = e.dataTransfer?.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      processFileSelection(droppedFiles[0], fieldName);
+    }
+  };
+
+  const handleRemoveFile = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFiles((prev) => ({
+      ...prev,
+      [fieldName]: null,
+    }));
+    const inputEl = document.getElementById(fieldName);
+    if (inputEl) {
+      inputEl.value = '';
     }
   };
 
@@ -866,178 +965,110 @@ const CounselorApplication = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Resume */}
-                  <div className="space-y-2">
-                    <Label htmlFor="resume" className="text-xs sm:text-sm font-medium">
-                      Resume (PDF) *
-                    </Label>
-                    <div className="relative">
-                      <input
-                        id="resume"
-                        name="resume"
-                        type="file"
-                        required
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor="resume"
-                        className="flex items-center justify-center w-full h-24 sm:h-28 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-neutral-400" />
-                          <div className="text-xs sm:text-sm">
-                            {files.resume ? (
-                              <span className="font-medium text-primary-700 dark:text-primary-400">
-                                {files.resume.name}
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-medium text-neutral-900 dark:text-white">
-                                  Click to upload
-                                </span>
-                                <span className="text-neutral-500 dark:text-neutral-400">
-                                  {' '}
-                                  or drag and drop
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  </div>
+                  {DOCUMENT_FIELDS.map((doc) => {
+                    const currentFile = files[doc.id];
+                    const isDragging = dragActiveField === doc.id;
 
-                  {/* Degree Certificate */}
-                  <div className="space-y-2">
-                    <Label htmlFor="degreeCertificate" className="text-xs sm:text-sm font-medium">
-                      Degree Certificate (PDF) *
-                    </Label>
-                    <div className="relative">
-                      <input
-                        id="degreeCertificate"
-                        name="degreeCertificate"
-                        type="file"
-                        required
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor="degreeCertificate"
-                        className="flex items-center justify-center w-full h-24 sm:h-28 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-neutral-400" />
-                          <div className="text-xs sm:text-sm">
-                            {files.degreeCertificate ? (
-                              <span className="font-medium text-primary-700 dark:text-primary-400">
-                                {files.degreeCertificate.name}
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-medium text-neutral-900 dark:text-white">
-                                  Click to upload
-                                </span>
-                                <span className="text-neutral-500 dark:text-neutral-400">
-                                  {' '}
-                                  or drag and drop
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  </div>
+                    return (
+                      <div key={doc.id} className="space-y-2">
+                        <Label htmlFor={doc.id} className="text-xs sm:text-sm font-medium">
+                          {doc.label}
+                        </Label>
+                        <div
+                          onDragEnter={(e) => handleDragEnter(e, doc.id)}
+                          onDragOver={(e) => handleDragOver(e, doc.id)}
+                          onDragLeave={(e) => handleDragLeave(e, doc.id)}
+                          onDrop={(e) => handleDrop(e, doc.id)}
+                          className={`relative rounded-lg border-2 border-dashed transition-all duration-200 focus-within:ring-2 focus-within:ring-primary-500/40 focus-within:ring-offset-1 ${
+                            isDragging
+                              ? 'border-primary-600 bg-primary-100/70 dark:bg-primary-950/40 ring-2 ring-primary-500/30 scale-[1.01]'
+                              : currentFile
+                              ? 'border-emerald-400 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20'
+                              : 'border-neutral-300 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50/50 dark:hover:bg-primary-900/10'
+                          }`}
+                        >
+                          <input
+                            id={doc.id}
+                            name={doc.id}
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            onChange={handleFileChange}
+                            className="sr-only"
+                          />
 
-                  {/* Government ID */}
-                  <div className="space-y-2">
-                    <Label htmlFor="governmentId" className="text-xs sm:text-sm font-medium">
-                      Government ID (PDF) *
-                    </Label>
-                    <div className="relative">
-                      <input
-                        id="governmentId"
-                        name="governmentId"
-                        type="file"
-                        required
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor="governmentId"
-                        className="flex items-center justify-center w-full h-24 sm:h-28 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-neutral-400" />
-                          <div className="text-xs sm:text-sm">
-                            {files.governmentId ? (
-                              <span className="font-medium text-primary-700 dark:text-primary-400">
-                                {files.governmentId.name}
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-medium text-neutral-900 dark:text-white">
-                                  Click to upload
+                          {currentFile ? (
+                            <div className="flex items-center justify-between p-3 sm:p-4 gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 shrink-0">
+                                  <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-white truncate">
+                                    {currentFile.name}
+                                  </p>
+                                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                    {formatFileSize(currentFile.size)} • PDF
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Label
+                                  htmlFor={doc.id}
+                                  className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline cursor-pointer px-2 py-1"
+                                >
+                                  Change
+                                </Label>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleRemoveFile(e, doc.id)}
+                                  className="p-1 rounded-full text-neutral-400 hover:text-red-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                                  title="Remove file"
+                                  aria-label={`Remove ${doc.label}`}
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <Label
+                              htmlFor={doc.id}
+                              className="flex items-center justify-center w-full h-24 sm:h-28 px-4 cursor-pointer"
+                            >
+                              <div className="flex flex-col items-center justify-center gap-2 text-center pointer-events-none">
+                                <Upload
+                                  className={`h-6 w-6 sm:h-8 sm:w-8 transition-colors ${
+                                    isDragging
+                                      ? 'text-primary-600 dark:text-primary-400 animate-bounce'
+                                      : 'text-neutral-400'
+                                  }`}
+                                />
+                                <div className="text-xs sm:text-sm">
+                                  {isDragging ? (
+                                    <span className="font-semibold text-primary-700 dark:text-primary-400">
+                                      Drop PDF file here
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <span className="font-medium text-neutral-900 dark:text-white">
+                                        Click to upload
+                                      </span>
+                                      <span className="text-neutral-500 dark:text-neutral-400">
+                                        {' '}
+                                        or drag and drop
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                                <span className="text-[10px] sm:text-xs text-neutral-400">
+                                  PDF only (max 5MB)
                                 </span>
-                                <span className="text-neutral-500 dark:text-neutral-400">
-                                  {' '}
-                                  or drag and drop
-                                </span>
-                              </>
-                            )}
-                          </div>
+                              </div>
+                            </Label>
+                          )}
                         </div>
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* License Certificate  */}
-                  <div className="space-y-2">
-                    <Label htmlFor="licenseCertificate" className="text-xs sm:text-sm font-medium">
-                      License Certificate (PDF) *
-                      
-                    </Label>
-                    <div className="relative">
-                      <input
-                        id="licenseCertificate"
-                        name="licenseCertificate"
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileChange}
-                        required
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor="licenseCertificate"
-                        className="flex items-center justify-center w-full h-24 sm:h-28 px-4 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:border-neutral-400 dark:hover:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-neutral-400" />
-                          <div className="text-xs sm:text-sm">
-                            {files.licenseCertificate ? (
-                              <span className="font-medium text-primary-700 dark:text-primary-400">
-                                {files.licenseCertificate.name}
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-medium text-neutral-900 dark:text-white">
-                                  Click to upload
-                                </span>
-                                <span className="text-neutral-500 dark:text-neutral-400">
-                                  {' '}
-                                  or drag and drop
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
