@@ -50,25 +50,30 @@ const iconVariants = {
 };
 
 const ApplicationStatus = () => {
-  const { counselor , counselorLogout } = useCounselorAuth();
+  const { counselor, counselorLogout, counselorLoading } = useCounselorAuth();
   const navigate = useNavigate();
 
+  const applicationStatus = counselor?.applicationStatus || counselor?.application?.applicationStatus;
+
   useEffect(() => {
+    if (counselorLoading) return;
+
     // Redirect based on application status
     if (!counselor) {
-      navigate('/counselor/login');
-    } else if (counselor.applicationStatus === 'approved') {
-      navigate('/counselor/dashboard');
-    } else if (!counselor.applicationStatus || counselor.applicationStatus === 'not_submitted') {
-      navigate('/counselor/application');
+      navigate('/counselor/login', { replace: true });
+    } else if (applicationStatus === 'approved') {
+      navigate('/counselor/dashboard', { replace: true });
+    } else if (!applicationStatus || applicationStatus === 'not_submitted') {
+      navigate('/counselor/application', { replace: true });
     }
     // Stay on this page if status is 'pending' or 'rejected'
-  }, [counselor, navigate]);
+  }, [counselor, applicationStatus, counselorLoading, navigate]);
 
   if (
+    counselorLoading ||
     !counselor ||
-    counselor.applicationStatus === 'approved' ||
-    counselor.applicationStatus === 'not_submitted'
+    applicationStatus === 'approved' ||
+    applicationStatus === 'not_submitted'
   ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-primary-50 dark:from-neutral-900 dark:to-neutral-800">
@@ -78,11 +83,12 @@ const ApplicationStatus = () => {
           className="flex flex-col items-center gap-4"
         >
           <Loader2 className="h-12 w-12 animate-spin text-primary-700 dark:text-primary-400" />
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Redirecting...</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading status...</p>
         </motion.div>
       </div>
     );
   }
+
   const handleLogout = async () => {
     try {
       await counselorLogout();
@@ -92,7 +98,7 @@ const ApplicationStatus = () => {
   };
 
   const getStatusContent = () => {
-    switch (counselor.applicationStatus) {
+    switch (applicationStatus) {
       case 'pending':
         return {
           title: 'Application Under Review',
@@ -226,7 +232,7 @@ const ApplicationStatus = () => {
                   Logout
                 </Button>
 
-                {counselor.applicationStatus === 'rejected' && (
+                {applicationStatus === 'rejected' && (
                   <Button
                     onClick={() => (window.location.href = 'mailto:support@solvitcounselling.com')}
                     variant="outline"
@@ -265,7 +271,7 @@ const ApplicationStatus = () => {
         </motion.div>
 
         {/* Timeline for pending status */}
-        {counselor.applicationStatus === 'pending' && (
+        {applicationStatus === 'pending' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

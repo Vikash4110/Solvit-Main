@@ -433,6 +433,9 @@ const registerCounselor = wrapper(async (req, res) => {
       });
     }
 
+    const counselorData = counselorCreated.toObject();
+    counselorData.applicationStatus = counselorData.application?.applicationStatus || 'not_submitted';
+
     const accessToken = await newCounselor.generateAccessToken();
     const options = {
       httpOnly: true,
@@ -448,7 +451,7 @@ const registerCounselor = wrapper(async (req, res) => {
         success: true,
         message: 'Counselor registered successfully! Please complete your application.',
         data: {
-          loggedInCounselor: counselorCreated,
+          loggedInCounselor: counselorData,
           accessToken,
         },
       });
@@ -507,7 +510,7 @@ const loginCounselor = wrapper(async (req, res) => {
     }).select('_id fullName username email specialization application profilePicture');
 
     const counselorData = loggedInCounselor.toObject();
-    counselorData.applicationStatus = loggedInCounselor.application?.applicationStatus;
+    counselorData.applicationStatus = loggedInCounselor.application?.applicationStatus || 'not_submitted';
     // 🧠 Fire-and-forget lastLogin update safely
     Counselor.updateOne(
       { _id: loggedInCounselor._id },

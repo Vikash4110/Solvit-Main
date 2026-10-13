@@ -13,8 +13,31 @@ export const useCounselorAuth = () => {
   return context;
 };
 
+const normalizeCounselor = (data) => {
+  if (!data) return null;
+  const status = data.applicationStatus || data.application?.applicationStatus || 'not_submitted';
+  return {
+    ...data,
+    applicationStatus: status,
+    application: {
+      ...(data.application || {}),
+      applicationStatus: status,
+    },
+  };
+};
+
 export const CounselorAuthProvider = ({ children }) => {
-  const [counselor, setCounselor] = useState(null);
+  const [counselor, setCounselor] = useState(() => {
+    try {
+      const stored = localStorage.getItem('counselor');
+      if (stored) {
+        return normalizeCounselor(JSON.parse(stored));
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  });
   const [counselorLoading, setCounselorLoading] = useState(true);
 
   useEffect(() => {
@@ -26,7 +49,7 @@ export const CounselorAuthProvider = ({ children }) => {
         try {
           // Verify token is still valid
           const response = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_GET);
-          const counselorData = response.data.data;
+          const counselorData = normalizeCounselor(response.data.data);
           setCounselor(counselorData);
           localStorage.setItem('counselor', JSON.stringify(counselorData));
         } catch (error) {
@@ -51,11 +74,12 @@ export const CounselorAuthProvider = ({ children }) => {
       });
 
       const { loggedInCounselor, accessToken } = response.data.data;
+      const normalizedCounselor = normalizeCounselor(loggedInCounselor);
       localStorage.setItem('counselorAccessToken', accessToken);
-      localStorage.setItem('counselor', JSON.stringify(loggedInCounselor));
-      setCounselor(loggedInCounselor);
+      localStorage.setItem('counselor', JSON.stringify(normalizedCounselor));
+      setCounselor(normalizedCounselor);
 
-      return { success: true, data: loggedInCounselor };
+      return { success: true, data: normalizedCounselor };
     } catch (error) {
       const message = getErrorMessage(error, 'Login failed. Please try again.');
       return { success: false, error: message };
@@ -78,11 +102,12 @@ export const CounselorAuthProvider = ({ children }) => {
       });
 
       const { accessToken, loggedInCounselor } = response.data.data;
+      const normalizedCounselor = normalizeCounselor(loggedInCounselor);
       localStorage.setItem('counselorAccessToken', accessToken);
-      localStorage.setItem('counselor', JSON.stringify(loggedInCounselor));
-      setCounselor(loggedInCounselor);
+      localStorage.setItem('counselor', JSON.stringify(normalizedCounselor));
+      setCounselor(normalizedCounselor);
 
-      return { success: true, data: loggedInCounselor };
+      return { success: true, data: normalizedCounselor };
     } catch (error) {
       const message = getErrorMessage(error, 'Registration failed.');
       return { success: false, error: message };

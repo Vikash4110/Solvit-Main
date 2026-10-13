@@ -16,37 +16,16 @@ const CounselorProtectedRoute = ({ children }) => {
     return <Navigate to="/counselor/login" replace />;
   }
 
+  const applicationStatus = counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
+
   // If application is not submitted, redirect to application
-  if (!counselor.application.applicationStatus || counselor.application.applicationStatus === 'not_submitted') {
+  if (applicationStatus === 'not_submitted') {
     return <Navigate to="/counselor/application" replace />;
   }
 
-  // If application is pending, redirect to status page
-  if (counselor.application.applicationStatus === 'pending') {
+  // If application is pending or rejected, redirect to status page
+  if (applicationStatus === 'pending' || applicationStatus === 'rejected') {
     return <Navigate to="/counselor/application-status" replace />;
-  }
-
-  // If application is rejected, show rejection message
-  if (counselor.application.applicationStatus === 'rejected') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-red-800 mb-4">Application Rejected</h2>
-            <p className="text-red-600 mb-4">
-              We're sorry, but your application has been rejected. Please contact support for more
-              information.
-            </p>
-            <button
-              onClick={() => (window.location.href = '/contact')}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-            >
-              Contact Support
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   // Only allow access if application is approved

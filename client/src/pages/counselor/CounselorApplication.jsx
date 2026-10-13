@@ -99,15 +99,19 @@ const CounselorApplication = () => {
   const { submitApplication, counselor, counselorLogout, counselorLoading } = useCounselorAuth();
   const navigate = useNavigate();
 
+  const applicationStatus = counselor?.applicationStatus || counselor?.application?.applicationStatus;
+
   useEffect(() => {
-    if (!counselor && !counselorLoading) {
+    if (counselorLoading) return;
+
+    if (!counselor) {
       navigate('/counselor/login', { replace: true });
-    } else if (counselor?.applicationStatus === 'approved') {
-      navigate('/counselor/dashboard');
-    } else if (counselor?.applicationStatus === 'pending') {
-      navigate('/counselor/application-status');
+    } else if (applicationStatus === 'approved') {
+      navigate('/counselor/dashboard', { replace: true });
+    } else if (applicationStatus === 'pending' || applicationStatus === 'rejected') {
+      navigate('/counselor/application-status', { replace: true });
     }
-  }, [counselor, counselorLoading, navigate]);
+  }, [counselor, applicationStatus, counselorLoading, navigate]);
 
   const handleExitToLogin = async () => {
     try {
@@ -408,8 +412,8 @@ const CounselorApplication = () => {
 
   const progressPercentage = calculateProgress();
 
-  // Loading state for checking application status
-  if (counselor?.applicationStatus === 'pending' || counselor?.applicationStatus === 'approved') {
+  // Loading state for checking authentication & application status
+  if (counselorLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-primary-50 dark:from-neutral-900 dark:to-neutral-800">
         <motion.div
@@ -418,7 +422,23 @@ const CounselorApplication = () => {
           className="flex flex-col items-center gap-4"
         >
           <Loader2 className="h-12 w-12 animate-spin text-primary-700 dark:text-primary-400" />
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading application...</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading your profile...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // If application is already submitted (pending) or approved or rejected, redirect away from form
+  if (applicationStatus === 'pending' || applicationStatus === 'approved' || applicationStatus === 'rejected') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-primary-50 dark:from-neutral-900 dark:to-neutral-800">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <Loader2 className="h-12 w-12 animate-spin text-primary-700 dark:text-primary-400" />
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Redirecting to application status...</p>
         </motion.div>
       </div>
     );
