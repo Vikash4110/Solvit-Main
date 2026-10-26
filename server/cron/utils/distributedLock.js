@@ -9,10 +9,10 @@ import { logger } from '../../utils/logger.js';
 import cronConfig from '../../config/cronConfig.js';
 
 const lockSchema = new mongoose.Schema({
-  lockKey: { type: String, required: true, unique: true, index: true },
+  lockKey: { type: String, required: true, unique: true },
   nodeId: { type: String, required: true },
   acquiredAt: { type: Date, required: true },
-  expiresAt: { type: Date, required: true, index: true },
+  expiresAt: { type: Date, required: true },
 });
 
 // Auto-delete expired locks
