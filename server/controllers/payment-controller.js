@@ -853,7 +853,18 @@ const checkout = wrapper(async (req, res) => {
       );
     }
 
-    throw error;
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    // Upstream gateway error (e.g. Razorpay authentication or API failure)
+    // Must NEVER return 401 to the client, which would trigger frontend session logout.
+    const errorMessage =
+      error?.error?.description ||
+      error?.message ||
+      'Failed to create payment order with Razorpay';
+
+    throw new ApiError(502, errorMessage, error?.error || error);
   }
 });
 
@@ -1215,7 +1226,13 @@ const paymentVerification = wrapper(async (req, res) => {
 // RECOVERY: Check Recent Booking
 // ========================================
 const checkRecentBooking = wrapper(async (req, res) => {
-  const currentUserId = req.verifiedClientId?._id || req.verifiedCounselorId?._id;
+  const currentUserId = (
+    req.verifiedUser?._id ||
+    req.user?._id ||
+    req.verifiedClientId?._id ||
+    req.verifiedCounselorId?._id
+  )?.toString();
+
   if (!currentUserId) {
     throw new ApiError(401, 'Authentication required');
   }
