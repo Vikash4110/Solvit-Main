@@ -39,6 +39,22 @@ const app = express();
 // Trust reverse proxy (AWS, Nginx, Render, Cloudflare) for accurate client IP rate limiting
 app.set('trust proxy', 1);
 
+// HTTP request logging (Morgan)
+// Mounted first to capture 100% of incoming API requests (including CORS preflights and errors)
+const isProduction = process.env.NODE_ENV === 'production';
+app.use(
+  morgan(isProduction ? 'combined' : 'dev', {
+    stream: {
+      write: (message) => {
+        console.log(message.trim());
+        if (isProduction) {
+          logger.info(message.trim());
+        }
+      },
+    },
+  })
+);
+
 // CORS Configuration
 const allowedOrigins = [
   process.env.CORS_ORIGIN1,
@@ -102,23 +118,6 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
-// HTTP request logging (Morgan)
-// - In Development: Colorized concise logs in console (:method :url :status :response-time ms - :res[content-length])
-// - In Production: Apache combined format streamed to stdout (PM2/Docker/terminal) and Winston file logger (logs/combined.log)
-if (process.env.NODE_ENV === 'production') {
-  app.use(
-    morgan('combined', {
-      stream: {
-        write: (message) => {
-          process.stdout.write(message);
-          logger.info(message.trim());
-        },
-      },
-    })
-  );
-} else {
-  app.use(morgan('dev'));
-}
 
 // Rate limiting configuration
 const authLimiter = rateLimit({
