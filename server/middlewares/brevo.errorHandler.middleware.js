@@ -1,8 +1,7 @@
 function errorHandler(err, req, res, next) {
-  console.error('Error:', err);
-
   // Brevo-specific errors
-  if (err.message.includes('Brevo') || err.message.includes('email')) {
+  if (err?.message && (err.message.includes('Brevo') || err.message.includes('email'))) {
+    console.error('Brevo Error:', err);
     return res.status(503).json({
       success: false,
       error: 'Email service temporarily unavailable. Please try again in a few moments.',
@@ -10,12 +9,8 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // Generic server error
-  res.status(500).json({
-    success: false,
-    error: 'An unexpected error occurred. Please try again later.',
-    code: 'INTERNAL_SERVER_ERROR',
-  });
+  // Pass non-Brevo errors to next error handling middleware
+  return next(err);
 }
 
 export default errorHandler;

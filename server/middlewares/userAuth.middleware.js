@@ -49,6 +49,12 @@ export const verifyJWTUser = wrapper(async (req, res, next) => {
     req.userType = userType;
     req.verifiedUser = user;
 
+    if (userType === 'client') {
+      req.verifiedClientId = user;
+    } else if (userType === 'counselor') {
+      req.verifiedCounselorId = user;
+    }
+
     next();
   } catch (error) {
     // If it's already an ApiError, just send it; otherwise wrap it

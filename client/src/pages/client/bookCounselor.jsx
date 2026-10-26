@@ -602,7 +602,7 @@ const BookCounselorCalendar = () => {
       }, 100);
     } catch (error) {
       console.error('Payment initiation error:', error);
-      if (error.message.includes('fetch') || error.message.includes('network')) {
+      if (error?.message?.includes('fetch') || error?.message?.includes('network')) {
         toast.error('Network error. Please check your connection and try again.');
       } else {
         toast.error('Unable to initiate payment. Please try again.');
