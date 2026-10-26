@@ -102,7 +102,23 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
-app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
+// HTTP request logging (Morgan)
+// - In Development: Colorized concise logs in console (:method :url :status :response-time ms - :res[content-length])
+// - In Production: Apache combined format streamed to stdout (PM2/Docker/terminal) and Winston file logger (logs/combined.log)
+if (process.env.NODE_ENV === 'production') {
+  app.use(
+    morgan('combined', {
+      stream: {
+        write: (message) => {
+          process.stdout.write(message);
+          logger.info(message.trim());
+        },
+      },
+    })
+  );
+} else {
+  app.use(morgan('dev'));
+}
 
 // Rate limiting configuration
 const authLimiter = rateLimit({
