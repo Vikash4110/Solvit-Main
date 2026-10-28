@@ -618,6 +618,19 @@ const BookCounselorCalendar = () => {
         return;
       }
 
+      // Check if this is a 100% free promotional booking bypass
+      if (orderData.success && orderData.data?.isFree) {
+        setBookingLoading(false);
+        setIsConfirmModalOpen(false);
+        sessionStorage.removeItem('current_booking_attempt');
+        sessionStorage.removeItem('current_idempotency_key');
+        toast.success('Free session booked successfully!');
+        navigate('/client/dashboard/myBookings', {
+          state: { successMessage: 'Your free session has been confirmed successfully!' },
+        });
+        return;
+      }
+
       if (!orderData.success || !orderData.data || !orderData.data.order) {
         toast.error('Unable to create payment order');
         setBookingLoading(false);
@@ -1787,13 +1800,22 @@ const BookingModal = ({
           <Button
             type="button"
             onClick={() => initiatePayment(false)}
-            disabled={bookingLoading || !razorpayLoaded || !isOnline}
-            className="w-full sm:w-auto h-10 px-6 text-sm font-semibold text-white rounded-xl bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 shadow-md transition-all active:scale-[0.99]"
+            disabled={bookingLoading || (finalPrice > 0 && !razorpayLoaded) || !isOnline}
+            className={`w-full sm:w-auto h-10 px-6 text-sm font-semibold text-white rounded-xl shadow-md transition-all active:scale-[0.99] ${
+              finalPrice === 0
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700'
+                : 'bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700'
+            }`}
           >
             {bookingLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
+              </>
+            ) : finalPrice === 0 ? (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Confirm Free Session
               </>
             ) : (
               <>

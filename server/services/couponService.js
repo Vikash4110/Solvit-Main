@@ -109,9 +109,9 @@ export const calculateDiscount = (coupon, slotPrice) => {
     discount = Math.round(coupon.discountValue);
   }
 
-  // Floor protection: Payment gateways (Razorpay) require minimum ₹1 charge
-  discount = Math.min(discount, Math.max(0, price - 1));
-  const finalAmount = Math.max(1, price - discount);
+  // Cap discount at total price so final amount cannot be negative
+  discount = Math.min(discount, price);
+  const finalAmount = Math.max(0, price - discount);
 
   return { discountAmount: discount, finalAmount };
 };

@@ -751,8 +751,8 @@ const checkout = wrapper(async (req, res) => {
     throw new ApiError(403, 'Cannot create orders for other users');
   }
 
-  // Validate required fields
-  if (!amount || !clientId || !slotId) {
+  // Validate required fields (amount can be 0 for free promotional bookings)
+  if (amount === undefined || amount === null || amount === '' || !clientId || !slotId) {
     throw new ApiError(400, 'Amount, clientId, and slotId are required');
   }
 
@@ -796,8 +796,8 @@ const checkout = wrapper(async (req, res) => {
   try {
     const requestedAmount = Number(amount);
 
-    // Validate amount
-    if (requestedAmount < MINIMUM_SLOT_AMOUNT) {
+    // Validate amount (allow 0 only if couponCode is provided)
+    if (requestedAmount < 0 || (!couponCode && requestedAmount < MINIMUM_SLOT_AMOUNT)) {
       await updateIdempotencyStatus(
         idempotencyKey,
         IDEMPOTENCY_TYPES.CHECKOUT,
@@ -916,6 +916,78 @@ const checkout = wrapper(async (req, res) => {
           pendingPaymentId: pendingPayment._id,
           createdAt: pendingPayment.createdAt,
         }
+      );
+    }
+
+    // Check for 100% Free Promotional Session Bypass (₹0 Total)
+    if (finalPayableAmount === 0 && couponQuote) {
+      contextLogger.info('100% Free Promotional Booking detected. Bypassing Razorpay.');
+
+      const freePaymentId = `free_promo_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+      const freeOrderId = `free_order_${Date.now()}`;
+
+      // Create payment record marked as captured/promotional
+      const payment = await Payment.create({
+        clientId,
+        slotId,
+        razorpay_order_id: freeOrderId,
+        razorpay_payment_id: freePaymentId,
+        razorpay_signature: 'free_promotional_signature',
+        amount: 0,
+        currency: 'INR',
+        status: PAYMENT_STATES.CAPTURED_UNLINKED,
+        bookingStatus: PAYMENT_BOOKING_STATUS.PAYMENT_CAPTURED,
+        captured: true,
+        couponDetails: {
+          couponCode: couponQuote.coupon.code,
+          discountAmount: couponQuote.discountAmount,
+          originalAmount: couponQuote.originalAmount,
+        },
+      });
+
+      // Execute atomic booking transaction
+      const txResult = await executeBookingTransaction(payment, clientId, slotId, contextLogger);
+
+      // Trigger phase 3: external resources asynchronously (VideoSDK room, emails)
+      setImmediate(async () => {
+        try {
+          await createExternalResourcesV2(
+            txResult.booking,
+            txResult.counselor,
+            txResult.client,
+            txResult.slot,
+            contextLogger
+          );
+        } catch (resourceError) {
+          contextLogger.error('Phase 3 failed for free booking:', resourceError);
+        }
+      });
+
+      const freeResponseData = {
+        isFree: true,
+        booking: txResult.booking,
+        pricing: {
+          originalAmount: couponQuote.originalAmount,
+          discountAmount: couponQuote.discountAmount,
+          finalAmount: 0,
+          couponCode: couponQuote.coupon.code,
+        },
+      };
+
+      await updateIdempotencyStatus(
+        idempotencyKey,
+        IDEMPOTENCY_TYPES.CHECKOUT,
+        'completed',
+        freeResponseData,
+        contextLogger
+      );
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          freeResponseData,
+          'Free promotional session confirmed successfully!'
+        )
       );
     }
 
