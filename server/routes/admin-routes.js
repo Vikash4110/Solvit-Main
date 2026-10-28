@@ -32,6 +32,7 @@ import {
   deleteBlogAdmin,
 } from '../controllers/admin-controller.js';
 import { verifyJWTAdmin } from '../middlewares/admin-auth-middleware.js';
+import { adminCouponRouter } from './admin-coupon-routes.js';
 
 const adminRouter = Router();
 
@@ -101,6 +102,11 @@ adminRouter.route('/bookings/analytics').get(verifyJWTAdmin, getBookingAnalytics
 adminRouter.route('/blogs').get(verifyJWTAdmin, getAllBlogsAdmin);
 adminRouter.route('/blogs/:blogId/featured').patch(verifyJWTAdmin, toggleBlogFeatured);
 adminRouter.route('/blogs/:blogId').delete(verifyJWTAdmin, deleteBlogAdmin);
+
+// ====================================
+// COUPON & PROMOTION MANAGEMENT ROUTES (ADMIN ONLY)
+// ====================================
+adminRouter.use('/coupons', verifyJWTAdmin, adminCouponRouter);
 
 // Test route
 adminRouter.get('/test', (req, res) => {
