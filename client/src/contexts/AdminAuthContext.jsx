@@ -542,6 +542,103 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Fetch paginated list of coupons with stats and filters
+   */
+  const getAllCouponsAdmin = async ({
+    page = 1,
+    limit = 10,
+    search = '',
+    status = 'all',
+    couponType = 'all',
+  } = {}) => {
+    try {
+      const params = new URLSearchParams();
+      if (page) params.append('page', page);
+      if (limit) params.append('limit', limit);
+      if (search?.trim()) params.append('search', search.trim());
+      if (status && status !== 'all') params.append('status', status);
+      if (couponType && couponType !== 'all') params.append('couponType', couponType);
+
+      const response = await api.get(`${API_ENDPOINTS.ADMIN_COUPONS}?${params.toString()}`);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch coupons');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Create a new coupon (Admin)
+   */
+  const createCouponAdmin = async (couponData) => {
+    try {
+      const response = await api.post(API_ENDPOINTS.ADMIN_COUPONS, couponData);
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to create coupon');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Toggle coupon active/inactive status (Kill-Switch)
+   */
+  const toggleCouponStatusAdmin = async (couponId) => {
+    try {
+      const response = await api.patch(API_ENDPOINTS.ADMIN_COUPON_TOGGLE_STATUS(couponId));
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to toggle coupon status');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Get audit redemptions list for a coupon
+   */
+  const getCouponRedemptionsAdmin = async (couponId, { page = 1, limit = 10 } = {}) => {
+    try {
+      const params = new URLSearchParams();
+      if (page) params.append('page', page);
+      if (limit) params.append('limit', limit);
+
+      const response = await api.get(
+        `${API_ENDPOINTS.ADMIN_COUPON_REDEMPTIONS(couponId)}?${params.toString()}`
+      );
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch coupon redemptions');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Delete or archive a coupon safely
+   */
+  const deleteCouponAdmin = async (couponId) => {
+    try {
+      const response = await api.delete(API_ENDPOINTS.ADMIN_COUPON_DELETE(couponId));
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to delete coupon');
+      return { success: false, error: message };
+    }
+  };
+
+  /**
+   * Get counselor list for counselor-exclusive coupon selector
+   */
+  const getCounselorsForCouponSelectorAdmin = async () => {
+    try {
+      const response = await api.get(API_ENDPOINTS.ADMIN_COUPONS_COUNSELORS);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch counselors list');
+      return { success: false, error: message };
+    }
+  };
+
   const value = useMemo(
     () => ({
       admin,
@@ -574,6 +671,12 @@ export const AdminAuthProvider = ({ children }) => {
       getAllBlogsAdmin,
       toggleBlogFeaturedAdmin,
       deleteBlogAdmin,
+      getAllCouponsAdmin,
+      createCouponAdmin,
+      toggleCouponStatusAdmin,
+      getCouponRedemptionsAdmin,
+      deleteCouponAdmin,
+      getCounselorsForCouponSelectorAdmin,
     }),
     [admin, adminLoading]
   );

@@ -140,4 +140,11 @@ export const API_ENDPOINTS = {
   ADMIN_BLOGS: '/admin/blogs',
   ADMIN_BLOG_TOGGLE_FEATURED: (blogId) => `/admin/blogs/${blogId}/featured`,
   ADMIN_BLOG_DELETE: (blogId) => `/admin/blogs/${blogId}`,
+
+  // Coupon & Promotion Management (Admin)
+  ADMIN_COUPONS: '/admin/coupons',
+  ADMIN_COUPONS_COUNSELORS: '/admin/coupons/counselors-list',
+  ADMIN_COUPON_TOGGLE_STATUS: (couponId) => `/admin/coupons/${couponId}/toggle-status`,
+  ADMIN_COUPON_REDEMPTIONS: (couponId) => `/admin/coupons/${couponId}/redemptions`,
+  ADMIN_COUPON_DELETE: (couponId) => `/admin/coupons/${couponId}`,
 };

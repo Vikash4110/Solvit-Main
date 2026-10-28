@@ -22,6 +22,7 @@ import {
   Search,
   FileQuestion,
   BookOpen,
+  TicketPercent,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -116,6 +117,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }
           name: 'Payments Recieved',
           icon: CreditCard,
           path: '/admin/payments',
+          badge: null,
+        },
+        {
+          name: 'Coupons & Promos',
+          icon: TicketPercent,
+          path: '/admin/coupons',
           badge: null,
         },
         // {
