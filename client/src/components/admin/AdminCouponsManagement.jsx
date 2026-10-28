@@ -70,6 +70,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+import CreateCouponModal from './CreateCouponModal';
 
 export default function AdminCouponsManagement() {
   const {
@@ -852,6 +853,13 @@ export default function AdminCouponsManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 7. Create Coupon Modal Form */}
+      <CreateCouponModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onSuccess={() => fetchCoupons(1)}
+      />
     </div>
   );
 }
