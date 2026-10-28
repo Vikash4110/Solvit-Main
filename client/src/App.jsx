@@ -63,6 +63,7 @@ const AdminPaymentsManagement = lazy(() => import('./components/admin/AdminPayme
 const AdminBookingsManagement = lazy(() => import('./components/admin/AdminBookingsManagement'));
 const AdminCounselorRequestsManagement = lazy(() => import('./components/admin/AdminCounselorRequestsManagement'));
 const AdminBlogsManagement = lazy(() => import('./components/admin/AdminBlogsManagement'));
+const AdminCouponsManagement = lazy(() => import('./components/admin/AdminCouponsManagement'));
 
 function App() {
   const location = useLocation();
@@ -226,6 +227,7 @@ function App() {
                     <Route path="counselors" element={<AdminCounselorsManagement />} />
                     <Route path="counselor-requests" element={<AdminCounselorRequestsManagement />} />
                     <Route path="payments" element={<AdminPaymentsManagement />} />
+                    <Route path="coupons" element={<AdminCouponsManagement />} />
                     <Route path="bookings" element={<AdminBookingsManagement />} />
                     <Route path="blogs" element={<AdminBlogsManagement />} />
                   </Route>

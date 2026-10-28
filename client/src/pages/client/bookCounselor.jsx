@@ -26,8 +26,11 @@ import {
   Sparkles,
   Wifi,
   WifiOff,
+  Tag,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -47,6 +50,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
+import { fetchApplicableCoupon, validateCoupon } from '../../services/couponService';
 import useSmartRefresh from '../../hooks/useSmartRefresh';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
@@ -151,10 +155,17 @@ const BookCounselorCalendar = () => {
   const [isRazorpayOpen, setIsRazorpayOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // ✅ NEW: Idempotency & resilience state
+  // Idempotency & resilience state
   const [currentIdempotencyKey, setCurrentIdempotencyKey] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [networkSpeed, setNetworkSpeed] = useState(null);
+
+  // Coupon & discount promotion state
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponInput, setCouponInput] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState(null);
+  const [autoCheckingCoupon, setAutoCheckingCoupon] = useState(false);
 
   // ==========================================
   // ✅ NETWORK STATUS DETECTION
@@ -399,8 +410,11 @@ const BookCounselorCalendar = () => {
     }
 
     setSelectedSlot(slot);
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
 
-    // ✅ Generate idempotency key
+    // Generate idempotency key
     const userData = getUserData();
     if (userData) {
       const idempotencyKey = `${userData._id}_${slot._id}_${Date.now()}_${uuidv4()}`;
@@ -416,6 +430,61 @@ const BookCounselorCalendar = () => {
     }
 
     setShowBookingModal(true);
+
+    // Auto-check promotion for eligible first-time clients
+    checkApplicableCoupon(slot._id);
+  };
+
+  // ==========================================
+  // COUPON PROMOTION HANDLERS
+  // ==========================================
+  const checkApplicableCoupon = async (slotId) => {
+    try {
+      setAutoCheckingCoupon(true);
+      setCouponError(null);
+      const res = await fetchApplicableCoupon(slotId);
+      if (res?.success && res?.data?.isAutoApplied && res?.data?.coupon) {
+        setAppliedCoupon(res.data);
+      }
+    } catch {
+      // Non-blocking fallback for returning clients or unauthenticated state
+    } finally {
+      setAutoCheckingCoupon(false);
+    }
+  };
+
+  const handleApplyCoupon = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const code = couponInput.trim();
+    if (!code) {
+      setCouponError('Please enter a coupon or referral code.');
+      return;
+    }
+    if (!selectedSlot) return;
+
+    try {
+      setCouponLoading(true);
+      setCouponError(null);
+      const res = await validateCoupon(code, selectedSlot._id);
+      if (res?.success && res?.data) {
+        setAppliedCoupon(res.data);
+        setCouponInput('');
+        toast.success(res.message || `Coupon ${res.data.coupon?.code} applied!`);
+      }
+    } catch (err) {
+      const msg =
+        err.response?.data?.message || 'Invalid or inapplicable coupon code.';
+      setCouponError(msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
+    toast.info('Coupon removed');
   };
 
   // ==========================================
@@ -424,6 +493,9 @@ const BookCounselorCalendar = () => {
   const closeBookingModal = () => {
     setShowBookingModal(false);
     setSelectedSlot(null);
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
     // Don't clear idempotency key - user might retry
   };
 
@@ -469,9 +541,13 @@ const BookCounselorCalendar = () => {
         return;
       }
 
-      const amount = getSlotPrice(selectedSlot);
+      const rawSlotAmount = getSlotPrice(selectedSlot);
+      const amount =
+        appliedCoupon?.finalAmount != null ? appliedCoupon.finalAmount : rawSlotAmount;
+      const couponCode =
+        appliedCoupon?.coupon?.code || appliedCoupon?.code || undefined;
 
-      // ✅ Use existing idempotency key or recover from sessionStorage
+      // Use existing idempotency key or recover from sessionStorage
       let idempotencyKey = currentIdempotencyKey;
 
       if (!idempotencyKey) {
@@ -502,12 +578,17 @@ const BookCounselorCalendar = () => {
       const keyResponse = await api.get(API_ENDPOINTS.PAYMENT_GET_KEY);
       const keyData = keyResponse.data;
 
-      // ✅ Create order with idempotency key
+      // Create order with idempotency key and server-side coupon discount
       let orderData;
       try {
         const orderResponse = await api.post(
           API_ENDPOINTS.PAYMENT_CHECKOUT,
-          { amount, clientId: userData._id, slotId: selectedSlot._id },
+          {
+            amount,
+            clientId: userData._id,
+            slotId: selectedSlot._id,
+            couponCode,
+          },
           { headers: { 'Idempotency-Key': idempotencyKey } }
         );
         orderData = orderResponse.data;
@@ -534,6 +615,19 @@ const BookCounselorCalendar = () => {
 
         toast.error(errData.message || 'Unable to create payment order');
         setBookingLoading(false);
+        return;
+      }
+
+      // Check if this is a 100% free promotional booking bypass
+      if (orderData.success && orderData.data?.isFree) {
+        setBookingLoading(false);
+        setIsConfirmModalOpen(false);
+        sessionStorage.removeItem('current_booking_attempt');
+        sessionStorage.removeItem('current_idempotency_key');
+        toast.success('Free session booked successfully!');
+        navigate('/client/dashboard/myBookings', {
+          state: { successMessage: 'Your free session has been confirmed successfully!' },
+        });
         return;
       }
 
@@ -972,6 +1066,14 @@ const BookCounselorCalendar = () => {
         selectedDate={selectedDate}
         razorpayLoaded={razorpayLoaded}
         isOnline={isOnline}
+        appliedCoupon={appliedCoupon}
+        couponInput={couponInput}
+        setCouponInput={setCouponInput}
+        couponLoading={couponLoading}
+        couponError={couponError}
+        autoCheckingCoupon={autoCheckingCoupon}
+        onApplyCoupon={handleApplyCoupon}
+        onRemoveCoupon={handleRemoveCoupon}
       />
 
       {/* Sticky Bottom CTA (Mobile) */}
@@ -1464,140 +1566,268 @@ const BookingModal = ({
   selectedDate,
   razorpayLoaded,
   isOnline,
-}) => (
-  <Dialog open={show} onOpenChange={onClose} modal={!isRazorpayOpen}>
-    <DialogContent
-      className="sm:max-w-lg w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-full p-0 overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[85vh] gap-0 rounded-2xl sm:rounded-3xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl bg-white dark:bg-neutral-900"
-      style={isRazorpayOpen ? { pointerEvents: 'none' } : undefined}
-    >
-      <DialogHeader className="px-5 pt-5 sm:px-6 sm:pt-6 pb-3.5 text-left border-b border-neutral-100 dark:border-neutral-800/80 shrink-0">
-        <DialogTitle className="flex items-center gap-2.5 text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
-          <span className="p-1 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 shrink-0">
-            <CheckCircle className="w-5 h-5" />
-          </span>
-          Confirm Booking
-        </DialogTitle>
-        <DialogDescription className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-          Review your session details before payment
-        </DialogDescription>
-      </DialogHeader>
+  appliedCoupon,
+  couponInput,
+  setCouponInput,
+  couponLoading,
+  couponError,
+  autoCheckingCoupon,
+  onApplyCoupon,
+  onRemoveCoupon,
+}) => {
+  const originalPrice = selectedSlot ? getSlotPrice(selectedSlot) : 0;
+  const discountAmount = appliedCoupon?.discountAmount || 0;
+  const finalPrice =
+    appliedCoupon?.finalAmount != null ? appliedCoupon.finalAmount : originalPrice;
 
-      {selectedSlot && counselor && (
-        <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-3.5">
-          {/* Counselor Info */}
-          <div className="flex items-center gap-3.5 p-3.5 sm:p-4 bg-primary-50/60 dark:bg-primary-950/30 rounded-2xl border border-primary-100/80 dark:border-primary-800/40">
-            <Avatar className="w-13 h-13 sm:w-14 sm:h-14 shrink-0 ring-2 ring-primary-200/80 dark:ring-primary-800/60 shadow-sm">
-              <AvatarImage
-                src={counselor.profilePicture}
-                alt={counselor.fullName}
-                className="object-cover"
-              />
-              <AvatarFallback className="text-base font-bold bg-gradient-to-br from-primary-700 to-primary-600 text-white">
-                {counselor.fullName?.charAt(0) || 'C'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-sm sm:text-base text-neutral-900 dark:text-white truncate">
-                {counselor.fullName}
-              </h4>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 line-clamp-1">
-                {Array.isArray(counselor.specialization)
-                  ? counselor.specialization.join(', ')
-                  : counselor.specialization}
-              </p>
-              <Badge className="mt-1.5 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 rounded-full font-medium">
-                <Shield className="w-3 h-3" />
-                Verified
-              </Badge>
-            </div>
-          </div>
-
-          {/* Session Details */}
-          <div className="bg-neutral-50/90 dark:bg-neutral-800/40 rounded-2xl p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800 space-y-2.5">
-            <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                Date
-              </span>
-              <span className="font-semibold text-neutral-900 dark:text-white">
-                {dayjs(selectedSlot.startTime).tz(TIMEZONE).format('ddd, MMM D, YYYY')}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                Time
-              </span>
-              <span className="font-semibold text-neutral-900 dark:text-white">
-                {dayjs(selectedSlot.startTime).tz(TIMEZONE).format('hh:mm A')} -{' '}
-                {dayjs(selectedSlot.endTime).tz(TIMEZONE).format('hh:mm A')}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
-                <Video className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                Duration
-              </span>
-              <span className="font-semibold text-neutral-900 dark:text-white">50 minutes</span>
-            </div>
-          </div>
-
-          {/* Payment Summary */}
-          <div className="bg-gradient-to-br from-primary-100/70 via-primary-50/40 to-white dark:from-primary-900/30 dark:via-primary-900/10 dark:to-neutral-900 p-3.5 sm:p-4 rounded-2xl border border-primary-200/60 dark:border-primary-800/40 flex items-center justify-between">
-            <div>
-              <span className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 block">
-                Total Amount
-              </span>
-              <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                Inclusive of all taxes
-              </p>
-            </div>
-            <span className="text-xl sm:text-2xl font-bold text-primary-700 dark:text-primary-400">
-              ₹{getSlotPrice(selectedSlot)}
+  return (
+    <Dialog open={show} onOpenChange={onClose} modal={!isRazorpayOpen}>
+      <DialogContent
+        className="sm:max-w-lg w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-full p-0 overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[85vh] gap-0 rounded-2xl sm:rounded-3xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl bg-white dark:bg-neutral-900"
+        style={isRazorpayOpen ? { pointerEvents: 'none' } : undefined}
+      >
+        <DialogHeader className="px-5 pt-5 sm:px-6 sm:pt-6 pb-3.5 text-left border-b border-neutral-100 dark:border-neutral-800/80 shrink-0">
+          <DialogTitle className="flex items-center gap-2.5 text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
+            <span className="p-1 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 shrink-0">
+              <CheckCircle className="w-5 h-5" />
             </span>
-          </div>
+            Confirm Booking
+          </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            Review your session details before payment
+          </DialogDescription>
+        </DialogHeader>
 
-          {/* Info Alert */}
-          <div className="rounded-xl border border-primary-200/60 dark:border-primary-800/50 bg-primary-50/40 dark:bg-primary-950/30 py-2.5 px-3.5 flex items-center gap-2.5">
-            <Sparkles className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
-            <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-snug">
-              You can join the session 5-10 minutes before the scheduled time
-            </p>
-          </div>
-        </div>
-      )}
+        {selectedSlot && counselor && (
+          <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-3.5">
+            {/* Counselor Info */}
+            <div className="flex items-center gap-3.5 p-3.5 sm:p-4 bg-primary-50/60 dark:bg-primary-950/30 rounded-2xl border border-primary-100/80 dark:border-primary-800/40">
+              <Avatar className="w-13 h-13 sm:w-14 sm:h-14 shrink-0 ring-2 ring-primary-200/80 dark:ring-primary-800/60 shadow-sm">
+                <AvatarImage
+                  src={counselor.profilePicture}
+                  alt={counselor.fullName}
+                  className="object-cover"
+                />
+                <AvatarFallback className="text-base font-bold bg-gradient-to-br from-primary-700 to-primary-600 text-white">
+                  {counselor.fullName?.charAt(0) || 'C'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm sm:text-base text-neutral-900 dark:text-white truncate">
+                  {counselor.fullName}
+                </h4>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 line-clamp-1">
+                  {Array.isArray(counselor.specialization)
+                    ? counselor.specialization.join(', ')
+                    : counselor.specialization}
+                </p>
+                <Badge className="mt-1.5 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 rounded-full font-medium">
+                  <Shield className="w-3 h-3" />
+                  Verified
+                </Badge>
+              </div>
+            </div>
 
-      <DialogFooter className="px-5 py-4 sm:px-6 sm:py-4 bg-neutral-50/80 dark:bg-neutral-800/40 border-t border-neutral-100 dark:border-neutral-800/80 shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 m-0">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-          disabled={bookingLoading || isRazorpayOpen}
-          className="w-full sm:w-auto h-10 px-5 text-sm font-medium rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 border-neutral-200 dark:border-neutral-700"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          onClick={() => initiatePayment(false)}
-          disabled={bookingLoading || !razorpayLoaded || !isOnline}
-          className="w-full sm:w-auto h-10 px-6 text-sm font-semibold text-white rounded-xl bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700 shadow-md transition-all active:scale-[0.99]"
-        >
-          {bookingLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Proceed to Payment
-            </>
-          )}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
+            {/* Session Details */}
+            <div className="bg-neutral-50/90 dark:bg-neutral-800/40 rounded-2xl p-3.5 sm:p-4 border border-neutral-100 dark:border-neutral-800 space-y-2.5">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                  Date
+                </span>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {dayjs(selectedSlot.startTime).tz(TIMEZONE).format('ddd, MMM D, YYYY')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                  Time
+                </span>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {dayjs(selectedSlot.startTime).tz(TIMEZONE).format('hh:mm A')} -{' '}
+                  {dayjs(selectedSlot.endTime).tz(TIMEZONE).format('hh:mm A')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+                  <Video className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
+                  Duration
+                </span>
+                <span className="font-semibold text-neutral-900 dark:text-white">50 minutes</span>
+              </div>
+            </div>
+
+            {/* Coupon / Promotion Section */}
+            <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-800/20 p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                  Promotions & Referral Code
+                </span>
+                {autoCheckingCoupon && (
+                  <span className="text-[11px] text-neutral-400 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Checking offers...
+                  </span>
+                )}
+              </div>
+
+              {appliedCoupon ? (
+                <div className="flex items-start justify-between gap-3 p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-xs uppercase px-2 py-0.5 rounded-md bg-emerald-600 text-white tracking-wide">
+                        {appliedCoupon.coupon?.code || appliedCoupon.code}
+                      </span>
+                      <span className="text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                        {appliedCoupon.coupon?.discountType === 'percentage'
+                          ? `${appliedCoupon.coupon.discountValue}% OFF`
+                          : `₹${appliedCoupon.coupon?.discountValue} OFF`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                      {appliedCoupon.coupon?.description || 'Discount applied to this session.'}
+                    </p>
+                    <p className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                      You save ₹{discountAmount} on this booking!
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onRemoveCoupon}
+                    className="h-7 px-2 text-xs text-neutral-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5 mr-1" />
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={onApplyCoupon}
+                  className="space-y-1.5"
+                >
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Enter promo or referral code"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        if (couponError) setCouponError(null);
+                      }}
+                      className="h-9 text-xs uppercase tracking-wider font-medium bg-white dark:bg-neutral-900 rounded-xl"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={couponLoading || !couponInput.trim()}
+                      className="h-9 px-4 text-xs font-semibold rounded-xl shrink-0"
+                    >
+                      {couponLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        'Apply'
+                      )}
+                    </Button>
+                  </div>
+                  {couponError && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-red-600 dark:text-red-400 pt-0.5">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{couponError}</span>
+                    </div>
+                  )}
+                </form>
+              )}
+            </div>
+
+            {/* Payment Summary */}
+            <div className="bg-gradient-to-br from-primary-100/70 via-primary-50/40 to-white dark:from-primary-900/30 dark:via-primary-900/10 dark:to-neutral-900 p-3.5 sm:p-4 rounded-2xl border border-primary-200/60 dark:border-primary-800/40 space-y-2">
+              <div className="flex items-center justify-between text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                <span>Session Fee</span>
+                <span className="font-medium text-neutral-900 dark:text-white">
+                  ₹{originalPrice}
+                </span>
+              </div>
+
+              {appliedCoupon && (
+                <div className="flex items-center justify-between text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span className="flex items-center gap-1">
+                    <Tag className="w-3 h-3" />
+                    Discount ({appliedCoupon.coupon?.code || appliedCoupon.code})
+                  </span>
+                  <span>-₹{discountAmount}</span>
+                </div>
+              )}
+
+              <Separator className="my-1.5 bg-primary-200/50 dark:bg-neutral-700" />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200 block">
+                    Total Amount
+                  </span>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Inclusive of all taxes
+                  </p>
+                </div>
+                <span className="text-xl sm:text-2xl font-bold text-primary-700 dark:text-primary-400">
+                  ₹{finalPrice}
+                </span>
+              </div>
+            </div>
+
+            {/* Info Alert */}
+            <div className="rounded-xl border border-primary-200/60 dark:border-primary-800/50 bg-primary-50/40 dark:bg-primary-950/30 py-2.5 px-3.5 flex items-center gap-2.5">
+              <Sparkles className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
+              <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-snug">
+                You can join the session 5-10 minutes before the scheduled time
+              </p>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="px-5 py-4 sm:px-6 sm:py-4 bg-neutral-50/80 dark:bg-neutral-800/40 border-t border-neutral-100 dark:border-neutral-800/80 shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 m-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={bookingLoading || isRazorpayOpen}
+            className="w-full sm:w-auto h-10 px-5 text-sm font-medium rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 border-neutral-200 dark:border-neutral-700"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={() => initiatePayment(false)}
+            disabled={bookingLoading || (finalPrice > 0 && !razorpayLoaded) || !isOnline}
+            className={`w-full sm:w-auto h-10 px-6 text-sm font-semibold text-white rounded-xl shadow-md transition-all active:scale-[0.99] ${
+              finalPrice === 0
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700'
+                : 'bg-gradient-to-r from-primary-700 to-primary-600 hover:from-primary-800 hover:to-primary-700'
+            }`}
+          >
+            {bookingLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : finalPrice === 0 ? (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Confirm Free Session
+              </>
+            ) : (
+              <>
+                <CreditCard className="mr-2 h-4 w-4" />
+                Pay ₹{finalPrice} & Confirm
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export default BookCounselorCalendar;

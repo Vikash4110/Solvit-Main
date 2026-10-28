@@ -46,6 +46,10 @@ export const API_ENDPOINTS = {
   PAYMENT_VERIFICATION: '/payment/paymentverification',
   PAYMENT_CHECK_RECENT: '/payment/check-recent',
 
+  // Coupon and Referral Promotion endpoints
+  COUPON_GET_APPLICABLE: '/coupons/applicable-for-slot',
+  COUPON_VALIDATE: '/coupons/validate',
+
   // Slot management endpoints
   SLOT_MANAGEMENT_GET_ALL: '/slotManagement/get-all-generated-slots',
   SLOT_MANAGEMENT_MANAGE_DAY: '/slotManagement/manage-day-slots',
@@ -136,4 +140,11 @@ export const API_ENDPOINTS = {
   ADMIN_BLOGS: '/admin/blogs',
   ADMIN_BLOG_TOGGLE_FEATURED: (blogId) => `/admin/blogs/${blogId}/featured`,
   ADMIN_BLOG_DELETE: (blogId) => `/admin/blogs/${blogId}`,
+
+  // Coupon & Promotion Management (Admin)
+  ADMIN_COUPONS: '/admin/coupons',
+  ADMIN_COUPONS_COUNSELORS: '/admin/coupons/counselors-list',
+  ADMIN_COUPON_TOGGLE_STATUS: (couponId) => `/admin/coupons/${couponId}/toggle-status`,
+  ADMIN_COUPON_REDEMPTIONS: (couponId) => `/admin/coupons/${couponId}/redemptions`,
+  ADMIN_COUPON_DELETE: (couponId) => `/admin/coupons/${couponId}`,
 };

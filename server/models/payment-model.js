@@ -79,6 +79,12 @@ const paymentSchema = new mongoose.Schema(
       default: 'INR',
     },
 
+    couponDetails: {
+      couponCode: { type: String, default: null },
+      discountAmount: { type: Number, default: 0 },
+      originalAmount: { type: Number, default: null },
+    },
+
     // ==========================================
     // PAYMENT STATUS & METHOD
     // ==========================================

@@ -9,6 +9,9 @@ import { Counselor } from '../models/counselor-model.js';
 import { Client } from '../models/client-model.js';
 import { GeneratedSlot } from '../models/generatedSlots-model.js';
 import { IdempotencyKey } from '../models/idempotencyKey.model.js';
+import { Coupon } from '../models/coupon-model.js';
+import { CouponUsage } from '../models/couponUsage-model.js';
+import { validateAndQuoteCoupon } from '../services/couponService.js';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
@@ -323,6 +326,15 @@ const verifyPaymentAuthenticity = async (
     );
   }
 
+  const notes = razorpayPayment.notes || {};
+  const couponCode = notes.couponCode || null;
+  const discountAmount = Number(notes.discountAmount) || 0;
+  const originalAmount = notes.originalAmount
+    ? Number(notes.originalAmount)
+    : couponCode
+    ? razorpayPayment.amount / 100 + discountAmount
+    : razorpayPayment.amount / 100;
+
   // Create unlinked payment
   const payment = await Payment.create({
     clientId,
@@ -340,7 +352,16 @@ const verifyPaymentAuthenticity = async (
     contact: razorpayPayment.contact,
     fee: razorpayPayment.fee ? razorpayPayment.fee / 100 : 0,
     tax: razorpayPayment.tax ? razorpayPayment.tax / 100 : 0,
-    notes: razorpayPayment.notes || {},
+    notes,
+    ...(couponCode
+      ? {
+          couponDetails: {
+            couponCode,
+            discountAmount,
+            originalAmount,
+          },
+        }
+      : {}),
     razorpay_created_at: razorpayPayment.created_at,
   });
 
@@ -408,9 +429,26 @@ const executeBookingTransaction = async (payment, clientId, slotId, contextLogge
 
         if (!counselor) throw new Error('COUNSELOR_NOT_FOUND');
 
-        // Create booking
+        // Create booking with itemized pricing details
         const slotStartTime = dayjs(lockedSlot.startTime).tz(timeZone);
         const slotEndTime = dayjs(lockedSlot.endTime).tz(timeZone);
+
+        const notes = payment.notes || {};
+        const couponCode = notes.couponCode || payment.couponDetails?.couponCode || null;
+        const discountAmount =
+          Number(notes.discountAmount) || payment.couponDetails?.discountAmount || 0;
+        const originalAmount =
+          Number(notes.originalAmount) ||
+          payment.couponDetails?.originalAmount ||
+          lockedSlot.totalPriceAfterPlatformFee;
+        const finalAmount = payment.amount;
+
+        const pricing = {
+          originalAmount,
+          discountAmount,
+          finalAmount,
+          couponCode,
+        };
 
         const [booking] = await Booking.create(
           [
@@ -424,14 +462,56 @@ const executeBookingTransaction = async (payment, clientId, slotId, contextLogge
                 autoCompleteAt: slotEndTime.clone().add(24, 'hours').utc().toDate(),
                 disputeWindowOpenAt: slotEndTime.clone().utc().toDate(),
               },
+              pricing,
             },
           ],
           { session }
         );
 
-        contextLogger.info('✅ Booking created', { bookingId: booking._id });
+        contextLogger.info('Booking created', { bookingId: booking._id });
 
-        // Link payment to booking
+        // Record coupon redemption atomically if coupon applied
+        if (couponCode) {
+          const coupon = await Coupon.findOne({ code: couponCode }).session(session);
+          if (coupon) {
+            await CouponUsage.create(
+              [
+                {
+                  couponId: coupon._id,
+                  couponCode: coupon.code,
+                  clientId: buyer._id,
+                  bookingId: booking._id,
+                  paymentId: payment._id,
+                  referrerId: coupon.referrerId || null,
+                  originalAmount,
+                  discountAmount,
+                  finalAmount,
+                  redeemedAt: new Date(),
+                },
+              ],
+              { session }
+            );
+
+            await Coupon.findByIdAndUpdate(
+              coupon._id,
+              { $inc: { currentTotalUses: 1 } },
+              { session }
+            );
+
+            contextLogger.info('Coupon redemption recorded atomically', {
+              couponCode: coupon.code,
+              couponId: coupon._id,
+              discountAmount,
+              bookingId: booking._id,
+            });
+          } else {
+            contextLogger.warn('Coupon code in payment notes not found in Coupon collection', {
+              couponCode,
+            });
+          }
+        }
+
+        // Link payment to booking and sync couponDetails
         await Payment.findByIdAndUpdate(
           payment._id,
           {
@@ -439,12 +519,21 @@ const executeBookingTransaction = async (payment, clientId, slotId, contextLogge
               bookingId: booking._id,
               status: PAYMENT_STATES.CAPTURED,
               bookingStatus: PAYMENT_BOOKING_STATUS.PENDING_RESOURCES,
+              ...(couponCode
+                ? {
+                    couponDetails: {
+                      couponCode,
+                      discountAmount,
+                      originalAmount,
+                    },
+                  }
+                : {}),
             },
           },
           { session }
         );
 
-        contextLogger.info('✅ Payment linked to booking');
+        contextLogger.info('Payment linked to booking');
 
         // Update slot reference
         await GeneratedSlot.findByIdAndUpdate(
@@ -648,7 +737,7 @@ const getKey = wrapper(async (req, res) => {
 // ENDPOINT: Create Razorpay Order
 // ========================================
 const checkout = wrapper(async (req, res) => {
-  const { amount, clientId, slotId } = req.body;
+  const { amount, clientId, slotId, couponCode } = req.body;
   const idempotencyKey = req.header('Idempotency-Key');
 
   const currentUserId = (
@@ -662,8 +751,8 @@ const checkout = wrapper(async (req, res) => {
     throw new ApiError(403, 'Cannot create orders for other users');
   }
 
-  // Validate required fields
-  if (!amount || !clientId || !slotId) {
+  // Validate required fields (amount can be 0 for free promotional bookings)
+  if (amount === undefined || amount === null || amount === '' || !clientId || !slotId) {
     throw new ApiError(400, 'Amount, clientId, and slotId are required');
   }
 
@@ -675,6 +764,7 @@ const checkout = wrapper(async (req, res) => {
     operation: 'checkout',
     clientId,
     slotId,
+    couponCode: couponCode || null,
     idempotencyKey,
   });
 
@@ -682,7 +772,12 @@ const checkout = wrapper(async (req, res) => {
   const idempotencyCheck = await checkIdempotency(
     idempotencyKey,
     IDEMPOTENCY_TYPES.CHECKOUT,
-    { amount, clientId, slotId },
+    {
+      amount,
+      clientId,
+      slotId,
+      couponCode: couponCode ? couponCode.trim().toUpperCase() : null,
+    },
     contextLogger
   );
 
@@ -699,10 +794,10 @@ const checkout = wrapper(async (req, res) => {
   }
 
   try {
-    const totalPriceAfterPlatformFee = Number(amount);
+    const requestedAmount = Number(amount);
 
-    // Validate amount
-    if (totalPriceAfterPlatformFee < MINIMUM_SLOT_AMOUNT) {
+    // Validate amount (allow 0 only if couponCode is provided)
+    if (requestedAmount < 0 || (!couponCode && requestedAmount < MINIMUM_SLOT_AMOUNT)) {
       await updateIdempotencyStatus(
         idempotencyKey,
         IDEMPOTENCY_TYPES.CHECKOUT,
@@ -737,16 +832,38 @@ const checkout = wrapper(async (req, res) => {
       throw new ApiError(400, 'This slot is no longer available. Please select another time slot.');
     }
 
-    // Verify slot amount
-    if (slot.totalPriceAfterPlatformFee !== Number(amount)) {
-      await updateIdempotencyStatus(
-        idempotencyKey,
-        IDEMPOTENCY_TYPES.CHECKOUT,
-        'failed',
-        null,
-        contextLogger
-      );
-      throw new ApiError(400, 'Slot price has changed. Please refresh and try again.');
+    // Zero-trust server-side price recalculation
+    let finalPayableAmount = slot.totalPriceAfterPlatformFee;
+    let couponQuote = null;
+
+    if (couponCode && typeof couponCode === 'string' && couponCode.trim().length > 0) {
+      couponQuote = await validateAndQuoteCoupon(couponCode, currentUserId, slot);
+      finalPayableAmount = couponQuote.finalAmount;
+
+      if (requestedAmount !== finalPayableAmount) {
+        await updateIdempotencyStatus(
+          idempotencyKey,
+          IDEMPOTENCY_TYPES.CHECKOUT,
+          'failed',
+          null,
+          contextLogger
+        );
+        throw new ApiError(
+          400,
+          `Payable amount mismatch. Expected ₹${finalPayableAmount}, received ₹${requestedAmount}.`
+        );
+      }
+    } else {
+      if (slot.totalPriceAfterPlatformFee !== requestedAmount) {
+        await updateIdempotencyStatus(
+          idempotencyKey,
+          IDEMPOTENCY_TYPES.CHECKOUT,
+          'failed',
+          null,
+          contextLogger
+        );
+        throw new ApiError(400, 'Slot price has changed. Please refresh and try again.');
+      }
     }
 
     // Check counselor
@@ -802,16 +919,99 @@ const checkout = wrapper(async (req, res) => {
       );
     }
 
-    // Create Razorpay order
-    const orderOptions = {
-      amount: Math.round(totalPriceAfterPlatformFee * 100),
-      currency: 'INR',
-      notes: {
+    // Check for 100% Free Promotional Session Bypass (₹0 Total)
+    if (finalPayableAmount === 0 && couponQuote) {
+      contextLogger.info('100% Free Promotional Booking detected. Bypassing Razorpay.');
+
+      const freePaymentId = `free_promo_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+      const freeOrderId = `free_order_${Date.now()}`;
+
+      // Create payment record marked as captured/promotional
+      const payment = await Payment.create({
         clientId,
         slotId,
+        razorpay_order_id: freeOrderId,
+        razorpay_payment_id: freePaymentId,
+        razorpay_signature: 'free_promotional_signature',
+        amount: 0,
+        currency: 'INR',
+        status: PAYMENT_STATES.CAPTURED_UNLINKED,
+        bookingStatus: PAYMENT_BOOKING_STATUS.PAYMENT_CAPTURED,
+        captured: true,
+        couponDetails: {
+          couponCode: couponQuote.coupon.code,
+          discountAmount: couponQuote.discountAmount,
+          originalAmount: couponQuote.originalAmount,
+        },
+      });
+
+      // Execute atomic booking transaction
+      const txResult = await executeBookingTransaction(payment, clientId, slotId, contextLogger);
+
+      // Trigger phase 3: external resources asynchronously (VideoSDK room, emails)
+      setImmediate(async () => {
+        try {
+          await createExternalResourcesV2(
+            txResult.booking,
+            txResult.counselor,
+            txResult.client,
+            txResult.slot,
+            contextLogger
+          );
+        } catch (resourceError) {
+          contextLogger.error('Phase 3 failed for free booking:', resourceError);
+        }
+      });
+
+      const freeResponseData = {
+        isFree: true,
+        booking: txResult.booking,
+        pricing: {
+          originalAmount: couponQuote.originalAmount,
+          discountAmount: couponQuote.discountAmount,
+          finalAmount: 0,
+          couponCode: couponQuote.coupon.code,
+        },
+      };
+
+      await updateIdempotencyStatus(
         idempotencyKey,
-        slotStartTime: slot.startTime.toISOString(),
-      },
+        IDEMPOTENCY_TYPES.CHECKOUT,
+        'completed',
+        freeResponseData,
+        contextLogger
+      );
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          freeResponseData,
+          'Free promotional session confirmed successfully!'
+        )
+      );
+    }
+
+    // Create Razorpay order
+    const orderNotes = {
+      clientId,
+      slotId,
+      idempotencyKey,
+      slotStartTime: slot.startTime.toISOString(),
+      ...(couponQuote
+        ? {
+            couponCode: couponQuote.coupon.code,
+            couponId: couponQuote.coupon._id.toString(),
+            originalAmount: String(couponQuote.originalAmount),
+            discountAmount: String(couponQuote.discountAmount),
+            finalAmount: String(couponQuote.finalAmount),
+          }
+        : {}),
+    };
+
+    const orderOptions = {
+      amount: Math.round(finalPayableAmount * 100),
+      currency: 'INR',
+      notes: orderNotes,
       receipt: `receipt_${Date.now()}_${idempotencyKey.slice(-8)}`,
     };
 
@@ -821,7 +1021,19 @@ const checkout = wrapper(async (req, res) => {
     );
 
     const order = await Promise.race([orderPromise, timeoutPromise]);
-    const responseData = { order };
+    const responseData = {
+      order,
+      ...(couponQuote
+        ? {
+            pricing: {
+              originalAmount: couponQuote.originalAmount,
+              discountAmount: couponQuote.discountAmount,
+              finalAmount: couponQuote.finalAmount,
+              couponCode: couponQuote.coupon.code,
+            },
+          }
+        : {}),
+    };
 
     await updateIdempotencyStatus(
       idempotencyKey,
@@ -938,7 +1150,16 @@ const razorpayWebhook = wrapper(async (req, res) => {
           return res.status(200).json({ status: 'already_processed' });
         }
 
-        // ✅ CREATE UNLINKED PAYMENT (Audit Trail)
+        const notes = razorpayPayment.notes || {};
+        const couponCode = notes.couponCode || null;
+        const discountAmount = Number(notes.discountAmount) || 0;
+        const originalAmount = notes.originalAmount
+          ? Number(notes.originalAmount)
+          : couponCode
+          ? razorpayPayment.amount / 100 + discountAmount
+          : razorpayPayment.amount / 100;
+
+        // CREATE UNLINKED PAYMENT (Audit Trail)
         const payment = await Payment.create({
           clientId,
           slotId,
@@ -955,7 +1176,16 @@ const razorpayWebhook = wrapper(async (req, res) => {
           contact: razorpayPayment.contact,
           fee: razorpayPayment.fee ? razorpayPayment.fee / 100 : 0,
           tax: razorpayPayment.tax ? razorpayPayment.tax / 100 : 0,
-          notes: razorpayPayment.notes || {},
+          notes,
+          ...(couponCode
+            ? {
+                couponDetails: {
+                  couponCode,
+                  discountAmount,
+                  originalAmount,
+                },
+              }
+            : {}),
           razorpay_created_at: razorpayPayment.created_at,
         });
 
@@ -1181,6 +1411,7 @@ const paymentVerification = wrapper(async (req, res) => {
       booking: {
         _id: booking._id,
         paidAmount: payment.amount,
+        pricing: booking.pricing || null,
         sessionDate: slotStartTime.format('dddd, D MMMM YYYY'),
         sessionTime: slotStartTime.format('hh:mm A'),
         duration: slotDuration,

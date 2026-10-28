@@ -148,6 +148,19 @@ const bookingSchema = new mongoose.Schema(
       ref: 'Payment',
       default: '',
     },
+
+    pricing: {
+      originalAmount: Number,
+      discountAmount: {
+        type: Number,
+        default: 0,
+      },
+      finalAmount: Number,
+      couponCode: {
+        type: String,
+        default: null,
+      },
+    },
   },
   {
     timestamps: true,
