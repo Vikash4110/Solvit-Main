@@ -46,6 +46,10 @@ export const API_ENDPOINTS = {
   PAYMENT_VERIFICATION: '/payment/paymentverification',
   PAYMENT_CHECK_RECENT: '/payment/check-recent',
 
+  // Coupon and Referral Promotion endpoints
+  COUPON_GET_APPLICABLE: '/coupons/applicable-for-slot',
+  COUPON_VALIDATE: '/coupons/validate',
+
   // Slot management endpoints
   SLOT_MANAGEMENT_GET_ALL: '/slotManagement/get-all-generated-slots',
   SLOT_MANAGEMENT_MANAGE_DAY: '/slotManagement/manage-day-slots',
