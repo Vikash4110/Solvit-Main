@@ -1,6 +1,6 @@
-// components/admin/CreateCouponModal.jsx - Interactive Coupon & Campaign Creation Dialog
+// components/admin/CreateCouponModal.jsx - Interactive Enterprise Coupon & Campaign Creation Dialog
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
@@ -8,18 +8,19 @@ import {
   TicketPercent,
   Sparkles,
   Percent,
-  DollarSign,
   Calendar,
   Users,
-  Shield,
-  HelpCircle,
-  X,
-  Loader2,
   CheckCircle2,
   AlertCircle,
-  Layers,
-  ArrowRight,
+  Loader2,
+  Tag,
+  Check,
+  Clock,
+  ShieldCheck,
+  Search,
+  X,
   UserCheck,
+  Info,
 } from 'lucide-react';
 import {
   Dialog,
@@ -35,7 +36,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
   const { createCouponAdmin, getCounselorsForCouponSelectorAdmin } = useAdminAuth();
@@ -73,6 +74,7 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
     if (open) {
       setFormData(initialFormData);
       setErrors({});
+      setCounselorSearch('');
       fetchCounselors();
     }
   }, [open]);
@@ -116,7 +118,7 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
 
   // Generate random code helper
   const handleGenerateCode = () => {
-    const prefixes = ['SOLV', 'PROMO', 'SAVE', 'CARE', 'FESTIVE'];
+    const prefixes = ['SOLV', 'PROMO', 'SAVE', 'CARE', 'FESTIVE', 'HEAL'];
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     const num = Math.floor(10 + Math.random() * 90);
     const generated = `${prefix}${num}`;
@@ -140,6 +142,25 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
       return { ...prev, applicableCounselors: updated };
     });
   };
+
+  // Remove single counselor chip
+  const handleRemoveCounselor = (counselorId) => {
+    setFormData((prev) => ({
+      ...prev,
+      applicableCounselors: prev.applicableCounselors.filter((id) => id !== counselorId),
+    }));
+  };
+
+  // Filtered counselors list memoized for performance
+  const filteredCounselors = useMemo(() => {
+    if (!counselorSearch.trim()) return counselorsList;
+    const term = counselorSearch.toLowerCase();
+    return counselorsList.filter(
+      (c) =>
+        c.fullName?.toLowerCase().includes(term) ||
+        c.email?.toLowerCase().includes(term)
+    );
+  }, [counselorsList, counselorSearch]);
 
   // Form Validation
   const validateForm = () => {
@@ -196,7 +217,7 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
 
   // Submit Handler
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!validateForm()) {
       toast.error('Please fix the validation errors before submitting.');
       return;
@@ -245,23 +266,20 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
     }
   };
 
-  // Filtered counselors list
-  const filteredCounselors = counselorsList.filter((c) =>
-    c.fullName?.toLowerCase().includes(counselorSearch.toLowerCase()) ||
-    c.email?.toLowerCase().includes(counselorSearch.toLowerCase())
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent
+        size="xl"
+        className="sm:max-w-4xl lg:max-w-4xl w-[95vw] max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-2xl border-slate-200/90 shadow-2xl bg-white"
+      >
         {/* Modal Header */}
-        <DialogHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shadow-sm">
+        <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-slate-100 bg-linear-to-r from-slate-50/90 via-white to-blue-50/40">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
               <TicketPercent className="w-5 h-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-bold text-slate-900">
+              <DialogTitle className="text-xl font-bold text-slate-900 tracking-tight">
                 Create New Coupon
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500 mt-0.5">
@@ -271,249 +289,343 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
           </div>
         </DialogHeader>
 
-        {/* Form Body (Scrollable) */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Section 1: Code & Description */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              1. Campaign Identity
-            </h3>
+        {/* Form Body (Scrollable with clean padding) */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Section 1: Campaign Identity */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <Tag className="w-3.5 h-3.5 text-blue-600" />
+                1. Campaign Identity
+              </h3>
+              <span className="text-[11px] text-slate-400">Step 1 of 4</span>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Code */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {/* Coupon Code */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <Label htmlFor="coupon-code" className="text-xs font-semibold text-slate-700">
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label htmlFor="coupon-code" className="text-xs font-semibold text-slate-700 flex items-center gap-1">
                     Coupon Code <span className="text-red-500">*</span>
                   </Label>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={handleGenerateCode}
-                    className="text-[11px] font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    className="h-6 px-2 text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 gap-1 rounded-md shrink-0"
                   >
-                    Generate Random
-                  </button>
+                    <Sparkles className="w-3 h-3 text-blue-600" />
+                    <span>Generate Random</span>
+                  </Button>
                 </div>
                 <Input
                   id="coupon-code"
                   placeholder="e.g. NEWSTART, DIWALI25"
                   value={formData.code}
                   onChange={handleCodeChange}
-                  className={`font-mono uppercase font-bold tracking-wider ${
+                  className={`font-mono uppercase font-bold tracking-wider text-sm h-10 border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20 ${
                     errors.code ? 'border-red-500 focus-visible:ring-red-500' : ''
                   }`}
                 />
-                {errors.code ? (
-                  <p className="text-[11px] text-red-600 mt-1">{errors.code}</p>
-                ) : (
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Uppercase letters, numbers, hyphens, and underscores only.
-                  </p>
-                )}
+                <div className="h-4 mt-1">
+                  {errors.code ? (
+                    <p className="text-[11px] text-red-600 font-medium leading-none">{errors.code}</p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 leading-none">
+                      Uppercase letters, numbers, hyphens, and underscores only.
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Status Toggle on Creation */}
+              {/* Initial Status Toggle */}
               <div>
-                <Label className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Initial Status
-                </Label>
-                <div className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
-                  <span className="text-xs text-slate-700 font-medium">
-                    {formData.isActive ? 'Active (Ready to redeem)' : 'Draft / Inactive (Paused)'}
-                  </span>
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">
+                    Initial Campaign Status
+                  </Label>
+                  <span className="text-[11px] text-slate-400">Kill-switch state</span>
+                </div>
+                <div className="flex items-center justify-between h-10 px-3.5 rounded-lg border border-slate-200 bg-slate-50/60">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full ${
+                        formData.isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                      }`}
+                    />
+                    <span className="text-xs font-medium text-slate-700">
+                      {formData.isActive ? 'Active (Ready to redeem)' : 'Draft / Inactive (Paused)'}
+                    </span>
+                  </div>
                   <Switch
                     checked={formData.isActive}
                     onCheckedChange={(val) => handleChange('isActive', val)}
-                    className="data-[state=checked]:bg-emerald-600"
+                    className="data-[state=checked]:bg-emerald-600 cursor-pointer"
                   />
+                </div>
+                <div className="h-4 mt-1">
+                  <p className="text-[11px] text-slate-400 leading-none">
+                    Active coupons can be redeemed immediately upon publishing.
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Description */}
+            {/* Campaign Description */}
             <div>
-              <Label htmlFor="coupon-desc" className="text-xs font-semibold text-slate-700 block mb-1.5">
-                Campaign Description <span className="text-red-500">*</span>
-              </Label>
+              <div className="flex items-center justify-between h-7 mb-1.5">
+                <Label htmlFor="coupon-desc" className="text-xs font-semibold text-slate-700">
+                  Campaign Description <span className="text-red-500">*</span>
+                </Label>
+                <span className="text-[11px] text-slate-400">Shown to clients at checkout</span>
+              </div>
               <Input
                 id="coupon-desc"
                 placeholder="e.g. 15% discount for first-time counseling sessions"
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}
-                className={errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                className={`h-10 border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20 ${
+                  errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''
+                }`}
               />
-              {errors.description && (
-                <p className="text-[11px] text-red-600 mt-1">{errors.description}</p>
-              )}
+              <div className="h-4 mt-1">
+                {errors.description && (
+                  <p className="text-[11px] text-red-600 font-medium leading-none">{errors.description}</p>
+                )}
+              </div>
             </div>
           </div>
 
-          <Separator className="bg-slate-100" />
+          {/* Section 2: Discount Structure & Pricing */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <Percent className="w-3.5 h-3.5 text-blue-600" />
+                2. Discount Rules & Pricing
+              </h3>
+              <span className="text-[11px] text-slate-400">Step 2 of 4</span>
+            </div>
 
-          {/* Section 2: Discount Structure */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Percent className="w-3.5 h-3.5 text-blue-600" />
-              2. Discount Rules & Pricing
-            </h3>
-
-            {/* Discount Type Selector */}
+            {/* Discount Type Radio Cards */}
             <div>
               <Label className="text-xs font-semibold text-slate-700 block mb-2">
-                Discount Type <span className="text-red-500">*</span>
+                Discount Calculation Type <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleChange('discountType', 'percentage')}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-xs font-semibold transition-all ${
+                  onKeyDown={(e) => e.key === 'Enter' && handleChange('discountType', 'percentage')}
+                  className={`relative flex items-center gap-3.5 p-4 rounded-xl border cursor-pointer transition-all ${
                     formData.discountType === 'percentage'
-                      ? 'border-blue-600 bg-blue-50/70 text-blue-900 shadow-sm ring-1 ring-blue-600'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20 shadow-xs'
+                      : 'border-slate-200 bg-white hover:bg-slate-50/80'
                   }`}
                 >
-                  <Percent className="w-4 h-4 text-blue-600" />
-                  Percentage Discount (%)
-                </button>
-                <button
-                  type="button"
+                  <div
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                      formData.discountType === 'percentage'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Percent className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-900">Percentage Discount (%)</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">e.g. 15% off the total session fee</p>
+                  </div>
+                  {formData.discountType === 'percentage' && (
+                    <CheckCircle2 className="w-5 h-5 text-blue-600 absolute right-3.5 top-4" />
+                  )}
+                </div>
+
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleChange('discountType', 'flat')}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-xs font-semibold transition-all ${
+                  onKeyDown={(e) => e.key === 'Enter' && handleChange('discountType', 'flat')}
+                  className={`relative flex items-center gap-3.5 p-4 rounded-xl border cursor-pointer transition-all ${
                     formData.discountType === 'flat'
-                      ? 'border-blue-600 bg-blue-50/70 text-blue-900 shadow-sm ring-1 ring-blue-600'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20 shadow-xs'
+                      : 'border-slate-200 bg-white hover:bg-slate-50/80'
                   }`}
                 >
-                  <span className="font-bold text-sm text-blue-600">₹</span>
-                  Flat Rupee Discount (₹)
-                </button>
+                  <div
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                      formData.discountType === 'flat'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <span className="font-bold text-lg">₹</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-900">Flat Rupee Discount (₹)</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">e.g. Deduct ₹150 from session fee</p>
+                  </div>
+                  {formData.discountType === 'flat' && (
+                    <CheckCircle2 className="w-5 h-5 text-blue-600 absolute right-3.5 top-4" />
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Inputs: Discount Value, Max Cap, Min Spend */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {/* Discount Value */}
               <div>
-                <Label htmlFor="discount-val" className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Discount Value <span className="text-red-500">*</span>
-                </Label>
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label htmlFor="discount-val" className="text-xs font-semibold text-slate-700">
+                    Discount Value <span className="text-red-500">*</span>
+                  </Label>
+                  <span className="text-[11px] text-slate-400">
+                    {formData.discountType === 'percentage' ? 'Max 100%' : 'In ₹'}
+                  </span>
+                </div>
                 <div className="relative">
                   <Input
                     id="discount-val"
                     type="number"
                     min="1"
                     max={formData.discountType === 'percentage' ? '100' : undefined}
-                    placeholder={formData.discountType === 'percentage' ? 'e.g. 15' : 'e.g. 100'}
+                    placeholder={formData.discountType === 'percentage' ? 'e.g. 15' : 'e.g. 150'}
                     value={formData.discountValue}
                     onChange={(e) => handleChange('discountValue', e.target.value)}
-                    className={errors.discountValue ? 'border-red-500' : ''}
+                    className={`h-10 pr-9 border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20 font-semibold ${
+                      errors.discountValue ? 'border-red-500' : ''
+                    }`}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
                     {formData.discountType === 'percentage' ? '%' : '₹'}
                   </span>
                 </div>
-                {errors.discountValue && (
-                  <p className="text-[11px] text-red-600 mt-1">{errors.discountValue}</p>
-                )}
+                <div className="h-4 mt-1">
+                  {errors.discountValue ? (
+                    <p className="text-[11px] text-red-600 font-medium leading-none">{errors.discountValue}</p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 leading-none">
+                      {formData.discountType === 'percentage' ? 'Value between 1 and 100%' : 'Amount in Indian Rupees'}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Max Discount Ceiling Cap (for Percentage) */}
+              {/* Max Discount Cap (for Percentage) */}
               <div>
-                <Label htmlFor="max-cap" className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Max Cap (₹)
-                </Label>
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label htmlFor="max-cap" className="text-xs font-semibold text-slate-700">
+                    Max Cap (₹)
+                  </Label>
+                  <span className="text-[11px] text-slate-400">
+                    {formData.discountType === 'flat' ? 'Disabled' : 'Optional'}
+                  </span>
+                </div>
                 <div className="relative">
                   <Input
                     id="max-cap"
                     type="number"
                     min="1"
                     disabled={formData.discountType === 'flat'}
-                    placeholder={formData.discountType === 'flat' ? 'N/A for flat' : 'e.g. 150'}
+                    placeholder={formData.discountType === 'flat' ? 'N/A for flat' : 'e.g. 250'}
                     value={formData.maxDiscountAmount}
                     onChange={(e) => handleChange('maxDiscountAmount', e.target.value)}
-                    className={errors.maxDiscountAmount ? 'border-red-500' : ''}
+                    className={`h-10 pr-9 border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20 disabled:bg-slate-100 disabled:text-slate-400 ${
+                      errors.maxDiscountAmount ? 'border-red-500' : ''
+                    }`}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
                     ₹
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Optional limit for % discounts.
-                </p>
+                <div className="h-4 mt-1">
+                  <p className="text-[11px] text-slate-400 leading-none">
+                    {formData.discountType === 'flat' ? 'Disabled for flat discount' : 'Optional ceiling cap for %'}
+                  </p>
+                </div>
               </div>
 
               {/* Minimum Order Spend */}
               <div>
-                <Label htmlFor="min-spend" className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Min Spend (₹)
-                </Label>
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label htmlFor="min-spend" className="text-xs font-semibold text-slate-700">
+                    Min Spend (₹)
+                  </Label>
+                  <span className="text-[11px] text-slate-400">Order floor</span>
+                </div>
                 <div className="relative">
                   <Input
                     id="min-spend"
                     type="number"
                     min="0"
-                    placeholder="e.g. 200"
+                    placeholder="e.g. 300"
                     value={formData.minOrderAmount}
                     onChange={(e) => handleChange('minOrderAmount', e.target.value)}
-                    className={errors.minOrderAmount ? 'border-red-500' : ''}
+                    className={`h-10 pr-9 border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20 ${
+                      errors.minOrderAmount ? 'border-red-500' : ''
+                    }`}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
                     ₹
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Minimum session fee (0 = none).
-                </p>
+                <div className="h-4 mt-1">
+                  <p className="text-[11px] text-slate-400 leading-none">Minimum session booking fee</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <Separator className="bg-slate-100" />
+          {/* Section 3: Target Audience & Scope */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <Users className="w-3.5 h-3.5 text-blue-600" />
+                3. Target Audience & Behavior Rules
+              </h3>
+              <span className="text-[11px] text-slate-400">Step 3 of 4</span>
+            </div>
 
-          {/* Section 3: Target Audience & Behavior */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-blue-600" />
-              3. Target Audience & Behavior
-            </h3>
-
+            {/* Audience Toggles */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* First Booking Only */}
-              <div className="flex items-start justify-between p-3 rounded-lg border border-slate-200 bg-slate-50/50">
-                <div className="pr-2">
-                  <p className="text-xs font-semibold text-slate-800">First Booking Only</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Restricted strictly to clients booking their very first session.
+              <div className="flex items-start justify-between p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                <div className="pr-3">
+                  <p className="text-xs font-bold text-slate-800">First Booking Only</p>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    Restricted strictly to new clients booking their very first counseling session.
                   </p>
                 </div>
                 <Switch
                   checked={formData.firstBookingOnly}
                   onCheckedChange={(val) => handleChange('firstBookingOnly', val)}
-                  className="data-[state=checked]:bg-blue-600"
+                  className="data-[state=checked]:bg-blue-600 cursor-pointer mt-0.5"
                 />
               </div>
 
-              {/* Auto-Apply in Checkout */}
-              <div className="flex items-start justify-between p-3 rounded-lg border border-slate-200 bg-slate-50/50">
-                <div className="pr-2">
-                  <p className="text-xs font-semibold text-slate-800">Auto-Apply in Modal</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Automatically fills in and applies on booking modal open.
+              {/* Auto-Apply in Modal */}
+              <div className="flex items-start justify-between p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                <div className="pr-3">
+                  <p className="text-xs font-bold text-slate-800">Auto-Apply at Checkout</p>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    Automatically fills in and applies when the booking modal opens for clients.
                   </p>
                 </div>
                 <Switch
                   checked={formData.isAutoApplied}
                   onCheckedChange={(val) => handleChange('isAutoApplied', val)}
-                  className="data-[state=checked]:bg-blue-600"
+                  className="data-[state=checked]:bg-blue-600 cursor-pointer mt-0.5"
                 />
               </div>
             </div>
 
-            {/* Counselor Scoping Toggle */}
-            <div className="space-y-3 pt-1">
-              <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50/50">
+            {/* Counselor Scoping Toggle & List */}
+            <div className="pt-1 space-y-3">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50/50">
                 <div>
-                  <p className="text-xs font-semibold text-slate-800">Restrict to Specific Counselors</p>
+                  <p className="text-xs font-bold text-slate-800">Restrict to Specific Counselors</p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     {formData.scopeToCounselors
                       ? 'Only valid when booking sessions with selected counselors.'
@@ -523,37 +635,69 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
                 <Switch
                   checked={formData.scopeToCounselors}
                   onCheckedChange={(val) => handleChange('scopeToCounselors', val)}
-                  className="data-[state=checked]:bg-purple-600"
+                  className="data-[state=checked]:bg-purple-600 cursor-pointer"
                 />
               </div>
 
               {/* Counselor Multi-Selector */}
               {formData.scopeToCounselors && (
-                <div className="p-3 border border-purple-200 rounded-lg bg-purple-50/30 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold text-purple-950">
-                      Select Counselors ({formData.applicableCounselors.length} selected)
-                    </Label>
-                    <Input
-                      placeholder="Search counselors..."
-                      value={counselorSearch}
-                      onChange={(e) => setCounselorSearch(e.target.value)}
-                      className="h-7 w-48 text-xs bg-white"
-                    />
+                <div className="p-4 border border-purple-200 rounded-xl bg-purple-50/30 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs font-bold text-purple-950">
+                        Select Counselors
+                      </Label>
+                      <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] font-semibold">
+                        {formData.applicableCounselors.length} selected
+                      </Badge>
+                    </div>
+                    <div className="relative w-full sm:w-60">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <Input
+                        placeholder="Search counselors..."
+                        value={counselorSearch}
+                        onChange={(e) => setCounselorSearch(e.target.value)}
+                        className="h-8 pl-8 text-xs bg-white border-slate-200 focus-visible:border-purple-500"
+                      />
+                    </div>
                   </div>
 
                   {errors.applicableCounselors && (
-                    <p className="text-[11px] text-red-600">{errors.applicableCounselors}</p>
+                    <p className="text-[11px] text-red-600 font-medium">{errors.applicableCounselors}</p>
                   )}
 
-                  <ScrollArea className="h-32 rounded border border-slate-200 bg-white p-2">
+                  {/* Selected Counselor Chips */}
+                  {formData.applicableCounselors.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pt-1">
+                      {formData.applicableCounselors.map((cId) => {
+                        const counselor = counselorsList.find((c) => c._id === cId);
+                        return (
+                          <span
+                            key={cId}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] bg-purple-100 text-purple-900 border border-purple-200"
+                          >
+                            <span>{counselor?.fullName || 'Counselor'}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCounselor(cId)}
+                              className="text-purple-600 hover:text-purple-900 ml-0.5"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <ScrollArea className="h-36 rounded-lg border border-slate-200 bg-white p-2">
                     {loadingCounselors ? (
-                      <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <div className="py-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
                         Loading counselors...
                       </div>
                     ) : filteredCounselors.length === 0 ? (
-                      <p className="py-6 text-center text-xs text-slate-400">No counselors found.</p>
+                      <div className="py-8 text-center text-xs text-slate-400">No counselors match your search.</div>
                     ) : (
                       <div className="space-y-1">
                         {filteredCounselors.map((counselor) => {
@@ -562,17 +706,33 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
                             <div
                               key={counselor._id}
                               onClick={() => handleToggleCounselor(counselor._id)}
-                              className={`flex items-center justify-between px-2.5 py-1.5 rounded cursor-pointer text-xs transition-colors ${
+                              className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-xs transition-colors ${
                                 isSelected
-                                  ? 'bg-purple-100/70 text-purple-950 font-semibold'
+                                  ? 'bg-purple-100/80 text-purple-950 font-medium'
                                   : 'hover:bg-slate-50 text-slate-700'
                               }`}
                             >
-                              <div>
-                                <p>{counselor.fullName}</p>
-                                <p className="text-[10px] text-slate-400">{counselor.email}</p>
+                              <div className="flex items-center gap-2.5">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={counselor.profilePic} />
+                                  <AvatarFallback className="text-[10px] bg-purple-100 text-purple-700 font-bold">
+                                    {counselor.fullName ? counselor.fullName[0].toUpperCase() : 'C'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-semibold text-slate-900">{counselor.fullName}</p>
+                                  <p className="text-[10px] text-slate-400">{counselor.email}</p>
+                                </div>
                               </div>
-                              {isSelected && <CheckCircle2 className="w-4 h-4 text-purple-600" />}
+                              <div
+                                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                  isSelected
+                                    ? 'bg-purple-600 border-purple-600 text-white'
+                                    : 'border-slate-300 bg-white'
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3 stroke-3" />}
+                              </div>
                             </div>
                           );
                         })}
@@ -584,69 +744,93 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
             </div>
           </div>
 
-          <Separator className="bg-slate-100" />
-
           {/* Section 4: Validity & Usage Limits */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-blue-600" />
-              4. Validity Window & Usage Caps
-            </h3>
+          <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                4. Validity Window & Usage Caps
+              </h3>
+              <span className="text-[11px] text-slate-400">Step 4 of 4</span>
+            </div>
 
-            {/* Validity Presets */}
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400">Duration Presets:</span>
-              {[7, 14, 30, 90].map((days) => (
+            {/* Quick Presets */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 mr-1">Quick Presets:</span>
+              {[
+                { label: '+7 Days', days: 7 },
+                { label: '+14 Days', days: 14 },
+                { label: '+30 Days', days: 30 },
+                { label: '+60 Days', days: 60 },
+                { label: '+90 Days', days: 90 },
+              ].map((preset) => (
                 <button
-                  key={days}
+                  key={preset.days}
                   type="button"
-                  onClick={() => handleSetValidityPreset(days)}
-                  className="px-2 py-0.5 rounded border border-slate-200 text-[11px] text-slate-600 hover:bg-slate-100 transition-colors"
+                  onClick={() => handleSetValidityPreset(preset.days)}
+                  className="px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-slate-700 transition-colors"
                 >
-                  +{days} Days
+                  {preset.label}
                 </button>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Start Date */}
+            {/* Date Pickers */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <Label htmlFor="valid-from" className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Valid From
-                </Label>
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label htmlFor="valid-from" className="text-xs font-semibold text-slate-700">
+                    Valid From
+                  </Label>
+                  <span className="text-[11px] text-slate-400">Start Date & Time</span>
+                </div>
                 <Input
                   id="valid-from"
                   type="datetime-local"
                   value={formData.validFrom}
                   onChange={(e) => handleChange('validFrom', e.target.value)}
-                  className="text-xs"
+                  className="h-10 text-xs border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20"
                 />
+                <div className="h-4 mt-1">
+                  <p className="text-[11px] text-slate-400 leading-none">Campaign launch datetime</p>
+                </div>
               </div>
 
-              {/* End Date */}
               <div>
-                <Label htmlFor="valid-until" className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Valid Until (Expiration) <span className="text-red-500">*</span>
-                </Label>
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label htmlFor="valid-until" className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                    Valid Until <span className="text-red-500">*</span>
+                  </Label>
+                  <span className="text-[11px] text-slate-400">Expiration Date & Time</span>
+                </div>
                 <Input
                   id="valid-until"
                   type="datetime-local"
                   value={formData.validUntil}
                   onChange={(e) => handleChange('validUntil', e.target.value)}
-                  className={`text-xs ${errors.validUntil ? 'border-red-500' : ''}`}
+                  className={`h-10 text-xs border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20 ${
+                    errors.validUntil ? 'border-red-500' : ''
+                  }`}
                 />
-                {errors.validUntil && (
-                  <p className="text-[11px] text-red-600 mt-1">{errors.validUntil}</p>
-                )}
+                <div className="h-4 mt-1">
+                  {errors.validUntil ? (
+                    <p className="text-[11px] text-red-600 font-medium leading-none">{errors.validUntil}</p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 leading-none">Strictly later than start date</p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-              {/* Platform Total Uses */}
+            {/* Usage Caps */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
               <div>
-                <Label htmlFor="max-uses" className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Total Platform Uses Cap
-                </Label>
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label htmlFor="max-uses" className="text-xs font-semibold text-slate-700">
+                    Total Platform Redemptions
+                  </Label>
+                  <span className="text-[11px] text-slate-400">Platform Quota</span>
+                </div>
                 <Input
                   id="max-uses"
                   type="number"
@@ -654,96 +838,155 @@ export default function CreateCouponModal({ open, onOpenChange, onSuccess }) {
                   placeholder="Leave empty for unlimited (∞)"
                   value={formData.maxTotalUses}
                   onChange={(e) => handleChange('maxTotalUses', e.target.value)}
-                  className={errors.maxTotalUses ? 'border-red-500' : ''}
+                  className={`h-10 border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20 ${
+                    errors.maxTotalUses ? 'border-red-500' : ''
+                  }`}
                 />
-                {errors.maxTotalUses ? (
-                  <p className="text-[11px] text-red-600 mt-1">{errors.maxTotalUses}</p>
-                ) : (
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    First N clients to redeem across Solvit.
-                  </p>
-                )}
+                <div className="h-4 mt-1">
+                  {errors.maxTotalUses ? (
+                    <p className="text-[11px] text-red-600 font-medium leading-none">{errors.maxTotalUses}</p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 leading-none">
+                      First N clients to redeem across Solvit platform.
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Uses Per User */}
               <div>
-                <Label htmlFor="per-user" className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Max Redemptions Per Client
-                </Label>
+                <div className="flex items-center justify-between h-7 mb-1.5">
+                  <Label htmlFor="per-user" className="text-xs font-semibold text-slate-700">
+                    Per-Client Redemptions
+                  </Label>
+                  <span className="text-[11px] text-slate-400">Client Limit</span>
+                </div>
                 <Input
                   id="per-user"
                   type="number"
                   min="1"
                   value={formData.maxUsesPerUser}
                   onChange={(e) => handleChange('maxUsesPerUser', e.target.value)}
-                  className={errors.maxUsesPerUser ? 'border-red-500' : ''}
+                  className={`h-10 border-slate-200 bg-white focus-visible:border-blue-600 focus-visible:ring-blue-600/20 ${
+                    errors.maxUsesPerUser ? 'border-red-500' : ''
+                  }`}
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Defaults to 1 redemption per registered user.
-                </p>
+                <div className="h-4 mt-1">
+                  <p className="text-[11px] text-slate-400 leading-none">
+                    Default: 1 redemption per registered client.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Real-time Coupon Card Preview */}
-          <div className="p-4 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 block mb-2">
-              Live Preview Summary
-            </span>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-mono font-bold text-base text-slate-900 bg-white px-2.5 py-1 rounded border border-blue-200">
-                  {formData.code || 'COUPON_CODE'}
-                </span>
-                <p className="text-xs text-slate-600 mt-1.5 font-medium">
-                  {formData.description || 'Campaign description preview'}
+          {/* Section 5: Real-time Live Voucher Preview Card */}
+          <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-blue-50/90 p-5 shadow-xs relative overflow-hidden">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                Live Coupon Voucher Preview
+              </span>
+              <Badge className="bg-white text-blue-700 border-blue-200 text-[10px] font-semibold">
+                Client Preview
+              </Badge>
+            </div>
+
+            <div className="bg-white rounded-xl border border-blue-100 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-extrabold text-sm tracking-wider text-blue-900 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200">
+                    {formData.code || 'COUPON_CODE'}
+                  </span>
+                  {formData.firstBookingOnly && (
+                    <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-medium">
+                      First Booking Only
+                    </Badge>
+                  )}
+                  {formData.isAutoApplied && (
+                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-medium">
+                      Auto-Apply
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-slate-600 font-medium">
+                  {formData.description || 'Campaign description will appear here'}
                 </p>
+                <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                  <span>Expires: {dayjs(formData.validUntil).format('DD MMM YYYY')}</span>
+                  {formData.minOrderAmount > 0 && (
+                    <span>• Min spend: ₹{formData.minOrderAmount}</span>
+                  )}
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-lg font-extrabold text-blue-600">
+
+              <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 sm:border-l sm:pl-5 border-slate-100">
+                <div className="text-2xl font-black text-blue-600 tracking-tight">
                   {formData.discountValue
                     ? formData.discountType === 'percentage'
                       ? `${formData.discountValue}% OFF`
                       : `₹${formData.discountValue} OFF`
                     : '--'}
-                </span>
+                </div>
                 {formData.discountType === 'percentage' && formData.maxDiscountAmount && (
-                  <p className="text-[10px] text-slate-500">Up to ₹{formData.maxDiscountAmount}</p>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Up to ₹{formData.maxDiscountAmount} cap
+                  </p>
                 )}
+                <span
+                  className={`inline-flex items-center gap-1 text-[10px] font-semibold mt-1 px-2 py-0.5 rounded-full ${
+                    formData.isActive
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      formData.isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                    }`}
+                  />
+                  {formData.isActive ? 'Ready to Publish' : 'Draft Mode'}
+                </span>
               </div>
             </div>
           </div>
         </form>
 
         {/* Modal Footer */}
-        <DialogFooter className="p-4 px-6 border-t border-slate-100 bg-slate-50/50 flex flex-row items-center justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={submitting}
-            className="h-9 text-xs"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                Creating Coupon...
-              </>
-            ) : (
-              <>
-                <TicketPercent className="w-3.5 h-3.5 mr-1.5" />
-                Publish Coupon
-              </>
-            )}
-          </Button>
+        <DialogFooter className="p-4 sm:px-6 border-t border-slate-100 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 text-slate-400 text-xs self-start sm:self-center">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Enterprise audit logging enabled</span>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+              className="h-9 px-4 text-xs font-semibold text-slate-700 border-slate-200 hover:bg-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="h-9 px-5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Publishing Coupon...
+                </>
+              ) : (
+                <>
+                  <TicketPercent className="w-3.5 h-3.5 mr-1.5" />
+                  Publish Coupon
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

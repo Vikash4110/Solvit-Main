@@ -432,14 +432,14 @@ export default function AdminCouponsManagement() {
                 placeholder="Search by coupon code or campaign description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 h-9 bg-white"
+                className="pl-9 h-9 bg-white border-slate-200 focus-visible:border-blue-500 focus-visible:ring-blue-500/20"
               />
             </div>
 
             {/* Status Filter */}
             <div className="w-full sm:w-44">
               <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
-                <SelectTrigger className="h-9 bg-white">
+                <SelectTrigger className="h-9 bg-white border-slate-200">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -454,7 +454,7 @@ export default function AdminCouponsManagement() {
             {/* Type Filter */}
             <div className="w-full sm:w-48">
               <Select value={couponTypeFilter} onValueChange={(val) => setCouponTypeFilter(val)}>
-                <SelectTrigger className="h-9 bg-white">
+                <SelectTrigger className="h-9 bg-white border-slate-200">
                   <SelectValue placeholder="All Campaign Types" />
                 </SelectTrigger>
                 <SelectContent>
@@ -486,15 +486,15 @@ export default function AdminCouponsManagement() {
       <Card className="border border-slate-200/80 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-slate-50/75 border-b border-slate-200">
+            <TableHeader className="bg-slate-50/90 border-b border-slate-200">
               <TableRow>
-                <TableHead className="font-semibold text-xs text-slate-600 uppercase">Coupon Code</TableHead>
-                <TableHead className="font-semibold text-xs text-slate-600 uppercase">Type</TableHead>
-                <TableHead className="font-semibold text-xs text-slate-600 uppercase">Discount Rate</TableHead>
-                <TableHead className="font-semibold text-xs text-slate-600 uppercase">Redemptions / Cap</TableHead>
-                <TableHead className="font-semibold text-xs text-slate-600 uppercase">Validity Window</TableHead>
-                <TableHead className="font-semibold text-xs text-slate-600 uppercase">Status & Kill-Switch</TableHead>
-                <TableHead className="font-semibold text-xs text-slate-600 uppercase text-right">Actions</TableHead>
+                <TableHead className="font-semibold text-xs text-slate-600 uppercase tracking-wider py-3.5 px-4 min-w-[200px]">Coupon Code</TableHead>
+                <TableHead className="font-semibold text-xs text-slate-600 uppercase tracking-wider py-3.5 px-4 min-w-[130px]">Type</TableHead>
+                <TableHead className="font-semibold text-xs text-slate-600 uppercase tracking-wider py-3.5 px-4 min-w-[140px]">Discount Rate</TableHead>
+                <TableHead className="font-semibold text-xs text-slate-600 uppercase tracking-wider py-3.5 px-4 min-w-[150px]">Redemptions / Cap</TableHead>
+                <TableHead className="font-semibold text-xs text-slate-600 uppercase tracking-wider py-3.5 px-4 min-w-[160px]">Validity Window</TableHead>
+                <TableHead className="font-semibold text-xs text-slate-600 uppercase tracking-wider py-3.5 px-4 min-w-[190px]">Status & Kill-Switch</TableHead>
+                <TableHead className="font-semibold text-xs text-slate-600 uppercase tracking-wider py-3.5 px-4 w-[110px] text-center [&>div]:justify-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -538,7 +538,7 @@ export default function AdminCouponsManagement() {
                   return (
                     <TableRow key={coupon._id} className="hover:bg-slate-50/50 transition-colors">
                       {/* Code & Description */}
-                      <TableCell className="align-top py-3.5">
+                      <TableCell className="align-middle py-4 px-4">
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold text-sm text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                             {coupon.code}
@@ -556,13 +556,13 @@ export default function AdminCouponsManagement() {
                             )}
                           </button>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1 max-w-xs line-clamp-2">
+                        <p className="text-xs text-slate-500 max-w-[210px] truncate" title={coupon.description}>
                           {coupon.description}
                         </p>
                       </TableCell>
 
                       {/* Type Badges */}
-                      <TableCell className="align-top py-3.5">
+                      <TableCell className="align-middle py-4 px-4">
                         <div className="flex flex-col gap-1 items-start">
                           {coupon.firstBookingOnly ? (
                             <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[11px] font-medium">
@@ -586,7 +586,7 @@ export default function AdminCouponsManagement() {
                       </TableCell>
 
                       {/* Discount Rate */}
-                      <TableCell className="align-top py-3.5">
+                      <TableCell className="align-middle py-4 px-4">
                         <div className="font-semibold text-slate-900 text-sm">
                           {isPercentage ? `${coupon.discountValue}% OFF` : `Flat ₹${coupon.discountValue} OFF`}
                         </div>
@@ -601,7 +601,7 @@ export default function AdminCouponsManagement() {
                       </TableCell>
 
                       {/* Redemptions / Cap */}
-                      <TableCell className="align-top py-3.5">
+                      <TableCell className="align-middle py-4 px-4">
                         <div className="font-medium text-slate-900 text-sm">
                           {coupon.currentTotalUses}{' '}
                           <span className="text-slate-400 font-normal">
@@ -619,7 +619,7 @@ export default function AdminCouponsManagement() {
                       </TableCell>
 
                       {/* Validity Window */}
-                      <TableCell className="align-top py-3.5">
+                      <TableCell className="align-middle py-4 px-4">
                         <div className="text-xs text-slate-700 font-medium">
                           {dayjs(coupon.validUntil).format('DD MMM YYYY')}
                         </div>
@@ -629,13 +629,13 @@ export default function AdminCouponsManagement() {
                       </TableCell>
 
                       {/* Status & Instant Kill-Switch Toggle */}
-                      <TableCell className="align-top py-3.5">
+                      <TableCell className="align-middle py-4 px-4">
                         <div className="flex items-center gap-3">
                           <Switch
                             checked={coupon.isActive}
                             disabled={togglingId === coupon._id}
                             onCheckedChange={() => handleToggleStatus(coupon)}
-                            className="data-[state=checked]:bg-emerald-600"
+                            className="data-[state=checked]:bg-emerald-600 cursor-pointer"
                             title={coupon.isActive ? 'Click to deactivate immediately' : 'Click to activate'}
                           />
                           {getCouponStatusBadge(coupon)}
@@ -643,8 +643,8 @@ export default function AdminCouponsManagement() {
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell className="align-top py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
+                      <TableCell className="align-middle py-4 px-4 text-center w-[110px]">
+                        <div className="flex items-center justify-center gap-1.5">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -768,7 +768,7 @@ export default function AdminCouponsManagement() {
               </div>
             ) : (
               <Table>
-                <TableHeader className="bg-slate-50/75 border-b border-slate-200">
+                <TableHeader className="bg-slate-50/90 border-b border-slate-200">
                   <TableRow>
                     <TableHead className="text-xs font-semibold uppercase">Client</TableHead>
                     <TableHead className="text-xs font-semibold uppercase">Session Details</TableHead>
