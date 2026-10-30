@@ -107,11 +107,16 @@ export const getAllAmbassadorsAdmin = wrapper(async (req, res) => {
     totalUnpaidBalance: 0,
   };
 
+  const formattedAmbassadors = ambassadors.map((amb) => ({
+    ...amb,
+    upiId: amb.payoutDetails?.upiId || amb.upiId || null,
+  }));
+
   return res.status(200).json(
     new ApiResponse(
       200,
       {
-        ambassadors,
+        ambassadors: formattedAmbassadors,
         pagination: {
           page: pageNum,
           limit: limitNum,
@@ -150,6 +155,7 @@ export const getAmbassadorDetailsAdmin = wrapper(async (req, res) => {
       200,
       {
         ...ambassador,
+        upiId: ambassador.payoutDetails?.upiId || ambassador.upiId || null,
         active60DayClientsCount: activeAttributionsCount,
       },
       'Ambassador details retrieved successfully.'
@@ -287,7 +293,7 @@ export const getAmbassadorLedgerAdmin = wrapper(async (req, res) => {
     query.status = status;
   }
 
-  const [ledgerEntries, totalEntries] = await Promise.all([
+  const [ledgerEntries, totalEntries, payouts] = await Promise.all([
     AmbassadorSessionEarning.find(query)
       .sort({ sessionCompletedAt: -1 })
       .skip(skip)
@@ -297,6 +303,9 @@ export const getAmbassadorLedgerAdmin = wrapper(async (req, res) => {
       .populate('paymentId', 'razorpay_payment_id')
       .lean(),
     AmbassadorSessionEarning.countDocuments(query),
+    AmbassadorPayout.find({ ambassadorId })
+      .sort({ processedAt: -1 })
+      .lean(),
   ]);
 
   return res.status(200).json(
@@ -304,6 +313,7 @@ export const getAmbassadorLedgerAdmin = wrapper(async (req, res) => {
       200,
       {
         ledgerEntries,
+        payouts: payouts || [],
         pagination: {
           page: pageNum,
           limit: limitNum,

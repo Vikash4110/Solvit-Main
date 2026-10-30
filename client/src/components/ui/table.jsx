@@ -131,6 +131,9 @@ const TableHead = React.forwardRef(
       }
     };
 
+    const isRight = className && (className.includes("text-right") || className.includes("justify-end"));
+    const isCenter = className && (className.includes("text-center") || className.includes("justify-center"));
+
     return (
       <th
         ref={ref}
@@ -148,10 +151,15 @@ const TableHead = React.forwardRef(
         onClick={sortable ? handleSort : undefined}
         {...props}
       >
-        <div className="flex items-center gap-2">
+        <div
+          className={cn(
+            "flex items-center gap-2 w-full",
+            isRight ? "justify-end text-right" : isCenter ? "justify-center text-center" : "justify-start text-left"
+          )}
+        >
           {props.children}
           {sortable && (
-            <span className="ml-auto">
+            <span className={cn(isRight ? "order-first" : "ml-auto")}>
               {sortDirection === "asc" ? (
                 <ChevronUp className="h-4 w-4" />
               ) : sortDirection === "desc" ? (

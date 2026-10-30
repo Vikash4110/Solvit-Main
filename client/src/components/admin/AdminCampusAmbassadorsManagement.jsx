@@ -29,10 +29,13 @@ import {
   FileSpreadsheet,
   Filter,
   X,
-  Sparkles,
   Phone,
   Mail,
-  Award,
+  FileText,
+  History,
+  ArrowUpRight,
+  User,
+  Quote,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +64,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
@@ -75,6 +79,11 @@ const getInitials = (name) => {
     .slice(0, 2)
     .join('')
     .toUpperCase();
+};
+
+// Helper for extracting UPI ID regardless of schema nesting
+const getAmbassadorUpi = (amb) => {
+  return amb?.payoutDetails?.upiId || amb?.upiId || 'Not provided';
 };
 
 export default function AdminCampusAmbassadorsManagement() {
@@ -124,13 +133,13 @@ export default function AdminCampusAmbassadorsManagement() {
   const [payoutNotes, setPayoutNotes] = useState('');
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
 
-  // Ledger Drawer State
-  const [ledgerModalOpen, setLedgerModalOpen] = useState(false);
-  const [selectedAmbassadorForLedger, setSelectedAmbassadorForLedger] = useState(null);
-  const [ledgerEntries, setLedgerEntries] = useState([]);
-  const [ledgerLoading, setLedgerLoading] = useState(false);
-  const [ledgerPage, setLedgerPage] = useState(1);
-  const [ledgerTotalPages, setLedgerTotalPages] = useState(1);
+  // Ambassador Details & History Modal State (Eye Icon Window)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedAmbassador, setSelectedAmbassador] = useState(null);
+  const [detailsTab, setDetailsTab] = useState('profile');
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyLedger, setHistoryLedger] = useState([]);
+  const [historyPayouts, setHistoryPayouts] = useState([]);
 
   // Fetch ambassadors list
   const fetchAmbassadors = useCallback(async () => {
@@ -181,12 +190,33 @@ export default function AdminCampusAmbassadorsManagement() {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  // Open Detailed Profile & History Window (Triggered by Eye Icon)
+  const handleOpenDetails = async (ambassador, initialTab = 'profile') => {
+    setSelectedAmbassador(ambassador);
+    setDetailsTab(initialTab);
+    setDetailsModalOpen(true);
+    setHistoryLoading(true);
+
+    try {
+      const res = await getAmbassadorLedgerAdmin(ambassador._id, { page: 1, limit: 50 });
+      if (res.success) {
+        setHistoryLedger(res.data.ledgerEntries || []);
+        setHistoryPayouts(res.data.payouts || []);
+      }
+    } catch {
+      console.error('Error fetching history details');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   // Approve Ambassador
   const handleApprove = async (ambassador) => {
     try {
       const res = await approveAmbassadorAdmin(ambassador._id);
       if (res.success) {
         toast.success(`Approved ${ambassador.fullName}. Code assigned: ${res.data?.referralCode}`);
+        setDetailsModalOpen(false);
         fetchAmbassadors();
       } else {
         toast.error(res.error || 'Failed to approve application.');
@@ -214,6 +244,7 @@ export default function AdminCampusAmbassadorsManagement() {
       if (res.success) {
         toast.success(`Rejected application for ${selectedAmbassadorForReject.fullName}.`);
         setRejectModalOpen(false);
+        setDetailsModalOpen(false);
         fetchAmbassadors();
       } else {
         toast.error(res.error || 'Failed to reject application.');
@@ -231,34 +262,13 @@ export default function AdminCampusAmbassadorsManagement() {
       const res = await toggleAmbassadorStatusAdmin(ambassador._id);
       if (res.success) {
         toast.success(res.message || 'Ambassador status updated.');
+        setDetailsModalOpen(false);
         fetchAmbassadors();
       } else {
         toast.error(res.error || 'Failed to toggle status.');
       }
     } catch {
       toast.error('Error toggling ambassador status.');
-    }
-  };
-
-  // Open Ledger Modal
-  const handleOpenLedger = async (ambassador, page = 1) => {
-    setSelectedAmbassadorForLedger(ambassador);
-    setLedgerModalOpen(true);
-    setLedgerLoading(true);
-    setLedgerPage(page);
-
-    try {
-      const res = await getAmbassadorLedgerAdmin(ambassador._id, { page, limit: 10 });
-      if (res.success) {
-        setLedgerEntries(res.data.ledgerEntries || []);
-        setLedgerTotalPages(res.data.pagination?.totalPages || 1);
-      } else {
-        toast.error(res.error || 'Failed to load session ledger.');
-      }
-    } catch {
-      toast.error('Error loading session audit ledger.');
-    } finally {
-      setLedgerLoading(false);
     }
   };
 
@@ -291,6 +301,7 @@ export default function AdminCampusAmbassadorsManagement() {
       if (res.success) {
         toast.success(`Settlement recorded: ₹${res.data?.payout?.amount} successfully paid.`);
         setPayoutModalOpen(false);
+        setDetailsModalOpen(false);
         fetchAmbassadors();
       } else {
         toast.error(res.error || 'Failed to process payout settlement.');
@@ -580,31 +591,31 @@ export default function AdminCampusAmbassadorsManagement() {
         </CardContent>
       </Card>
 
-      {/* 4. Ambassadors Table */}
+      {/* 4. Streamlined Clean Table */}
       <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="table-fixed w-full min-w-[980px]">
             <TableHeader className="bg-slate-50/80 dark:bg-neutral-800/80">
               <TableRow>
-                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5">
-                  Ambassador Profile
+                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 pl-6 text-left [&>div]:justify-start w-[250px]">
+                  Ambassador
                 </TableHead>
-                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5">
-                  Referral Tracking
+                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-center [&>div]:justify-center w-[170px]">
+                  Referral Code
                 </TableHead>
-                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5">
-                  Contact & UPI
+                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-center [&>div]:justify-center w-[100px]">
+                  Students
                 </TableHead>
-                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-center">
-                  Attributed Students
-                </TableHead>
-                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-right">
+                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-right [&>div]:justify-end w-[140px]">
                   Unpaid Balance
                 </TableHead>
-                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-center">
+                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-center [&>div]:justify-center w-[120px]">
                   Status
                 </TableHead>
-                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-right">
+                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-center [&>div]:justify-center w-[70px]">
+                  View
+                </TableHead>
+                <TableHead className="font-semibold text-slate-700 dark:text-neutral-300 text-xs uppercase tracking-wider py-3.5 text-right pr-6 [&>div]:justify-end w-[180px]">
                   Actions
                 </TableHead>
               </TableRow>
@@ -637,32 +648,26 @@ export default function AdminCampusAmbassadorsManagement() {
                 ambassadors.map((amb) => (
                   <TableRow key={amb._id} className="hover:bg-slate-50/60 dark:hover:bg-neutral-800/40 transition-colors">
                     {/* Ambassador Profile */}
-                    <TableCell className="align-middle py-3.5">
+                    <TableCell className="align-middle py-3.5 pl-6 w-[250px]">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center shrink-0 shadow-xs">
                           {getInitials(amb.fullName)}
                         </div>
                         <div className="space-y-0.5 min-w-0">
-                          <div className="font-semibold text-slate-900 dark:text-neutral-100 text-sm">
+                          <div className="font-semibold text-slate-900 dark:text-neutral-100 text-sm truncate">
                             {amb.fullName}
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400">
-                            <Building2 className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                            <span className="truncate max-w-[200px]" title={amb.collegeName}>
-                              {amb.collegeName}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-slate-400 dark:text-neutral-500">
-                            {amb.degreeAndYear}
+                          <div className="text-xs text-slate-500 dark:text-neutral-400 truncate max-w-[180px]" title={amb.collegeName}>
+                            {amb.collegeName}
                           </div>
                         </div>
                       </div>
                     </TableCell>
 
                     {/* Referral Tracking */}
-                    <TableCell className="align-middle py-3.5">
-                      {amb.referralCode ? (
-                        <div className="space-y-1">
+                    <TableCell className="align-middle py-3.5 text-center w-[170px]">
+                      <div className="flex justify-center">
+                        {amb.referralCode ? (
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-neutral-800 font-mono text-xs font-semibold text-slate-800 dark:text-neutral-200 border border-slate-200 dark:border-neutral-700">
                             <span>{amb.referralCode}</span>
                             <button
@@ -677,61 +682,27 @@ export default function AdminCampusAmbassadorsManagement() {
                               )}
                             </button>
                           </div>
-                          <div>
-                            <button
-                              onClick={() =>
-                                copyToClipboard(
-                                  `${window.location.origin}/?amb=${amb.referralCode}`,
-                                  amb._id + '_link'
-                                )
-                              }
-                              className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 font-medium"
-                            >
-                              <span>Copy referral link</span>
-                              {copiedCode === amb._id + '_link' ? (
-                                <Check className="w-2.5 h-2.5 text-emerald-600" />
-                              ) : (
-                                <ExternalLink className="w-2.5 h-2.5" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400 italic">
-                          Assigned on approval
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* Contact & UPI */}
-                    <TableCell className="align-middle py-3.5">
-                      <div className="space-y-0.5 text-xs">
-                        <div className="flex items-center gap-1 text-slate-800 dark:text-neutral-200 font-medium">
-                          <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate max-w-[160px]">{amb.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-slate-500 dark:text-neutral-400">
-                          <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{amb.phone}</span>
-                        </div>
-                        <div className="inline-flex items-center gap-1 text-[11px] text-slate-700 dark:text-neutral-300 font-mono bg-slate-50 dark:bg-neutral-800 px-2 py-0.5 rounded border border-slate-200 dark:border-neutral-700">
-                          <CreditCard className="w-3 h-3 text-slate-400" />
-                          <span>{amb.upiId}</span>
-                        </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">
+                            Assigned on approval
+                          </span>
+                        )}
                       </div>
                     </TableCell>
 
                     {/* Students Attributed */}
-                    <TableCell className="align-middle py-3.5 text-center">
-                      <Badge variant="outline" className="font-semibold text-slate-800 dark:text-neutral-200 text-xs px-2.5 py-0.5 bg-slate-50 dark:bg-neutral-800">
-                        <Users className="w-3 h-3 mr-1 text-blue-600 dark:text-blue-400" />
-                        {amb.metrics?.totalStudentsAttributed || 0}
-                      </Badge>
+                    <TableCell className="align-middle py-3.5 text-center w-[100px]">
+                      <div className="flex justify-center">
+                        <Badge variant="outline" className="font-semibold text-slate-800 dark:text-neutral-200 text-xs px-2.5 py-0.5 bg-slate-50 dark:bg-neutral-800">
+                          <Users className="w-3 h-3 mr-1 text-blue-600 dark:text-blue-400" />
+                          {amb.metrics?.totalStudentsAttributed || 0}
+                        </Badge>
+                      </div>
                     </TableCell>
 
                     {/* Financials & Unpaid Balance */}
-                    <TableCell className="align-middle py-3.5 text-right">
-                      <div className="space-y-0.5">
+                    <TableCell className="align-middle py-3.5 text-right w-[140px]">
+                      <div className="space-y-0.5 text-right">
                         <div className="text-sm font-bold text-amber-700 dark:text-amber-400 font-mono">
                           ₹{(amb.metrics?.unpaidCommissionBalance || 0).toLocaleString('en-IN')}
                         </div>
@@ -742,13 +713,30 @@ export default function AdminCampusAmbassadorsManagement() {
                     </TableCell>
 
                     {/* Status */}
-                    <TableCell className="align-middle py-3.5 text-center">
-                      {renderStatusBadge(amb.status)}
+                    <TableCell className="align-middle py-3.5 text-center w-[120px]">
+                      <div className="flex justify-center">
+                        {renderStatusBadge(amb.status)}
+                      </div>
+                    </TableCell>
+
+                    {/* Dedicated Eye Icon Column */}
+                    <TableCell className="align-middle py-3.5 text-center w-[70px]">
+                      <div className="flex justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 rounded-full hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400"
+                          onClick={() => handleOpenDetails(amb, 'profile')}
+                          title="View Full Profile & Performance History"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
 
                     {/* Actions */}
-                    <TableCell className="align-middle py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                    <TableCell className="align-middle py-3.5 text-right pr-6 w-[180px]">
+                      <div className="flex items-center justify-end gap-1.5">
                         {amb.status === 'pending_review' && (
                           <>
                             <Button
@@ -773,16 +761,6 @@ export default function AdminCampusAmbassadorsManagement() {
                           <>
                             <Button
                               size="sm"
-                              variant="outline"
-                              className="h-8 text-xs gap-1 text-slate-700 dark:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 border-slate-200 dark:border-neutral-700"
-                              onClick={() => handleOpenLedger(amb)}
-                            >
-                              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                              <span>Ledger</span>
-                            </Button>
-
-                            <Button
-                              size="sm"
                               className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white gap-1 font-medium shadow-xs"
                               onClick={() => handleOpenPayout(amb)}
                               disabled={(amb.metrics?.unpaidCommissionBalance || 0) <= 0}
@@ -805,30 +783,18 @@ export default function AdminCampusAmbassadorsManagement() {
                         )}
 
                         {amb.status === 'suspended' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs gap-1"
-                              onClick={() => handleOpenLedger(amb)}
-                            >
-                              <FileSpreadsheet className="w-3.5 h-3.5" />
-                              <span>Ledger</span>
-                            </Button>
-
-                            <Button
-                              size="sm"
-                              className="h-8 text-xs bg-slate-800 hover:bg-slate-900 text-white font-medium"
-                              onClick={() => handleToggleStatus(amb)}
-                            >
-                              Reactivate
-                            </Button>
-                          </>
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs bg-slate-800 hover:bg-slate-900 text-white font-medium"
+                            onClick={() => handleToggleStatus(amb)}
+                          >
+                            Reactivate
+                          </Button>
                         )}
 
                         {amb.status === 'rejected' && (
-                          <div className="text-[11px] text-slate-400 italic max-w-[140px] truncate" title={amb.rejectionReason}>
-                            {amb.rejectionReason || 'Rejected by admin'}
+                          <div className="text-[11px] text-slate-400 italic max-w-[120px] truncate" title={amb.rejectionReason}>
+                            {amb.rejectionReason || 'Rejected'}
                           </div>
                         )}
                       </div>
@@ -870,119 +836,430 @@ export default function AdminCampusAmbassadorsManagement() {
         )}
       </Card>
 
-      {/* 5. Session Audit Ledger Modal */}
-      <Dialog open={ledgerModalOpen} onOpenChange={setLedgerModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-6">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-                <span>Session Commission Audit Ledger</span>
-              </div>
-              {selectedAmbassadorForLedger && (
-                <Badge variant="outline" className="font-mono text-xs">
-                  {selectedAmbassadorForLedger.referralCode}
-                </Badge>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              Chronological log of every realized paid session completed by students attributed to{' '}
-              <span className="font-semibold text-slate-800 dark:text-neutral-200">
-                {selectedAmbassadorForLedger?.fullName}
-              </span>.
-            </DialogDescription>
-          </DialogHeader>
+      {/* 5. Comprehensive Details & History Modal (Triggered by Eye Icon) */}
+      <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-6 overflow-hidden">
+          {selectedAmbassador && (
+            <>
+              {/* Modal Top Header */}
+              <DialogHeader className="pb-4 pr-12 border-b border-slate-100 dark:border-neutral-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm">
+                      {getInitials(selectedAmbassador.fullName)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <DialogTitle className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                          {selectedAmbassador.fullName}
+                        </DialogTitle>
+                        {renderStatusBadge(selectedAmbassador.status)}
+                      </div>
+                      <DialogDescription className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5 flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-slate-700 dark:text-neutral-300">{selectedAmbassador.collegeName}</span>
+                        <span>•</span>
+                        <span>{selectedAmbassador.degreeAndYear}</span>
+                      </DialogDescription>
+                    </div>
+                  </div>
 
-          <div className="flex-1 overflow-y-auto space-y-4 my-2">
-            {ledgerLoading ? (
-              <div className="py-12 text-center text-slate-500">
-                <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
-                <span>Loading ledger transactions...</span>
-              </div>
-            ) : ledgerEntries.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 border border-dashed rounded-xl">
-                No session earnings recorded yet for this ambassador.
-              </div>
-            ) : (
-              <div className="border border-slate-200 dark:border-neutral-800 rounded-xl overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-slate-50 dark:bg-neutral-800">
-                    <TableRow>
-                      <TableHead className="text-xs uppercase font-semibold">Client</TableHead>
-                      <TableHead className="text-xs uppercase font-semibold">Session Date</TableHead>
-                      <TableHead className="text-xs uppercase font-semibold text-right">
-                        Session Price
-                      </TableHead>
-                      <TableHead className="text-xs uppercase font-semibold text-right">
-                        5% Commission
-                      </TableHead>
-                      <TableHead className="text-xs uppercase font-semibold text-center">
-                        60-Day Window
-                      </TableHead>
-                      <TableHead className="text-xs uppercase font-semibold text-center">
-                        Status
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ledgerEntries.map((entry) => (
-                      <TableRow key={entry._id} className="text-xs">
-                        <TableCell className="font-medium text-slate-800 dark:text-neutral-200">
-                          {entry.clientId?.fullName || 'Client'}
-                          <div className="text-[10px] text-slate-400">
-                            {entry.clientId?.email}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-slate-600 dark:text-neutral-400">
-                          {dayjs(entry.sessionCompletedAt).format('DD MMM YYYY, hh:mm A')}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
-                          ₹{entry.realizedSessionPrice}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                          +₹{entry.commissionAmount}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 dark:bg-neutral-800 text-[11px] font-medium text-slate-700 dark:text-neutral-300">
-                            Day {entry.attributionDayNumber || 1} of 60
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge
-                            className={`text-[10px] uppercase font-semibold ${
-                              entry.status === 'accrued'
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : entry.status === 'settled'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-rose-50 text-rose-700 border-rose-200'
-                            }`}
+                  {/* Header Quick Actions */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {selectedAmbassador.status === 'pending_review' && (
+                      <>
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                          onClick={() => handleApprove(selectedAmbassador)}
+                        >
+                          Approve Application
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs text-rose-600 hover:bg-rose-50 border-rose-200"
+                          onClick={() => {
+                            setDetailsModalOpen(false);
+                            handleOpenReject(selectedAmbassador);
+                          }}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
+
+                    {selectedAmbassador.status === 'active' && (
+                      (selectedAmbassador.metrics?.unpaidCommissionBalance || 0) > 0 ? (
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white gap-1.5 font-medium shadow-xs"
+                          onClick={() => {
+                            setDetailsModalOpen(false);
+                            handleOpenPayout(selectedAmbassador);
+                          }}
+                        >
+                          <Wallet className="w-3.5 h-3.5" />
+                          <span>Settle Payout (₹{(selectedAmbassador.metrics?.unpaidCommissionBalance || 0).toLocaleString('en-IN')})</span>
+                        </Button>
+                      ) : (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-neutral-800 text-xs font-medium text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Balance Settled (₹0)</span>
+                        </div>
+                      )
+                    )}
+
+                    {selectedAmbassador.status === 'suspended' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs font-medium"
+                        onClick={() => handleToggleStatus(selectedAmbassador)}
+                      >
+                        Reactivate Ambassador
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* Navigation Tabs */}
+              <Tabs value={detailsTab} onValueChange={setDetailsTab} className="flex-1 flex flex-col min-h-0 pt-2">
+                <TabsList className="grid grid-cols-3 w-full sm:w-[420px] bg-slate-100 dark:bg-neutral-800">
+                  <TabsTrigger value="profile" className="text-xs">
+                    Applicant Profile
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="text-xs">
+                    Earnings Ledger ({historyLedger.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="payouts" className="text-xs">
+                    Payout History ({historyPayouts.length})
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Tab 1: Full Applicant Profile Information */}
+                <TabsContent value="profile" className="flex-1 overflow-y-auto space-y-4 pt-3 pr-1">
+                  {/* Grid of Profile Information */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-800/80 border border-slate-200/80 dark:border-neutral-700 space-y-1">
+                      <div className="text-slate-400 font-medium">Email Address</div>
+                      <div className="font-semibold text-slate-800 dark:text-neutral-200 flex items-center justify-between">
+                        <span className="truncate">{selectedAmbassador.email}</span>
+                        <button
+                          onClick={() => copyToClipboard(selectedAmbassador.email, 'dtl_email')}
+                          className="text-slate-400 hover:text-slate-600"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-800/80 border border-slate-200/80 dark:border-neutral-700 space-y-1">
+                      <div className="text-slate-400 font-medium">Phone Number</div>
+                      <div className="font-semibold text-slate-800 dark:text-neutral-200 flex items-center justify-between">
+                        <span>{selectedAmbassador.phone}</span>
+                        <button
+                          onClick={() => copyToClipboard(selectedAmbassador.phone, 'dtl_phone')}
+                          className="text-slate-400 hover:text-slate-600"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-800/80 border border-slate-200/80 dark:border-neutral-700 space-y-1">
+                      <div className="text-slate-400 font-medium">College / University</div>
+                      <div className="font-semibold text-slate-800 dark:text-neutral-200">
+                        {selectedAmbassador.collegeName}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-800/80 border border-slate-200/80 dark:border-neutral-700 space-y-1">
+                      <div className="text-slate-400 font-medium">Degree & Academic Year</div>
+                      <div className="font-semibold text-slate-800 dark:text-neutral-200">
+                        {selectedAmbassador.degreeAndYear}
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-neutral-800/80 border border-slate-200/80 dark:border-neutral-700 space-y-1.5 sm:col-span-2">
+                      <div className="text-xs text-slate-500 dark:text-neutral-400 font-medium flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <CreditCard className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                          Registered UPI Payment ID
+                        </span>
+                        {getAmbassadorUpi(selectedAmbassador) !== 'Not provided' && (
+                          <button
+                            onClick={() => copyToClipboard(getAmbassadorUpi(selectedAmbassador), 'dtl_upi')}
+                            className="text-slate-500 hover:text-blue-600 inline-flex items-center gap-1 text-[11px] font-sans font-medium transition-colors"
                           >
-                            {entry.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
+                            <span>{copiedCode === 'dtl_upi' ? 'Copied' : 'Copy UPI'}</span>
+                            {copiedCode === 'dtl_upi' ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      <div className="font-mono font-bold text-sm text-slate-900 dark:text-white">
+                        {getAmbassadorUpi(selectedAmbassador) !== 'Not provided' ? (
+                          <span className="bg-white dark:bg-neutral-900 px-2.5 py-1 rounded border border-slate-200 dark:border-neutral-700 select-all inline-block">
+                            {getAmbassadorUpi(selectedAmbassador)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic font-normal">Not provided</span>
+                        )}
+                      </div>
+                    </div>
 
-          <DialogFooter className="border-t border-slate-100 dark:border-neutral-800 pt-3 flex items-center justify-between sm:justify-between">
-            <div className="text-xs text-slate-500">
-              Ambassador Unpaid Balance:{' '}
-              <span className="font-bold text-slate-800 dark:text-neutral-200 font-mono">
-                ₹{selectedAmbassadorForLedger?.metrics?.unpaidCommissionBalance || 0}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLedgerModalOpen(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
+                    {selectedAmbassador.referralCode && (
+                      <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900 space-y-1 sm:col-span-2">
+                        <div className="text-blue-600 dark:text-blue-400 font-medium">Referral Code & Smart Link</div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <span className="font-mono font-bold text-sm text-blue-950 dark:text-blue-200">
+                            {selectedAmbassador.referralCode}
+                          </span>
+                          <button
+                            onClick={() =>
+                              copyToClipboard(
+                                `${window.location.origin}/?amb=${selectedAmbassador.referralCode}`,
+                                'dtl_link'
+                              )
+                            }
+                            className="text-xs text-blue-700 dark:text-blue-300 font-medium hover:underline inline-flex items-center gap-1"
+                          >
+                            <span>Copy Smart Link</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Statement of Purpose / Reason to Join */}
+                  <div className="p-4 rounded-xl border border-slate-200/80 dark:border-neutral-700 bg-white dark:bg-neutral-900 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                      <Quote className="w-4 h-4 text-blue-600" />
+                      <span>Why do you want to become a Solvit Campus Ambassador?</span>
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-neutral-300 leading-relaxed italic bg-slate-50 dark:bg-neutral-800/60 p-3 rounded-lg border border-slate-100 dark:border-neutral-700">
+                      "{selectedAmbassador.reasonToJoin || 'No statement provided by applicant.'}"
+                    </div>
+                  </div>
+
+                  {/* Rejection Note if rejected */}
+                  {selectedAmbassador.status === 'rejected' && (
+                    <div className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-xs text-rose-800 space-y-1">
+                      <div className="font-semibold flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
+                        <span>Administrative Rejection Reason:</span>
+                      </div>
+                      <p>{selectedAmbassador.rejectionReason || 'Application rejected by administration.'}</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Tab 2: Sessions & Earnings Ledger (History to Calculate Payout) */}
+                <TabsContent value="history" className="flex-1 overflow-y-auto space-y-4 pt-3 pr-1">
+                  {/* Calculation Overview Banner */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-neutral-800/60 border border-slate-200/80 dark:border-neutral-700 text-center">
+                    <div>
+                      <div className="text-[11px] text-slate-400 font-medium">Attributed Students</div>
+                      <div className="text-base font-bold text-slate-800 dark:text-neutral-100">
+                        {selectedAmbassador.metrics?.totalStudentsAttributed || 0}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-400 font-medium">Total Gross Revenue</div>
+                      <div className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+                        ₹{(selectedAmbassador.metrics?.totalGrossRevenueDriven || 0).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-400 font-medium">Lifetime 5% Accrued</div>
+                      <div className="text-base font-bold text-indigo-700 dark:text-indigo-400">
+                        ₹{(selectedAmbassador.metrics?.totalCommissionAccrued || 0).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-400 font-medium">Net Unpaid Balance</div>
+                      <div className="text-base font-bold text-amber-700 dark:text-amber-400">
+                        ₹{(selectedAmbassador.metrics?.unpaidCommissionBalance || 0).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sessions Ledger Table */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                      <span className="flex items-center gap-1.5">
+                        <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                        <span>All Completed Sessions by Attributed Students</span>
+                      </span>
+                      <span className="text-slate-400 text-[11px]">
+                        5% calculated on net realized session price
+                      </span>
+                    </div>
+
+                    {historyLoading ? (
+                      <div className="py-12 text-center text-slate-500">
+                        <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
+                        <span>Loading session ledger...</span>
+                      </div>
+                    ) : historyLedger.length === 0 ? (
+                      <div className="py-10 text-center text-slate-500 border border-dashed rounded-xl text-xs">
+                        No sessions have been completed yet by students referred by this ambassador.
+                      </div>
+                    ) : (
+                      <div className="border border-slate-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+                        <Table>
+                          <TableHeader className="bg-slate-50 dark:bg-neutral-800">
+                            <TableRow>
+                              <TableHead className="text-xs uppercase font-semibold">Client</TableHead>
+                              <TableHead className="text-xs uppercase font-semibold">Session Date</TableHead>
+                              <TableHead className="text-xs uppercase font-semibold text-right">
+                                Net Session Fee
+                              </TableHead>
+                              <TableHead className="text-xs uppercase font-semibold text-right">
+                                5% Commission
+                              </TableHead>
+                              <TableHead className="text-xs uppercase font-semibold text-center">
+                                60-Day Window
+                              </TableHead>
+                              <TableHead className="text-xs uppercase font-semibold text-center">
+                                Status
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {historyLedger.map((entry) => (
+                              <TableRow key={entry._id} className="text-xs">
+                                <TableCell className="font-medium text-slate-800 dark:text-neutral-200">
+                                  {entry.clientId?.fullName || 'Client'}
+                                  <div className="text-[10px] text-slate-400">
+                                    {entry.clientId?.email}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-slate-600 dark:text-neutral-400">
+                                  {dayjs(entry.sessionCompletedAt).format('DD MMM YYYY, hh:mm A')}
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-medium">
+                                  ₹{entry.realizedSessionPrice}
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                  +₹{entry.commissionAmount}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 dark:bg-neutral-800 text-[11px] font-medium text-slate-700 dark:text-neutral-300">
+                                    Day {entry.attributionDayNumber || 1} of 60
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    className={`text-[10px] uppercase font-semibold ${
+                                      entry.status === 'accrued'
+                                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                        : entry.status === 'settled'
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        : 'bg-rose-50 text-rose-700 border-rose-200'
+                                    }`}
+                                  >
+                                    {entry.status}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                {/* Tab 3: Past Payout Settlements */}
+                <TabsContent value="payouts" className="flex-1 overflow-y-auto space-y-4 pt-3 pr-1">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-neutral-300">
+                    <span className="flex items-center gap-1.5">
+                      <History className="w-4 h-4 text-blue-600" />
+                      <span>Disbursed Monthly Payout Receipts</span>
+                    </span>
+                    <span className="text-slate-400 text-[11px]">
+                      Lifetime Settled: ₹{(selectedAmbassador.metrics?.totalCommissionPaid || 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+
+                  {historyLoading ? (
+                    <div className="py-12 text-center text-slate-500">
+                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
+                      <span>Loading payout receipts...</span>
+                    </div>
+                  ) : historyPayouts.length === 0 ? (
+                    <div className="py-10 text-center text-slate-500 border border-dashed rounded-xl text-xs">
+                      No payouts have been settled yet for this ambassador.
+                    </div>
+                  ) : (
+                    <div className="border border-slate-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+                      <Table>
+                        <TableHeader className="bg-slate-50 dark:bg-neutral-800">
+                          <TableRow>
+                            <TableHead className="text-xs uppercase font-semibold">Period</TableHead>
+                            <TableHead className="text-xs uppercase font-semibold text-right">Amount</TableHead>
+                            <TableHead className="text-xs uppercase font-semibold">Method</TableHead>
+                            <TableHead className="text-xs uppercase font-semibold">Bank / UPI UTR</TableHead>
+                            <TableHead className="text-xs uppercase font-semibold">Date Settled</TableHead>
+                            <TableHead className="text-xs uppercase font-semibold text-center">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {historyPayouts.map((p) => (
+                            <TableRow key={p._id} className="text-xs">
+                              <TableCell className="font-semibold text-slate-800 dark:text-neutral-200">
+                                {p.payoutPeriod}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-bold text-slate-900 dark:text-white">
+                                ₹{p.amount?.toLocaleString('en-IN')}
+                              </TableCell>
+                              <TableCell className="text-slate-600 dark:text-neutral-400">
+                                {p.paymentMethod}
+                              </TableCell>
+                              <TableCell className="font-mono text-slate-800 dark:text-neutral-200">
+                                {p.transactionReference}
+                              </TableCell>
+                              <TableCell className="text-slate-600 dark:text-neutral-400">
+                                {dayjs(p.processedAt).format('DD MMM YYYY, hh:mm A')}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
+                                  {p.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+
+              {/* Modal Bottom Footer */}
+              <DialogFooter className="pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between sm:justify-between">
+                <div className="text-xs text-slate-500">
+                  Application ID:{' '}
+                  <span className="font-mono text-[11px] text-slate-700 dark:text-neutral-300">
+                    {selectedAmbassador._id}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDetailsModalOpen(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -1011,7 +1288,7 @@ export default function AdminCampusAmbassadorsManagement() {
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Registered UPI ID:</span>
                   <span className="font-mono font-semibold text-slate-900 dark:text-white bg-white dark:bg-neutral-900 px-2 py-0.5 rounded border border-slate-200 dark:border-neutral-700 select-all">
-                    {selectedAmbassadorForPayout.upiId}
+                    {getAmbassadorUpi(selectedAmbassadorForPayout)}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-slate-200/80 dark:border-neutral-700 pt-1.5">
