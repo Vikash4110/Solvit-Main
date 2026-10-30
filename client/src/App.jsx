@@ -1,4 +1,5 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { captureAmbassadorReferralFromUrl } from './services/ambassadorService';
 import { Toaster } from '@/components/ui/sonner';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -21,6 +22,7 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 
 // PUBLIC & GENERAL PAGES (Lazy Loaded)
 const Home = lazy(() => import('./pages/general/Home'));
+const CampusAmbassadorLanding = lazy(() => import('./pages/general/CampusAmbassadorLanding'));
 const About = lazy(() => import('./pages/general/About'));
 const ContactUs = lazy(() => import('./pages/general/ContactUs'));
 const Blogs = lazy(() => import('./pages/general/Blogs'));
@@ -64,12 +66,18 @@ const AdminBookingsManagement = lazy(() => import('./components/admin/AdminBooki
 const AdminCounselorRequestsManagement = lazy(() => import('./components/admin/AdminCounselorRequestsManagement'));
 const AdminBlogsManagement = lazy(() => import('./components/admin/AdminBlogsManagement'));
 const AdminCouponsManagement = lazy(() => import('./components/admin/AdminCouponsManagement'));
+const AdminCampusAmbassadorsManagement = lazy(() => import('./components/admin/AdminCampusAmbassadorsManagement'));
 
 function App() {
   const location = useLocation();
   const isMeetingRoute = location.pathname.startsWith('/meeting');
   const isAdminRoute = location.pathname.startsWith('/admin');
   const hideNavbar = isMeetingRoute || isAdminRoute;
+
+  // Frictionless Campus Ambassador tracking capture (?amb=CODE or ?ref=CODE)
+  useEffect(() => {
+    captureAmbassadorReferralFromUrl();
+  }, [location.search]);
 
   return (
     <ClientAuthProvider>
@@ -85,6 +93,8 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<ContactUs />} />
+                  <Route path="/campus-ambassador" element={<CampusAmbassadorLanding />} />
+                  <Route path="/campus-ambassadors" element={<CampusAmbassadorLanding />} />
 
                   {/* BLOG ROUTES */}
                   <Route path="/blogs" element={<Blogs />} />
@@ -228,6 +238,7 @@ function App() {
                     <Route path="counselor-requests" element={<AdminCounselorRequestsManagement />} />
                     <Route path="payments" element={<AdminPaymentsManagement />} />
                     <Route path="coupons" element={<AdminCouponsManagement />} />
+                    <Route path="campus-ambassadors" element={<AdminCampusAmbassadorsManagement />} />
                     <Route path="bookings" element={<AdminBookingsManagement />} />
                     <Route path="blogs" element={<AdminBlogsManagement />} />
                   </Route>

@@ -1,3 +1,4 @@
+import { getStoredAmbassadorReferral, clearStoredAmbassadorReferral } from '../services/ambassadorService';
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import api from '../lib/axios';
@@ -72,6 +73,12 @@ export const ClientAuthProvider = ({ children }) => {
     try {
       const formData = new FormData();
 
+      // Automatically inject frictionless campus ambassador referral if active
+      const storedAmbCode = getStoredAmbassadorReferral();
+      if (storedAmbCode && !clientData.ambassadorRef) {
+        formData.append('ambassadorRef', storedAmbCode);
+      }
+
       Object.keys(clientData).forEach((key) => {
         if (key === 'profilePicture' && clientData[key]) {
           formData.append(key, clientData[key]);
@@ -85,6 +92,7 @@ export const ClientAuthProvider = ({ children }) => {
       });
 
       await clientLogin(clientData.email , clientData.password)
+      clearStoredAmbassadorReferral();
       toast.success('Registration successful!');
       return { success: true };
     } catch (error) {
