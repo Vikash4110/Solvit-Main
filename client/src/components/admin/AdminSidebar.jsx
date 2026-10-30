@@ -23,6 +23,7 @@ import {
   FileQuestion,
   BookOpen,
   TicketPercent,
+  GraduationCap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -88,6 +89,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }
           name: 'Counselors',
           icon: UserCheck,
           path: '/admin/counselors',
+          badge: null,
+        },
+        {
+          name: 'Campus Ambassadors',
+          icon: GraduationCap,
+          path: '/admin/campus-ambassadors',
           badge: null,
         },
         {

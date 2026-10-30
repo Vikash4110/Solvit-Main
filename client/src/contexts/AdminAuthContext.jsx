@@ -639,6 +639,79 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Campus Ambassador Management Functions
+   */
+  const getAllAmbassadorsAdmin = async (params) => {
+    try {
+      const response = await api.get(API_ENDPOINTS.ADMIN_AMBASSADORS, { params });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch ambassadors');
+      return { success: false, error: message };
+    }
+  };
+
+  const getAmbassadorDetailsAdmin = async (id) => {
+    try {
+      const response = await api.get(API_ENDPOINTS.ADMIN_AMBASSADOR_DETAILS(id));
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch ambassador details');
+      return { success: false, error: message };
+    }
+  };
+
+  const approveAmbassadorAdmin = async (id) => {
+    try {
+      const response = await api.patch(API_ENDPOINTS.ADMIN_AMBASSADOR_APPROVE(id));
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to approve ambassador');
+      return { success: false, error: message };
+    }
+  };
+
+  const rejectAmbassadorAdmin = async (id, reason) => {
+    try {
+      const response = await api.patch(API_ENDPOINTS.ADMIN_AMBASSADOR_REJECT(id), { reason });
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to reject ambassador');
+      return { success: false, error: message };
+    }
+  };
+
+  const toggleAmbassadorStatusAdmin = async (id) => {
+    try {
+      const response = await api.patch(API_ENDPOINTS.ADMIN_AMBASSADOR_TOGGLE_STATUS(id));
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to toggle ambassador status');
+      return { success: false, error: message };
+    }
+  };
+
+  const getAmbassadorLedgerAdmin = async (id, params) => {
+    try {
+      const response = await api.get(API_ENDPOINTS.ADMIN_AMBASSADOR_LEDGER(id), { params });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch ambassador ledger');
+      return { success: false, error: message };
+    }
+  };
+
+  const settleAmbassadorPayoutAdmin = async (id, payoutData) => {
+    try {
+      const response = await api.post(API_ENDPOINTS.ADMIN_AMBASSADOR_PAYOUT(id), payoutData);
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to process ambassador payout');
+      return { success: false, error: message };
+    }
+  };
+
   const value = useMemo(
     () => ({
       admin,
@@ -677,6 +750,13 @@ export const AdminAuthProvider = ({ children }) => {
       getCouponRedemptionsAdmin,
       deleteCouponAdmin,
       getCounselorsForCouponSelectorAdmin,
+      getAllAmbassadorsAdmin,
+      getAmbassadorDetailsAdmin,
+      approveAmbassadorAdmin,
+      rejectAmbassadorAdmin,
+      toggleAmbassadorStatusAdmin,
+      getAmbassadorLedgerAdmin,
+      settleAmbassadorPayoutAdmin,
     }),
     [admin, adminLoading]
   );
