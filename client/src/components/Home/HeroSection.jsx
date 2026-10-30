@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Shield, Search, Briefcase, Calendar, Users, Clock, Lock } from 'lucide-react';
+import { CheckCircle, Shield, Search, Briefcase, Calendar, Users, Clock, Lock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import HeroImg from '../../assets/homePage/counseling_hero.jpg';
@@ -75,11 +75,26 @@ const HeroSection = () => {
         <div className="max-w-2xl lg:max-w-3xl mx-auto lg:mx-0">
           <motion.div className="space-y-4 sm:space-y-6 lg:space-y-7 text-center lg:text-left" variants={staggerContainer} initial="initial" animate="animate">
             
-            <motion.div variants={fadeInUp} className="flex justify-center lg:justify-start">
+            <motion.div variants={fadeInUp} className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
               <Badge variant="outline" className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-white/10 backdrop-blur-md text-white border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all">
                 <Shield className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Certified & Licensed Counselors</span>
               </Badge>
+
+              <button
+                type="button"
+                onClick={() => navigate(client ? '/browse-counselors' : '/login')}
+                className="group inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-gradient-to-r from-amber-500/20 via-white/15 to-white/10 hover:from-amber-500/30 hover:via-white/25 hover:to-white/20 backdrop-blur-md text-white border border-amber-300/40 hover:border-amber-300/70 rounded-full shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer text-left"
+                aria-label="Book your first session and get up to 10% discount on your first session"
+              >
+                <span className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-slate-900 font-bold text-[10px] shrink-0 shadow-xs">
+                  %
+                </span>
+                <span>
+                  Book your first session & get up to <strong className="text-amber-200 font-bold">10% discount</strong>
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 text-amber-200 group-hover:translate-x-0.5 transition-transform shrink-0" aria-hidden="true" />
+              </button>
             </motion.div>
 
             <motion.h1 id="hero-heading" className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.15] tracking-tight text-white drop-shadow-lg" variants={fadeInUp}>
