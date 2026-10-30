@@ -11,6 +11,7 @@ import { GeneratedSlot } from '../models/generatedSlots-model.js';
 import { IdempotencyKey } from '../models/idempotencyKey.model.js';
 import { Coupon } from '../models/coupon-model.js';
 import { CouponUsage } from '../models/couponUsage-model.js';
+import { ambassadorIncentiveService } from '../services/ambassadorIncentiveService.js';
 import { validateAndQuoteCoupon } from '../services/couponService.js';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -509,6 +510,24 @@ const executeBookingTransaction = async (payment, clientId, slotId, contextLogge
               couponCode,
             });
           }
+        }
+
+        // Process 60-day rolling Campus Ambassador 5% incentive
+        try {
+          await ambassadorIncentiveService.processSessionCommission(
+            {
+              clientId: buyer._id,
+              bookingId: booking._id,
+              paymentId: payment._id,
+              grossAmount: originalAmount,
+              discountAmount,
+              netPaidAmount: finalAmount,
+              session,
+            },
+            contextLogger
+          );
+        } catch (ambErr) {
+          contextLogger.error('Campus ambassador commission hook failed:', ambErr);
         }
 
         // Link payment to booking and sync couponDetails
