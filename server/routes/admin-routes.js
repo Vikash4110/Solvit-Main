@@ -33,6 +33,7 @@ import {
 } from '../controllers/admin-controller.js';
 import { verifyJWTAdmin } from '../middlewares/admin-auth-middleware.js';
 import { adminCouponRouter } from './admin-coupon-routes.js';
+import { adminAmbassadorRouter } from './admin-ambassador-routes.js';
 
 const adminRouter = Router();
 
@@ -107,6 +108,11 @@ adminRouter.route('/blogs/:blogId').delete(verifyJWTAdmin, deleteBlogAdmin);
 // COUPON & PROMOTION MANAGEMENT ROUTES (ADMIN ONLY)
 // ====================================
 adminRouter.use('/coupons', verifyJWTAdmin, adminCouponRouter);
+
+// ====================================
+// CAMPUS AMBASSADOR MANAGEMENT ROUTES (ADMIN ONLY)
+// ====================================
+adminRouter.use('/ambassadors', verifyJWTAdmin, adminAmbassadorRouter);
 
 // Test route
 adminRouter.get('/test', (req, res) => {
