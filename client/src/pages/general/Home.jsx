@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { GraduationCap, ArrowRight } from 'lucide-react';
 import Faq from '../../components/Home/Faq.jsx';
 import Footer from '../../components/Home/Footer.jsx';
 import HeroSection from '../../components/Home/HeroSection.jsx';
@@ -48,8 +50,33 @@ const Home = () => {
           <Separator />
         </div>
 
-        <div className="relative mb-24">
+        <div className="relative mb-12">
           <Faq />
+        </div>
+
+        {/* Campus Ambassador Advertising Banner (Above Footer) */}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
+          <div className="relative overflow-hidden rounded-2xl bg-white/95 dark:bg-neutral-900/90 backdrop-blur-md border border-primary-200/80 dark:border-primary-800/80 p-6 sm:p-8 shadow-xl shadow-primary-500/5 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 text-xs font-semibold border border-primary-200 dark:border-primary-800">
+                <GraduationCap className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+                <span>Solvit Campus Ambassador Program</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Are You a College Student? Become a Solvit Campus Ambassador.
+              </h3>
+              <p className="text-slate-600 dark:text-slate-300 text-sm max-w-2xl leading-relaxed">
+                Promote mental wellness across your university community and earn an ongoing 5% monthly revenue share on every session for 60 days.
+              </p>
+            </div>
+            <Link
+              to="/campus-ambassador"
+              className="inline-flex items-center justify-center shrink-0 px-6 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm shadow-md transition-all hover:scale-105 active:scale-95"
+            >
+              Apply as Campus Ambassador
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Link>
+          </div>
         </div>
 
         <Footer />

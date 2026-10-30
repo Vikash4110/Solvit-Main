@@ -22,6 +22,7 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 
 // PUBLIC & GENERAL PAGES (Lazy Loaded)
 const Home = lazy(() => import('./pages/general/Home'));
+const CampusAmbassadorLanding = lazy(() => import('./pages/general/CampusAmbassadorLanding'));
 const About = lazy(() => import('./pages/general/About'));
 const ContactUs = lazy(() => import('./pages/general/ContactUs'));
 const Blogs = lazy(() => import('./pages/general/Blogs'));
@@ -91,6 +92,8 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<ContactUs />} />
+                  <Route path="/campus-ambassador" element={<CampusAmbassadorLanding />} />
+                  <Route path="/campus-ambassadors" element={<CampusAmbassadorLanding />} />
 
                   {/* BLOG ROUTES */}
                   <Route path="/blogs" element={<Blogs />} />

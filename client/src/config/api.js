@@ -141,6 +141,19 @@ export const API_ENDPOINTS = {
   ADMIN_BLOG_TOGGLE_FEATURED: (blogId) => `/admin/blogs/${blogId}/featured`,
   ADMIN_BLOG_DELETE: (blogId) => `/admin/blogs/${blogId}`,
 
+  // Campus Ambassador Endpoints
+  CAMPUS_AMBASSADOR_REGISTER: '/campus-ambassadors/register',
+  CAMPUS_AMBASSADOR_VALIDATE: (code) => '/campus-ambassadors/validate/' + code,
+
+  // Campus Ambassador Management (Admin)
+  ADMIN_AMBASSADORS: '/admin/ambassadors',
+  ADMIN_AMBASSADOR_DETAILS: (id) => '/admin/ambassadors/' + id,
+  ADMIN_AMBASSADOR_APPROVE: (id) => '/admin/ambassadors/' + id + '/approve',
+  ADMIN_AMBASSADOR_REJECT: (id) => '/admin/ambassadors/' + id + '/reject',
+  ADMIN_AMBASSADOR_TOGGLE_STATUS: (id) => '/admin/ambassadors/' + id + '/toggle-status',
+  ADMIN_AMBASSADOR_LEDGER: (id) => '/admin/ambassadors/' + id + '/ledger',
+  ADMIN_AMBASSADOR_PAYOUT: (id) => '/admin/ambassadors/' + id + '/payout',
+
   // Coupon & Promotion Management (Admin)
   ADMIN_COUPONS: '/admin/coupons',
   ADMIN_COUPONS_COUNSELORS: '/admin/coupons/counselors-list',
