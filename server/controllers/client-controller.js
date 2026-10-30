@@ -1,3 +1,4 @@
+import { ambassadorAttributionService } from '../services/ambassadorAttributionService.js';
 import { Client } from '../models/client-model.js';
 import { OTP } from '../models/clientOTP-model.js';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
@@ -306,7 +307,8 @@ const resetPassword = wrapper(async (req, res) => {
 });
 
 const registerClient = wrapper(async (req, res) => {
-  const { fullName, username, password, email, phone } = req.body;
+  const { fullName, username, password, email, phone, ambassadorRef } = req.body;
+  const referralCode = ambassadorRef || req.cookies?.solvit_amb_ref;
 
   // Validations
   if (!fullName || !username || !password || !email || !phone) {
@@ -385,6 +387,15 @@ const registerClient = wrapper(async (req, res) => {
 
   // Checking if user created
   const clientCreated = await Client.findById(newClient._id).select('-password');
+
+  // Frictionless Campus Ambassador attribution
+  if (referralCode) {
+    try {
+      await ambassadorAttributionService.attributeClient(newClient._id, referralCode, 'signup_ref');
+    } catch (attrErr) {
+      console.error('Campus Ambassador attribution error on signup:', attrErr);
+    }
+  }
 
   if (!clientCreated) {
     return res.status(500).json({

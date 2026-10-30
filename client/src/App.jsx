@@ -1,4 +1,5 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { captureAmbassadorReferralFromUrl } from './services/ambassadorService';
 import { Toaster } from '@/components/ui/sonner';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -70,6 +71,11 @@ function App() {
   const isMeetingRoute = location.pathname.startsWith('/meeting');
   const isAdminRoute = location.pathname.startsWith('/admin');
   const hideNavbar = isMeetingRoute || isAdminRoute;
+
+  // Frictionless Campus Ambassador tracking capture (?amb=CODE or ?ref=CODE)
+  useEffect(() => {
+    captureAmbassadorReferralFromUrl();
+  }, [location.search]);
 
   return (
     <ClientAuthProvider>
