@@ -22,7 +22,12 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
-import Academic from '../../assets/img-academix.jpg';
+import mentalHealthImg from '../../assets/services/mental_health.jpg';
+import careerImg from '../../assets/services/career_counselling.jpg';
+import relationshipImg from '../../assets/services/relationship_therapy.jpg';
+import lifeDevImg from '../../assets/services/life_development.jpg';
+import academicImg from '../../assets/services/academic_counselling.jpg';
+import healthWellnessImg from '../../assets/services/health_wellness.jpg';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,8 +38,7 @@ const services = [
   {
     title: 'Mental Health Counseling',
     icon: Brain,
-    image:
-      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop',
+    image: mentalHealthImg,
     description: [
       'Anxiety & Stress Management',
       'Depression Counseling',
@@ -48,8 +52,7 @@ const services = [
   {
     title: 'Career Counselling',
     icon: Briefcase,
-    image:
-      'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop',
+    image: careerImg,
     description: [
       'Career Path Guidance',
       'Workplace Stress Relief',
@@ -62,8 +65,7 @@ const services = [
   {
     title: 'Relationship & Family Therapy',
     icon: Heart,
-    image:
-      'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop',
+    image: relationshipImg,
     description: [
       'Couples Counseling',
       'Divorce & Separation Support',
@@ -76,8 +78,7 @@ const services = [
   {
     title: 'Life & Personal Development',
     icon: Rocket,
-    image:
-      'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=800&auto=format&fit=crop',
+    image: lifeDevImg,
     description: [
       'Confidence Building',
       'Goal Setting & Productivity',
@@ -90,7 +91,7 @@ const services = [
   {
     title: 'Academic Counselling',
     icon: GraduationCap,
-    image: Academic,
+    image: academicImg,
     description: [
       'Study Skills Enhancement',
       'Exam Anxiety Management',
@@ -103,8 +104,7 @@ const services = [
   {
     title: 'Health and Wellness',
     icon: Sparkles,
-    image:
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop',
+    image: healthWellnessImg,
     description: [
       'Nutrition & Diet Plans',
       'Fitness Lifestyle Coaching',
@@ -210,7 +210,10 @@ const OurServices = () => {
                   const IconComponent = service.icon;
                   return (
                     <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3 py-2">
-                      <Card onClick={()=>navigate(service.path)} className="group relative h-full flex flex-col bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500 overflow-hidden">
+                      <Card
+                        onClick={() => navigate(service.path)}
+                        className="group relative h-full flex flex-col bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 hover:scale-[1.02] transition-all duration-500 overflow-hidden"
+                      >
                         {/* Image */}
                         <div className="relative overflow-hidden">
                           <AspectRatio ratio={16 / 9}>
@@ -224,9 +227,9 @@ const OurServices = () => {
                           </AspectRatio>
 
                           {/* Icon Badge with Tilt */}
-                          <div className="absolute top-4 right-4 flex items-center justify-center w-12 h-12 rounded-xl bg-white dark:bg-neutral-900 shadow-lg transition-all duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:shadow-xl">
+                          <div className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white dark:bg-neutral-900 shadow-md transition-all duration-300 group-hover:rotate-12 group-hover:scale-105 group-hover:shadow-lg">
                             <IconComponent
-                              className="w-6 h-6 text-primary-600 dark:text-primary-400"
+                              className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-primary-600 dark:text-primary-400"
                               aria-hidden="true"
                             />
                           </div>

@@ -43,6 +43,12 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
+import mentalHealthImg from '../../assets/services/mental_health.jpg';
+import careerImg from '../../assets/services/career_counselling.jpg';
+import relationshipImg from '../../assets/services/relationship_therapy.jpg';
+import lifeDevImg from '../../assets/services/life_development.jpg';
+import academicImg from '../../assets/services/academic_counselling.jpg';
+import healthWellnessImg from '../../assets/services/health_wellness.jpg';
 
 const Separator = () => (
   <>
@@ -128,8 +134,7 @@ const serviceData = {
         description:
           'Explore unconscious patterns and past experiences that influence current behaviors. Gain deep self-awareness and resolve long-standing emotional conflicts to foster authentic growth.',
         icon: Target,
-        image:
-          'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&auto=format&fit=crop',
+        image: mentalHealthImg,
       },
     ],
     commonConcerns: [
@@ -191,8 +196,7 @@ const serviceData = {
         'Integration with medication management when appropriate',
       ],
     },
-    image:
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+    image: mentalHealthImg,
   },
   'life-personal-development': {
     title: 'Life & Personal Development',
@@ -210,8 +214,7 @@ const serviceData = {
       'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1552581234-26160f608093?w=800&auto=format&fit=crop',
     ],
-    bannerImage:
-      'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=1200&auto=format&fit=crop',
+    bannerImage: lifeDevImg,
     bannerTitle: "Design the Life You've Always Imagined",
     bannerDescription:
       'Stop dreaming and start doing. Our life coaches help you create a compelling vision and build the habits, mindset, and strategies to make it reality.',
@@ -259,8 +262,7 @@ const serviceData = {
         description:
           'Create a compelling vision for your future across all life areas. Map your ideal career, relationships, health, and lifestyle, then build a strategic roadmap to get there.',
         icon: Rocket,
-        image:
-          'https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=400&auto=format&fit=crop',
+        image: lifeDevImg,
       },
     ],
     commonConcerns: [
@@ -322,8 +324,7 @@ const serviceData = {
         'Results-focused coaching that creates measurable change',
       ],
     },
-    image:
-      'https://images.unsplash.com/photo-1543269865-cbf427effbad?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+    image: lifeDevImg,
   },
   'relationship-family-therapy': {
     title: 'Relationship & Family Therapy',
@@ -453,8 +454,7 @@ const serviceData = {
         "Tools you'll use long after therapy ends",
       ],
     },
-    image:
-      'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+    image: relationshipImg,
   },
   'career-professional-coaching': {
     title: 'Career & Professional Coaching',
@@ -584,8 +584,7 @@ const serviceData = {
         'Network expansion through industry connections',
       ],
     },
-    image:
-      'https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+    image: careerImg,
   },
   'health-wellness-coaching': {
     title: 'Health & Wellness Coaching',
@@ -715,8 +714,7 @@ const serviceData = {
         'Ongoing support and accountability for lasting results',
       ],
     },
-    image:
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+    image: healthWellnessImg,
   },
   'academic-student-support': {
     title: 'Academic & Student Support',
@@ -734,8 +732,7 @@ const serviceData = {
       'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop',
     ],
-    bannerImage:
-      'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1200&auto=format&fit=crop',
+    bannerImage: academicImg,
     bannerTitle: 'Unlock Your Academic Potential',
     bannerDescription:
       'Achieve academic excellence while maintaining wellbeing. Our counselors help students manage pressure, improve study skills, and build confidence for lifelong success.',
@@ -783,8 +780,7 @@ const serviceData = {
         description:
           'Navigate peer relationships, bullying, identity development, and social anxiety. Build confidence, communication skills, and healthy friendships during critical developmental years.',
         icon: Heart,
-        image:
-          'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=400&auto=format&fit=crop',
+        image: academicImg,
       },
     ],
     commonConcerns: [
@@ -846,8 +842,7 @@ const serviceData = {
         'Safe, confidential space for students to be themselves',
       ],
     },
-    image:
-      'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=400&auto=format&fit=crop',
+    image: academicImg,
   },
 };
 
@@ -919,7 +914,7 @@ const ServicePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 sm:py-20 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
             {/* Left Content */}
-            <motion.div variants={fadeInUp} className="space-y-4 sm:space-y-6 lg:space-y-8">
+            <motion.div variants={fadeInUp} className="space-y-4 sm:space-y-5 lg:space-y-6">
               <Badge
                 variant="outline"
                 className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-900/20 hover:bg-primary-100/50 dark:hover:bg-primary-900/30 transition-colors"
@@ -929,15 +924,15 @@ const ServicePage = () => {
               </Badge>
 
               <div className="space-y-3 sm:space-y-4">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 dark:text-neutral-100 leading-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-neutral-100 leading-tight">
                   {service.title}
                 </h1>
-                <p className="text-lg sm:text-xl lg:text-2xl font-semibold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
+                <p className="text-base sm:text-lg lg:text-xl font-semibold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
                   {service.tagline}
                 </p>
               </div>
 
-              <p className="text-sm sm:text-base lg:text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
                 {service.description}
               </p>
 
@@ -946,7 +941,7 @@ const ServicePage = () => {
                   <motion.div
                     key={index}
                     variants={fadeInUp}
-                    className="flex items-center gap-2 text-xs sm:text-sm lg:text-base text-neutral-700 dark:text-neutral-300"
+                    className="flex items-center gap-2 text-xs sm:text-sm text-neutral-700 dark:text-neutral-300"
                   >
                     <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                       <feature.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-600 dark:text-primary-400" />
@@ -960,11 +955,11 @@ const ServicePage = () => {
             {/* Right Image */}
             <motion.div variants={fadeInUp} className="relative order-first lg:order-last">
               <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white dark:border-neutral-800 group">
-                <div className="aspect-[4/3] sm:aspect-[4/5] lg:aspect-square">
+                <div className="aspect-[4/3] sm:aspect-[4/3] lg:aspect-[4/3]">
                   <img
                     src={service.image}
                     alt={service.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-center"
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -972,18 +967,18 @@ const ServicePage = () => {
                 {/* Glow effect on hover */}
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-600 to-primary-400 rounded-2xl opacity-0 group-hover:opacity-20 blur transition duration-500" />
 
-                <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 bg-white dark:bg-neutral-900 p-3 sm:p-4 rounded-xl shadow-2xl border border-primary-200 dark:border-primary-800 backdrop-blur-sm">
-                  <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-primary-600 dark:text-primary-400" />
+                <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 bg-white dark:bg-neutral-900 p-2 sm:p-2.5 rounded-xl shadow-xl border border-primary-200 dark:border-primary-800 backdrop-blur-sm">
+                  <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-primary-600 dark:text-primary-400" />
                 </div>
 
-                <div className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-lg border border-primary-200 dark:border-primary-800">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600 dark:text-primary-400" />
+                <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl shadow-lg border border-primary-200 dark:border-primary-800">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-600 dark:text-primary-400" />
                     <div>
-                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      <p className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 leading-tight">
                         500+
                       </p>
-                      <p className="text-[10px] sm:text-xs text-neutral-600 dark:text-neutral-400">
+                      <p className="text-[9px] sm:text-[10px] text-neutral-600 dark:text-neutral-400 leading-tight">
                         Happy Clients
                       </p>
                     </div>
