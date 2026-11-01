@@ -37,6 +37,14 @@ const adminSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
     },
+    refreshToken: {
+      type: String,
+      select: false,
+    },
+    tokenVersion: {
+      type: Number,
+      default: 1,
+    },
   },
   { timestamps: true }
 );
@@ -54,13 +62,29 @@ adminSchema.methods.isPasswordCorrect = async function (password) {
 adminSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
-      _id: this.id,
+      _id: this._id || this.id,
       role: 'admin',
       adminRole: this.role,
+      tokenVersion: this.tokenVersion,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15m',
+    }
+  );
+};
+
+adminSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    {
+      _id: this._id || this.id,
+      role: 'admin',
+      adminRole: this.role,
+      tokenVersion: this.tokenVersion,
+    },
+    process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '7d',
     }
   );
 };

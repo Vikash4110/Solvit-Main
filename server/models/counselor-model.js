@@ -125,7 +125,7 @@ const counselorSchema = new mongoose.Schema(
       applicationStatus: {
         type: String,
         enum: ['not_submitted', 'pending', 'approved', 'rejected'],
-        default: 'not_submitted', 
+        default: 'not_submitted',
       },
       applicationSubmittedAt: {
         type: Date,
@@ -137,6 +137,14 @@ const counselorSchema = new mongoose.Schema(
     },
     lastLogin: {
       type: Date,
+    },
+    refreshToken: {
+      type: String,
+      select: false,
+    },
+    tokenVersion: {
+      type: Number,
+      default: 1,
     },
   },
   { timestamps: true }
@@ -161,12 +169,27 @@ counselorSchema.methods.isPasswordCorrect = async function (password) {
 counselorSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
-      _id: this.id,
+      _id: this._id || this.id,
       role: 'counselor',
+      tokenVersion: this.tokenVersion,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15m',
+    }
+  );
+};
+
+counselorSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    {
+      _id: this._id || this.id,
+      role: 'counselor',
+      tokenVersion: this.tokenVersion,
+    },
+    process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '7d',
     }
   );
 };
