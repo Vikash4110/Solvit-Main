@@ -21,6 +21,8 @@ import {
 } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import api from '../../lib/axios';
+import { useClientAuth } from '../../contexts/ClientAuthContext';
+import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 import {
   Select,
   SelectContent,
@@ -30,11 +32,13 @@ import {
 } from '@/components/ui/select';
 
 const ContactUs = () => {
+  const { client } = useClientAuth();
+  const { counselor } = useCounselorAuth();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    // ✅ REMOVED: phone field
     subject: 'general',
     message: '',
     userType: 'client',
@@ -43,84 +47,47 @@ const ContactUs = () => {
   const [submitted, setSubmitted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [prefilledFromProfile, setPrefilledFromProfile] = useState(false);
-  // ✅ UPDATED: Track which fields are locked (removed phone)
   const [lockedFields, setLockedFields] = useState({
     firstName: false,
     lastName: false,
     email: false,
-    // ✅ REMOVED: phone: false,
     userType: false,
   });
 
-  // ✅ UPDATED: AUTO-PREFILL WITH LOCKED FIELDS (removed phone handling)
+  // Auto-prefill with locked fields from reactive auth context
   useEffect(() => {
-    const prefillFormFromLocalStorage = () => {
-      try {
-        // Check authentication status
-        const clientToken = localStorage.getItem('clientAccessToken');
-        const counselorToken = localStorage.getItem('counselorAccessToken');
+    const activeUser = client || counselor;
+    if (activeUser) {
+      setIsAuthenticated(true);
+      const userType = client ? 'client' : 'counselor';
+      const firstName = activeUser.firstName || activeUser.fullName?.split(' ')[0] || '';
+      const lastName =
+        activeUser.lastName || activeUser.fullName?.split(' ').slice(1).join(' ') || '';
+      const email = activeUser.email || '';
 
-        if (clientToken || counselorToken) {
-          setIsAuthenticated(true);
-          const userType = clientToken ? 'client' : 'counselor';
+      setFormData((prev) => ({
+        ...prev,
+        firstName,
+        lastName,
+        email,
+        userType,
+      }));
 
-          // Get user data from localStorage
-          let userData = null;
-          try {
-            if (userType === 'client') {
-              userData = JSON.parse(localStorage.getItem('client') || '{}');
-            } else {
-              userData = JSON.parse(localStorage.getItem('counselor') || '{}');
-            }
-          } catch (parseError) {
-            console.warn('Error parsing user data from localStorage:', parseError);
-            return;
-          }
+      setLockedFields({
+        firstName: Boolean(firstName),
+        lastName: Boolean(lastName),
+        email: Boolean(email),
+        userType: true,
+      });
 
-          // ✅ UPDATED: Prefill form with available user data (removed phone)
-          if (userData && Object.keys(userData).length > 0) {
-            const firstName = userData.firstName || userData.fullName?.split(' ')[0] || '';
-            const lastName =
-              userData.lastName || userData.fullName?.split(' ').slice(1).join(' ') || '';
-            const email = userData.email || '';
-
-            setFormData((prev) => ({
-              ...prev,
-              firstName,
-              lastName,
-              email,
-              // ✅ REMOVED: phone,
-              userType,
-            }));
-
-            // ✅ UPDATED: Lock fields that have data (removed phone)
-            setLockedFields({
-              firstName: !!firstName,
-              lastName: !!lastName,
-              email: !!email,
-              // ✅ REMOVED: phone: !!phone,
-              userType: true, // Always lock user type if authenticated
-            });
-
-            setPrefilledFromProfile(true);
-          } else {
-            // Set user type even if no user data available
-            setFormData((prev) => ({ ...prev, userType }));
-            setLockedFields((prev) => ({ ...prev, userType: true }));
-          }
-        }
-      } catch (error) {
-        console.error('Error prefilling form from localStorage:', error);
-      }
-    };
-
-    prefillFormFromLocalStorage();
-  }, []);
+      setPrefilledFromProfile(Boolean(firstName || email));
+    }
+  }, [client, counselor]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // ✅ Prevent changes to locked fields
+    // Prevent changes to locked fields
     if (lockedFields[name]) {
       return;
     }
@@ -162,7 +129,6 @@ const ContactUs = () => {
         setSubmitted(true);
         toast.success("Message sent successfully! We'll get back to you soon.", {
           duration: 4000,
-          icon: '📧',
         });
 
         // Reset only non-locked fields after successful submission
@@ -211,7 +177,6 @@ const ContactUs = () => {
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
     },
-    
   ];
 
   const faqItems = [
@@ -236,10 +201,26 @@ const ContactUs = () => {
   ];
 
   const socialLinks = [
-    { icon: FaFacebook, url: 'https://www.facebook.com/share/12HYipkeXG9/?mibextid=wwXIfr', color: 'text-blue-600 hover:text-blue-700' },
-    { icon: FaTwitter, url: 'https://x.com/solvitforyou?s=21', color: 'text-sky-500 hover:text-sky-600' },
-    { icon: FaLinkedin, url: 'https://www.linkedin.com/company/solvitcounselling/', color: 'text-blue-700 hover:text-blue-800' },
-    { icon: FaInstagram, url: 'https://www.instagram.com/solvit.care?igsh=NzNoanhzd2N5M3ky', color: 'text-pink-600 hover:text-pink-700' },
+    {
+      icon: FaFacebook,
+      url: 'https://www.facebook.com/share/12HYipkeXG9/?mibextid=wwXIfr',
+      color: 'text-blue-600 hover:text-blue-700',
+    },
+    {
+      icon: FaTwitter,
+      url: 'https://x.com/solvitforyou?s=21',
+      color: 'text-sky-500 hover:text-sky-600',
+    },
+    {
+      icon: FaLinkedin,
+      url: 'https://www.linkedin.com/company/solvitcounselling/',
+      color: 'text-blue-700 hover:text-blue-800',
+    },
+    {
+      icon: FaInstagram,
+      url: 'https://www.instagram.com/solvit.care?igsh=NzNoanhzd2N5M3ky',
+      color: 'text-pink-600 hover:text-pink-700',
+    },
   ];
 
   return (
@@ -373,7 +354,7 @@ const ContactUs = () => {
                     </div>
                   </div>
 
-                  {/* ✅ UPDATED: Email takes full width since phone is removed */}
+                  {/* Email takes full width */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Email Address *
@@ -398,9 +379,7 @@ const ContactUs = () => {
 
                   {/* Subject */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Subject
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
                     <Select
                       value={formData.subject}
                       onValueChange={(value) =>
@@ -518,7 +497,7 @@ const ContactUs = () => {
                   <a
                     key={index}
                     href={social.url}
-                    target='_blank'
+                    target="_blank"
                     className={`w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center ${social.color} hover:scale-110 transition-all duration-300`}
                   >
                     <social.icon className="h-6 w-6" />
@@ -526,8 +505,6 @@ const ContactUs = () => {
                 ))}
               </div>
             </div>
-
-            
           </motion.div>
         </div>
       </div>

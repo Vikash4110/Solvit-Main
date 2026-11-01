@@ -29,6 +29,7 @@ import { Dialog, Popover, Transition } from '@headlessui/react';
 import { createPopper } from '@popperjs/core';
 import { useMeetingAppContext } from '../../MeetingAppContextDef';
 import useMediaStream from '../../hooks/useMediaStream';
+import { getActiveToken } from '@/lib/axios';
 
 function PipBTN({ isMobile, isTab }) {
   const { pipMode, setPipMode } = useMeetingAppContext();
@@ -194,7 +195,9 @@ const MicBTN = () => {
         onClick={() => {
           mMeeting.toggleMic();
         }}
-        bgColor={localMicOn ? 'bg-gradient-to-br from-primary-600 to-primary-700' : 'bg-neutral-800'}
+        bgColor={
+          localMicOn ? 'bg-gradient-to-br from-primary-600 to-primary-700' : 'bg-neutral-800'
+        }
         borderColor={localMicOn && 'border-primary-700'}
         isFocused={localMicOn}
         focusIconColor={localMicOn && 'white'}
@@ -269,8 +272,18 @@ const MicBTN = () => {
                             <div>
                               <div className="flex items-center p-3 pb-0 gap-2">
                                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary-600 to-primary-700 shadow-lg">
-                                  <svg className="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                  <svg
+                                    className="h-3.5 w-3.5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                                    />
                                   </svg>
                                 </div>
                                 <p className="text-sm font-bold text-white">SPEAKER</p>
@@ -365,7 +378,9 @@ const WebCamBTN = () => {
           }
           mMeeting.toggleWebcam(track);
         }}
-        bgColor={localWebcamOn ? 'bg-gradient-to-br from-primary-600 to-primary-700' : 'bg-neutral-800'}
+        bgColor={
+          localWebcamOn ? 'bg-gradient-to-br from-primary-600 to-primary-700' : 'bg-neutral-800'
+        }
         borderColor={localWebcamOn && 'border-primary-700'}
         isFocused={localWebcamOn}
         focusIconColor={localWebcamOn && 'white'}
@@ -468,8 +483,8 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft, participantId, se
   const isCounselor =
     participantId?.startsWith('counselor') ||
     sessionData?.userType === 'counselor' ||
-    Boolean(localStorage.getItem('counselorAccessToken'));
-  
+    Boolean(getActiveToken('counselor'));
+
   const RaiseHandBTN = ({ isMobile, isTab }) => {
     const { publish } = usePubSub('RAISE_HAND');
     const { localParticipant } = useMeeting();
@@ -477,9 +492,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft, participantId, se
       useMeetingAppContext();
 
     const isHandRaised = useMemo(() => {
-      return (raisedHandsParticipants || []).some(
-        (p) => p.participantId === localParticipant?.id
-      );
+      return (raisedHandsParticipants || []).some((p) => p.participantId === localParticipant?.id);
     }, [raisedHandsParticipants, localParticipant?.id]);
 
     const toggleRaiseHand = () => {
@@ -499,7 +512,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft, participantId, se
     return isMobile || isTab ? (
       <MobileIconButton
         id="RaiseHandBTN"
-        tooltipTitle={isHandRaised ? 'Lower Hand ✋' : 'Raise Hand'}
+        tooltipTitle={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
         Icon={Hand}
         onClick={toggleRaiseHand}
         buttonText={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
@@ -511,7 +524,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft, participantId, se
       <OutlinedButton
         btnID="RaiseHandBTN"
         onClick={toggleRaiseHand}
-        tooltip={isHandRaised ? 'Lower Hand ✋' : 'Raise Hand'}
+        tooltip={isHandRaised ? 'Lower Hand' : 'Raise Hand'}
         Icon={Hand}
         isFocused={isHandRaised}
         focusIconColor={isHandRaised ? '#000000' : undefined}
@@ -667,7 +680,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft, participantId, se
         isFocused={sideBarMode === sideBarModes.CHAT}
         onClick={() => {
           setSideBarMode((s) => (s === sideBarModes.CHAT ? null : sideBarModes.CHAT));
-          setOpen(false)
+          setOpen(false);
         }}
       />
     ) : (
@@ -695,7 +708,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft, participantId, se
           setSideBarMode((s) =>
             s === sideBarModes.PARTICIPANTS ? null : sideBarModes.PARTICIPANTS
           );
-          setOpen(false)
+          setOpen(false);
         }}
         badge={`${new Map(participants)?.size}`}
       />
@@ -783,7 +796,10 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft, participantId, se
   ];
 
   return isMobile || isTab ? (
-    <div className="flex items-center justify-center gap-2 px-4 bg-neutral-900 border-t border-neutral-800" style={{ height: bottomBarHeight }}>
+    <div
+      className="flex items-center justify-center gap-2 px-4 bg-neutral-900 border-t border-neutral-800"
+      style={{ height: bottomBarHeight }}
+    >
       <LeaveBTN />
       <MicBTN />
       <WebCamBTN />

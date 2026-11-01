@@ -6,6 +6,7 @@ import { MeetingContainer } from './meeting/MeetingContainer';
 import { LeaveScreen } from './components/screens/LeaveScreen';
 import { JoiningScreen } from './components/screens/JoiningScreen';
 import { toast } from 'react-toastify';
+import api from '../lib/axios';
 
 // Helper to safely terminate media tracks and streams
 const stopMediaStreamOrTrack = (streamOrTrack) => {
@@ -77,29 +78,9 @@ function VideoCallInterface() {
       try {
         setLoading(true);
 
-        // Get session details
-        const token =
-          localStorage.getItem('clientAccessToken') ||
-          localStorage.getItem('counselorAccessToken') ||
-          localStorage.getItem('adminAccessToken');
-
-        const detailsResponse = await fetch(
-          `${import.meta.env.VITE_API_URL}/meeting/session/${bookingId}/details`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          }
-        );
-
-        if (!detailsResponse.ok) {
-          throw new Error('Failed to get session details');
-        }
-
-        const detailsData = await detailsResponse.json();
+        // Get session details via authenticated API transport
+        const detailsResponse = await api.get(`/meeting/session/${bookingId}/details`);
+        const detailsData = detailsResponse.data;
 
         setSessionData(detailsData.data);
 
@@ -114,12 +95,11 @@ function VideoCallInterface() {
             : `counselor - ${detailsData.data.booking.slotId.counselorId._id}`
         );
 
-        console.log(participantId);
         // Name is set as "fullName_mongoId" — unique per person, used by VideoSDK for display.
         // The primary duplicate-join check uses participantId embedded in the JWT,
         // but a unique name also prevents any name-based collisions in VideoSDK's participant list.
-        const _client     = detailsData.data.booking.clientId;
-        const _counselor  = detailsData.data.booking.slotId.counselorId;
+        const _client = detailsData.data.booking.clientId;
+        const _counselor = detailsData.data.booking.slotId.counselorId;
         setParticipantName(
           detailsData.data.userType === 'client'
             ? `${_client.fullName}_${_client._id}`

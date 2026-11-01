@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
@@ -16,50 +16,54 @@ import {
   Lock,
   MessageCircle,
 } from 'lucide-react';
-import {
-  FaComment,
-  FaSpinner,
-  FaPaperPlane,
-} from 'react-icons/fa';
+import { FaComment, FaSpinner, FaPaperPlane } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import { API_ENDPOINTS } from '../../config/api';
 import api from '../../lib/axios';
+import { useClientAuth } from '../../contexts/ClientAuthContext';
+import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 
 const CATEGORY_THEMES = {
   'mental-health': {
     label: 'Mental Health',
     icon: '🧠',
-    badge: 'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800/80',
+    badge:
+      'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800/80',
     headerGradient: 'from-teal-500/15 via-emerald-500/10 to-teal-700/15',
   },
   career: {
     label: 'Career & Work',
     icon: '💼',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/80',
+    badge:
+      'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/80',
     headerGradient: 'from-blue-500/15 via-indigo-500/10 to-blue-700/15',
   },
   relationship: {
     label: 'Relationship',
     icon: '❤️',
-    badge: 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/80',
+    badge:
+      'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/80',
     headerGradient: 'from-rose-500/15 via-pink-500/10 to-rose-700/15',
   },
   'life-coaching': {
     label: 'Personal Growth',
     icon: '🌱',
-    badge: 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80',
+    badge:
+      'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80',
     headerGradient: 'from-purple-500/15 via-violet-500/10 to-purple-700/15',
   },
   academic: {
     label: 'Academic & Students',
     icon: '🎓',
-    badge: 'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/80',
+    badge:
+      'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/80',
     headerGradient: 'from-sky-500/15 via-cyan-500/10 to-sky-700/15',
   },
   'health-wellness': {
     label: 'Health & Wellness',
     icon: '🌿',
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80',
+    badge:
+      'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80',
     headerGradient: 'from-emerald-500/15 via-teal-500/10 to-emerald-700/15',
   },
 };
@@ -68,9 +72,12 @@ const getCategoryTheme = (category) => {
   const normalized = category?.toLowerCase()?.trim() || '';
   return (
     CATEGORY_THEMES[normalized] || {
-      label: category ? category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Mental Health',
+      label: category
+        ? category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+        : 'Mental Health',
       icon: '✨',
-      badge: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+      badge:
+        'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
       headerGradient: 'from-slate-500/10 via-primary-500/10 to-slate-700/10',
     }
   );
@@ -92,6 +99,8 @@ const getAuthorSpecialization = (author) => {
 const BlogPost = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { client } = useClientAuth();
+  const { counselor } = useCounselorAuth();
   const [blog, setBlog] = useState(null);
   const [relatedBlogs, setRelatedBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,26 +112,8 @@ const BlogPost = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userType, setUserType] = useState(null);
 
-  useEffect(() => {
-    // Check authentication status
-    const clientToken = localStorage.getItem('clientAccessToken');
-    const counselorToken = localStorage.getItem('counselorAccessToken');
-
-    if (clientToken || counselorToken) {
-      setIsAuthenticated(true);
-      setUserType(clientToken ? 'client' : 'counselor');
-    } else {
-      setIsAuthenticated(false);
-      setUserType(null);
-    }
-
-    if (slug) {
-      fetchBlog();
-    }
-  }, [slug]);
-
   // Fetch blog using API endpoint
-  const fetchBlog = async () => {
+  const fetchBlog = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -134,24 +125,13 @@ const BlogPost = () => {
         setLikesCount(data.data.blog.likes?.length || 0);
 
         // Safe user identification and like status checking
-        const clientToken = localStorage.getItem('clientAccessToken');
-        const counselorToken = localStorage.getItem('counselorAccessToken');
-        const activeUserType = clientToken ? 'client' : counselorToken ? 'counselor' : null;
-
-        if (activeUserType) {
-          try {
-            const storedUser = localStorage.getItem(activeUserType);
-            const userId = storedUser ? JSON.parse(storedUser)?._id : null;
-            if (userId) {
-              const userLiked = data.data.blog.likes?.some((like) => {
-                const likeUserId = (like?.user?._id || like?.user || like?._id)?.toString();
-                return likeUserId === userId.toString();
-              });
-              setLiked(Boolean(userLiked));
-            }
-          } catch (storageErr) {
-            console.error('Error reading stored user session:', storageErr);
-          }
+        const currentUserId = (client?._id || counselor?._id)?.toString();
+        if (currentUserId) {
+          const userLiked = data.data.blog.likes?.some((like) => {
+            const likeUserId = (like?.user?._id || like?.user || like?._id)?.toString();
+            return likeUserId === currentUserId;
+          });
+          setLiked(Boolean(userLiked));
         }
       } else {
         toast.error(data.message || 'Failed to load blog');
@@ -162,13 +142,22 @@ const BlogPost = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug, client, counselor]);
 
-  // ✅ UPDATED: Robust like/unlike handling with unified endpoint
+  useEffect(() => {
+    const active = Boolean(client || counselor);
+    setIsAuthenticated(active);
+    setUserType(client ? 'client' : counselor ? 'counselor' : null);
+
+    if (slug) {
+      fetchBlog();
+    }
+  }, [slug, client, counselor, fetchBlog]);
+
+  // Robust like/unlike handling with unified endpoint
   const handleLike = async () => {
     if (!isAuthenticated) {
       toast.error('Please login to like this blog', {
-        icon: '🔒',
         duration: 3000,
         style: {
           borderRadius: '12px',
@@ -190,7 +179,7 @@ const BlogPost = () => {
       if (data.success) {
         setLiked(data.data.liked);
         setLikesCount(data.data.likesCount);
-        toast.success(data.data.liked ? 'Blog liked! ❤️' : 'Blog unliked');
+        toast.success(data.data.liked ? 'Blog liked!' : 'Blog unliked');
       } else {
         toast.error(data.message || 'Failed to update like');
       }
@@ -202,13 +191,12 @@ const BlogPost = () => {
     }
   };
 
-  // ✅ UPDATED: Simplified comment handling with unified endpoint
+  // Simplified comment handling with unified endpoint
   const handleComment = async (e) => {
     e.preventDefault();
 
     if (!isAuthenticated) {
       toast.error('Please login to comment on this blog', {
-        icon: '🔒',
         duration: 3000,
         style: {
           borderRadius: '12px',
@@ -232,13 +220,13 @@ const BlogPost = () => {
 
       const data = response.data;
       if (data.success) {
-        // ✅ IMPROVED: Better comment state management
+        // Better comment state management
         setBlog((prev) => ({
           ...prev,
           comments: [...(prev.comments || []), data.data],
         }));
         setCommentText('');
-        toast.success('Comment added successfully! 💬');
+        toast.success('Comment added successfully!');
       } else {
         toast.error(data.message || 'Failed to add comment');
       }
@@ -250,7 +238,7 @@ const BlogPost = () => {
     }
   };
 
-  // ✅ ENHANCED: Better share functionality
+  // Better share functionality
   const handleShare = async () => {
     const shareData = {
       title: blog.title,
@@ -279,7 +267,6 @@ const BlogPost = () => {
 
   const handleAuthRequired = (action) => {
     toast.error(`Please login to ${action}`, {
-      icon: '🔒',
       duration: 3000,
       style: {
         borderRadius: '12px',
@@ -354,11 +341,17 @@ const BlogPost = () => {
             <div className="flex items-center justify-center space-x-2 text-blue-700 dark:text-blue-300 text-sm sm:text-base">
               <Lock className="w-4 h-4" />
               <span className="font-medium">
-                <Link to="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+                <Link
+                  to="/login"
+                  className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                >
                   Login
                 </Link>{' '}
                 or{' '}
-                <Link to="/register" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+                <Link
+                  to="/register"
+                  className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                >
                   Register
                 </Link>{' '}
                 to like and comment on this blog
@@ -377,14 +370,17 @@ const BlogPost = () => {
             {/* Category and Date Header */}
             {(() => {
               const theme = getCategoryTheme(blog.category);
-              const formattedDate = blog.publishedAt && dayjs(blog.publishedAt).isValid()
-                ? dayjs(blog.publishedAt).format('MMMM DD, YYYY')
-                : 'Recent';
+              const formattedDate =
+                blog.publishedAt && dayjs(blog.publishedAt).isValid()
+                  ? dayjs(blog.publishedAt).format('MMMM DD, YYYY')
+                  : 'Recent';
 
               return (
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                   <div className="flex items-center gap-2.5">
-                    <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border shadow-xs ${theme.badge}`}>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border shadow-xs ${theme.badge}`}
+                    >
                       <span>{theme.icon}</span>
                       <span>{theme.label}</span>
                     </span>
@@ -452,7 +448,9 @@ const BlogPost = () => {
                   }
                   disabled={isLiking}
                   className={`flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
-                    liked ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300 hover:text-rose-600'
+                    liked
+                      ? 'text-rose-600 dark:text-rose-400'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-rose-600'
                   } ${!isAuthenticated ? 'opacity-75' : ''} ${isLiking ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <Heart className={`w-4 h-4 ${liked ? 'fill-rose-600 text-rose-600' : ''}`} />
@@ -633,12 +631,15 @@ const BlogPost = () => {
               </h2>
             </div>
 
-            <div className={`grid gap-6 ${relatedBlogs.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : relatedBlogs.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+            <div
+              className={`grid gap-6 ${relatedBlogs.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : relatedBlogs.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}
+            >
               {relatedBlogs.map((relatedBlog, index) => {
                 const relTheme = getCategoryTheme(relatedBlog.category);
-                const relFormattedDate = relatedBlog.publishedAt && dayjs(relatedBlog.publishedAt).isValid()
-                  ? dayjs(relatedBlog.publishedAt).format('DD MMM YYYY')
-                  : 'Recent';
+                const relFormattedDate =
+                  relatedBlog.publishedAt && dayjs(relatedBlog.publishedAt).isValid()
+                    ? dayjs(relatedBlog.publishedAt).format('DD MMM YYYY')
+                    : 'Recent';
 
                 return (
                   <motion.div
@@ -661,21 +662,27 @@ const BlogPost = () => {
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-80" />
-                        
+
                         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md border shadow-xs ${relTheme.badge}`}>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md border shadow-xs ${relTheme.badge}`}
+                          >
                             <span>{relTheme.icon}</span>
                             <span>{relTheme.label}</span>
                           </span>
                         </div>
                       </div>
                     ) : (
-                      <div className={`relative h-24 w-full bg-gradient-to-br ${relTheme.headerGradient} border-b border-slate-100 dark:border-slate-800/80 p-3.5 flex flex-col justify-between overflow-hidden shrink-0`}>
+                      <div
+                        className={`relative h-24 w-full bg-gradient-to-br ${relTheme.headerGradient} border-b border-slate-100 dark:border-slate-800/80 p-3.5 flex flex-col justify-between overflow-hidden shrink-0`}
+                      >
                         <div className="absolute -right-2 -bottom-3 text-5xl opacity-10 select-none pointer-events-none">
                           {relTheme.icon}
                         </div>
                         <div className="flex items-center justify-between relative z-10">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm shadow-xs ${relTheme.badge}`}>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm shadow-xs ${relTheme.badge}`}
+                          >
                             <span>{relTheme.icon}</span>
                             <span>{relTheme.label}</span>
                           </span>

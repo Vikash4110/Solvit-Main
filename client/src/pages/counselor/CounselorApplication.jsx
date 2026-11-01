@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
+import { clearMemoryTokens } from '../../lib/axios';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -99,7 +100,8 @@ const CounselorApplication = () => {
   const { submitApplication, counselor, counselorLogout, counselorLoading } = useCounselorAuth();
   const navigate = useNavigate();
 
-  const applicationStatus = counselor?.applicationStatus || counselor?.application?.applicationStatus;
+  const applicationStatus =
+    counselor?.applicationStatus || counselor?.application?.applicationStatus;
 
   useEffect(() => {
     if (counselorLoading) return;
@@ -123,8 +125,13 @@ const CounselorApplication = () => {
       navigate('/counselor/login', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      localStorage.removeItem('counselorAccessToken');
-      localStorage.removeItem('counselor');
+      clearMemoryTokens();
+      try {
+        localStorage.removeItem('counselorAccessToken');
+        localStorage.removeItem('counselor');
+      } catch {
+        // Ignore storage access error
+      }
       navigate('/counselor/login', { replace: true });
     } finally {
       setIsLoggingOut(false);
@@ -303,8 +310,8 @@ const CounselorApplication = () => {
       'Graduation Year': formData.education.graduation.year,
       Experience: formData.experience?.trim(),
       'Professional Summary': formData.professionalSummary?.trim(),
-      'License Number' : formData?.license?.licenseNo?.trim(),
-      'License Issuing Authority' : formData?.license?.issuingAuthority?.trim(),
+      'License Number': formData?.license?.licenseNo?.trim(),
+      'License Issuing Authority': formData?.license?.issuingAuthority?.trim(),
       Languages: formData.languages.length > 0,
       'Bank Account Number': formData.bankDetails.accountNo?.trim(),
       'IFSC Code': formData.bankDetails.ifscCode?.trim(),
@@ -312,7 +319,7 @@ const CounselorApplication = () => {
       Resume: files.resume,
       'Degree Certificate': files.degreeCertificate,
       'Government ID': files.governmentId,
-      'License Certificate' : files.licenseCertificate
+      'License Certificate': files.licenseCertificate,
     };
 
     const missingFields = Object.entries(requiredFields)
@@ -403,9 +410,9 @@ const CounselorApplication = () => {
     if (files.resume) completed++;
     if (files.degreeCertificate) completed++;
     if (files.governmentId) completed++;
-    if (files.licenseCertificate) completed++
-    if(formData.license.licenseNo) completed++
-    if(formData.license.issuingAuthority) completed++ 
+    if (files.licenseCertificate) completed++;
+    if (formData.license.licenseNo) completed++;
+    if (formData.license.issuingAuthority) completed++;
 
     return Math.round((completed / total) * 100);
   };
@@ -429,7 +436,11 @@ const CounselorApplication = () => {
   }
 
   // If application is already submitted (pending) or approved or rejected, redirect away from form
-  if (applicationStatus === 'pending' || applicationStatus === 'approved' || applicationStatus === 'rejected') {
+  if (
+    applicationStatus === 'pending' ||
+    applicationStatus === 'approved' ||
+    applicationStatus === 'rejected'
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-primary-50 dark:from-neutral-900 dark:to-neutral-800">
         <motion.div
@@ -438,7 +449,9 @@ const CounselorApplication = () => {
           className="flex flex-col items-center gap-4"
         >
           <Loader2 className="h-12 w-12 animate-spin text-primary-700 dark:text-primary-400" />
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Redirecting to application status...</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            Redirecting to application status...
+          </p>
         </motion.div>
       </div>
     );
@@ -1071,8 +1084,8 @@ const CounselorApplication = () => {
                             isDragging
                               ? 'border-primary-600 bg-primary-100/70 dark:bg-primary-950/40 ring-2 ring-primary-500/30 scale-[1.01]'
                               : currentFile
-                              ? 'border-emerald-400 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20'
-                              : 'border-neutral-300 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50/50 dark:hover:bg-primary-900/10'
+                                ? 'border-emerald-400 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20'
+                                : 'border-neutral-300 dark:border-neutral-700 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50/50 dark:hover:bg-primary-900/10'
                           }`}
                         >
                           <input
