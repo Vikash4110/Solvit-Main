@@ -1,3 +1,9 @@
+import {
+  COOKIE_NAMES,
+  getCookieOptions,
+  getClearCookieOptions,
+  hashToken,
+} from '../utils/cookieOptions.js';
 // controllers/admin-controller.js
 
 import { Admin } from '../models/admin-model.js';
@@ -43,28 +49,26 @@ const loginAdmin = wrapper(async (req, res) => {
     }
 
     const accessToken = await admin.generateAccessToken();
-
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
-    };
-
+    const refreshToken = await admin.generateRefreshToken();
+    admin.refreshToken = hashToken(refreshToken);
     admin.lastLogin = new Date();
     await admin.save({ validateBeforeSave: false });
 
     const loggedInAdmin = admin.toObject();
     delete loggedInAdmin.password;
 
-    return res.status(200).cookie('accessToken', accessToken, options).json({
-      success: true,
-      message: 'Logged in successfully',
-      data: {
-        accessToken,
-        loggedInAdmin,
-      },
-    });
+    return res
+      .status(200)
+      .cookie(COOKIE_NAMES.ADMIN_REFRESH_TOKEN, refreshToken, getCookieOptions())
+      .cookie('accessToken', accessToken, getCookieOptions(24 * 60 * 60 * 1000))
+      .json({
+        success: true,
+        message: 'Logged in successfully',
+        data: {
+          accessToken,
+          loggedInAdmin,
+        },
+      });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -75,16 +79,14 @@ const loginAdmin = wrapper(async (req, res) => {
 });
 
 const logoutAdmin = wrapper(async (req, res) => {
-  const options = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
-  };
-
-  return res.status(200).clearCookie('accessToken', options).json({
-    success: true,
-    message: 'Logged out successfully',
-  });
+  return res
+    .status(200)
+    .clearCookie('accessToken', getClearCookieOptions())
+    .clearCookie(COOKIE_NAMES.ADMIN_REFRESH_TOKEN, getClearCookieOptions())
+    .json({
+      success: true,
+      message: 'Logged out successfully',
+    });
 });
 
 const getAdminProfile = wrapper(async (req, res) => {
@@ -1298,7 +1300,8 @@ const getAllBookings = wrapper(async (req, res) => {
         select: 'startTime endTime basePrice totalPriceAfterPlatformFee status',
         populate: {
           path: 'counselorId',
-          select: 'fullName email phone profilePicture specialization experienceLevel isBlocked application',
+          select:
+            'fullName email phone profilePicture specialization experienceLevel isBlocked application',
         },
       })
       .populate({
@@ -1672,7 +1675,14 @@ const getBookingAnalytics = wrapper(async (req, res) => {
  * @access Private (Admin only)
  */
 const getAllCounselorRequests = wrapper(async (req, res) => {
-  const { page = 1, limit = 20, search = '', status = '', isChecked = '', requestType = '' } = req.query;
+  const {
+    page = 1,
+    limit = 20,
+    search = '',
+    status = '',
+    isChecked = '',
+    requestType = '',
+  } = req.query;
 
   const filter = {};
 
@@ -1680,7 +1690,10 @@ const getAllCounselorRequests = wrapper(async (req, res) => {
     filter.status = status;
   }
 
-  if (requestType && ['specialization_and_experience', 'education', 'documents'].includes(requestType)) {
+  if (
+    requestType &&
+    ['specialization_and_experience', 'education', 'documents'].includes(requestType)
+  ) {
     filter.requestType = requestType;
   }
 
@@ -1716,22 +1729,32 @@ const getAllCounselorRequests = wrapper(async (req, res) => {
     ];
   }
 
-  const [requests, total, pendingCount, approvedCount, rejectedCount, uncheckedCount, checkedCount] =
-    await Promise.all([
-      CounselorProfileRequest.find(filter)
-        .populate('counselor', 'fullName email phone profilePicture username specialization experienceYears experienceLevel application')
-        .populate('reviewedBy', 'fullName email')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit, 10))
-        .lean(),
-      CounselorProfileRequest.countDocuments(filter),
-      CounselorProfileRequest.countDocuments({ status: 'pending' }),
-      CounselorProfileRequest.countDocuments({ status: 'approved' }),
-      CounselorProfileRequest.countDocuments({ status: 'rejected' }),
-      CounselorProfileRequest.countDocuments({ isChecked: false }),
-      CounselorProfileRequest.countDocuments({ isChecked: true }),
-    ]);
+  const [
+    requests,
+    total,
+    pendingCount,
+    approvedCount,
+    rejectedCount,
+    uncheckedCount,
+    checkedCount,
+  ] = await Promise.all([
+    CounselorProfileRequest.find(filter)
+      .populate(
+        'counselor',
+        'fullName email phone profilePicture username specialization experienceYears experienceLevel application'
+      )
+      .populate('reviewedBy', 'fullName email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit, 10))
+      .lean(),
+    CounselorProfileRequest.countDocuments(filter),
+    CounselorProfileRequest.countDocuments({ status: 'pending' }),
+    CounselorProfileRequest.countDocuments({ status: 'approved' }),
+    CounselorProfileRequest.countDocuments({ status: 'rejected' }),
+    CounselorProfileRequest.countDocuments({ isChecked: false }),
+    CounselorProfileRequest.countDocuments({ isChecked: true }),
+  ]);
 
   return res.status(200).json({
     success: true,
@@ -1768,7 +1791,10 @@ const getCounselorRequestDetails = wrapper(async (req, res) => {
   }
 
   const request = await CounselorProfileRequest.findById(requestId)
-    .populate('counselor', 'fullName email phone profilePicture username specialization experienceYears experienceLevel application createdAt')
+    .populate(
+      'counselor',
+      'fullName email phone profilePicture username specialization experienceYears experienceLevel application createdAt'
+    )
     .populate('reviewedBy', 'fullName email')
     .lean();
 
@@ -1830,7 +1856,9 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
   }
 
   if (!['approved', 'rejected'].includes(status)) {
-    return res.status(400).json({ success: false, message: 'Status must be either approved or rejected' });
+    return res
+      .status(400)
+      .json({ success: false, message: 'Status must be either approved or rejected' });
   }
 
   const request = await CounselorProfileRequest.findById(requestId);
@@ -1862,7 +1890,10 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
       if (request.requestedSpecialization && request.requestedSpecialization.length > 0) {
         counselor.specialization = request.requestedSpecialization;
       }
-      if (request.requestedExperienceYears !== undefined && request.requestedExperienceYears !== null) {
+      if (
+        request.requestedExperienceYears !== undefined &&
+        request.requestedExperienceYears !== null
+      ) {
         counselor.experienceYears = request.requestedExperienceYears;
 
         // Recalculate experience level based on years
@@ -1904,10 +1935,12 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
         counselor.application.documents.resume = request.requestedDocuments.resume;
       }
       if (request.requestedDocuments?.degreeCertificate) {
-        counselor.application.documents.degreeCertificate = request.requestedDocuments.degreeCertificate;
+        counselor.application.documents.degreeCertificate =
+          request.requestedDocuments.degreeCertificate;
       }
       if (request.requestedDocuments?.licenseCertificate) {
-        counselor.application.documents.licenseCertificate = request.requestedDocuments.licenseCertificate;
+        counselor.application.documents.licenseCertificate =
+          request.requestedDocuments.licenseCertificate;
       }
       if (request.requestedDocuments?.governmentId) {
         counselor.application.documents.governmentId = request.requestedDocuments.governmentId;
@@ -1928,7 +1961,10 @@ const reviewCounselorRequest = wrapper(async (req, res) => {
   await request.save();
 
   const populatedRequest = await CounselorProfileRequest.findById(requestId)
-    .populate('counselor', 'fullName email phone profilePicture username specialization experienceYears experienceLevel application')
+    .populate(
+      'counselor',
+      'fullName email phone profilePicture username specialization experienceYears experienceLevel application'
+    )
     .populate('reviewedBy', 'fullName email')
     .lean();
 
@@ -2146,9 +2182,7 @@ const toggleBlogFeatured = wrapper(async (req, res) => {
 
   return res.status(200).json({
     success: true,
-    message: blog.featured
-      ? 'Blog successfully marked as Featured'
-      : 'Blog removed from Featured',
+    message: blog.featured ? 'Blog successfully marked as Featured' : 'Blog removed from Featured',
     data: {
       blogId: blog._id,
       featured: blog.featured,
@@ -2217,5 +2251,3 @@ export {
   toggleBlogFeatured,
   deleteBlogAdmin,
 };
-
-

@@ -1,3 +1,9 @@
+import {
+  COOKIE_NAMES,
+  getCookieOptions,
+  getClearCookieOptions,
+  hashToken,
+} from '../utils/cookieOptions.js';
 import { OTP } from '../models/clientOTP-model.js';
 import { Counselor } from '../models/counselor-model.js';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
@@ -66,7 +72,7 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     }
 
     // Only save OTP if email was sent successfully
-    const saveOTP = await OTP.create({
+    await OTP.create({
       email: email.trim(),
       otp: generatedOTP,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
@@ -434,19 +440,18 @@ const registerCounselor = wrapper(async (req, res) => {
     }
 
     const counselorData = counselorCreated.toObject();
-    counselorData.applicationStatus = counselorData.application?.applicationStatus || 'not_submitted';
+    counselorData.applicationStatus =
+      counselorData.application?.applicationStatus || 'not_submitted';
 
     const accessToken = await newCounselor.generateAccessToken();
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    };
+    const refreshToken = await newCounselor.generateRefreshToken();
+    newCounselor.refreshToken = hashToken(refreshToken);
+    await newCounselor.save({ validateBeforeSave: false });
 
     return res
       .status(201)
-      .cookie('accessToken', accessToken, options)
+      .cookie(COOKIE_NAMES.COUNSELOR_REFRESH_TOKEN, refreshToken, getCookieOptions())
+      .cookie('accessToken', accessToken, getCookieOptions(24 * 60 * 60 * 1000))
       .json({
         success: true,
         message: 'Counselor registered successfully! Please complete your application.',
@@ -498,28 +503,31 @@ const loginCounselor = wrapper(async (req, res) => {
     }
 
     const accessToken = await counselor.generateAccessToken();
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    };
+    const refreshToken = await counselor.generateRefreshToken();
+    const hashedRefreshToken = hashToken(refreshToken);
 
     const loggedInCounselor = await Counselor.findOne({
       email: email.trim(),
     }).select('_id fullName username email specialization application profilePicture');
 
     const counselorData = loggedInCounselor.toObject();
-    counselorData.applicationStatus = loggedInCounselor.application?.applicationStatus || 'not_submitted';
+    counselorData.applicationStatus =
+      loggedInCounselor.application?.applicationStatus || 'not_submitted';
     // 🧠 Fire-and-forget lastLogin update safely
     Counselor.updateOne(
       { _id: loggedInCounselor._id },
-      { $set: { lastLogin: dayjs().utc().toDate() } }
-    ).catch((err) => logger.error(`Failed to update lastLogin: ${err.message}`));
+      {
+        $set: {
+          lastLogin: dayjs().utc().toDate(),
+          refreshToken: hashedRefreshToken,
+        },
+      }
+    ).catch((err) => logger.error(`Failed to update counselor auth state: ${err.message}`));
 
     return res
       .status(200)
-      .cookie('accessToken', accessToken, options)
+      .cookie(COOKIE_NAMES.COUNSELOR_REFRESH_TOKEN, refreshToken, getCookieOptions())
+      .cookie('accessToken', accessToken, getCookieOptions(24 * 60 * 60 * 1000))
       .json({
         success: true,
         message: 'Logged in successfully',
@@ -818,16 +826,14 @@ const submitCounselorApplication = wrapper(async (req, res) => {
 });
 
 const logoutCounselor = wrapper(async (req, res) => {
-  const options = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'None',
-  };
-
-  return res.status(200).clearCookie('accessToken', options).json({
-    success: true,
-    message: 'Logged out successfully',
-  });
+  return res
+    .status(200)
+    .clearCookie('accessToken', getClearCookieOptions())
+    .clearCookie(COOKIE_NAMES.COUNSELOR_REFRESH_TOKEN, getClearCookieOptions())
+    .json({
+      success: true,
+      message: 'Logged out successfully',
+    });
 });
 
 export {

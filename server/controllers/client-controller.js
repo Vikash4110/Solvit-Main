@@ -1,3 +1,9 @@
+import {
+  COOKIE_NAMES,
+  getCookieOptions,
+  getClearCookieOptions,
+  hashToken,
+} from '../utils/cookieOptions.js';
 import { ambassadorAttributionService } from '../services/ambassadorAttributionService.js';
 import { Client } from '../models/client-model.js';
 import { OTP } from '../models/clientOTP-model.js';
@@ -74,7 +80,7 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     }
 
     // Only save OTP if email was sent successfully
-    const saveOTP = await OTP.create({
+    await OTP.create({
       email: email.trim(),
       otp: generatedOTP,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -208,7 +214,7 @@ const forgotPassword = wrapper(async (req, res) => {
     }
 
     // Only save OTP if email was sent successfully
-    const saveOTP = await OTP.create({
+    await OTP.create({
       email: email.trim(),
       otp: generatedOTP,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -447,46 +453,50 @@ const loginClient = wrapper(async (req, res) => {
     });
   }
 
-  const options = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  };
   const accessToken = await client.generateAccessToken();
+  const refreshToken = await client.generateRefreshToken();
+  const hashedRefreshToken = hashToken(refreshToken);
 
-  const loggedInClient = await Client.findOne({ email: email.trim() }).select('-password').lean(); // 🚀 faster read since we’re not modifying the document
+  const loggedInClient = await Client.findOne({ email: email.trim() }).select('-password').lean();
 
   if (!loggedInClient) {
     throw new Error('Client not found');
   }
 
-  // 🧠 Fire-and-forget lastLogin update safely
+  // Update lastLogin and hashed refresh token
   Client.updateOne(
     { _id: loggedInClient._id },
-    { $set: { lastLogin: dayjs().utc().toDate() } }
-  ).catch((err) => logger.error(`Failed to update lastLogin: ${err.message}`));
+    {
+      $set: {
+        lastLogin: dayjs().utc().toDate(),
+        refreshToken: hashedRefreshToken,
+      },
+    }
+  ).catch((err) => logger.error(`Failed to update client auth state: ${err.message}`));
 
-  res.status(200).cookie('accessToken', accessToken, options).json({
-    status: 200,
-    message: 'Logged in successfully',
-    data: {
-      accessToken,
-      loggedInClient,
-    },
-  });
+  res
+    .status(200)
+    .cookie(COOKIE_NAMES.CLIENT_REFRESH_TOKEN, refreshToken, getCookieOptions())
+    .cookie('accessToken', accessToken, getCookieOptions(24 * 60 * 60 * 1000))
+    .json({
+      status: 200,
+      message: 'Logged in successfully',
+      data: {
+        accessToken,
+        loggedInClient,
+      },
+    });
 });
 
 const logoutClient = wrapper(async (req, res) => {
-  const options = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'None',
-  };
-  return res.status(200).clearCookie('accessToken', options).json({
-    status: 200,
-    message: 'Logout successful',
-  });
+  return res
+    .status(200)
+    .clearCookie('accessToken', getClearCookieOptions())
+    .clearCookie(COOKIE_NAMES.CLIENT_REFRESH_TOKEN, getClearCookieOptions())
+    .json({
+      status: 200,
+      message: 'Logout successful',
+    });
 });
 
 const changeCurrentPassword = wrapper(async (req, res) => {
