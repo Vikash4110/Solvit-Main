@@ -5,28 +5,28 @@ import { ApiError } from '../utils/ApiError.js';
 
 export const auth = async (req, res, next) => {
   try {
+    const authHeader = req.header('Authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.replace('Bearer ', '').trim()
+      : authHeader?.trim();
     const token =
+      bearerToken ||
       req.cookies?.accessToken ||
       req.cookies?.clientAccessToken ||
-      req.cookies?.counselorAccessToken ||
-      req.header('Authorization')?.replace('Bearer ', '');
+      req.cookies?.counselorAccessToken;
 
     if (!token) {
       return next(new ApiError(401, 'Unauthorized access - No token provided'));
     }
 
-    // Verify token
     let decodedToken;
     try {
       decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     } catch (jwtError) {
-      if (jwtError.name === 'JsonWebTokenError') {
-        return next(new ApiError(401, 'Invalid token'));
-      } else if (jwtError.name === 'TokenExpiredError') {
+      if (jwtError.name === 'TokenExpiredError') {
         return next(new ApiError(401, 'Token expired'));
-      } else {
-        return next(new ApiError(401, 'Token verification failed'));
       }
+      return next(new ApiError(401, 'Invalid token'));
     }
 
     if (!decodedToken?._id) {
@@ -37,16 +37,14 @@ export const auth = async (req, res, next) => {
     let user = null;
     let userType = role || 'client';
 
-    // Direct single-query lookup based on embedded JWT role
     if (role === 'counselor') {
-      user = await Counselor.findById(_id).select('-password');
+      user = await Counselor.findById(_id).select('-password').lean();
     } else if (role === 'client') {
-      user = await Client.findById(_id).select('-password');
+      user = await Client.findById(_id).select('-password').lean();
     } else {
-      // Backward compatibility fallback for legacy tokens without role claim
-      user = await Client.findById(_id).select('-password');
+      user = await Client.findById(_id).select('-password').lean();
       if (!user) {
-        user = await Counselor.findById(_id).select('-password');
+        user = await Counselor.findById(_id).select('-password').lean();
         userType = 'counselor';
       }
     }
@@ -55,12 +53,19 @@ export const auth = async (req, res, next) => {
       return next(new ApiError(401, 'User not found'));
     }
 
-    // Add user and userType to request
+    if (user.isBlocked) {
+      return next(new ApiError(403, 'Account is blocked'));
+    }
+
+    if (decodedToken.tokenVersion && decodedToken.tokenVersion !== user.tokenVersion) {
+      return next(new ApiError(401, 'Session revoked. Please login again.'));
+    }
+
     req.user = user;
     req.userType = userType;
     req.verifiedUser = user;
     next();
   } catch (error) {
-    return next(new ApiError(401, 'Authentication failed'));
+    return next(new ApiError(401, error?.message || 'Authentication failed'));
   }
 };
