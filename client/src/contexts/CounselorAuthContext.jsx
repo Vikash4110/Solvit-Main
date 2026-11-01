@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { API_ENDPOINTS } from '../config/api';
-import { toast } from 'sonner';
 import api from '../lib/axios';
+import { counselorAuthService } from '../services/auth/counselorAuth.service';
 
 const CounselorAuthContext = createContext();
 
@@ -40,27 +40,47 @@ export const CounselorAuthProvider = ({ children }) => {
   });
   const [counselorLoading, setCounselorLoading] = useState(true);
 
+  // Initialize auth on mount via silent token refresh
   useEffect(() => {
-    const initializeAuth = async () => {
-      const token = localStorage.getItem('counselorAccessToken');
-      const storedCounselor = localStorage.getItem('counselor');
+    let isMounted = true;
 
-      if (token && storedCounselor) {
-        try {
-          // Verify token is still valid
-          const response = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_GET);
-          const counselorData = normalizeCounselor(response.data.data);
-          setCounselor(counselorData);
-          localStorage.setItem('counselor', JSON.stringify(counselorData));
-        } catch (error) {
-          console.error('Error initializing auth:', error);
-          await counselorLogout();
+    const bootstrapAuth = async () => {
+      try {
+        await counselorAuthService.refreshToken();
+        const profile = await counselorAuthService.getProfile();
+        const normalized = normalizeCounselor(profile);
+        if (isMounted) {
+          setCounselor(normalized);
+          try {
+            localStorage.setItem('counselor', JSON.stringify(normalized));
+          } catch {
+            // Ignore storage restrictions
+          }
+        }
+      } catch {
+        const legacyToken = localStorage.getItem('counselorAccessToken');
+        const storedCounselor = localStorage.getItem('counselor');
+        if (legacyToken && storedCounselor && isMounted) {
+          try {
+            setCounselor(normalizeCounselor(JSON.parse(storedCounselor)));
+          } catch {
+            setCounselor(null);
+          }
+        } else if (isMounted) {
+          setCounselor(null);
+        }
+      } finally {
+        if (isMounted) {
+          setCounselorLoading(false);
         }
       }
-      setCounselorLoading(false);
     };
 
-    initializeAuth();
+    bootstrapAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const getErrorMessage = (error, fallback = 'Something went wrong') =>
@@ -68,17 +88,14 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const counselorLogin = async (email, password) => {
     try {
-      const response = await api.post(API_ENDPOINTS.COUNSELOR_LOGIN, {
-        email,
-        password,
-      });
-
-      const { loggedInCounselor, accessToken } = response.data.data;
+      const loggedInCounselor = await counselorAuthService.login(email, password);
       const normalizedCounselor = normalizeCounselor(loggedInCounselor);
-      localStorage.setItem('counselorAccessToken', accessToken);
-      localStorage.setItem('counselor', JSON.stringify(normalizedCounselor));
       setCounselor(normalizedCounselor);
-
+      try {
+        localStorage.setItem('counselor', JSON.stringify(normalizedCounselor));
+      } catch {
+        // Ignore storage restrictions
+      }
       return { success: true, data: normalizedCounselor };
     } catch (error) {
       const message = getErrorMessage(error, 'Login failed. Please try again.');
@@ -97,15 +114,14 @@ export const CounselorAuthProvider = ({ children }) => {
         }
       });
 
-      const response = await api.post(API_ENDPOINTS.COUNSELOR_REGISTER, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      const { accessToken, loggedInCounselor } = response.data.data;
-      const normalizedCounselor = normalizeCounselor(loggedInCounselor);
-      localStorage.setItem('counselorAccessToken', accessToken);
-      localStorage.setItem('counselor', JSON.stringify(normalizedCounselor));
+      const registeredCounselor = await counselorAuthService.register(formData);
+      const normalizedCounselor = normalizeCounselor(registeredCounselor);
       setCounselor(normalizedCounselor);
+      try {
+        localStorage.setItem('counselor', JSON.stringify(normalizedCounselor));
+      } catch {
+        // Ignore storage restrictions
+      }
 
       return { success: true, data: normalizedCounselor };
     } catch (error) {
@@ -159,17 +175,12 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const submitApplication = async (applicationData) => {
     try {
-      await api.post(
-        API_ENDPOINTS.COUNSELOR_APPLICATION,
-        applicationData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      await api.post(API_ENDPOINTS.COUNSELOR_APPLICATION, applicationData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-      // Update counselor with new application status
       const updatedCounselor = {
         ...counselor,
         applicationStatus: 'pending',
@@ -181,7 +192,11 @@ export const CounselorAuthProvider = ({ children }) => {
       };
 
       setCounselor(updatedCounselor);
-      localStorage.setItem('counselor', JSON.stringify(updatedCounselor));
+      try {
+        localStorage.setItem('counselor', JSON.stringify(updatedCounselor));
+      } catch {
+        // Ignore storage restrictions
+      }
 
       return { success: true };
     } catch (error) {
@@ -192,12 +207,10 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const counselorLogout = async () => {
     try {
-      await api.post(API_ENDPOINTS.COUNSELOR_LOGOUT);
+      await counselorAuthService.logout();
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('counselorAccessToken');
-      localStorage.removeItem('counselor');
       setCounselor(null);
     }
   };
@@ -205,6 +218,7 @@ export const CounselorAuthProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       counselor,
+      isAuthenticated: !!counselor,
       counselorLoading,
       counselorLogin,
       counselorRegister,

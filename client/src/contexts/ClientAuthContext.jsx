@@ -1,13 +1,15 @@
-import { getStoredAmbassadorReferral, clearStoredAmbassadorReferral } from '../services/ambassadorService';
+import {
+  getStoredAmbassadorReferral,
+  clearStoredAmbassadorReferral,
+} from '../services/ambassadorService';
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import api from '../lib/axios';
 import { API_ENDPOINTS } from '../config/api';
+import { clientAuthService } from '../services/auth/clientAuth.service';
 
-// Create context
 const ClientAuthContext = createContext();
 
-// Custom hook
 export const useClientAuth = () => {
   const context = useContext(ClientAuthContext);
   if (!context) {
@@ -16,50 +18,65 @@ export const useClientAuth = () => {
   return context;
 };
 
-// Provider
 export const ClientAuthProvider = ({ children }) => {
   const [client, setClient] = useState(null);
   const [clientLoading, setClientLoading] = useState(true);
 
-  // Initialize auth on mount
+  // Initialize auth on mount via silent token refresh
   useEffect(() => {
-    const initializeAuth = () => {
-      const token = localStorage.getItem('clientAccessToken');
-      if (token) {
-        try {
-          const storedClient = localStorage.getItem('client');
-          if (storedClient) {
-            setClient(JSON.parse(storedClient));
+    let isMounted = true;
+
+    const bootstrapAuth = async () => {
+      try {
+        await clientAuthService.refreshToken();
+        const profile = await clientAuthService.getProfile();
+        if (isMounted) {
+          setClient(profile);
+          try {
+            localStorage.setItem('client', JSON.stringify(profile));
+          } catch {
+            // Ignore storage restrictions
           }
-        } catch (error) {
-          console.error('Error initializing auth:', error);
-          localStorage.removeItem('clientAccessToken');
-          localStorage.removeItem('client');
+        }
+      } catch {
+        // Fallback for transition period if legacy session exists in storage
+        const legacyToken = localStorage.getItem('clientAccessToken');
+        const storedClient = localStorage.getItem('client');
+        if (legacyToken && storedClient && isMounted) {
+          try {
+            setClient(JSON.parse(storedClient));
+          } catch {
+            setClient(null);
+          }
+        } else if (isMounted) {
+          setClient(null);
+        }
+      } finally {
+        if (isMounted) {
+          setClientLoading(false);
         }
       }
-      setClientLoading(false);
     };
 
-    initializeAuth();
+    bootstrapAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Helper for error messages
   const getErrorMessage = (error, fallback = 'Something went wrong') =>
     error.response?.data?.message || error.message || fallback;
 
   const clientLogin = async (email, password) => {
     try {
-      const response = await api.post(API_ENDPOINTS.CLIENT_LOGIN, {
-        email,
-        password,
-      });
-
-      const { loggedInClient, accessToken } = response.data.data;
-
-      localStorage.setItem('clientAccessToken', accessToken);
-      localStorage.setItem('client', JSON.stringify(loggedInClient));
+      const loggedInClient = await clientAuthService.login(email, password);
       setClient(loggedInClient);
-
+      try {
+        localStorage.setItem('client', JSON.stringify(loggedInClient));
+      } catch {
+        // Ignore storage restrictions
+      }
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
@@ -73,7 +90,6 @@ export const ClientAuthProvider = ({ children }) => {
     try {
       const formData = new FormData();
 
-      // Automatically inject frictionless campus ambassador referral if active
       const storedAmbCode = getStoredAmbassadorReferral();
       if (storedAmbCode && !clientData.ambassadorRef) {
         formData.append('ambassadorRef', storedAmbCode);
@@ -91,7 +107,7 @@ export const ClientAuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      await clientLogin(clientData.email , clientData.password)
+      await clientLogin(clientData.email, clientData.password);
       clearStoredAmbassadorReferral();
       toast.success('Registration successful!');
       return { success: true };
@@ -149,13 +165,11 @@ export const ClientAuthProvider = ({ children }) => {
 
   const clientLogout = async () => {
     try {
-      await api.post(API_ENDPOINTS.CLIENT_LOGOUT);
+      await clientAuthService.logout();
       toast.success('Logged out successfully!');
-    } catch (error) {
-      toast.error('Logout failed. Clearing local data.');
+    } catch {
+      toast.error('Logout completed');
     } finally {
-      localStorage.removeItem('clientAccessToken');
-      localStorage.removeItem('client');
       setClient(null);
     }
   };
@@ -163,6 +177,7 @@ export const ClientAuthProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       client,
+      isAuthenticated: !!client,
       clientLoading,
       clientLogin,
       clientRegister,
