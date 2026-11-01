@@ -78,6 +78,7 @@
 
 ## ⚡ Core Engineering Highlights
 
+* **Enterprise 4-Layer Auth Architecture:** OAuth2 / OIDC compliant auth pattern featuring 15-minute in-memory access tokens, rotating 7-day HttpOnly refresh cookies, instant tokenVersion revocation, and concurrency-safe silent 401 refresh queues.
 * **High-Throughput Concurrency:** Tuned MongoDB connection pooling (`maxPoolSize: 50`) and role-embedded JWTs reduce database authentication lookups by 50%.
 * **Smart Tab Visibility Management:** Foreground-only polling architecture (`useSmartRefresh`) halts background network requests on inactive browser tabs, eliminating idle database drain.
 * **Optimized Bundle Delivery:** Dynamic route-level code splitting and manual vendor chunking drop the initial entry JavaScript to **187 kB (45 kB Brotli)** with automated `.br` and `.gz` static pre-compression.
@@ -98,6 +99,7 @@ Solvit-Main/
 │   │   ├── hooks/              # Custom hooks (useSmartRefresh, useMediaStream, etc.)
 │   │   ├── lib/                # Shared Axios HTTP client & interceptors
 │   │   ├── pages/              # Lazy-loaded route views
+│   │   ├── services/           # Domain API services (auth, coupons, ambassadors)
 │   │   └── videoCall/          # VideoSDK WebRTC consultation interface
 │   ├── vite.config.js          # Build optimization, vendor chunking & compression
 │   └── package.json
