@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import {
   COOKIE_NAMES,
   getCookieOptions,
@@ -489,6 +490,11 @@ const loginClient = wrapper(async (req, res) => {
 });
 
 const logoutClient = wrapper(async (req, res) => {
+  const userId = req.user?._id || req.verifiedClientId?._id;
+  if (userId) {
+    await Client.findByIdAndUpdate(userId, { $unset: { refreshToken: 1 } });
+  }
+
   return res
     .status(200)
     .clearCookie('accessToken', getClearCookieOptions())
@@ -527,10 +533,91 @@ const changeCurrentPassword = wrapper(async (req, res) => {
   });
 });
 
+const refreshClientToken = wrapper(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies?.[COOKIE_NAMES.CLIENT_REFRESH_TOKEN] || req.cookies?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: 'No refresh token provided',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET
+    );
+
+    const client = await Client.findById(decoded._id).select('+refreshToken tokenVersion');
+
+    if (!client) {
+      return res.status(401).json({
+        success: false,
+        message: 'User does not exist',
+      });
+    }
+
+    if (client.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is blocked. Please contact support.',
+      });
+    }
+
+    if (decoded.tokenVersion && decoded.tokenVersion !== client.tokenVersion) {
+      return res.status(401).json({
+        success: false,
+        message: 'Session revoked. Please login again.',
+      });
+    }
+
+    const incomingHash = hashToken(incomingRefreshToken);
+    if (!client.refreshToken || client.refreshToken !== incomingHash) {
+      client.refreshToken = null;
+      client.tokenVersion = (client.tokenVersion || 1) + 1;
+      await client.save({ validateBeforeSave: false });
+
+      res.clearCookie(COOKIE_NAMES.CLIENT_REFRESH_TOKEN, getClearCookieOptions());
+      res.clearCookie('accessToken', getClearCookieOptions());
+
+      return res.status(403).json({
+        success: false,
+        message: 'Security breach detected. All sessions revoked.',
+      });
+    }
+
+    const newAccessToken = client.generateAccessToken();
+    const newRefreshToken = client.generateRefreshToken();
+
+    client.refreshToken = hashToken(newRefreshToken);
+    await client.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .cookie(COOKIE_NAMES.CLIENT_REFRESH_TOKEN, newRefreshToken, getCookieOptions())
+      .cookie('accessToken', newAccessToken, getCookieOptions(24 * 60 * 60 * 1000))
+      .json({
+        success: true,
+        data: {
+          accessToken: newAccessToken,
+        },
+      });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired refresh token',
+      error: error.message,
+    });
+  }
+});
+
 export {
   changeCurrentPassword,
   forgotPassword,
   loginClient,
+  refreshClientToken,
   logoutClient,
   registerClient,
   resetPassword,

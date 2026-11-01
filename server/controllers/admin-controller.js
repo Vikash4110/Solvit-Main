@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import {
   COOKIE_NAMES,
   getCookieOptions,
@@ -79,6 +80,11 @@ const loginAdmin = wrapper(async (req, res) => {
 });
 
 const logoutAdmin = wrapper(async (req, res) => {
+  const adminId = req.user?._id || req.verifiedAdminId?._id;
+  if (adminId) {
+    await Admin.findByIdAndUpdate(adminId, { $unset: { refreshToken: 1 } });
+  }
+
   return res
     .status(200)
     .clearCookie('accessToken', getClearCookieOptions())
@@ -2220,8 +2226,89 @@ const deleteBlogAdmin = wrapper(async (req, res) => {
 
 // ✅ ==================== EXPORTS ====================
 
+const refreshAdminToken = wrapper(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies?.[COOKIE_NAMES.ADMIN_REFRESH_TOKEN] || req.cookies?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: 'No refresh token provided',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET
+    );
+
+    const admin = await Admin.findById(decoded._id).select('+refreshToken tokenVersion');
+
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: 'Admin account does not exist',
+      });
+    }
+
+    if (!admin.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin account is deactivated',
+      });
+    }
+
+    if (decoded.tokenVersion && decoded.tokenVersion !== admin.tokenVersion) {
+      return res.status(401).json({
+        success: false,
+        message: 'Session revoked. Please login again.',
+      });
+    }
+
+    const incomingHash = hashToken(incomingRefreshToken);
+    if (!admin.refreshToken || admin.refreshToken !== incomingHash) {
+      admin.refreshToken = null;
+      admin.tokenVersion = (admin.tokenVersion || 1) + 1;
+      await admin.save({ validateBeforeSave: false });
+
+      res.clearCookie(COOKIE_NAMES.ADMIN_REFRESH_TOKEN, getClearCookieOptions());
+      res.clearCookie('accessToken', getClearCookieOptions());
+
+      return res.status(403).json({
+        success: false,
+        message: 'Security breach detected. All sessions revoked.',
+      });
+    }
+
+    const newAccessToken = admin.generateAccessToken();
+    const newRefreshToken = admin.generateRefreshToken();
+
+    admin.refreshToken = hashToken(newRefreshToken);
+    await admin.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .cookie(COOKIE_NAMES.ADMIN_REFRESH_TOKEN, newRefreshToken, getCookieOptions())
+      .cookie('accessToken', newAccessToken, getCookieOptions(24 * 60 * 60 * 1000))
+      .json({
+        success: true,
+        data: {
+          accessToken: newAccessToken,
+        },
+      });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired refresh token',
+      error: error.message,
+    });
+  }
+});
+
 export {
   loginAdmin,
+  refreshAdminToken,
   logoutAdmin,
   getAdminProfile,
   getAllCounselorApplications,

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 // models/admin-model.js
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -81,6 +82,7 @@ adminSchema.methods.generateRefreshToken = function () {
       role: 'admin',
       adminRole: this.role,
       tokenVersion: this.tokenVersion,
+      jti: crypto.randomUUID(),
     },
     process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET,
     {

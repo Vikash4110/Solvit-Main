@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import {
   COOKIE_NAMES,
   getCookieOptions,
@@ -513,7 +514,7 @@ const loginCounselor = wrapper(async (req, res) => {
     const counselorData = loggedInCounselor.toObject();
     counselorData.applicationStatus =
       loggedInCounselor.application?.applicationStatus || 'not_submitted';
-    // 🧠 Fire-and-forget lastLogin update safely
+    // Fire-and-forget lastLogin update safely
     Counselor.updateOne(
       { _id: loggedInCounselor._id },
       {
@@ -826,6 +827,11 @@ const submitCounselorApplication = wrapper(async (req, res) => {
 });
 
 const logoutCounselor = wrapper(async (req, res) => {
+  const counselorId = req.user?._id || req.verifiedCounselorId?._id;
+  if (counselorId) {
+    await Counselor.findByIdAndUpdate(counselorId, { $unset: { refreshToken: 1 } });
+  }
+
   return res
     .status(200)
     .clearCookie('accessToken', getClearCookieOptions())
@@ -836,9 +842,90 @@ const logoutCounselor = wrapper(async (req, res) => {
     });
 });
 
+const refreshCounselorToken = wrapper(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies?.[COOKIE_NAMES.COUNSELOR_REFRESH_TOKEN] || req.cookies?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: 'No refresh token provided',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET
+    );
+
+    const counselor = await Counselor.findById(decoded._id).select('+refreshToken tokenVersion');
+
+    if (!counselor) {
+      return res.status(401).json({
+        success: false,
+        message: 'Counselor does not exist',
+      });
+    }
+
+    if (counselor.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is blocked. Please contact support.',
+      });
+    }
+
+    if (decoded.tokenVersion && decoded.tokenVersion !== counselor.tokenVersion) {
+      return res.status(401).json({
+        success: false,
+        message: 'Session revoked. Please login again.',
+      });
+    }
+
+    const incomingHash = hashToken(incomingRefreshToken);
+    if (!counselor.refreshToken || counselor.refreshToken !== incomingHash) {
+      counselor.refreshToken = null;
+      counselor.tokenVersion = (counselor.tokenVersion || 1) + 1;
+      await counselor.save({ validateBeforeSave: false });
+
+      res.clearCookie(COOKIE_NAMES.COUNSELOR_REFRESH_TOKEN, getClearCookieOptions());
+      res.clearCookie('accessToken', getClearCookieOptions());
+
+      return res.status(403).json({
+        success: false,
+        message: 'Security breach detected. All sessions revoked.',
+      });
+    }
+
+    const newAccessToken = counselor.generateAccessToken();
+    const newRefreshToken = counselor.generateRefreshToken();
+
+    counselor.refreshToken = hashToken(newRefreshToken);
+    await counselor.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .cookie(COOKIE_NAMES.COUNSELOR_REFRESH_TOKEN, newRefreshToken, getCookieOptions())
+      .cookie('accessToken', newAccessToken, getCookieOptions(24 * 60 * 60 * 1000))
+      .json({
+        success: true,
+        data: {
+          accessToken: newAccessToken,
+        },
+      });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired refresh token',
+      error: error.message,
+    });
+  }
+});
+
 export {
   forgotPassword,
   loginCounselor,
+  refreshCounselorToken,
   logoutCounselor,
   registerCounselor,
   resetPassword,

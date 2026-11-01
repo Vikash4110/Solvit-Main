@@ -20,9 +20,8 @@ import { adminRouter } from './routes/admin-routes.js';
 import { videoCallRouter } from './routes/videoCall.routes.js';
 import { counselorDashboardRouter } from './routes/counselor-dashboard-routes.js';
 import { oauthRouter } from './routes/oauth.routes.js';
-import { GeneratedSlot } from './models/generatedSlots-model.js';
 //brevo initailizationa and verification on stratup
-import { initializeBrevo, verifyBrevoConnection } from './services/emailService.js';
+import { initializeBrevo } from './services/emailService.js';
 import errorHandler from './middlewares/brevo.errorHandler.middleware.js';
 // Security
 import helmet from 'helmet';
@@ -30,7 +29,6 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 
 import { logger } from './utils/logger.js';
-import Razorpay from 'razorpay';
 
 //cron
 import { healthCheck } from './cron/health/healthCheck.js';
@@ -124,9 +122,9 @@ app.use(cookieParser());
 // Rate limiting configuration
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,                  // 10 attempts per IP per 15 minutes
-  standardHeaders: true,    // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false,     // Disable `X-RateLimit-*` headers
+  max: 10, // 10 attempts per IP per 15 minutes
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable `X-RateLimit-*` headers
   message: {
     success: false,
     message: 'Too many attempts from this IP. Please try again after 15 minutes.',
@@ -135,7 +133,7 @@ const authLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300,                 // 300 requests per 15 minutes per IP
+  max: 300, // 300 requests per 15 minutes per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -179,7 +177,9 @@ app.get('/api/health/cron', async (req, res) => {
 
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/clients', clientRouter);
+app.use('/api/v1/client', clientRouter);
 app.use('/api/v1/counselors', counselorRouter);
+app.use('/api/v1/counselor', counselorRouter);
 app.use('/api/v1/slotManagement', availabilityRouter);
 app.use('/api/v1/booking', bookingRouter);
 app.use('/api/v1/payment', paymentRouter);

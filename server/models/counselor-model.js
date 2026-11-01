@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
@@ -186,6 +187,7 @@ counselorSchema.methods.generateRefreshToken = function () {
       _id: this._id || this.id,
       role: 'counselor',
       tokenVersion: this.tokenVersion,
+      jti: crypto.randomUUID(),
     },
     process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET,
     {
