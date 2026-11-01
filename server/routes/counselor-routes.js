@@ -1,8 +1,8 @@
-
 import { Router } from 'express';
 import {
   forgotPassword,
   loginCounselor,
+  refreshCounselorToken,
   logoutCounselor,
   registerCounselor,
   resetPassword,
@@ -26,6 +26,7 @@ counselorRouter
   .post(uploadProfilePicture.single('profilePicture'), registerCounselor);
 
 counselorRouter.route('/login-counselor').post(loginCounselor);
+counselorRouter.route('/refresh-token').post(refreshCounselorToken);
 
 // Use upload for application documents (PDFs only)
 counselorRouter.route('/submit-application').post(

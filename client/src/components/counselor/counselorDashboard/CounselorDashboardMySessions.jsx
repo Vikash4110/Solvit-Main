@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { API_ENDPOINTS } from '../../../config/api';
 import api from '@/lib/axios';
+import { useCounselorAuth } from '../../../contexts/CounselorAuthContext';
 import { TIMEZONE } from '../../../constants/constants';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
@@ -67,14 +68,15 @@ const computeCanJoin = (booking) => {
 // Each tab has a `filterKey` that maps exactly to what the backend `getCounselorBookings`
 // expects in its `allowedFilters` list.
 const TABS = [
-  { key: 'upcoming',     filterKey: 'upcoming',    label: 'Upcoming',        icon: Clock        },
-  { key: 'reviewWindow', filterKey: 'inProgress',  label: 'Review Window',   icon: Hourglass    },
-  { key: 'disputed',     filterKey: 'disputed',    label: 'Disputed',        icon: ShieldAlert  },
-  { key: 'completed',    filterKey: 'completed',   label: 'Completed',       icon: CheckCircle2 },
+  { key: 'upcoming', filterKey: 'upcoming', label: 'Upcoming', icon: Clock },
+  { key: 'reviewWindow', filterKey: 'inProgress', label: 'Review Window', icon: Hourglass },
+  { key: 'disputed', filterKey: 'disputed', label: 'Disputed', icon: ShieldAlert },
+  { key: 'completed', filterKey: 'completed', label: 'Completed', icon: CheckCircle2 },
 ];
 
 const CounselorDashboardMySessions = () => {
   const navigate = useNavigate();
+  const { counselorLogout } = useCounselorAuth();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,11 +100,15 @@ const CounselorDashboardMySessions = () => {
     );
   };
 
-  const handleAuthError = useCallback(() => {
-    localStorage.removeItem('counselorAccessToken');
+  const handleAuthError = useCallback(async () => {
+    try {
+      await counselorLogout();
+    } catch {
+      // Ignore cleanup error
+    }
     toast.error('Session expired. Please login again.');
     navigate('/counselor/login');
-  }, [navigate]);
+  }, [counselorLogout, navigate]);
 
   // ── Fetch ────────────────────────────────────────────────────────────────────
   const fetchSessions = useCallback(
@@ -119,9 +125,7 @@ const CounselorDashboardMySessions = () => {
           perPage: '10',
         });
 
-        const response = await api.get(
-          `${API_ENDPOINTS.COUNSELOR_BOOKINGS}?${queryParams}`
-        );
+        const response = await api.get(`${API_ENDPOINTS.COUNSELOR_BOOKINGS}?${queryParams}`);
 
         const data = response.data;
         if (!data || typeof data !== 'object') {
@@ -136,7 +140,11 @@ const CounselorDashboardMySessions = () => {
           }));
           setBookings(enriched);
           setPagination(
-            data.data.pagination || { currentPage: page, totalPages: 1, totalCount: enriched.length }
+            data.data.pagination || {
+              currentPage: page,
+              totalPages: 1,
+              totalCount: enriched.length,
+            }
           );
         } else {
           toast.error(data.message || 'Failed to load sessions');
@@ -148,19 +156,19 @@ const CounselorDashboardMySessions = () => {
         setLoading(false);
       }
     },
-    [activeTab, handleAuthError]
+    [activeTab]
   );
 
-  useEffect(() => { fetchSessions(1); }, [fetchSessions]);
+  useEffect(() => {
+    fetchSessions(1);
+  }, [fetchSessions]);
 
   // Live timer: recompute canJoin every 30 s for the 'upcoming' tab
   useEffect(() => {
     if (activeTab !== 'upcoming') return;
 
     timerRef.current = setInterval(() => {
-      setBookings((prev) =>
-        prev.map((b) => ({ ...b, canJoin: computeCanJoin(b) }))
-      );
+      setBookings((prev) => prev.map((b) => ({ ...b, canJoin: computeCanJoin(b) })));
     }, 30_000);
 
     return () => clearInterval(timerRef.current);
@@ -168,9 +176,18 @@ const CounselorDashboardMySessions = () => {
 
   // ── Join handlers ────────────────────────────────────────────────────────────
   const handleJoinSession = (booking) => {
-    if (!booking?.bookingId) { toast.error('Invalid session data'); return; }
-    if (!computeCanJoin(booking)) { toast.error('Session not ready to join yet'); return; }
-    if (!booking.videoSDKRoomId) { toast.error('Meeting room not available'); return; }
+    if (!booking?.bookingId) {
+      toast.error('Invalid session data');
+      return;
+    }
+    if (!computeCanJoin(booking)) {
+      toast.error('Session not ready to join yet');
+      return;
+    }
+    if (!booking.videoSDKRoomId) {
+      toast.error('Meeting room not available');
+      return;
+    }
     setGuidelinesState({ show: true, booking });
   };
 
@@ -259,25 +276,33 @@ const CounselorDashboardMySessions = () => {
 
     if (booking.status === 'confirmed' && minutesToStart <= 10 && minutesToStart > 0) {
       return {
-        show: true, icon: BellRing,
-        className: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-200',
+        show: true,
+        icon: BellRing,
+        className:
+          'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-200',
         message: `Session starts in ${minutesToStart} min`,
       };
     }
 
     if (booking.status === 'dispute_window_open') {
       return {
-        show: true, icon: Hourglass,
-        className: 'border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/25 dark:text-violet-200',
-        message: 'Client has a 24-hour window to raise an issue with this session. If none is raised, it will be marked complete and your earnings released.',
+        show: true,
+        icon: Hourglass,
+        className:
+          'border-violet-200 bg-violet-50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/25 dark:text-violet-200',
+        message:
+          'Client has a 24-hour window to raise an issue with this session. If none is raised, it will be marked complete and your earnings released.',
       };
     }
 
     if (booking.status === 'disputed') {
       return {
-        show: true, icon: AlertTriangle,
-        className: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-200',
-        message: 'The client has raised an issue for this session. Admin will review and reach out if needed. Please stay available.',
+        show: true,
+        icon: AlertTriangle,
+        className:
+          'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-200',
+        message:
+          'The client has raised an issue for this session. Admin will review and reach out if needed. Please stay available.',
       };
     }
 
@@ -304,7 +329,8 @@ const CounselorDashboardMySessions = () => {
               Completed sessions
             </AlertTitle>
             <AlertDescription className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
-              These sessions passed the 24-hour review window with no client issues. Your earnings for these sessions have been released.
+              These sessions passed the 24-hour review window with no client issues. Your earnings
+              for these sessions have been released.
             </AlertDescription>
           </Alert>
         </motion.div>
@@ -320,9 +346,10 @@ const CounselorDashboardMySessions = () => {
               Client review window is open
             </AlertTitle>
             <AlertDescription className="text-xs text-violet-800 dark:text-violet-300 leading-relaxed">
-              Sessions here have ended and clients have up to <strong>24 hours</strong> to raise an issue.
-              If no issue is raised, the session moves to <strong>Completed</strong> and your earnings are released.
-              If an issue is raised, the session moves to <strong>Disputed</strong> and admin will review.
+              Sessions here have ended and clients have up to <strong>24 hours</strong> to raise an
+              issue. If no issue is raised, the session moves to <strong>Completed</strong> and your
+              earnings are released. If an issue is raised, the session moves to{' '}
+              <strong>Disputed</strong> and admin will review.
             </AlertDescription>
           </Alert>
         </motion.div>
@@ -338,8 +365,9 @@ const CounselorDashboardMySessions = () => {
               Client raised an issue
             </AlertTitle>
             <AlertDescription className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-              These sessions have an active dispute filed by the client. The admin team is reviewing them.
-              You may be contacted for more information. Earnings for disputed sessions are held until resolved.
+              These sessions have an active dispute filed by the client. The admin team is reviewing
+              them. You may be contacted for more information. Earnings for disputed sessions are
+              held until resolved.
             </AlertDescription>
           </Alert>
         </motion.div>
@@ -361,13 +389,18 @@ const CounselorDashboardMySessions = () => {
 
     const clientName = booking?.clientName || 'Client';
     const initials =
-      clientName.split(' ').filter(Boolean).slice(0, 2)
-        .map((w) => w[0]?.toUpperCase()).join('') || 'CL';
+      clientName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0]?.toUpperCase())
+        .join('') || 'CL';
 
     return (
       <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full h-full">
-        <Card className={`group relative bg-white/80 dark:bg-neutral-900/70 backdrop-blur-xl rounded-2xl border ${getStatusBorderClass(booking?.status)} shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden w-full h-full flex flex-col`}>
-
+        <Card
+          className={`group relative bg-white/80 dark:bg-neutral-900/70 backdrop-blur-xl rounded-2xl border ${getStatusBorderClass(booking?.status)} shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden w-full h-full flex flex-col`}
+        >
           {alert.show && (
             <Alert className={`rounded-none border-0 border-b ${alert.className}`}>
               <alert.icon className="h-4 w-4" />
@@ -399,7 +432,10 @@ const CounselorDashboardMySessions = () => {
                         Client
                       </span>
                       {booking.hasNotes && (
-                        <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                        <Badge
+                          variant="outline"
+                          className="px-1.5 py-0 text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                        >
                           Notes Saved
                         </Badge>
                       )}
@@ -408,7 +444,9 @@ const CounselorDashboardMySessions = () => {
                 </div>
 
                 <div className="self-start sm:self-center shrink-0">
-                  <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}>
+                  <span
+                    className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}
+                  >
                     {statusUI.label}
                   </span>
                 </div>
@@ -436,7 +474,8 @@ const CounselorDashboardMySessions = () => {
                   </p>
                   {s && (
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pt-0.5">
-                      {s.duration} • <Video className="w-3 h-3 inline text-primary-500" /> Video session
+                      {s.duration} • <Video className="w-3 h-3 inline text-primary-500" /> Video
+                      session
                     </p>
                   )}
                 </div>
@@ -446,17 +485,23 @@ const CounselorDashboardMySessions = () => {
                     <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span className="font-medium">Your Earnings</span>
                   </div>
-                  <p className={`text-base font-bold ${
-                    booking.status === 'disputed'
-                      ? 'text-amber-600 dark:text-amber-400'
-                      : 'text-emerald-600 dark:text-emerald-400'
-                  }`}>
+                  <p
+                    className={`text-base font-bold ${
+                      booking.status === 'disputed'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }`}
+                  >
                     ₹{booking.earnings ?? 0}
                     {booking.status === 'disputed' && (
-                      <span className="ml-1.5 text-[10px] font-medium text-amber-500 dark:text-amber-400">(on hold)</span>
+                      <span className="ml-1.5 text-[10px] font-medium text-amber-500 dark:text-amber-400">
+                        (on hold)
+                      </span>
                     )}
                     {booking.status === 'dispute_window_open' && (
-                      <span className="ml-1.5 text-[10px] font-medium text-violet-500 dark:text-violet-400">(pending)</span>
+                      <span className="ml-1.5 text-[10px] font-medium text-violet-500 dark:text-violet-400">
+                        (pending)
+                      </span>
                     )}
                   </p>
                 </div>
@@ -466,7 +511,10 @@ const CounselorDashboardMySessions = () => {
                     <Mail className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
                     <span className="font-medium">Email</span>
                   </div>
-                  <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate" title={booking.clientEmail}>
+                  <p
+                    className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate"
+                    title={booking.clientEmail}
+                  >
                     {booking.clientEmail || 'N/A'}
                   </p>
                 </div>
@@ -477,7 +525,9 @@ const CounselorDashboardMySessions = () => {
                 <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-4 space-y-2">
                   <div className="flex items-center gap-2">
                     <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Issue raised by client</p>
+                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                      Issue raised by client
+                    </p>
                   </div>
                   {booking.dispute?.issueType && (
                     <p className="text-xs text-amber-800 dark:text-amber-300 pl-6">
@@ -502,10 +552,13 @@ const CounselorDashboardMySessions = () => {
                 <div className="rounded-xl border border-violet-200 bg-violet-50 dark:border-violet-900/60 dark:bg-violet-950/20 p-4 space-y-1.5">
                   <div className="flex items-center gap-2">
                     <Hourglass className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
-                    <p className="text-xs font-semibold text-violet-900 dark:text-violet-200">Review window is open</p>
+                    <p className="text-xs font-semibold text-violet-900 dark:text-violet-200">
+                      Review window is open
+                    </p>
                   </div>
                   <p className="text-xs text-violet-700 dark:text-violet-400 pl-6">
-                    Client has up to 24 hours to raise an issue. No action is needed from you right now.
+                    Client has up to 24 hours to raise an issue. No action is needed from you right
+                    now.
                   </p>
                 </div>
               )}
@@ -522,13 +575,18 @@ const CounselorDashboardMySessions = () => {
                   </Button>
                 )}
 
-                {booking.status === 'confirmed' && !booking.canJoin && s && s.minutesToStart > 0 && (
-                  <div className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 text-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                    {`Join opens ${s.minutesToStart > EARLY_JOIN_MINUTES
-                        ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
-                        : `in ${s.minutesToStart} min`}`}
-                  </div>
-                )}
+                {booking.status === 'confirmed' &&
+                  !booking.canJoin &&
+                  s &&
+                  s.minutesToStart > 0 && (
+                    <div className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-700/50 text-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                      {`Join opens ${
+                        s.minutesToStart > EARLY_JOIN_MINUTES
+                          ? `at ${dayjs.utc(booking.startTime).subtract(EARLY_JOIN_MINUTES, 'minute').tz(TIMEZONE).format('h:mm A')}`
+                          : `in ${s.minutesToStart} min`
+                      }`}
+                    </div>
+                  )}
 
                 <Button
                   variant="outline"
@@ -577,10 +635,11 @@ const CounselorDashboardMySessions = () => {
 
   // ── Empty state messages ─────────────────────────────────────────────────────
   const emptyMessage = {
-    upcoming:      "You don't have any upcoming sessions scheduled.",
-    reviewWindow:  'No sessions are currently in the client review window.',
-    disputed:      'No sessions have an active client dispute.',
-    completed:     'No completed sessions yet. Sessions appear here after the review period ends with no issues raised.',
+    upcoming: "You don't have any upcoming sessions scheduled.",
+    reviewWindow: 'No sessions are currently in the client review window.',
+    disputed: 'No sessions have an active client dispute.',
+    completed:
+      'No completed sessions yet. Sessions appear here after the review period ends with no issues raised.',
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -590,7 +649,10 @@ const CounselorDashboardMySessions = () => {
         className="relative z-10 max-w-7xl mx-auto w-full"
         initial="hidden"
         animate="visible"
-        variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+        }}
       >
         <motion.div className="text-center mb-6 sm:mb-8" variants={fadeInUp}>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-2 sm:mb-3">
@@ -628,7 +690,9 @@ const CounselorDashboardMySessions = () => {
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-20">
                   <Loader2 className="w-10 h-10 animate-spin text-primary-600 mb-4" />
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading sessions...</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Loading sessions...
+                  </p>
                 </div>
               ) : bookings.length === 0 ? (
                 <Card className="border-dashed border-2 border-neutral-300 dark:border-neutral-700 bg-transparent">
@@ -656,14 +720,19 @@ const CounselorDashboardMySessions = () => {
                     <div className="flex items-center justify-between pt-6">
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
                         Showing{' '}
-                        <span className="font-semibold">{(pagination.currentPage - 1) * 10 + 1}</span>{' '}
+                        <span className="font-semibold">
+                          {(pagination.currentPage - 1) * 10 + 1}
+                        </span>{' '}
                         to{' '}
-                        <span className="font-semibold">{Math.min(pagination.currentPage * 10, pagination.totalCount)}</span>{' '}
+                        <span className="font-semibold">
+                          {Math.min(pagination.currentPage * 10, pagination.totalCount)}
+                        </span>{' '}
                         of <span className="font-semibold">{pagination.totalCount}</span>
                       </p>
                       <div className="flex items-center gap-2">
                         <Button
-                          variant="outline" size="sm"
+                          variant="outline"
+                          size="sm"
                           onClick={() => changePage(pagination.currentPage - 1)}
                           disabled={pagination.currentPage === 1 || loading}
                         >
@@ -673,7 +742,8 @@ const CounselorDashboardMySessions = () => {
                           {pagination.currentPage} / {pagination.totalPages}
                         </span>
                         <Button
-                          variant="outline" size="sm"
+                          variant="outline"
+                          size="sm"
                           onClick={() => changePage(pagination.currentPage + 1)}
                           disabled={pagination.currentPage === pagination.totalPages || loading}
                         >

@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   CLIENT_LOGIN: '/clients/login-client',
   CLIENT_REGISTER: '/clients/register-client',
   CLIENT_LOGOUT: '/clients/logout-client',
+  CLIENT_REFRESH_TOKEN: '/clients/refresh-token',
   CLIENT_DASHBOARD: '/client/dashboard',
   CLIENT_CANCEL_SESSION: '/client/cancel-session',
   CLIENT_SEND_OTP: '/clients/send-otp-register-email',
@@ -30,6 +31,7 @@ export const API_ENDPOINTS = {
   COUNSELOR_LOGIN: '/counselors/login-counselor',
   COUNSELOR_REGISTER: '/counselors/register-counselor',
   COUNSELOR_LOGOUT: '/counselors/logout-counselor',
+  COUNSELOR_REFRESH_TOKEN: '/counselors/refresh-token',
   COUNSELOR_SEND_OTP: '/counselors/send-otp-register-email',
   COUNSELOR_VERIFY_OTP: '/counselors/verify-otp-register-email',
   COUNSELOR_FORGOT_PASSWORD: '/counselors/forgot-password',
@@ -110,6 +112,7 @@ export const API_ENDPOINTS = {
 
   ADMIN_LOGIN: '/admin/login',
   ADMIN_LOGOUT: '/admin/logout',
+  ADMIN_REFRESH_TOKEN: '/admin/refresh-token',
   ADMIN_PROFILE: '/admin/profile',
   ADMIN_COUNSELOR_APPLICATIONS: '/admin/counselor-applications',
   ADMIN_COUNSELOR_APPLICATION: '/admin/counselor-application',

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
@@ -145,6 +146,14 @@ const clientSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
     },
+    refreshToken: {
+      type: String,
+      select: false,
+    },
+    tokenVersion: {
+      type: Number,
+      default: 1,
+    },
   },
   { timestamps: true }
 );
@@ -164,12 +173,28 @@ clientSchema.methods.isPasswordCorrect = async function (password) {
 clientSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
-      _id: this.id,
+      _id: this._id || this.id,
       role: 'client',
+      tokenVersion: this.tokenVersion,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15m',
+    }
+  );
+};
+
+clientSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    {
+      _id: this._id || this.id,
+      role: 'client',
+      tokenVersion: this.tokenVersion,
+      jti: crypto.randomUUID(),
+    },
+    process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '7d',
     }
   );
 };

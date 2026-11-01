@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import {
   loginAdmin,
+  refreshAdminToken,
   logoutAdmin,
   getAdminProfile,
   getAllCounselorApplications,
@@ -49,6 +50,8 @@ adminRouter.route('/login').post((req, res, next) => {
   next();
 }, loginAdmin);
 
+adminRouter.route('/refresh-token').post(refreshAdminToken);
+
 // Protected routes
 adminRouter.route('/logout').post(verifyJWTAdmin, logoutAdmin);
 adminRouter.route('/profile').get(verifyJWTAdmin, getAdminProfile);
@@ -82,8 +85,12 @@ adminRouter.route('/counselors/:counselorId/block').patch(verifyJWTAdmin, toggle
 // ====================================
 adminRouter.route('/counselor-requests').get(verifyJWTAdmin, getAllCounselorRequests);
 adminRouter.route('/counselor-requests/:requestId').get(verifyJWTAdmin, getCounselorRequestDetails);
-adminRouter.route('/counselor-requests/:requestId/check').patch(verifyJWTAdmin, toggleCounselorRequestCheck);
-adminRouter.route('/counselor-requests/:requestId/review').put(verifyJWTAdmin, reviewCounselorRequest);
+adminRouter
+  .route('/counselor-requests/:requestId/check')
+  .patch(verifyJWTAdmin, toggleCounselorRequestCheck);
+adminRouter
+  .route('/counselor-requests/:requestId/review')
+  .put(verifyJWTAdmin, reviewCounselorRequest);
 
 // ====================================
 // PAYMENT MANAGEMENT ROUTES

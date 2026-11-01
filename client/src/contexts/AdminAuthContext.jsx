@@ -1,3 +1,4 @@
+import { adminAuthService } from '../services/auth/adminAuth.service';
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { API_ENDPOINTS } from '../config/api';
 import { toast } from 'sonner';
@@ -18,48 +19,61 @@ export const AdminAuthProvider = ({ children }) => {
   const [adminLoading, setAdminLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      const token = localStorage.getItem('adminAccessToken');
-      const storedAdmin = localStorage.getItem('admin');
+    let isMounted = true;
 
-      if (token && storedAdmin) {
-        try {
-          const response = await api.get(API_ENDPOINTS.ADMIN_PROFILE);
-          const adminData = response.data.data;
-          setAdmin(adminData);
-          localStorage.setItem('admin', JSON.stringify(adminData));
-        } catch (error) {
-          console.error('Error initializing admin auth:', error);
-          localStorage.removeItem('adminAccessToken');
-          localStorage.removeItem('admin');
+    const bootstrapAuth = async () => {
+      try {
+        await adminAuthService.refreshToken();
+        const profile = await adminAuthService.getProfile();
+        if (isMounted) {
+          setAdmin(profile);
+          try {
+            localStorage.setItem('admin', JSON.stringify(profile));
+          } catch {
+            // Ignore storage restrictions
+          }
+        }
+      } catch {
+        const legacyToken = localStorage.getItem('adminAccessToken');
+        const storedAdmin = localStorage.getItem('admin');
+        if (legacyToken && storedAdmin && isMounted) {
+          try {
+            setAdmin(JSON.parse(storedAdmin));
+          } catch {
+            setAdmin(null);
+          }
+        } else if (isMounted) {
           setAdmin(null);
         }
+      } finally {
+        if (isMounted) {
+          setAdminLoading(false);
+        }
       }
-      setAdminLoading(false);
     };
 
-    initializeAuth();
+    bootstrapAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const getErrorMessage = (error, fallback = 'Something went wrong') =>
     error.response?.data?.message || error.message || fallback;
 
-  // In AdminAuthContext.jsx - improve error handling
   const adminLogin = async (email, password) => {
     try {
-      const response = await api.post(API_ENDPOINTS.ADMIN_LOGIN, {
-        email,
-        password,
-      });
-
-      const { loggedInAdmin, accessToken } = response.data.data;
-      localStorage.setItem('adminAccessToken', accessToken);
-      localStorage.setItem('admin', JSON.stringify(loggedInAdmin));
+      const loggedInAdmin = await adminAuthService.login(email, password);
       setAdmin(loggedInAdmin);
-
+      try {
+        localStorage.setItem('admin', JSON.stringify(loggedInAdmin));
+      } catch {
+        // Ignore storage restrictions
+      }
       return { success: true, data: loggedInAdmin };
     } catch (error) {
-      console.error('❌ Login error details:', error);
+      console.error('Login error details:', error);
       const message = getErrorMessage(error, 'Login failed. Please try again.');
       return { success: false, error: message };
     }
@@ -67,12 +81,10 @@ export const AdminAuthProvider = ({ children }) => {
 
   const adminLogout = async () => {
     try {
-      await api.post(API_ENDPOINTS.ADMIN_LOGOUT);
+      await adminAuthService.logout();
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('adminAccessToken');
-      localStorage.removeItem('admin');
       setAdmin(null);
     }
   };
@@ -107,9 +119,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const getCounselorApplication = async (counselorId) => {
     try {
-      const response = await api.get(
-        `${API_ENDPOINTS.ADMIN_COUNSELOR_APPLICATION}/${counselorId}`
-      );
+      const response = await api.get(`${API_ENDPOINTS.ADMIN_COUNSELOR_APPLICATION}/${counselorId}`);
 
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -177,10 +187,12 @@ export const AdminAuthProvider = ({ children }) => {
     payoutAmount = 0
   ) => {
     try {
-      const response = await api.put(
-        `/admin/disputes/${bookingId}/status`,
-        { status, resolution, refundAmount, payoutAmount }
-      );
+      const response = await api.put(`/admin/disputes/${bookingId}/status`, {
+        status,
+        resolution,
+        refundAmount,
+        payoutAmount,
+      });
       return { success: true, data: response.data.data };
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update dispute status');
@@ -195,10 +207,7 @@ export const AdminAuthProvider = ({ children }) => {
    */
   const addDisputeNote = async (bookingId, note) => {
     try {
-      const response = await api.post(
-        `/admin/disputes/${bookingId}/note`,
-        { note }
-      );
+      const response = await api.post(`/admin/disputes/${bookingId}/note`, { note });
       return { success: true, data: response.data.data };
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to add note');
@@ -226,9 +235,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const getClientDetails = async (clientId) => {
     try {
-      const response = await api.get(
-        `${API_ENDPOINTS.ADMINCLIENTS}/${clientId}`
-      );
+      const response = await api.get(`${API_ENDPOINTS.ADMINCLIENTS}/${clientId}`);
 
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -239,10 +246,9 @@ export const AdminAuthProvider = ({ children }) => {
 
   const toggleClientBlock = async (clientId, block) => {
     try {
-      const response = await api.patch(
-        `${API_ENDPOINTS.ADMINCLIENTS}/${clientId}/block`,
-        { block }
-      );
+      const response = await api.patch(`${API_ENDPOINTS.ADMINCLIENTS}/${clientId}/block`, {
+        block,
+      });
 
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -269,9 +275,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const getCounselorDetails = async (counselorId) => {
     try {
-      const response = await api.get(
-        `${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}`
-      );
+      const response = await api.get(`${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}`);
 
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -282,10 +286,9 @@ export const AdminAuthProvider = ({ children }) => {
 
   const toggleCounselorBlock = async (counselorId, block) => {
     try {
-      const response = await api.patch(
-        `${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}/block`,
-        { block }
-      );
+      const response = await api.patch(`${API_ENDPOINTS.ADMINCOUNSELORS}/${counselorId}/block`, {
+        block,
+      });
 
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -430,7 +433,14 @@ export const AdminAuthProvider = ({ children }) => {
   /**
    * Get all counselor profile change requests
    */
-  const getAllCounselorRequests = async (page = 1, limit = 20, search = '', status = '', isChecked = '', requestType = '') => {
+  const getAllCounselorRequests = async (
+    page = 1,
+    limit = 20,
+    search = '',
+    status = '',
+    isChecked = '',
+    requestType = ''
+  ) => {
     try {
       const response = await api.get(API_ENDPOINTS.ADMIN_COUNSELOR_REQUESTS, {
         params: { page, limit, search, status, isChecked, requestType },

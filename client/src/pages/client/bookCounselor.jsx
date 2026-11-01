@@ -49,7 +49,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../../config/api';
-import api from '../../lib/axios';
+import api, { getActiveToken } from '../../lib/axios';
 import { fetchApplicableCoupon, validateCoupon } from '../../services/couponService';
 import useSmartRefresh from '../../hooks/useSmartRefresh';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
@@ -70,7 +70,7 @@ dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 
 // ==========================================
-// ✅ CONFIGURATION CONSTANTS
+// CONFIGURATION CONSTANTS
 // ==========================================
 const MINIMUM_BOOKING_WINDOW_MINUTES = 0;
 const STALE_ATTEMPT_THRESHOLD_MS = 15 * 60 * 1000;
@@ -132,8 +132,7 @@ const BookCounselorCalendar = () => {
     return null;
   }, [client, loggedInCounselor]);
 
-  const currentAccessToken =
-    localStorage.getItem('clientAccessToken') || localStorage.getItem('counselorAccessToken');
+  const currentAccessToken = getActiveToken('client') || getActiveToken('counselor');
 
   const isSelfBooking = useMemo(() => {
     if (!currentUser?._id || !counselorId) return false;
@@ -168,7 +167,7 @@ const BookCounselorCalendar = () => {
   const [autoCheckingCoupon, setAutoCheckingCoupon] = useState(false);
 
   // ==========================================
-  // ✅ NETWORK STATUS DETECTION
+  // NETWORK STATUS DETECTION
   // ==========================================
   useEffect(() => {
     const handleOnline = () => {
@@ -198,7 +197,7 @@ const BookCounselorCalendar = () => {
   }, []);
 
   // ==========================================
-  // ✅ PREVENT ACCIDENTAL PAGE CLOSE DURING PAYMENT
+  // PREVENT ACCIDENTAL PAGE CLOSE DURING PAYMENT
   // ==========================================
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -214,7 +213,7 @@ const BookCounselorCalendar = () => {
   }, [bookingLoading, isRazorpayOpen]);
 
   // ==========================================
-  // ✅ RECOVER FROM PAGE REFRESH DURING PAYMENT
+  // RECOVER FROM PAGE REFRESH DURING PAYMENT
   // ==========================================
   useEffect(() => {
     const checkForStaleBooking = () => {
@@ -240,10 +239,11 @@ const BookCounselorCalendar = () => {
     };
 
     checkForStaleBooking();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
 
   // ==========================================
-  // ✅ CLEANUP ON UNMOUNT
+  // CLEANUP ON UNMOUNT
   // ==========================================
   useEffect(() => {
     return () => {
@@ -290,7 +290,7 @@ const BookCounselorCalendar = () => {
   }, []);
 
   // ==========================================
-  // ✅ FETCH COUNSELOR DATA (RACE CONDITION FIX)
+  // FETCH COUNSELOR DATA (RACE CONDITION FIX)
   // ==========================================
   const fetchCounselorData = useCallback(
     async (skipLoading = false) => {
@@ -306,7 +306,7 @@ const BookCounselorCalendar = () => {
         const data = response.data;
         setCounselor(data.counselor);
 
-        // ✅ Don't update slots if payment is in progress
+        // Don't update slots if payment is in progress
         if (!bookingLoading && !isRazorpayOpen) {
           setSlots(data.slots || []);
         }
@@ -370,7 +370,7 @@ const BookCounselorCalendar = () => {
   const getUserData = () => currentUser;
 
   // ==========================================
-  // ✅ OPEN BOOKING MODAL (WITH VALIDATION + IDEMPOTENCY)
+  // OPEN BOOKING MODAL (WITH VALIDATION + IDEMPOTENCY)
   // ==========================================
   const openBookingModal = (slot) => {
     if (isSelfBooking) {
@@ -378,7 +378,7 @@ const BookCounselorCalendar = () => {
       return;
     }
 
-    if (!currentAccessToken || !currentUser) {
+    if (!currentUser || (!currentAccessToken && !client && !loggedInCounselor)) {
       toast.info('Login or register to proceed with the payment for the session', {
         duration: 5000,
       });
@@ -472,8 +472,7 @@ const BookCounselorCalendar = () => {
         toast.success(res.message || `Coupon ${res.data.coupon?.code} applied!`);
       }
     } catch (err) {
-      const msg =
-        err.response?.data?.message || 'Invalid or inapplicable coupon code.';
+      const msg = err.response?.data?.message || 'Invalid or inapplicable coupon code.';
       setCouponError(msg);
     } finally {
       setCouponLoading(false);
@@ -500,7 +499,7 @@ const BookCounselorCalendar = () => {
   };
 
   // ==========================================
-  // ✅ INITIATE PAYMENT (FULL ERROR HANDLING + IDEMPOTENCY)
+  // INITIATE PAYMENT (FULL ERROR HANDLING + IDEMPOTENCY)
   // ==========================================
   const initiatePayment = async (isRetry = false) => {
     if (!selectedSlot) return;
@@ -527,7 +526,7 @@ const BookCounselorCalendar = () => {
       const userData = getUserData();
       const accessToken = currentAccessToken;
 
-      if (!userData || !accessToken) {
+      if (!userData || (!accessToken && !client && !loggedInCounselor)) {
         toast.info('Login or register to proceed with the payment for the session', {
           duration: 5000,
         });
@@ -542,10 +541,8 @@ const BookCounselorCalendar = () => {
       }
 
       const rawSlotAmount = getSlotPrice(selectedSlot);
-      const amount =
-        appliedCoupon?.finalAmount != null ? appliedCoupon.finalAmount : rawSlotAmount;
-      const couponCode =
-        appliedCoupon?.coupon?.code || appliedCoupon?.code || undefined;
+      const amount = appliedCoupon?.finalAmount != null ? appliedCoupon.finalAmount : rawSlotAmount;
+      const couponCode = appliedCoupon?.coupon?.code || appliedCoupon?.code || undefined;
 
       // Use existing idempotency key or recover from sessionStorage
       let idempotencyKey = currentIdempotencyKey;
@@ -621,7 +618,7 @@ const BookCounselorCalendar = () => {
       // Check if this is a 100% free promotional booking bypass
       if (orderData.success && orderData.data?.isFree) {
         setBookingLoading(false);
-        setIsConfirmModalOpen(false);
+        setShowBookingModal(false);
         sessionStorage.removeItem('current_booking_attempt');
         sessionStorage.removeItem('current_idempotency_key');
         toast.success('Free session booked successfully!');
@@ -706,11 +703,11 @@ const BookCounselorCalendar = () => {
   };
 
   // ==========================================
-  // ✅ VERIFY PAYMENT (COMPREHENSIVE ERROR HANDLING)
+  // VERIFY PAYMENT (COMPREHENSIVE ERROR HANDLING)
   // ==========================================
   const verifyPayment = async (paymentData) => {
     try {
-      // ✅ Use same idempotency key
+      // Use same idempotency key
       let idempotencyKey = currentIdempotencyKey;
 
       if (!idempotencyKey) {
@@ -747,7 +744,7 @@ const BookCounselorCalendar = () => {
         const status = err.response?.status;
         const errData = err.response?.data || {};
 
-        // ✅ Handle 400 Bad Request (Invalid signature)
+        // Handle 400 Bad Request (Invalid signature)
         if (status === 400) {
           toast.error(errData.message || 'Payment verification failed. Please try again.', {
             duration: 6000,
@@ -759,7 +756,7 @@ const BookCounselorCalendar = () => {
           return;
         }
 
-        // ✅ 409 Conflict - Request already processing
+        // 409 Conflict - Request already processing
         if (status === 409) {
           toast.info(errData.message || 'Verification in progress. Please wait...', {
             duration: 3000,
@@ -793,7 +790,7 @@ const BookCounselorCalendar = () => {
         return;
       }
 
-      // ✅ Success cases
+      // Success cases
       if (data && data.success) {
         const booking = data.data.booking;
 
@@ -847,7 +844,7 @@ const BookCounselorCalendar = () => {
   };
 
   // ==========================================
-  // ✅ CHECK BOOKING STATUS (FOR RECOVERY)
+  // CHECK BOOKING STATUS (FOR RECOVERY)
   // ==========================================
   const checkBookingStatus = async (slotId) => {
     try {
@@ -942,7 +939,7 @@ const BookCounselorCalendar = () => {
   // ==========================================
   return (
     <div className="relative min-h-screen bg-transparent overflow-hidden">
-      {/* ✅ Network Status Indicator */}
+      {/* Network Status Indicator */}
       {!isOnline && (
         <div className="fixed top-4 right-4 z-50">
           <Alert variant="destructive" className="shadow-lg">
@@ -1571,14 +1568,14 @@ const BookingModal = ({
   setCouponInput,
   couponLoading,
   couponError,
+  setCouponError,
   autoCheckingCoupon,
   onApplyCoupon,
   onRemoveCoupon,
 }) => {
   const originalPrice = selectedSlot ? getSlotPrice(selectedSlot) : 0;
   const discountAmount = appliedCoupon?.discountAmount || 0;
-  const finalPrice =
-    appliedCoupon?.finalAmount != null ? appliedCoupon.finalAmount : originalPrice;
+  const finalPrice = appliedCoupon?.finalAmount != null ? appliedCoupon.finalAmount : originalPrice;
 
   return (
     <Dialog open={show} onOpenChange={onClose} modal={!isRazorpayOpen}>
@@ -1704,10 +1701,7 @@ const BookingModal = ({
                   </Button>
                 </div>
               ) : (
-                <form
-                  onSubmit={onApplyCoupon}
-                  className="space-y-1.5"
-                >
+                <form onSubmit={onApplyCoupon} className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <Input
                       type="text"
@@ -1724,11 +1718,7 @@ const BookingModal = ({
                       disabled={couponLoading || !couponInput.trim()}
                       className="h-9 px-4 text-xs font-semibold rounded-xl shrink-0"
                     >
-                      {couponLoading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        'Apply'
-                      )}
+                      {couponLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Apply'}
                     </Button>
                   </div>
                   {couponError && (

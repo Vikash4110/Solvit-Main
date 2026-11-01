@@ -1,3 +1,10 @@
+import jwt from 'jsonwebtoken';
+import {
+  COOKIE_NAMES,
+  getCookieOptions,
+  getClearCookieOptions,
+  hashToken,
+} from '../utils/cookieOptions.js';
 import { ambassadorAttributionService } from '../services/ambassadorAttributionService.js';
 import { Client } from '../models/client-model.js';
 import { OTP } from '../models/clientOTP-model.js';
@@ -74,7 +81,7 @@ const sendOtpRegisterEmail = wrapper(async (req, res) => {
     }
 
     // Only save OTP if email was sent successfully
-    const saveOTP = await OTP.create({
+    await OTP.create({
       email: email.trim(),
       otp: generatedOTP,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -208,7 +215,7 @@ const forgotPassword = wrapper(async (req, res) => {
     }
 
     // Only save OTP if email was sent successfully
-    const saveOTP = await OTP.create({
+    await OTP.create({
       email: email.trim(),
       otp: generatedOTP,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -447,46 +454,55 @@ const loginClient = wrapper(async (req, res) => {
     });
   }
 
-  const options = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  };
   const accessToken = await client.generateAccessToken();
+  const refreshToken = await client.generateRefreshToken();
+  const hashedRefreshToken = hashToken(refreshToken);
 
-  const loggedInClient = await Client.findOne({ email: email.trim() }).select('-password').lean(); // 🚀 faster read since we’re not modifying the document
+  const loggedInClient = await Client.findOne({ email: email.trim() }).select('-password').lean();
 
   if (!loggedInClient) {
     throw new Error('Client not found');
   }
 
-  // 🧠 Fire-and-forget lastLogin update safely
+  // Update lastLogin and hashed refresh token
   Client.updateOne(
     { _id: loggedInClient._id },
-    { $set: { lastLogin: dayjs().utc().toDate() } }
-  ).catch((err) => logger.error(`Failed to update lastLogin: ${err.message}`));
+    {
+      $set: {
+        lastLogin: dayjs().utc().toDate(),
+        refreshToken: hashedRefreshToken,
+      },
+    }
+  ).catch((err) => logger.error(`Failed to update client auth state: ${err.message}`));
 
-  res.status(200).cookie('accessToken', accessToken, options).json({
-    status: 200,
-    message: 'Logged in successfully',
-    data: {
-      accessToken,
-      loggedInClient,
-    },
-  });
+  res
+    .status(200)
+    .cookie(COOKIE_NAMES.CLIENT_REFRESH_TOKEN, refreshToken, getCookieOptions())
+    .cookie('accessToken', accessToken, getCookieOptions(24 * 60 * 60 * 1000))
+    .json({
+      status: 200,
+      message: 'Logged in successfully',
+      data: {
+        accessToken,
+        loggedInClient,
+      },
+    });
 });
 
 const logoutClient = wrapper(async (req, res) => {
-  const options = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'None',
-  };
-  return res.status(200).clearCookie('accessToken', options).json({
-    status: 200,
-    message: 'Logout successful',
-  });
+  const userId = req.user?._id || req.verifiedClientId?._id;
+  if (userId) {
+    await Client.findByIdAndUpdate(userId, { $unset: { refreshToken: 1 } });
+  }
+
+  return res
+    .status(200)
+    .clearCookie('accessToken', getClearCookieOptions())
+    .clearCookie(COOKIE_NAMES.CLIENT_REFRESH_TOKEN, getClearCookieOptions())
+    .json({
+      status: 200,
+      message: 'Logout successful',
+    });
 });
 
 const changeCurrentPassword = wrapper(async (req, res) => {
@@ -517,10 +533,91 @@ const changeCurrentPassword = wrapper(async (req, res) => {
   });
 });
 
+const refreshClientToken = wrapper(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies?.[COOKIE_NAMES.CLIENT_REFRESH_TOKEN] || req.cookies?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: 'No refresh token provided',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET
+    );
+
+    const client = await Client.findById(decoded._id).select('+refreshToken tokenVersion');
+
+    if (!client) {
+      return res.status(401).json({
+        success: false,
+        message: 'User does not exist',
+      });
+    }
+
+    if (client.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is blocked. Please contact support.',
+      });
+    }
+
+    if (decoded.tokenVersion && decoded.tokenVersion !== client.tokenVersion) {
+      return res.status(401).json({
+        success: false,
+        message: 'Session revoked. Please login again.',
+      });
+    }
+
+    const incomingHash = hashToken(incomingRefreshToken);
+    if (!client.refreshToken || client.refreshToken !== incomingHash) {
+      client.refreshToken = null;
+      client.tokenVersion = (client.tokenVersion || 1) + 1;
+      await client.save({ validateBeforeSave: false });
+
+      res.clearCookie(COOKIE_NAMES.CLIENT_REFRESH_TOKEN, getClearCookieOptions());
+      res.clearCookie('accessToken', getClearCookieOptions());
+
+      return res.status(403).json({
+        success: false,
+        message: 'Security breach detected. All sessions revoked.',
+      });
+    }
+
+    const newAccessToken = client.generateAccessToken();
+    const newRefreshToken = client.generateRefreshToken();
+
+    client.refreshToken = hashToken(newRefreshToken);
+    await client.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .cookie(COOKIE_NAMES.CLIENT_REFRESH_TOKEN, newRefreshToken, getCookieOptions())
+      .cookie('accessToken', newAccessToken, getCookieOptions(24 * 60 * 60 * 1000))
+      .json({
+        success: true,
+        data: {
+          accessToken: newAccessToken,
+        },
+      });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired refresh token',
+      error: error.message,
+    });
+  }
+});
+
 export {
   changeCurrentPassword,
   forgotPassword,
   loginClient,
+  refreshClientToken,
   logoutClient,
   registerClient,
   resetPassword,

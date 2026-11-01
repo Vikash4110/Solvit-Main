@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { disputeFormSchema } from '@/validators/disputeFormSchema';
+import { useClientAuth } from '../../../contexts/ClientAuthContext';
 
 // Shadcn components
 import { Button } from '@/components/ui/button';
@@ -54,7 +55,7 @@ import {
 import { API_ENDPOINTS } from '../../../config/api.js';
 import api from '@/lib/axios';
 
-// ✅ CONSTANTS
+// CONSTANTS
 const ISSUE_TYPES = [
   { value: 'counselor_did_not_join', label: 'Counselor did not join the session' },
   { value: 'counselor_joined_late', label: 'Counselor joined late' },
@@ -85,7 +86,7 @@ const FILE_LIMITS = {
   ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.pdf', '.mp4', '.mp3', '.docx'],
 };
 
-// ✅ HELPER FUNCTIONS
+// HELPER FUNCTIONS
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -94,20 +95,21 @@ const formatFileSize = (bytes) => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 };
 
-const getFileIcon = (fileType) => {
-  if (fileType.startsWith('image/')) return '🖼️';
-  if (fileType.startsWith('video/')) return '🎥';
-  if (fileType.startsWith('audio/')) return '🎵';
-  if (fileType === 'application/pdf') return '📄';
-  return '📎';
+const renderFileIcon = (fileType) => {
+  if (fileType.startsWith('image/')) return <Image className="h-6 w-6 text-blue-500" />;
+  if (fileType.startsWith('video/')) return <Video className="h-6 w-6 text-purple-500" />;
+  if (fileType.startsWith('audio/')) return <Music className="h-6 w-6 text-amber-500" />;
+  if (fileType === 'application/pdf') return <FileText className="h-6 w-6 text-red-500" />;
+  return <Paperclip className="h-6 w-6 text-slate-500" />;
 };
 
 const RaiseIssueForm = () => {
   const { bookingId } = useParams();
-  console.log(bookingId)
+  console.log(bookingId);
   const navigate = useNavigate();
+  const { client, isAuthenticated } = useClientAuth();
 
-  // ✅ REACT HOOK FORM WITH ZOD
+  // REACT HOOK FORM WITH ZOD
   const form = useForm({
     resolver: zodResolver(disputeFormSchema),
     defaultValues: {
@@ -117,7 +119,7 @@ const RaiseIssueForm = () => {
     },
   });
 
-  // ✅ STATE
+  // STATE
   const [files, setFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -129,7 +131,7 @@ const RaiseIssueForm = () => {
   const description = form.watch('description');
   const remainingChars = 2000 - (description?.length || 0);
 
-  // ✅ VALIDATE FILE
+  // VALIDATE FILE
   const validateFile = useCallback((file) => {
     if (file.size > FILE_LIMITS.MAX_FILE_SIZE) {
       return {
@@ -150,7 +152,7 @@ const RaiseIssueForm = () => {
     return { valid: true };
   }, []);
 
-  // ✅ PROCESS FILES
+  // PROCESS FILES
   const processFiles = useCallback(
     (selectedFiles) => {
       if (files.length + selectedFiles.length > FILE_LIMITS.MAX_FILES) {
@@ -182,7 +184,7 @@ const RaiseIssueForm = () => {
     [files, validateFile]
   );
 
-  // ✅ HANDLE FILE UPLOAD
+  // HANDLE FILE UPLOAD
   const handleFileChange = useCallback(
     (e) => {
       const selectedFiles = Array.from(e.target.files);
@@ -192,7 +194,7 @@ const RaiseIssueForm = () => {
     [processFiles]
   );
 
-  // ✅ DRAG AND DROP
+  // DRAG AND DROP
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -213,27 +215,26 @@ const RaiseIssueForm = () => {
     [processFiles]
   );
 
-  // ✅ REMOVE FILE
+  // REMOVE FILE
   const removeFile = useCallback((index) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
     toast.info('File removed');
   }, []);
 
-  // ✅ HANDLE FORM SUBMIT
+  // HANDLE FORM SUBMIT
   const onSubmit = async (data) => {
     setShowWarningModal(true);
   };
 
-  // ✅ CONFIRM SUBMIT
+  // CONFIRM SUBMIT
   const confirmSubmit = useCallback(async () => {
     setShowWarningModal(false);
     setIsSubmitting(true);
     setUploadProgress(0);
+    let progressInterval;
 
     try {
-      const token = localStorage.getItem('clientAccessToken');
-
-      if (!token) {
+      if (!isAuthenticated && !client) {
         toast.error('Authentication required. Please login again.');
         navigate('/login');
         return;
@@ -251,7 +252,7 @@ const RaiseIssueForm = () => {
         formDataToSend.append('evidence', file);
       });
 
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
             clearInterval(progressInterval);
@@ -311,9 +312,9 @@ const RaiseIssueForm = () => {
       setIsSubmitting(false);
       setUploadProgress(0);
     }
-  }, [bookingId, files, form, navigate]);
+  }, [bookingId, client, files, form, isAuthenticated, navigate]);
 
-  // ✅ SUCCESS SCREEN
+  // SUCCESS SCREEN
   if (submitSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 flex items-center justify-center p-4">
@@ -354,7 +355,7 @@ const RaiseIssueForm = () => {
     );
   }
 
-  // ✅ MAIN FORM
+  // MAIN FORM
   return (
     <div className="min-h-screen mt-[80px] bg-gradient-to-br from-primary-50 via-white to-primary-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -539,7 +540,7 @@ const RaiseIssueForm = () => {
                               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
                             >
                               <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className="text-2xl">{getFileIcon(file.type)}</div>
+                                <div className="text-2xl">{renderFileIcon(file.type)}</div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-gray-900 truncate">
                                     {file.name}
