@@ -26,12 +26,17 @@ export const bookingService = {
   },
 
   /**
-   * Fetches all booking records for the authenticated client.
-   * @returns {Promise<Array>} List of client appointments.
+   * Fetches all booking records for the authenticated client with optional pagination and tab filtering.
+   * @param {Object} [params={}] - Optional query parameters (filter, page, perPage).
+   * @returns {Promise<Object>} Response object containing bookings array and pagination metadata.
    */
-  async getClientBookings() {
-    const response = await api.get(API_ENDPOINTS.CLIENT_BOOKINGS);
-    return response.data?.bookings || response.data?.data?.bookings || response.data || [];
+  async getClientBookings(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const endpoint = query
+      ? `${API_ENDPOINTS.CLIENT_BOOKINGS}?${query}`
+      : API_ENDPOINTS.CLIENT_BOOKINGS;
+    const response = await api.get(endpoint);
+    return response.data;
   },
 
   /**
