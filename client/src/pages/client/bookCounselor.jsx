@@ -51,6 +51,7 @@ import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../../config/api';
 import api, { getActiveToken } from '../../lib/axios';
 import { fetchApplicableCoupon, validateCoupon } from '../../services/couponService';
+import { usePaymentCheckout } from '../../hooks/usePaymentCheckout';
 import useSmartRefresh from '../../hooks/useSmartRefresh';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
@@ -146,16 +147,23 @@ const BookCounselorCalendar = () => {
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [imgError, setImgError] = useState(false);
-  const [isRazorpayOpen, setIsRazorpayOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Idempotency & resilience state
-  const [currentIdempotencyKey, setCurrentIdempotencyKey] = useState(null);
+  // Layer 3 Payment Checkout Hook (Decoupled from Layer 4 UI)
+  const {
+    bookingLoading,
+    razorpayLoaded,
+    isRazorpayOpen,
+    currentIdempotencyKey,
+    setCurrentIdempotencyKey,
+    initiatePayment: triggerPaymentCheckout,
+    checkBookingStatus,
+  } = usePaymentCheckout();
+
+  // Network & resilience state
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [networkSpeed, setNetworkSpeed] = useState(null);
 
@@ -197,22 +205,6 @@ const BookCounselorCalendar = () => {
   }, []);
 
   // ==========================================
-  // PREVENT ACCIDENTAL PAGE CLOSE DURING PAYMENT
-  // ==========================================
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (bookingLoading || isRazorpayOpen) {
-        e.preventDefault();
-        e.returnValue = 'Payment is in progress. Are you sure you want to leave?';
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [bookingLoading, isRazorpayOpen]);
-
-  // ==========================================
   // RECOVER FROM PAGE REFRESH DURING PAYMENT
   // ==========================================
   useEffect(() => {
@@ -229,7 +221,11 @@ const BookCounselorCalendar = () => {
             setCurrentIdempotencyKey(null);
           } else if (parsed.slotId) {
             console.log('Found recent booking attempt, checking status...');
-            checkBookingStatus(parsed.slotId);
+            checkBookingStatus({
+              onConfirmed: () => fetchCounselorData(),
+              onNotFound: () => fetchCounselorData(),
+              currentUser,
+            });
           }
         } catch (error) {
           console.error('Error parsing stored attempt:', error);
@@ -241,53 +237,6 @@ const BookCounselorCalendar = () => {
     checkForStaleBooking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
-
-  // ==========================================
-  // CLEANUP ON UNMOUNT
-  // ==========================================
-  useEffect(() => {
-    return () => {
-      if (!bookingLoading && !isRazorpayOpen) {
-        const storedAttempt = sessionStorage.getItem('current_booking_attempt');
-        if (storedAttempt) {
-          try {
-            const parsed = JSON.parse(storedAttempt);
-            const attemptAge = Date.now() - parsed.timestamp;
-
-            if (attemptAge > UNMOUNT_CLEANUP_THRESHOLD_MS) {
-              console.log('Clearing old attempt on unmount');
-              sessionStorage.removeItem('current_booking_attempt');
-            }
-          } catch (error) {
-            console.error('Cleanup error:', error);
-          }
-        }
-      }
-    };
-  }, [bookingLoading, isRazorpayOpen]);
-
-  // ==========================================
-  // LOAD RAZORPAY SCRIPT
-  // ==========================================
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
-    script.onerror = () => {
-      console.error('Failed to load Razorpay script');
-      toast.error('Payment service failed to load. Please refresh the page.');
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      try {
-        document.body.removeChild(script);
-      } catch (e) {
-        // Script already removed
-      }
-    };
-  }, []);
 
   // ==========================================
   // FETCH COUNSELOR DATA (RACE CONDITION FIX)
@@ -499,385 +448,55 @@ const BookCounselorCalendar = () => {
   };
 
   // ==========================================
-  // INITIATE PAYMENT (FULL ERROR HANDLING + IDEMPOTENCY)
+  // INITIATE PAYMENT (LAYER 3 HOOK DELEGATION)
   // ==========================================
-  const initiatePayment = async (isRetry = false) => {
-    if (!selectedSlot) return;
+  const initiatePayment = (isRetry = false) => {
+    const rawSlotAmount = getSlotPrice(selectedSlot);
+    const amount = appliedCoupon?.finalAmount != null ? appliedCoupon.finalAmount : rawSlotAmount;
+    const couponCode = appliedCoupon?.coupon?.code || appliedCoupon?.code || undefined;
 
-    if (isSelfBooking) {
-      toast.error('You cannot book a session with yourself.');
-      return;
-    }
-
-    if (!razorpayLoaded) {
-      toast.error('Payment service is loading. Please try again shortly.');
-      return;
-    }
-
-    // Check network status
-    if (!isOnline) {
-      toast.error('No internet connection. Please check your network and try again.');
-      return;
-    }
-
-    try {
-      setBookingLoading(true);
-
-      const userData = getUserData();
-      const accessToken = currentAccessToken;
-
-      if (!userData || (!accessToken && !client && !loggedInCounselor)) {
-        toast.info('Login or register to proceed with the payment for the session', {
-          duration: 5000,
-        });
-        navigate('/login', {
-          state: {
-            redirectTo: `/book-counselor/${counselorId}`,
-            message: 'Login or register to proceed with the payment for the session',
-          },
-        });
-        setBookingLoading(false);
-        return;
-      }
-
-      const rawSlotAmount = getSlotPrice(selectedSlot);
-      const amount = appliedCoupon?.finalAmount != null ? appliedCoupon.finalAmount : rawSlotAmount;
-      const couponCode = appliedCoupon?.coupon?.code || appliedCoupon?.code || undefined;
-
-      // Use existing idempotency key or recover from sessionStorage
-      let idempotencyKey = currentIdempotencyKey;
-
-      if (!idempotencyKey) {
-        const storedAttempt = sessionStorage.getItem('current_booking_attempt');
-        if (storedAttempt) {
-          const parsed = JSON.parse(storedAttempt);
-          if (parsed.slotId === selectedSlot._id) {
-            idempotencyKey = parsed.key;
-            setCurrentIdempotencyKey(idempotencyKey);
-          }
-        }
-
-        if (!idempotencyKey) {
-          idempotencyKey = `${userData._id}_${selectedSlot._id}_${Date.now()}_${uuidv4()}`;
-          setCurrentIdempotencyKey(idempotencyKey);
-          sessionStorage.setItem(
-            'current_booking_attempt',
-            JSON.stringify({
-              key: idempotencyKey,
-              slotId: selectedSlot._id,
-              timestamp: Date.now(),
-            })
+    triggerPaymentCheckout(
+      {
+        selectedSlot,
+        counselor,
+        selectedDate,
+        amount,
+        couponCode,
+        userData: getUserData(),
+        accessToken: currentAccessToken,
+        isSelfBooking,
+        isOnline,
+        formatDateToString,
+        currentUser,
+        onBookingSuccess: ({ slotId }) => {
+          setSlots((prev) =>
+            prev.map((slot) =>
+              slot._id === (slotId || selectedSlot?._id)
+                ? { ...slot, status: 'booked', isBooked: true }
+                : slot
+            )
           );
-        }
-      }
-
-      // Get Razorpay key
-      const keyResponse = await api.get(API_ENDPOINTS.PAYMENT_GET_KEY);
-      const keyData = keyResponse.data;
-
-      // Create order with idempotency key and server-side coupon discount
-      let orderData;
-      try {
-        const orderResponse = await api.post(
-          API_ENDPOINTS.PAYMENT_CHECKOUT,
-          {
-            amount,
-            clientId: userData._id,
-            slotId: selectedSlot._id,
-            couponCode,
-          },
-          { headers: { 'Idempotency-Key': idempotencyKey } }
-        );
-        orderData = orderResponse.data;
-      } catch (err) {
-        const status = err.response?.status;
-        const errData = err.response?.data || {};
-
-        if (status === 409) {
-          toast.info(errData.message || 'Your request is being processed. Please wait...', {
-            duration: 3000,
-          });
-          setBookingLoading(false);
-          return;
-        }
-
-        if (status === 503 && errData.data?.retryable) {
-          toast.error(errData.message);
-          toast.info('Retrying automatically...', { duration: 2000 });
-          setTimeout(() => {
-            initiatePayment(true);
-          }, errData.data.retryAfter || 5000);
-          return;
-        }
-
-        toast.error(errData.message || 'Unable to create payment order');
-        setBookingLoading(false);
-        return;
-      }
-
-      // Check if this is a 100% free promotional booking bypass
-      if (orderData.success && orderData.data?.isFree) {
-        setBookingLoading(false);
-        setShowBookingModal(false);
-        sessionStorage.removeItem('current_booking_attempt');
-        sessionStorage.removeItem('current_idempotency_key');
-        toast.success('Free session booked successfully!');
-        navigate('/client/dashboard/myBookings', {
-          state: { successMessage: 'Your free session has been confirmed successfully!' },
-        });
-        return;
-      }
-
-      if (!orderData.success || !orderData.data || !orderData.data.order) {
-        toast.error('Unable to create payment order');
-        setBookingLoading(false);
-        return;
-      }
-
-      // Handle cached response
-      if (orderData.data._cached || orderData.message?.includes('cached')) {
-        toast.info('Resuming previous payment attempt...');
-      } else if (isRetry) {
-        toast.success('Retry successful. Proceeding with payment...');
-      }
-
-      setIsRazorpayOpen(true);
-
-      setTimeout(() => {
-        const options = {
-          key: keyData.data.key,
-          amount: orderData.data.order.amount,
-          currency: 'INR',
-          name: 'Solvit',
-          description: `Therapy Session with ${counselor.fullName}`,
-          order_id: orderData.data.order.id,
-          handler: async (response) => {
-            setIsRazorpayOpen(false);
-            await verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              clientId: userData._id,
-              slotId: selectedSlot._id,
-            });
-          },
-          prefill: {
-            name: userData.fullName,
-            email: userData.email,
-            contact: userData.phone || '9999999999',
-          },
-          notes: {
-            counselor: counselor.fullName,
-            session_date: formatDateToString(selectedDate),
-            idempotencyKey: idempotencyKey,
-          },
-          theme: { color: '#1C3C63' },
-          modal: {
-            ondismiss: () => {
-              setIsRazorpayOpen(false);
-              setBookingLoading(false);
-              toast.info('Payment cancelled. You can try again anytime.');
-            },
-          },
-        };
-
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
-
-        razorpay.on('payment.failed', (response) => {
-          setIsRazorpayOpen(false);
-          const errorMsg = response.error?.description || 'Payment unsuccessful';
-          toast.error(errorMsg, { duration: 5000 });
-          setBookingLoading(false);
-        });
-      }, 100);
-    } catch (error) {
-      console.error('Payment initiation error:', error);
-      if (error?.message?.includes('fetch') || error?.message?.includes('network')) {
-        toast.error('Network error. Please check your connection and try again.');
-      } else {
-        toast.error('Unable to initiate payment. Please try again.');
-      }
-      setBookingLoading(false);
-    }
-  };
-
-  // ==========================================
-  // VERIFY PAYMENT (COMPREHENSIVE ERROR HANDLING)
-  // ==========================================
-  const verifyPayment = async (paymentData) => {
-    try {
-      // Use same idempotency key
-      let idempotencyKey = currentIdempotencyKey;
-
-      if (!idempotencyKey) {
-        const storedAttempt = sessionStorage.getItem('current_booking_attempt');
-        if (storedAttempt) {
-          const parsed = JSON.parse(storedAttempt);
-          if (parsed.slotId === paymentData.slotId) {
-            idempotencyKey = parsed.key;
-          }
-        }
-
-        if (!idempotencyKey) {
-          console.error('No idempotency key found for verification');
-          const userData = getUserData();
-          if (userData && paymentData.slotId) {
-            idempotencyKey = `${userData._id}_${paymentData.slotId}_${Date.now()}_${uuidv4()}`;
-          } else {
-            toast.error('Unable to verify payment. Please contact support with your payment ID.');
-            setBookingLoading(false);
-            return;
-          }
-        }
-      }
-
-      let data;
-      try {
-        const response = await api.post(API_ENDPOINTS.PAYMENT_VERIFICATION, paymentData, {
-          headers: {
-            'Idempotency-Key': idempotencyKey,
-          },
-        });
-        data = response.data;
-      } catch (err) {
-        const status = err.response?.status;
-        const errData = err.response?.data || {};
-
-        // Handle 400 Bad Request (Invalid signature)
-        if (status === 400) {
-          toast.error(errData.message || 'Payment verification failed. Please try again.', {
-            duration: 6000,
-          });
-          setCurrentIdempotencyKey(null);
-          sessionStorage.removeItem('current_booking_attempt');
           setShowBookingModal(false);
-          setBookingLoading(false);
-          return;
-        }
-
-        // 409 Conflict - Request already processing
-        if (status === 409) {
-          toast.info(errData.message || 'Verification in progress. Please wait...', {
-            duration: 3000,
+          setSelectedSlot(null);
+        },
+        onFreeBookingSuccess: () => {
+          setShowBookingModal(false);
+          setSelectedSlot(null);
+          navigate('/client/dashboard/myBookings', {
+            state: { successMessage: 'Your free session has been confirmed successfully!' },
           });
-          setTimeout(() => {
-            checkBookingStatus(paymentData.slotId);
-          }, 3000);
-          return;
-        }
-
-        const errorMessage = errData.message || 'Payment verification unsuccessful';
-        if (errData.data?.refundInfo?.refunded) {
-          toast.error(errorMessage, {
-            duration: 8000,
-            description: 'Your payment has been refunded automatically.',
-          });
-        } else if (errData.data?.refundInfo?.pending) {
-          toast.error(errorMessage, {
-            duration: 8000,
-            description: 'Refund will be processed within 24-48 hours.',
-          });
-        } else {
-          toast.error(errorMessage, { duration: 6000 });
-        }
-
-        setCurrentIdempotencyKey(null);
-        sessionStorage.removeItem('current_booking_attempt');
-        fetchCounselorData();
-        setShowBookingModal(false);
-        setSelectedSlot(null);
-        return;
-      }
-
-      // Success cases
-      if (data && data.success) {
-        const booking = data.data.booking;
-
-        // Clear idempotency key - booking successful
-        setCurrentIdempotencyKey(null);
-        sessionStorage.removeItem('current_booking_attempt');
-
-        // Handle cached/duplicate responses
-        if (data.data._cached) {
-          toast.info('Returning cached booking confirmation');
-        } else if (data.data._duplicate) {
-          toast.info('This booking was already confirmed');
-        } else {
-          toast.success('Payment completed! Session booked successfully.', { duration: 4000 });
-        }
-
-        // Update slot UI immediately
-        setSlots((prev) =>
-          prev.map((slot) =>
-            slot._id === selectedSlot._id ? { ...slot, status: 'booked', isBooked: true } : slot
-          )
-        );
-
-        // Close modal
-        setShowBookingModal(false);
-        setSelectedSlot(null);
-
-        // Navigate to dashboard
-        setTimeout(() => {
-          if (currentUser?.role === 'counselor') {
-            navigate('/counselor/dashboard');
-          } else {
-            navigate('/client/dashboard/bookings');
-          }
-        }, 1500);
-        return;
-      }
-    } catch (error) {
-      console.error('Payment verification error:', error);
-      toast.error(
-        'Unable to verify payment. If money was deducted, it will be refunded automatically.',
-        { duration: 8000 }
-      );
-
-      // Refresh slots
-      fetchCounselorData();
-    } finally {
-      setBookingLoading(false);
-      setIsRazorpayOpen(false);
-    }
-  };
-
-  // ==========================================
-  // CHECK BOOKING STATUS (FOR RECOVERY)
-  // ==========================================
-  const checkBookingStatus = async (slotId) => {
-    try {
-      const response = await api.get(API_ENDPOINTS.PAYMENT_CHECK_RECENT);
-      const data = response.data;
-
-      if (data.success && data.data.recentBooking) {
-        toast.success('Your booking was successful!');
-
-        // Clear attempt
-        setCurrentIdempotencyKey(null);
-        sessionStorage.removeItem('current_booking_attempt');
-
-        // Navigate to dashboard
-        if (currentUser?.role === 'counselor') {
-          navigate('/counselor/dashboard');
-        } else {
-          navigate('/client/dashboard/bookings');
-        }
-      } else {
-        toast.info('No recent booking found. You can try booking again.', {
-          duration: 5000,
-        });
-
-        // Clear attempt and refresh
-        setCurrentIdempotencyKey(null);
-        sessionStorage.removeItem('current_booking_attempt');
-        fetchCounselorData();
-      }
-    } catch (error) {
-      console.error('Status check error:', error);
-      toast.error('Unable to check booking status. Please refresh the page.');
-    }
+        },
+        onSlotsRefresh: () => {
+          fetchCounselorData();
+          setShowBookingModal(false);
+          setSelectedSlot(null);
+        },
+        onCloseModal: () => {
+          setShowBookingModal(false);
+        },
+      },
+      isRetry
+    );
   };
 
   // Disable dates that don't have available slots
