@@ -169,15 +169,13 @@ const Footer = () => {
             </li>
             <li>212 2nd Floor, Jalaram Mangalam Building, Parhi Nagar, Nagpur, India</li>
           </ul>
-          
         </motion.address>
       </div>
 
       <Separator className="border-white opacity-30" />
 
       <motion.p className="text-sm text-center text-white select-none mt-6">
-        © {new Date().getFullYear()} Solvit. All rights reserved | Developed by{' '}
-        <a href="https://www.saasweft.com/">SaaSWeft</a>
+        © {new Date().getFullYear()} Solvit. All rights reserved.
       </motion.p>
     </motion.footer>
   );
