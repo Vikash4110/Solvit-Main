@@ -29,8 +29,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { API_ENDPOINTS } from '../../../config/api';
-import api from '@/lib/axios';
 import { useCounselorAuth } from '../../../contexts/CounselorAuthContext';
 import { TIMEZONE } from '../../../constants/constants';
 import dayjs from 'dayjs';
@@ -40,28 +38,16 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter.js';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
 import PreSessionGuidelines from './CounselorDashboardPreSessonGuidelines';
 import { ClinicalNotesModal } from './ClinicalNotesModal';
+import { useCounselorSessions, EARLY_JOIN_MINUTES } from '../../../hooks/useCounselorSessions';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-const EARLY_JOIN_MINUTES = 10;
-
 const fadeInUp = {
   hidden: { opacity: 0, y: 14 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
-
-const computeCanJoin = (booking) => {
-  if (!booking.videoSDKRoomId || !booking.startTime || !booking.endTime) return false;
-  if (booking.status !== 'confirmed') return false;
-
-  const now = dayjs().utc();
-  const start = dayjs.utc(booking.startTime);
-  const end = dayjs.utc(booking.endTime);
-
-  return now.isSameOrAfter(start.subtract(EARLY_JOIN_MINUTES, 'minute')) && now.isBefore(end);
 };
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
@@ -77,18 +63,23 @@ const TABS = [
 const CounselorDashboardMySessions = () => {
   const navigate = useNavigate();
   const { counselorLogout } = useCounselorAuth();
-  const [activeTab, setActiveTab] = useState('upcoming');
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalCount: 0,
-  });
 
-  const [guidelinesState, setGuidelinesState] = useState({ show: false, booking: null });
-  const [notesModalState, setNotesModalState] = useState({ show: false, booking: null });
-  const timerRef = useRef(null);
+  // Layer 3 Counselor Sessions Hook (Decoupled from Layer 4 Presentation)
+  const {
+    activeTab,
+    setActiveTab,
+    bookings,
+    setBookings,
+    loading,
+    pagination,
+    guidelinesState,
+    setGuidelinesState,
+    notesModal: notesModalState,
+    setNotesModal: setNotesModalState,
+    fetchSessions,
+    handleJoinSession,
+    handleProceedToSession,
+  } = useCounselorSessions();
 
   const handleNotesSaved = (bookingId, savedNote) => {
     setBookings((prevBookings) =>
@@ -109,92 +100,6 @@ const CounselorDashboardMySessions = () => {
     toast.error('Session expired. Please login again.');
     navigate('/counselor/login');
   }, [counselorLogout, navigate]);
-
-  // ── Fetch ────────────────────────────────────────────────────────────────────
-  const fetchSessions = useCallback(
-    async (page = 1) => {
-      try {
-        setLoading(true);
-
-        // Resolve the correct filter key for the active tab
-        const currentTab = TABS.find((t) => t.key === activeTab) || TABS[0];
-
-        const queryParams = new URLSearchParams({
-          filter: currentTab.filterKey,
-          page: page.toString(),
-          perPage: '10',
-        });
-
-        const response = await api.get(`${API_ENDPOINTS.COUNSELOR_BOOKINGS}?${queryParams}`);
-
-        const data = response.data;
-        if (!data || typeof data !== 'object') {
-          toast.error('Unexpected response from server');
-          return;
-        }
-
-        if (data.success && data.data && Array.isArray(data.data.bookings)) {
-          const enriched = data.data.bookings.map((b) => ({
-            ...b,
-            canJoin: computeCanJoin(b),
-          }));
-          setBookings(enriched);
-          setPagination(
-            data.data.pagination || {
-              currentPage: page,
-              totalPages: 1,
-              totalCount: enriched.length,
-            }
-          );
-        } else {
-          toast.error(data.message || 'Failed to load sessions');
-        }
-      } catch (error) {
-        console.error('Error fetching sessions:', error);
-        toast.error('Network error while loading sessions');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [activeTab]
-  );
-
-  useEffect(() => {
-    fetchSessions(1);
-  }, [fetchSessions]);
-
-  // Live timer: recompute canJoin every 30 s for the 'upcoming' tab
-  useEffect(() => {
-    if (activeTab !== 'upcoming') return;
-
-    timerRef.current = setInterval(() => {
-      setBookings((prev) => prev.map((b) => ({ ...b, canJoin: computeCanJoin(b) })));
-    }, 30_000);
-
-    return () => clearInterval(timerRef.current);
-  }, [activeTab]);
-
-  // ── Join handlers ────────────────────────────────────────────────────────────
-  const handleJoinSession = (booking) => {
-    if (!booking?.bookingId) {
-      toast.error('Invalid session data');
-      return;
-    }
-    if (!computeCanJoin(booking)) {
-      toast.error('Session not ready to join yet');
-      return;
-    }
-    if (!booking.videoSDKRoomId) {
-      toast.error('Meeting room not available');
-      return;
-    }
-    setGuidelinesState({ show: true, booking });
-  };
-
-  const handleProceedToSession = (bookingId, videoSDKRoomId) => {
-    setGuidelinesState({ show: false, booking: null });
-    navigate(`/meeting/${bookingId}/${videoSDKRoomId}`);
-  };
 
   const changePage = (nextPage) => {
     if (loading) return;

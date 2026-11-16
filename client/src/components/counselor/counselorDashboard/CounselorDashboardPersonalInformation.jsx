@@ -95,8 +95,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { TIMEZONE } from '../../../constants/constants';
-import { API_ENDPOINTS } from '@/config/api';
-import api from '@/lib/axios';
+import { counselorProfileService } from '../../../services/profile';
 
 // Configure Day.js plugins
 dayjs.extend(utc);
@@ -262,8 +261,8 @@ const CounselorDashboardPersonalInfo = () => {
 
   const fetchProfileRequests = async () => {
     try {
-      const res = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_REQUESTS_GET);
-      setProfileRequests(res.data?.data || []);
+      const res = await counselorProfileService.getProfileRequests();
+      setProfileRequests(res?.data || []);
     } catch (err) {
       console.warn('Could not fetch profile requests:', err);
     }
@@ -271,10 +270,14 @@ const CounselorDashboardPersonalInfo = () => {
 
   const handleOpenRequestChangeModal = () => {
     const pendingReq = profileRequests.find(
-      (r) => (!r.requestType || r.requestType === 'specialization_and_experience') && r.status === 'pending'
+      (r) =>
+        (!r.requestType || r.requestType === 'specialization_and_experience') &&
+        r.status === 'pending'
     );
     if (pendingReq) {
-      toast.info('You already have a specialization/experience change request pending admin review');
+      toast.info(
+        'You already have a specialization/experience change request pending admin review'
+      );
       return;
     }
     setRequestedSpecialization(
@@ -290,7 +293,9 @@ const CounselorDashboardPersonalInfo = () => {
   };
 
   const handleOpenEducationRequestModal = () => {
-    const pendingReq = profileRequests.find((r) => r.requestType === 'education' && r.status === 'pending');
+    const pendingReq = profileRequests.find(
+      (r) => r.requestType === 'education' && r.status === 'pending'
+    );
     if (pendingReq) {
       toast.info('You already have an education change request pending admin review');
       return;
@@ -311,7 +316,9 @@ const CounselorDashboardPersonalInfo = () => {
   };
 
   const handleOpenDocumentRequestModal = () => {
-    const pendingReq = profileRequests.find((r) => r.requestType === 'documents' && r.status === 'pending');
+    const pendingReq = profileRequests.find(
+      (r) => r.requestType === 'documents' && r.status === 'pending'
+    );
     if (pendingReq) {
       toast.info('You already have a document update request pending admin review');
       return;
@@ -329,7 +336,9 @@ const CounselorDashboardPersonalInfo = () => {
   const handleDocFileChange = (field, file) => {
     if (file) {
       if (file.type !== 'application/pdf') {
-        toast.error('Invalid File Type', { description: 'Only PDF documents are allowed (Max 5MB).' });
+        toast.error('Invalid File Type', {
+          description: 'Only PDF documents are allowed (Max 5MB).',
+        });
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
@@ -405,7 +414,7 @@ const CounselorDashboardPersonalInfo = () => {
 
     setIsSubmittingChangeRequest(true);
     try {
-      await api.post(API_ENDPOINTS.COUNSELOR_PROFILE_REQUEST_SUBMIT, {
+      await counselorProfileService.submitSpecializationRequest({
         requestedSpecialization,
         requestedExperienceYears: Number(requestedExperienceYears),
         message: requestMessage.trim(),
@@ -417,7 +426,8 @@ const CounselorDashboardPersonalInfo = () => {
       await fetchProfileRequests();
     } catch (err) {
       toast.error('Submission Failed', {
-        description: err.response?.data?.message || err.message || 'Failed to submit change request',
+        description:
+          err.response?.data?.message || err.message || 'Failed to submit change request',
       });
     } finally {
       setIsSubmittingChangeRequest(false);
@@ -426,7 +436,11 @@ const CounselorDashboardPersonalInfo = () => {
 
   const handleSubmitEducationRequest = async (e) => {
     if (e) e.preventDefault();
-    if (!requestedGraduation.university?.trim() || !requestedGraduation.degree?.trim() || !requestedGraduation.year) {
+    if (
+      !requestedGraduation.university?.trim() ||
+      !requestedGraduation.degree?.trim() ||
+      !requestedGraduation.year
+    ) {
       toast.error('Validation Error', {
         description: 'Please provide Graduation University, Degree, and Passing Year.',
       });
@@ -451,14 +465,15 @@ const CounselorDashboardPersonalInfo = () => {
     }
     if (!educationRequestMessage.trim()) {
       toast.error('Validation Error', {
-        description: 'Please provide a message / reason explaining your education update for admin.',
+        description:
+          'Please provide a message / reason explaining your education update for admin.',
       });
       return;
     }
 
     setIsSubmittingEducationRequest(true);
     try {
-      await api.post(API_ENDPOINTS.COUNSELOR_EDUCATION_REQUEST_SUBMIT, {
+      await counselorProfileService.submitEducationRequest({
         graduation: {
           university: requestedGraduation.university.trim(),
           degree: requestedGraduation.degree.trim(),
@@ -478,7 +493,8 @@ const CounselorDashboardPersonalInfo = () => {
       await fetchProfileRequests();
     } catch (err) {
       toast.error('Submission Failed', {
-        description: err.response?.data?.message || err.message || 'Failed to submit education change request',
+        description:
+          err.response?.data?.message || err.message || 'Failed to submit education change request',
       });
     } finally {
       setIsSubmittingEducationRequest(false);
@@ -495,7 +511,8 @@ const CounselorDashboardPersonalInfo = () => {
 
     if (!hasFiles) {
       toast.error('No Documents Selected', {
-        description: 'Please select at least one document (Resume, Degree, License, or Govt ID) to update/replace.',
+        description:
+          'Please select at least one document (Resume, Degree, License, or Govt ID) to update/replace.',
       });
       return;
     }
@@ -511,23 +528,26 @@ const CounselorDashboardPersonalInfo = () => {
     try {
       const formDataToSend = new FormData();
       if (selectedDocFiles.resume) formDataToSend.append('resume', selectedDocFiles.resume);
-      if (selectedDocFiles.degreeCertificate) formDataToSend.append('degreeCertificate', selectedDocFiles.degreeCertificate);
-      if (selectedDocFiles.licenseCertificate) formDataToSend.append('licenseCertificate', selectedDocFiles.licenseCertificate);
-      if (selectedDocFiles.governmentId) formDataToSend.append('governmentId', selectedDocFiles.governmentId);
+      if (selectedDocFiles.degreeCertificate)
+        formDataToSend.append('degreeCertificate', selectedDocFiles.degreeCertificate);
+      if (selectedDocFiles.licenseCertificate)
+        formDataToSend.append('licenseCertificate', selectedDocFiles.licenseCertificate);
+      if (selectedDocFiles.governmentId)
+        formDataToSend.append('governmentId', selectedDocFiles.governmentId);
       formDataToSend.append('message', documentRequestMessage.trim());
 
-      await api.post(API_ENDPOINTS.COUNSELOR_DOCUMENT_REQUEST_SUBMIT, formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      await counselorProfileService.submitDocumentRequest(formDataToSend);
 
       toast.success('Document Update Request Submitted', {
-        description: 'Your document updates have been uploaded and are pending review by Solvit Admin.',
+        description:
+          'Your document updates have been uploaded and are pending review by Solvit Admin.',
       });
       setIsDocumentRequestModalOpen(false);
       await fetchProfileRequests();
     } catch (err) {
       toast.error('Submission Failed', {
-        description: err.response?.data?.message || err.message || 'Failed to submit document change request',
+        description:
+          err.response?.data?.message || err.message || 'Failed to submit document change request',
       });
     } finally {
       setIsSubmittingDocumentRequest(false);
@@ -545,8 +565,8 @@ const CounselorDashboardPersonalInfo = () => {
     setIsFetching(true);
     setError(null);
     try {
-      const response = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_GET);
-      const data = response.data?.data || response.data;
+      const response = await counselorProfileService.getProfile();
+      const data = response.data || response;
 
       const transformedData = {
         _id: data._id || data.id || '',
@@ -592,9 +612,13 @@ const CounselorDashboardPersonalInfo = () => {
           documents: {
             resume: data.application?.documents?.resume || data.documents?.resume || '',
             degreeCertificate:
-              data.application?.documents?.degreeCertificate || data.documents?.degreeCertificate || '',
+              data.application?.documents?.degreeCertificate ||
+              data.documents?.degreeCertificate ||
+              '',
             licenseCertificate:
-              data.application?.documents?.licenseCertificate || data.documents?.licenseCertificate || '',
+              data.application?.documents?.licenseCertificate ||
+              data.documents?.licenseCertificate ||
+              '',
             governmentId:
               data.application?.documents?.governmentId || data.documents?.governmentId || '',
           },
@@ -622,8 +646,8 @@ const CounselorDashboardPersonalInfo = () => {
 
   const fetchProfileCompleteness = async () => {
     try {
-      const response = await api.get(API_ENDPOINTS.COUNSELOR_PROFILE_COMPLETENESS);
-      const result = response.data;
+      const response = await counselorProfileService.getProfileCompleteness();
+      const result = response.data || response;
       setProfileCompleteness(result.data || result);
     } catch (err) {
       console.error('Error fetching profile completeness:', err);
@@ -727,7 +751,7 @@ const CounselorDashboardPersonalInfo = () => {
   const handleSubmitApplication = async () => {
     setIsLoading(true);
     try {
-      await api.post(API_ENDPOINTS.COUNSELOR_APPLICATION_SUBMIT);
+      await counselorProfileService.submitApplication();
       toast.success('Application Submitted', {
         description: 'Your verification application has been submitted for review.',
       });
@@ -875,7 +899,7 @@ const CounselorDashboardPersonalInfo = () => {
         };
       }
 
-      await api.put(API_ENDPOINTS.COUNSELOR_PROFILE_UPDATE, changedData);
+      await counselorProfileService.updateProfile(changedData);
 
       await fetchCounselorData();
       await fetchProfileCompleteness();
@@ -888,7 +912,9 @@ const CounselorDashboardPersonalInfo = () => {
       console.error('Error updating profile:', err);
       toast.error('Update Failed', {
         description:
-          err.response?.data?.message || err.message || 'Failed to update profile. Please try again.',
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to update profile. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -1026,18 +1052,8 @@ const CounselorDashboardPersonalInfo = () => {
       const formData = new FormData();
       formData.append('profilePicture', file);
 
-      const response = await api.put(
-        API_ENDPOINTS.COUNSELOR_PROFILE_PICTURE_UPDATE,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      const result = response.data;
-      const data = result.data || result;
+      const response = await counselorProfileService.uploadProfilePicture(formData);
+      const data = response.data || response;
       const newProfilePicture = data.profilePicture;
 
       try {
@@ -1277,7 +1293,10 @@ const CounselorDashboardPersonalInfo = () => {
                         {counselorData.fullName}
                       </h2>
                       {counselorData.application?.applicationStatus === 'approved' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-xs shrink-0 whitespace-nowrap" title="Verified Counselor">
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-xs shrink-0 whitespace-nowrap"
+                          title="Verified Counselor"
+                        >
                           <BadgeCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 fill-blue-500/20 shrink-0" />
                           <span>Verified</span>
                         </span>
@@ -1290,7 +1309,9 @@ const CounselorDashboardPersonalInfo = () => {
 
                   <div className="flex flex-wrap gap-2">
                     <Badge className={experienceBadge.color}>
-                      {experienceBadge.icon && <experienceBadge.icon className="h-3.5 w-3.5 mr-1" />}
+                      {experienceBadge.icon && (
+                        <experienceBadge.icon className="h-3.5 w-3.5 mr-1" />
+                      )}
                       {counselorData.experienceLevel} ({counselorData.experienceYears}{' '}
                       {counselorData.experienceYears <= 1 ? 'year' : 'years'})
                     </Badge>
@@ -1376,14 +1397,14 @@ const CounselorDashboardPersonalInfo = () => {
                   {profileRequests.some(
                     (r) => r.requestType === 'education' && r.status === 'pending'
                   ) && (
-                      <Badge
-                        variant="outline"
-                        className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium"
-                      >
-                        <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
-                        Change Pending
-                      </Badge>
-                    )}
+                    <Badge
+                      variant="outline"
+                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium"
+                    >
+                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                      Change Pending
+                    </Badge>
+                  )}
                   {counselorData.application?.applicationStatus === 'approved' ? (
                     <Button
                       variant="outline"
@@ -1418,20 +1439,25 @@ const CounselorDashboardPersonalInfo = () => {
                       icon={Building}
                       label="University"
                       value={
-                        counselorData.application.education?.graduation?.university || 'Not specified'
+                        counselorData.application.education?.graduation?.university ||
+                        'Not specified'
                       }
                       compact
                     />
                     <InfoRow
                       icon={GraduationCap}
                       label="Degree"
-                      value={counselorData.application.education?.graduation?.degree || 'Not specified'}
+                      value={
+                        counselorData.application.education?.graduation?.degree || 'Not specified'
+                      }
                       compact
                     />
                     <InfoRow
                       icon={Calendar}
                       label="Year"
-                      value={counselorData.application.education?.graduation?.year || 'Not specified'}
+                      value={
+                        counselorData.application.education?.graduation?.year || 'Not specified'
+                      }
                       compact
                     />
                   </div>
@@ -1440,40 +1466,41 @@ const CounselorDashboardPersonalInfo = () => {
                 {/* Post Graduation */}
                 {(counselorData.application.education?.postGraduation?.university ||
                   counselorData.application.education?.postGraduation?.degree) && (
-                    <div className="border-t border-neutral-200/80 dark:border-neutral-800 pt-4">
-                      <Label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block mb-3">
-                        Post Graduation
-                      </Label>
-                      <div className="space-y-2">
-                        <InfoRow
-                          icon={Building}
-                          label="University"
-                          value={
-                            counselorData.application.education?.postGraduation?.university ||
-                            'Not specified'
-                          }
-                          compact
-                        />
-                        <InfoRow
-                          icon={GraduationCap}
-                          label="Degree"
-                          value={
-                            counselorData.application.education?.postGraduation?.degree ||
-                            'Not specified'
-                          }
-                          compact
-                        />
-                        <InfoRow
-                          icon={Calendar}
-                          label="Year"
-                          value={
-                            counselorData.application.education?.postGraduation?.year || 'Not specified'
-                          }
-                          compact
-                        />
-                      </div>
+                  <div className="border-t border-neutral-200/80 dark:border-neutral-800 pt-4">
+                    <Label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block mb-3">
+                      Post Graduation
+                    </Label>
+                    <div className="space-y-2">
+                      <InfoRow
+                        icon={Building}
+                        label="University"
+                        value={
+                          counselorData.application.education?.postGraduation?.university ||
+                          'Not specified'
+                        }
+                        compact
+                      />
+                      <InfoRow
+                        icon={GraduationCap}
+                        label="Degree"
+                        value={
+                          counselorData.application.education?.postGraduation?.degree ||
+                          'Not specified'
+                        }
+                        compact
+                      />
+                      <InfoRow
+                        icon={Calendar}
+                        label="Year"
+                        value={
+                          counselorData.application.education?.postGraduation?.year ||
+                          'Not specified'
+                        }
+                        compact
+                      />
                     </div>
-                  )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -1490,14 +1517,14 @@ const CounselorDashboardPersonalInfo = () => {
                   {profileRequests.some(
                     (r) => r.requestType === 'documents' && r.status === 'pending'
                   ) && (
-                      <Badge
-                        variant="outline"
-                        className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
-                      >
-                        <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
-                        Update Pending
-                      </Badge>
-                    )}
+                    <Badge
+                      variant="outline"
+                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
+                    >
+                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                      Update Pending
+                    </Badge>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -1514,7 +1541,9 @@ const CounselorDashboardPersonalInfo = () => {
                   {
                     key: 'resume',
                     label: 'Resume / Curriculum Vitae',
-                    url: counselorData.application?.documents?.resume || counselorData.documents?.resume,
+                    url:
+                      counselorData.application?.documents?.resume ||
+                      counselorData.documents?.resume,
                   },
                   {
                     key: 'degreeCertificate',
@@ -1544,10 +1573,11 @@ const CounselorDashboardPersonalInfo = () => {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`p-2 rounded-lg shrink-0 ${doc.url
+                        className={`p-2 rounded-lg shrink-0 ${
+                          doc.url
                             ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400'
                             : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'
-                          }`}
+                        }`}
                       >
                         <FileText className="h-4 w-4" />
                       </div>
@@ -1602,14 +1632,14 @@ const CounselorDashboardPersonalInfo = () => {
                       (!r.requestType || r.requestType === 'specialization_and_experience') &&
                       r.status === 'pending'
                   ) && (
-                      <Badge
-                        variant="outline"
-                        className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
-                      >
-                        <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
-                        Change Pending
-                      </Badge>
-                    )}
+                    <Badge
+                      variant="outline"
+                      className="h-7 text-xs gap-1.5 px-2.5 text-amber-700 bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 font-medium whitespace-nowrap"
+                    >
+                      <Clock className="h-3 w-3 text-amber-600 animate-pulse" />
+                      Change Pending
+                    </Badge>
+                  )}
                   {counselorData.application?.applicationStatus === 'approved' && (
                     <Button
                       variant="outline"
@@ -1894,20 +1924,27 @@ const CounselorDashboardPersonalInfo = () => {
                     <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                       Account Credentials
                     </span>
-                    <Badge variant="outline" className="text-[10px] gap-1 py-0.5 text-neutral-600 dark:text-neutral-400 border-neutral-300 dark:border-neutral-700">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] gap-1 py-0.5 text-neutral-600 dark:text-neutral-400 border-neutral-300 dark:border-neutral-700"
+                    >
                       <Lock className="h-3 w-3" />
                       Verified
                     </Badge>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">Full Name</span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Full Name
+                      </span>
                       <p className="font-medium text-neutral-800 dark:text-neutral-200 truncate">
                         {formData?.fullName || counselorData?.fullName || 'Not provided'}
                       </p>
                     </div>
                     <div>
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">Email Address</span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Email Address
+                      </span>
                       <p className="font-medium text-neutral-800 dark:text-neutral-200 truncate">
                         {formData?.email || counselorData?.email || 'Not provided'}
                       </p>
@@ -1918,7 +1955,10 @@ const CounselorDashboardPersonalInfo = () => {
                 {/* Editable fields */}
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="username" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="username"
+                      className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                    >
                       <User className="h-3.5 w-3.5 text-neutral-500" />
                       Username <span className="text-red-500">*</span>
                     </Label>
@@ -1935,7 +1975,10 @@ const CounselorDashboardPersonalInfo = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="phone" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="phone"
+                      className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                    >
                       <Phone className="h-3.5 w-3.5 text-neutral-500" />
                       Phone Number <span className="text-red-500">*</span>
                     </Label>
@@ -1953,14 +1996,20 @@ const CounselorDashboardPersonalInfo = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="gender" className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="gender"
+                      className="text-sm font-semibold text-neutral-800 dark:text-neutral-200"
+                    >
                       Gender <span className="text-red-500">*</span>
                     </Label>
                     <Select
                       value={formData?.gender || ''}
                       onValueChange={(value) => handleInputChange('gender', value)}
                     >
-                      <SelectTrigger id="gender" className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm">
+                      <SelectTrigger
+                        id="gender"
+                        className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm"
+                      >
                         <SelectValue placeholder="Select your gender" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1974,15 +2023,29 @@ const CounselorDashboardPersonalInfo = () => {
               </TabsContent>
 
               {/* Professional Info Tab */}
-              <TabsContent value="professional" className="mt-0 space-y-5 focus-visible:outline-none">
+              <TabsContent
+                value="professional"
+                className="mt-0 space-y-5 focus-visible:outline-none"
+              >
                 {/* Active Pending Request Banner */}
                 {profileRequests.find((r) => r.status === 'pending') && (
                   <div className="rounded-xl p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200">
                     <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold">Specialization & Experience Change Request Pending</p>
+                      <p className="font-semibold">
+                        Specialization & Experience Change Request Pending
+                      </p>
                       <p className="text-amber-700 dark:text-amber-300 mt-0.5">
-                        Your submitted change request ({profileRequests.find((r) => r.status === 'pending')?.requestedSpecialization?.join(', ')} | {profileRequests.find((r) => r.status === 'pending')?.requestedExperienceYears} yrs) is currently under review by Solvit Admin.
+                        Your submitted change request (
+                        {profileRequests
+                          .find((r) => r.status === 'pending')
+                          ?.requestedSpecialization?.join(', ')}{' '}
+                        |{' '}
+                        {
+                          profileRequests.find((r) => r.status === 'pending')
+                            ?.requestedExperienceYears
+                        }{' '}
+                        yrs) is currently under review by Solvit Admin.
                       </p>
                     </div>
                   </div>
@@ -1992,12 +2055,18 @@ const CounselorDashboardPersonalInfo = () => {
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <Label htmlFor="specialization" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <Label
+                        htmlFor="specialization"
+                        className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                      >
                         <Award className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
                         <span>Areas of Specialization</span> <span className="text-red-500">*</span>
                       </Label>
                       {counselorData.application?.applicationStatus === 'approved' && (
-                        <Badge variant="outline" className="text-[10px] gap-1 text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 font-normal shrink-0">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] gap-1 text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 font-normal shrink-0"
+                        >
                           <Lock className="h-2.5 w-2.5" /> Verified
                         </Badge>
                       )}
@@ -2034,14 +2103,18 @@ const CounselorDashboardPersonalInfo = () => {
                         ))}
                       </div>
                       <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Since your profile is verified, specialization areas cannot be directly edited. Use the <strong>Request Change</strong> button above to propose updates.
+                        Since your profile is verified, specialization areas cannot be directly
+                        edited. Use the <strong>Request Change</strong> button above to propose
+                        updates.
                       </p>
                     </div>
                   ) : (
                     <>
                       <Select onValueChange={handleSpecializationSelect} value="">
                         <SelectTrigger className="h-11 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-sm">
-                          <span className="text-neutral-500">Choose a specialization to add...</span>
+                          <span className="text-neutral-500">
+                            Choose a specialization to add...
+                          </span>
                         </SelectTrigger>
                         <SelectContent>
                           {specializationOptions.map((spec) => (
@@ -2091,12 +2164,18 @@ const CounselorDashboardPersonalInfo = () => {
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <Label htmlFor="experienceYears" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                      <Label
+                        htmlFor="experienceYears"
+                        className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                      >
                         <Briefcase className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
                         <span>Years of Experience</span> <span className="text-red-500">*</span>
                       </Label>
                       {counselorData.application?.applicationStatus === 'approved' && (
-                        <Badge variant="outline" className="text-[10px] gap-1 text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 font-normal shrink-0">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] gap-1 text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 font-normal shrink-0"
+                        >
                           <Lock className="h-2.5 w-2.5" /> Verified
                         </Badge>
                       )}
@@ -2116,10 +2195,11 @@ const CounselorDashboardPersonalInfo = () => {
                       )
                     }
                     placeholder="e.g. 5"
-                    className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                    className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
+                      counselorData.application?.applicationStatus === 'approved'
                         ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 cursor-not-allowed'
                         : 'bg-white dark:bg-neutral-800 focus-visible:ring-primary-500'
-                      }`}
+                    }`}
                   />
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                     {counselorData.application?.applicationStatus === 'approved'
@@ -2151,10 +2231,11 @@ const CounselorDashboardPersonalInfo = () => {
                           key={lang}
                           type="button"
                           onClick={() => handleLanguageToggle(lang)}
-                          className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left cursor-pointer ${isChecked
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left cursor-pointer ${
+                            isChecked
                               ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/40 text-primary-800 dark:text-primary-200 shadow-sm ring-1 ring-primary-600/30'
                               : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/60 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
-                            }`}
+                          }`}
                         >
                           <span className="truncate">{lang}</span>
                           {isChecked ? (
@@ -2171,32 +2252,32 @@ const CounselorDashboardPersonalInfo = () => {
                   {normalizeLanguages(formData?.application?.languages).filter(
                     (l) => !LANGUAGES.includes(l)
                   ).length > 0 && (
-                      <div className="pt-2 space-y-1.5">
-                        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                          Custom Added Languages:
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {normalizeLanguages(formData?.application?.languages)
-                            .filter((l) => !LANGUAGES.includes(l))
-                            .map((customLang) => (
-                              <Badge
-                                key={customLang}
-                                variant="secondary"
-                                className="bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200 border border-primary-300 dark:border-primary-700 pl-2.5 pr-1 py-1 gap-1 flex items-center text-xs"
+                    <div className="pt-2 space-y-1.5">
+                      <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                        Custom Added Languages:
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
+                        {normalizeLanguages(formData?.application?.languages)
+                          .filter((l) => !LANGUAGES.includes(l))
+                          .map((customLang) => (
+                            <Badge
+                              key={customLang}
+                              variant="secondary"
+                              className="bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-200 border border-primary-300 dark:border-primary-700 pl-2.5 pr-1 py-1 gap-1 flex items-center text-xs"
+                            >
+                              <span>{customLang}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCustomLanguage(customLang)}
+                                className="h-4 w-4 rounded-full inline-flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
                               >
-                                <span>{customLang}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveCustomLanguage(customLang)}
-                                  className="h-4 w-4 rounded-full inline-flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 transition-colors"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </Badge>
-                            ))}
-                        </div>
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
                       </div>
-                    )}
+                    </div>
+                  )}
 
                   {/* Write / Add Custom Language Input */}
                   <div className="pt-1 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
@@ -2240,15 +2321,19 @@ const CounselorDashboardPersonalInfo = () => {
                 {/* Professional Summary - ALWAYS DIRECTLY EDITABLE */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="professionalSummary" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="professionalSummary"
+                      className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                    >
                       <FileText className="h-3.5 w-3.5 text-neutral-500" />
                       Professional Summary
                     </Label>
                     <span
-                      className={`text-[11px] ${(formData?.application?.professionalSummary?.length || 0) > 900
+                      className={`text-[11px] ${
+                        (formData?.application?.professionalSummary?.length || 0) > 900
                           ? 'text-amber-600 font-medium'
                           : 'text-neutral-400'
-                        }`}
+                      }`}
                     >
                       {formData?.application?.professionalSummary?.length || 0}/1000
                     </span>
@@ -2278,7 +2363,8 @@ const CounselorDashboardPersonalInfo = () => {
                     <div className="text-xs text-amber-900 dark:text-amber-200 space-y-1">
                       <p className="font-semibold">Academic Credentials Verified & Locked</p>
                       <p className="text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
-                        Your university degrees were verified during your counselor application approval. Verified qualifications cannot be edited directly.
+                        Your university degrees were verified during your counselor application
+                        approval. Verified qualifications cannot be edited directly.
                       </p>
                     </div>
                   </div>
@@ -2288,7 +2374,8 @@ const CounselorDashboardPersonalInfo = () => {
                     <div className="text-xs text-primary-900 dark:text-primary-200 space-y-1">
                       <p className="font-semibold">Academic & Professional Credentials</p>
                       <p className="text-primary-700/80 dark:text-primary-300/80 leading-relaxed">
-                        Adding your university degrees helps clients understand your training in psychology, counselling, or healthcare.
+                        Adding your university degrees helps clients understand your training in
+                        psychology, counselling, or healthcare.
                       </p>
                     </div>
                   </div>
@@ -2301,14 +2388,20 @@ const CounselorDashboardPersonalInfo = () => {
                       <Building className="h-3.5 w-3.5 text-primary-600" />
                       Graduation (Primary Degree)
                     </span>
-                    <Badge variant="outline" className="text-[10px] font-semibold text-primary-600 border-primary-300">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-semibold text-primary-600 border-primary-300"
+                    >
                       Primary
                     </Badge>
                   </div>
 
                   <div className="space-y-3.5">
                     <div className="space-y-1.5">
-                      <Label htmlFor="gradUniversity" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      <Label
+                        htmlFor="gradUniversity"
+                        className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                      >
                         University / College / Institute
                       </Label>
                       <Input
@@ -2322,16 +2415,20 @@ const CounselorDashboardPersonalInfo = () => {
                           })
                         }
                         placeholder="e.g. University of Delhi"
-                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                          counselorData.application?.applicationStatus === 'approved'
                             ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                             : 'bg-white dark:bg-neutral-800'
-                          }`}
+                        }`}
                       />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2 space-y-1.5">
-                        <Label htmlFor="gradDegree" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        <Label
+                          htmlFor="gradDegree"
+                          className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                        >
                           Degree Title
                         </Label>
                         <Input
@@ -2345,14 +2442,18 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. B.A. Psychology (Hons)"
-                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                            counselorData.application?.applicationStatus === 'approved'
                               ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                               : 'bg-white dark:bg-neutral-800'
-                            }`}
+                          }`}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="gradYear" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        <Label
+                          htmlFor="gradYear"
+                          className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                        >
                           Passing Year
                         </Label>
                         <Input
@@ -2369,10 +2470,11 @@ const CounselorDashboardPersonalInfo = () => {
                             })
                           }
                           placeholder="e.g. 2018"
-                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                            counselorData.application?.applicationStatus === 'approved'
                               ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                               : 'bg-white dark:bg-neutral-800'
-                            }`}
+                          }`}
                         />
                       </div>
                     </div>
@@ -2386,14 +2488,20 @@ const CounselorDashboardPersonalInfo = () => {
                       <GraduationCap className="h-3.5 w-3.5 text-primary-600" />
                       Post Graduation Degree (Master's / M.Phil / Ph.D)
                     </span>
-                    <Badge variant="outline" className="text-[10px] text-neutral-500 border-neutral-300">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] text-neutral-500 border-neutral-300"
+                    >
                       Optional
                     </Badge>
                   </div>
 
                   <div className="space-y-3.5">
                     <div className="space-y-1.5">
-                      <Label htmlFor="postGradUniversity" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      <Label
+                        htmlFor="postGradUniversity"
+                        className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                      >
                         University / Institute
                       </Label>
                       <Input
@@ -2401,22 +2509,31 @@ const CounselorDashboardPersonalInfo = () => {
                         disabled={counselorData.application?.applicationStatus === 'approved'}
                         value={formData?.application?.education?.postGraduation?.university || ''}
                         onChange={(e) =>
-                          handleDeepNestedInputChange('application', 'education', 'postGraduation', {
-                            ...formData?.application?.education?.postGraduation,
-                            university: e.target.value,
-                          })
+                          handleDeepNestedInputChange(
+                            'application',
+                            'education',
+                            'postGraduation',
+                            {
+                              ...formData?.application?.education?.postGraduation,
+                              university: e.target.value,
+                            }
+                          )
                         }
                         placeholder="e.g. Tata Institute of Social Sciences (TISS)"
-                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                        className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                          counselorData.application?.applicationStatus === 'approved'
                             ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                             : 'bg-white dark:bg-neutral-800'
-                          }`}
+                        }`}
                       />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2 space-y-1.5">
-                        <Label htmlFor="postGradDegree" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        <Label
+                          htmlFor="postGradDegree"
+                          className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                        >
                           Degree Title
                         </Label>
                         <Input
@@ -2424,20 +2541,29 @@ const CounselorDashboardPersonalInfo = () => {
                           disabled={counselorData.application?.applicationStatus === 'approved'}
                           value={formData?.application?.education?.postGraduation?.degree || ''}
                           onChange={(e) =>
-                            handleDeepNestedInputChange('application', 'education', 'postGraduation', {
-                              ...formData?.application?.education?.postGraduation,
-                              degree: e.target.value,
-                            })
+                            handleDeepNestedInputChange(
+                              'application',
+                              'education',
+                              'postGraduation',
+                              {
+                                ...formData?.application?.education?.postGraduation,
+                                degree: e.target.value,
+                              }
+                            )
                           }
                           placeholder="e.g. M.Sc. Clinical Psychology"
-                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                            counselorData.application?.applicationStatus === 'approved'
                               ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                               : 'bg-white dark:bg-neutral-800'
-                            }`}
+                          }`}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="postGradYear" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        <Label
+                          htmlFor="postGradYear"
+                          className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                        >
                           Passing Year
                         </Label>
                         <Input
@@ -2448,16 +2574,22 @@ const CounselorDashboardPersonalInfo = () => {
                           disabled={counselorData.application?.applicationStatus === 'approved'}
                           value={formData?.application?.education?.postGraduation?.year || ''}
                           onChange={(e) =>
-                            handleDeepNestedInputChange('application', 'education', 'postGraduation', {
-                              ...formData?.application?.education?.postGraduation,
-                              year: e.target.value,
-                            })
+                            handleDeepNestedInputChange(
+                              'application',
+                              'education',
+                              'postGraduation',
+                              {
+                                ...formData?.application?.education?.postGraduation,
+                                year: e.target.value,
+                              }
+                            )
                           }
                           placeholder="e.g. 2021"
-                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                          className={`h-10 border-neutral-300 dark:border-neutral-700 text-sm ${
+                            counselorData.application?.applicationStatus === 'approved'
                               ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                               : 'bg-white dark:bg-neutral-800'
-                            }`}
+                          }`}
                         />
                       </div>
                     </div>
@@ -2473,7 +2605,9 @@ const CounselorDashboardPersonalInfo = () => {
                     <div className="text-xs text-amber-900 dark:text-amber-200 space-y-1">
                       <p className="font-semibold">Professional License Verified & Locked</p>
                       <p className="text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
-                        Your licensing and council registration credentials were validated during your practitioner application approval. License details cannot be edited directly on verified profiles.
+                        Your licensing and council registration credentials were validated during
+                        your practitioner application approval. License details cannot be edited
+                        directly on verified profiles.
                       </p>
                     </div>
                   </div>
@@ -2483,7 +2617,8 @@ const CounselorDashboardPersonalInfo = () => {
                     <div className="text-xs text-primary-900 dark:text-primary-200 space-y-1">
                       <p className="font-semibold">Professional License & Accreditation</p>
                       <p className="text-primary-700/80 dark:text-primary-300/80 leading-relaxed">
-                        Your clinical license or registration details establish practitioner trust and will display a verified badge on your profile once approved.
+                        Your clinical license or registration details establish practitioner trust
+                        and will display a verified badge on your profile once approved.
                       </p>
                     </div>
                   </div>
@@ -2491,7 +2626,10 @@ const CounselorDashboardPersonalInfo = () => {
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="licenseNo" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="licenseNo"
+                      className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                    >
                       <FileText className="h-3.5 w-3.5 text-neutral-500" />
                       License / Registration Number
                     </Label>
@@ -2506,18 +2644,23 @@ const CounselorDashboardPersonalInfo = () => {
                         })
                       }
                       placeholder="e.g. RCI/CRR/2023/12345"
-                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
+                        counselorData.application?.applicationStatus === 'approved'
                           ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                           : 'bg-white dark:bg-neutral-800'
-                        }`}
+                      }`}
                     />
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      Registration number issued by your professional licensing authority or council.
+                      Registration number issued by your professional licensing authority or
+                      council.
                     </p>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="issuingAuthority" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="issuingAuthority"
+                      className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                    >
                       <Building className="h-3.5 w-3.5 text-neutral-500" />
                       Issuing Authority / Council
                     </Label>
@@ -2532,13 +2675,15 @@ const CounselorDashboardPersonalInfo = () => {
                         })
                       }
                       placeholder="e.g. Rehabilitation Council of India (RCI)"
-                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${counselorData.application?.applicationStatus === 'approved'
+                      className={`h-11 border-neutral-300 dark:border-neutral-700 text-sm ${
+                        counselorData.application?.applicationStatus === 'approved'
                           ? 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 cursor-not-allowed'
                           : 'bg-white dark:bg-neutral-800'
-                        }`}
+                      }`}
                     />
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      The official body or state council that issued your practitioner certification.
+                      The official body or state council that issued your practitioner
+                      certification.
                     </p>
                   </div>
                 </div>
@@ -2551,14 +2696,18 @@ const CounselorDashboardPersonalInfo = () => {
                   <div className="text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
                     <p className="font-semibold">Direct Payout Settlement Account</p>
                     <p className="text-emerald-700/80 dark:text-emerald-300/80 leading-relaxed">
-                      Counselor session payouts and earnings will be directly transferred via automated NEFT/IMPS to this bank account.
+                      Counselor session payouts and earnings will be directly transferred via
+                      automated NEFT/IMPS to this bank account.
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="accountNo" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="accountNo"
+                      className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                    >
                       <CreditCard className="h-3.5 w-3.5 text-neutral-500" />
                       Bank Account Number
                     </Label>
@@ -2581,7 +2730,10 @@ const CounselorDashboardPersonalInfo = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="ifscCode" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="ifscCode"
+                      className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                    >
                       <Building className="h-3.5 w-3.5 text-neutral-500" />
                       Bank IFSC Code
                     </Label>
@@ -2605,7 +2757,10 @@ const CounselorDashboardPersonalInfo = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="branchName" className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                    <Label
+                      htmlFor="branchName"
+                      className="text-sm font-semibold flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200"
+                    >
                       <FileText className="h-3.5 w-3.5 text-neutral-500" />
                       Bank & Branch Name
                     </Label>
@@ -2637,22 +2792,26 @@ const CounselorDashboardPersonalInfo = () => {
                     <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                       Practitioner Application Status
                     </span>
-                    <Badge className={applicationStatus.color}>
-                      {applicationStatus.label}
-                    </Badge>
+                    <Badge className={applicationStatus.color}>{applicationStatus.label}</Badge>
                   </div>
 
                   <div className="space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
                     {counselorData.application?.applicationStatus === 'approved' && (
                       <div className="p-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg text-xs text-green-800 dark:text-green-300 flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
-                        <span>Your counselor application has been verified and approved. You are eligible to take bookings.</span>
+                        <span>
+                          Your counselor application has been verified and approved. You are
+                          eligible to take bookings.
+                        </span>
                       </div>
                     )}
                     {counselorData.application?.applicationStatus === 'pending' && (
                       <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-amber-600 shrink-0" />
-                        <span>Your application is currently under review by our clinical verification team.</span>
+                        <span>
+                          Your application is currently under review by our clinical verification
+                          team.
+                        </span>
                       </div>
                     )}
                     {counselorData.application?.applicationStatus === 'rejected' && (
@@ -2666,11 +2825,16 @@ const CounselorDashboardPersonalInfo = () => {
                     )}
                     {counselorData.application?.applicationStatus === 'not_submitted' && (
                       <div className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-xs text-neutral-700 dark:text-neutral-300 space-y-2">
-                        <p>Complete all required profile sections to submit your application for practitioner verification.</p>
+                        <p>
+                          Complete all required profile sections to submit your application for
+                          practitioner verification.
+                        </p>
                         {profileCompleteness && (
                           <div className="flex items-center justify-between pt-1">
                             <span>Current Completeness:</span>
-                            <span className="font-bold text-primary-600">{profileCompleteness.completionPercentage}%</span>
+                            <span className="font-bold text-primary-600">
+                              {profileCompleteness.completionPercentage}%
+                            </span>
                           </div>
                         )}
                       </div>
@@ -2679,16 +2843,19 @@ const CounselorDashboardPersonalInfo = () => {
 
                   {(counselorData.application?.applicationStatus === 'not_submitted' ||
                     counselorData.application?.applicationStatus === 'rejected') && (
-                      <Button
-                        type="button"
-                        onClick={handleSubmitApplication}
-                        disabled={isLoading || (profileCompleteness && profileCompleteness.completionPercentage < 100)}
-                        className="w-full gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs h-10"
-                      >
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Submit Application for Review
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      onClick={handleSubmitApplication}
+                      disabled={
+                        isLoading ||
+                        (profileCompleteness && profileCompleteness.completionPercentage < 100)
+                      }
+                      className="w-full gap-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs h-10"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Submit Application for Review
+                    </Button>
+                  )}
                 </div>
 
                 {/* Platform Standing */}
@@ -2699,20 +2866,29 @@ const CounselorDashboardPersonalInfo = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className="p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60">
                       <span className="text-xs text-neutral-500 block">Member Since</span>
-                      <span className="font-medium text-neutral-800 dark:text-neutral-200">{formatDate(counselorData.createdAt)}</span>
+                      <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                        {formatDate(counselorData.createdAt)}
+                      </span>
                     </div>
                     <div className="p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60">
                       <span className="text-xs text-neutral-500 block">Last Active</span>
-                      <span className="font-medium text-neutral-800 dark:text-neutral-200">{formatSmartDate(counselorData.lastLogin)}</span>
+                      <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                        {formatSmartDate(counselorData.lastLogin)}
+                      </span>
                     </div>
                     <div className="p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 sm:col-span-2 flex items-center justify-between">
                       <div>
                         <span className="text-xs text-neutral-500 block">Account Status</span>
                         <span className="font-medium text-neutral-800 dark:text-neutral-200">
-                          {counselorData.isBlocked ? 'Blocked / Restricted' : 'Active & In Good Standing'}
+                          {counselorData.isBlocked
+                            ? 'Blocked / Restricted'
+                            : 'Active & In Good Standing'}
                         </span>
                       </div>
-                      <Badge variant={counselorData.isBlocked ? 'destructive' : 'default'} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <Badge
+                        variant={counselorData.isBlocked ? 'destructive' : 'default'}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
                         {counselorData.isBlocked ? 'Blocked' : 'Active'}
                       </Badge>
                     </div>
@@ -2766,10 +2942,11 @@ const CounselorDashboardPersonalInfo = () => {
           </DialogHeader>
 
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+              dragActive
                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-950'
                 : 'border-neutral-300 dark:border-neutral-700'
-              }`}
+            }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -2933,7 +3110,8 @@ const CounselorDashboardPersonalInfo = () => {
                     </Badge>
                   </div>
                   <DialogDescription className="text-xs text-primary-100/90 mt-1">
-                    Specialization and experience are verified credentials that undergo admin review before publishing.
+                    Specialization and experience are verified credentials that undergo admin review
+                    before publishing.
                   </DialogDescription>
                 </div>
               </div>
@@ -2942,8 +3120,11 @@ const CounselorDashboardPersonalInfo = () => {
 
           {/* Form Scroll Area */}
           <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-6">
-            <form id="credential-change-form" onSubmit={handleSubmitProfileChangeRequest} className="space-y-6">
-
+            <form
+              id="credential-change-form"
+              onSubmit={handleSubmitProfileChangeRequest}
+              className="space-y-6"
+            >
               {/* Live Comparison Preview Card */}
               <div className="rounded-xl p-4 bg-gradient-to-br from-neutral-50 via-slate-50 to-primary-50/30 dark:from-neutral-900/90 dark:via-neutral-900/50 dark:to-primary-950/20 border border-neutral-200 dark:border-neutral-800 shadow-sm">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-200/70 dark:border-neutral-800">
@@ -2958,9 +3139,15 @@ const CounselorDashboardPersonalInfo = () => {
                   {/* Current State */}
                   <div className="p-3 rounded-lg bg-white dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700/80 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold uppercase text-neutral-500">Current In Profile</span>
-                      <Badge variant="outline" className="text-[10px] text-neutral-600 dark:text-neutral-300 border-neutral-300">
-                        {counselorData?.experienceYears || 0} Yrs ({counselorData?.experienceLevel || 'Beginner'})
+                      <span className="text-[11px] font-semibold uppercase text-neutral-500">
+                        Current In Profile
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] text-neutral-600 dark:text-neutral-300 border-neutral-300"
+                      >
+                        {counselorData?.experienceYears || 0} Yrs (
+                        {counselorData?.experienceLevel || 'Beginner'})
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-1">
@@ -2970,7 +3157,11 @@ const CounselorDashboardPersonalInfo = () => {
                           ? [counselorData.specialization]
                           : []
                       ).map((s) => (
-                        <Badge key={s} variant="secondary" className="text-[10px] py-0.5 px-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
+                        <Badge
+                          key={s}
+                          variant="secondary"
+                          className="text-[10px] py-0.5 px-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300"
+                        >
                           {s}
                         </Badge>
                       ))}
@@ -2984,18 +3175,24 @@ const CounselorDashboardPersonalInfo = () => {
                         <ArrowRight className="h-3 w-3" /> Proposed Request
                       </span>
                       <Badge className="bg-primary-600 text-white text-[10px]">
-                        {requestedExperienceYears || 0} Yrs ({getComputedLevel(requestedExperienceYears)})
+                        {requestedExperienceYears || 0} Yrs (
+                        {getComputedLevel(requestedExperienceYears)})
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {requestedSpecialization.length > 0 ? (
                         requestedSpecialization.map((s) => (
-                          <Badge key={s} className="text-[10px] py-0.5 px-2 bg-primary-100 dark:bg-primary-900/60 text-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700">
+                          <Badge
+                            key={s}
+                            className="text-[10px] py-0.5 px-2 bg-primary-100 dark:bg-primary-900/60 text-primary-800 dark:text-primary-200 border border-primary-300 dark:border-primary-700"
+                          >
                             {s}
                           </Badge>
                         ))
                       ) : (
-                        <span className="text-[11px] text-amber-600 italic">No specialization chosen</span>
+                        <span className="text-[11px] text-amber-600 italic">
+                          No specialization chosen
+                        </span>
                       )}
                     </div>
                   </div>
@@ -3025,10 +3222,11 @@ const CounselorDashboardPersonalInfo = () => {
                         key={opt}
                         type="button"
                         onClick={() => handleToggleRequestedSpec(opt)}
-                        className={`flex items-center justify-between p-3 rounded-xl border text-xs font-medium transition-all text-left group ${isSelected
+                        className={`flex items-center justify-between p-3 rounded-xl border text-xs font-medium transition-all text-left group ${
+                          isSelected
                             ? 'bg-primary-50/90 dark:bg-primary-950/40 border-primary-500 text-primary-900 dark:text-primary-100 shadow-sm ring-1 ring-primary-500/30'
                             : 'bg-white dark:bg-neutral-800/70 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-50/50'
-                          }`}
+                        }`}
                       >
                         <span className="truncate pr-2">{opt}</span>
                         {isSelected ? (
@@ -3047,11 +3245,17 @@ const CounselorDashboardPersonalInfo = () => {
               {/* Experience Years */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="req-exp-years" className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                  <Label
+                    htmlFor="req-exp-years"
+                    className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+                  >
                     <Briefcase className="h-4 w-4 text-primary-600" />
                     Years of Clinical / Practice Experience <span className="text-red-500">*</span>
                   </Label>
-                  <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-800 dark:text-primary-200 border border-primary-200">
+                  <Badge
+                    variant="secondary"
+                    className="text-xs font-semibold px-2.5 py-0.5 bg-primary-100 dark:bg-primary-900/50 text-primary-800 dark:text-primary-200 border border-primary-200"
+                  >
                     Tier: {getComputedLevel(requestedExperienceYears)}
                   </Badge>
                 </div>
@@ -3092,11 +3296,16 @@ const CounselorDashboardPersonalInfo = () => {
               {/* Message / Reason with Quick Fill Helper Tags */}
               <div className="space-y-2.5 pt-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="req-message" className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                  <Label
+                    htmlFor="req-message"
+                    className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+                  >
                     <FileText className="h-4 w-4 text-primary-600" />
                     Request Reason / Context for Admin <span className="text-red-500">*</span>
                   </Label>
-                  <span className={`text-[11px] ${requestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}>
+                  <span
+                    className={`text-[11px] ${requestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}
+                  >
                     {requestMessage.length}/1000
                   </span>
                 </div>
@@ -3129,7 +3338,9 @@ const CounselorDashboardPersonalInfo = () => {
                 <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 flex items-start gap-2 text-amber-900 dark:text-amber-200">
                   <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <p className="text-[11px] leading-relaxed">
-                    <strong className="font-semibold">Note:</strong> Please provide a clear and valid reason for these changes. Incomplete or unverified request reasons may lead to rejection of your request.
+                    <strong className="font-semibold">Note:</strong> Please provide a clear and
+                    valid reason for these changes. Incomplete or unverified request reasons may
+                    lead to rejection of your request.
                   </p>
                 </div>
 
@@ -3194,7 +3405,8 @@ const CounselorDashboardPersonalInfo = () => {
                   Request Education Details Update
                 </DialogTitle>
                 <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Submit revised academic credentials. Solvit Admin will verify and update your verified profile.
+                  Submit revised academic credentials. Solvit Admin will verify and update your
+                  verified profile.
                 </DialogDescription>
               </div>
             </div>
@@ -3202,7 +3414,11 @@ const CounselorDashboardPersonalInfo = () => {
 
           {/* Form Content */}
           <div className="overflow-y-auto p-5 sm:p-6 space-y-5 flex-1">
-            <form id="education-change-form" onSubmit={handleSubmitEducationRequest} className="space-y-5">
+            <form
+              id="education-change-form"
+              onSubmit={handleSubmitEducationRequest}
+              className="space-y-5"
+            >
               {/* Graduation Section */}
               <div className="rounded-xl p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 space-y-3">
                 <div className="flex items-center justify-between pb-1 border-b border-neutral-200 dark:border-neutral-700">
@@ -3214,7 +3430,9 @@ const CounselorDashboardPersonalInfo = () => {
 
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-xs text-neutral-600 dark:text-neutral-400">University / College Name *</Label>
+                    <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+                      University / College Name *
+                    </Label>
                     <Input
                       value={requestedGraduation.university}
                       onChange={(e) =>
@@ -3228,7 +3446,9 @@ const CounselorDashboardPersonalInfo = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">Degree / Major *</Label>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+                        Degree / Major *
+                      </Label>
                       <Input
                         value={requestedGraduation.degree}
                         onChange={(e) =>
@@ -3240,7 +3460,9 @@ const CounselorDashboardPersonalInfo = () => {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">Passing Year *</Label>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+                        Passing Year *
+                      </Label>
                       <Input
                         type="number"
                         min="1960"
@@ -3269,11 +3491,16 @@ const CounselorDashboardPersonalInfo = () => {
 
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-xs text-neutral-600 dark:text-neutral-400">University / College Name</Label>
+                    <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+                      University / College Name
+                    </Label>
                     <Input
                       value={requestedPostGraduation.university}
                       onChange={(e) =>
-                        setRequestedPostGraduation((prev) => ({ ...prev, university: e.target.value }))
+                        setRequestedPostGraduation((prev) => ({
+                          ...prev,
+                          university: e.target.value,
+                        }))
                       }
                       placeholder="e.g., NIMHANS"
                       className="mt-1 text-xs sm:text-sm bg-white dark:bg-neutral-800"
@@ -3282,18 +3509,25 @@ const CounselorDashboardPersonalInfo = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">Degree / Major</Label>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+                        Degree / Major
+                      </Label>
                       <Input
                         value={requestedPostGraduation.degree}
                         onChange={(e) =>
-                          setRequestedPostGraduation((prev) => ({ ...prev, degree: e.target.value }))
+                          setRequestedPostGraduation((prev) => ({
+                            ...prev,
+                            degree: e.target.value,
+                          }))
                         }
                         placeholder="e.g., M.Sc. Clinical Psychology"
                         className="mt-1 text-xs sm:text-sm bg-white dark:bg-neutral-800"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">Passing Year</Label>
+                      <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+                        Passing Year
+                      </Label>
                       <Input
                         type="number"
                         min="1960"
@@ -3313,11 +3547,16 @@ const CounselorDashboardPersonalInfo = () => {
               {/* Message / Reason */}
               <div className="space-y-2.5 pt-1">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="edu-req-msg" className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                  <Label
+                    htmlFor="edu-req-msg"
+                    className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+                  >
                     <FileText className="h-4 w-4 text-primary-600" />
                     Request Reason / Context for Admin <span className="text-red-500">*</span>
                   </Label>
-                  <span className={`text-[11px] ${educationRequestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}>
+                  <span
+                    className={`text-[11px] ${educationRequestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}
+                  >
                     {educationRequestMessage.length}/1000
                   </span>
                 </div>
@@ -3350,7 +3589,9 @@ const CounselorDashboardPersonalInfo = () => {
                 <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 flex items-start gap-2 text-amber-900 dark:text-amber-200">
                   <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <p className="text-[11px] leading-relaxed">
-                    <strong className="font-semibold">Note:</strong> Please provide a clear and valid reason for this education update. Incomplete or unverified academic details may lead to rejection of your request.
+                    <strong className="font-semibold">Note:</strong> Please provide a clear and
+                    valid reason for this education update. Incomplete or unverified academic
+                    details may lead to rejection of your request.
                   </p>
                 </div>
 
@@ -3415,7 +3656,8 @@ const CounselorDashboardPersonalInfo = () => {
                   Request Document & Certificate Update
                 </DialogTitle>
                 <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Upload new or replacement verification documents (PDF only, max 5MB each). Admin will verify before approving.
+                  Upload new or replacement verification documents (PDF only, max 5MB each). Admin
+                  will verify before approving.
                 </DialogDescription>
               </div>
             </div>
@@ -3423,11 +3665,16 @@ const CounselorDashboardPersonalInfo = () => {
 
           {/* Form Content */}
           <div className="overflow-y-auto p-5 sm:p-6 space-y-5 flex-1">
-            <form id="document-change-form" onSubmit={handleSubmitDocumentRequest} className="space-y-5">
+            <form
+              id="document-change-form"
+              onSubmit={handleSubmitDocumentRequest}
+              className="space-y-5"
+            >
               {/* Document Upload Slots */}
               <div className="space-y-3">
                 <Label className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 block">
-                  Select Documents to Upload / Replace (Choose at least one) <span className="text-red-500">*</span>
+                  Select Documents to Upload / Replace (Choose at least one){' '}
+                  <span className="text-red-500">*</span>
                 </Label>
 
                 {[
@@ -3474,13 +3721,17 @@ const CounselorDashboardPersonalInfo = () => {
                             id={`file-input-${item.key}`}
                             accept="application/pdf"
                             className="hidden"
-                            onChange={(e) => handleDocFileChange(item.key, e.target.files?.[0] || null)}
+                            onChange={(e) =>
+                              handleDocFileChange(item.key, e.target.files?.[0] || null)
+                            }
                           />
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => document.getElementById(`file-input-${item.key}`)?.click()}
+                            onClick={() =>
+                              document.getElementById(`file-input-${item.key}`)?.click()
+                            }
                             className="h-8 gap-1.5 text-xs border-primary-500/40 hover:bg-primary-50 dark:hover:bg-primary-950/40 text-primary-700 dark:text-primary-300"
                           >
                             <Upload className="h-3.5 w-3.5" />
@@ -3520,11 +3771,16 @@ const CounselorDashboardPersonalInfo = () => {
               {/* Message / Reason */}
               <div className="space-y-2.5 pt-1">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="doc-req-msg" className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                  <Label
+                    htmlFor="doc-req-msg"
+                    className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+                  >
                     <FileText className="h-4 w-4 text-primary-600" />
                     Request Reason / Context for Admin <span className="text-red-500">*</span>
                   </Label>
-                  <span className={`text-[11px] ${documentRequestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}>
+                  <span
+                    className={`text-[11px] ${documentRequestMessage.length > 900 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}
+                  >
                     {documentRequestMessage.length}/1000
                   </span>
                 </div>
@@ -3557,7 +3813,9 @@ const CounselorDashboardPersonalInfo = () => {
                 <div className="p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 flex items-start gap-2 text-amber-900 dark:text-amber-200">
                   <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <p className="text-[11px] leading-relaxed">
-                    <strong className="font-semibold">Note:</strong> Please write a proper reason for changing or updating your documents. Ensure uploaded files are authentic and legible, otherwise Solvit may reject your request.
+                    <strong className="font-semibold">Note:</strong> Please write a proper reason
+                    for changing or updating your documents. Ensure uploaded files are authentic and
+                    legible, otherwise Solvit may reject your request.
                   </p>
                 </div>
 

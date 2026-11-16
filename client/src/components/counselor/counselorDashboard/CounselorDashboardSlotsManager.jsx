@@ -15,16 +15,18 @@ import {
   AlertTriangle,
   Plus, // NEW: Added for Add Custom Slot button
 } from 'lucide-react';
-import { API_ENDPOINTS } from '../../../config/api';
-import api from '@/lib/axios';
-import useSmartRefresh from '@/hooks/useSmartRefresh';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { TIMEZONE, SLOT_DURATION_MINUTES, TIME_OPTIONS_5_MIN as timeOptions } from '../../../constants/constants';
+import {
+  TIMEZONE,
+  SLOT_DURATION_MINUTES,
+  TIME_OPTIONS_5_MIN as timeOptions,
+} from '../../../constants/constants';
 import { toast } from 'sonner';
+import { useSlotManagement } from '../../../hooks/useSlotManagement';
 
 // shadcn/ui imports
 import { Button } from '@/components/ui/button';
@@ -93,147 +95,33 @@ const containerVariants = {
 };
 
 const CounselorDashboardSlotsManager = () => {
-  const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  // Layer 3 Slot Management Hook (Decoupled from Layer 4 Presentation)
+  const {
+    slots,
+    loading,
+    actionLoading,
+    confirmDialog,
+    setConfirmDialog,
+    showConfirmDialog,
+    handleConfirm,
+    manageDaySlots,
+    manageIndividualSlot,
+    showAddSlotDialog,
+    setShowAddSlotDialog,
+    newSlotData,
+    setNewSlotData,
+    addSlotLoading,
+    handleAddCustomSlot: submitAddCustomSlot,
+  } = useSlotManagement();
+
   const [selectedDate, setSelectedDate] = useState(dayjs().tz(TIMEZONE));
   const [filterStatus, setFilterStatus] = useState('all');
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    title: '',
-    description: '',
-    action: null,
-    variant: 'default',
-  });
 
-  // NEW: Add Custom Slot state
-  const [showAddSlotDialog, setShowAddSlotDialog] = useState(false);
-  const [addSlotLoading, setAddSlotLoading] = useState(false);
-  const [newSlotData, setNewSlotData] = useState({
-    date: dayjs().format('YYYY-MM-DD'),
-    startTime: '9:00 AM',
-    endTime: '9:45 AM',
-    price: '',
-  });
-
-  const fetchSlots = useCallback(async (isAutoRefresh = false) => {
-    try {
-      if (!isAutoRefresh) {
-        setLoading(true);
-      }
-      const response = await api.get(API_ENDPOINTS.SLOT_MANAGEMENT_GET_ALL);
-      setSlots(response.data.slots || []);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setSlots([]);
-      } else if (!isAutoRefresh) {
-        toast.error('Failed to fetch slots');
-      }
-    } finally {
-      if (!isAutoRefresh) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
-  useSmartRefresh(fetchSlots, {
-    intervalMs: 120000,
-    staleTimeMs: 30000,
-  });
-
-  const showConfirmDialog = (title, description, action, variant = 'default') => {
-    setConfirmDialog({
-      open: true,
-      title,
-      description,
-      action,
-      variant,
-    });
-  };
-
-  const handleConfirm = async () => {
-    if (confirmDialog.action) {
-      await confirmDialog.action();
-    }
-    setConfirmDialog({ open: false, title: '', description: '', action: null, variant: 'default' });
-  };
-
-  const manageDaySlots = async (date, status) => {
-    try {
-      setActionLoading(true);
-      const response = await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_DAY, {
-        date: dayjs(date).format('YYYY-MM-DD'),
-        status,
-      });
-
-      const data = response.data;
-      toast.success(data.message || 'Day slots updated successfully!');
-      await fetchSlots();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update day slots');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const manageIndividualSlot = async (slotId, status) => {
-    try {
-      setActionLoading(true);
-      const response = await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_MANAGE_INDIVIDUAL, {
-        slotId,
-        status,
-      });
-
-      const data = response.data;
-      toast.success(data.message || 'Slot updated successfully!');
-      await fetchSlots();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update slot');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // NEW: Add Custom Slot Handlers
   const handleAddCustomSlot = async () => {
-    if (!newSlotData.date || !newSlotData.startTime || !newSlotData.endTime || !newSlotData.price) {
-      toast.error('Please fill all fields');
-      return;
-    }
-
-    if (Number(newSlotData.price) <= 0) {
-      toast.error('Price must be greater than 0');
-      return;
-    }
-
-    setAddSlotLoading(true);
-
-    try {
-      const response = await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_ADD_CUSTOM, {
-        date: newSlotData.date,
-        startTime: newSlotData.startTime,
-        endTime: newSlotData.endTime,
-        price: Number(newSlotData.price),
-      });
-
-      const data = response.data;
-      toast.success(data.message || 'Slot added successfully!');
-      setShowAddSlotDialog(false);
-      setNewSlotData({
-        date: dayjs().format('YYYY-MM-DD'),
-        startTime: '9:00 AM',
-        endTime: '9:45 AM',
-        price: '',
-      });
-      await fetchSlots();
-
-      const addedSlotDate = dayjs(newSlotData.date);
-      setSelectedDate(addedSlotDate);
-    } catch (error) {
-      console.error('Error adding slot:', error);
-      toast.error(error.response?.data?.message || 'Failed to add slot. Please try again');
-    } finally {
-      setAddSlotLoading(false);
+    const targetDate = newSlotData.date;
+    await submitAddCustomSlot();
+    if (targetDate) {
+      setSelectedDate(dayjs(targetDate));
     }
   };
 
@@ -462,7 +350,9 @@ const CounselorDashboardSlotsManager = () => {
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
                       <SelectTrigger
-                        leftIcon={<Filter className="w-4 h-4 text-primary-600 dark:text-primary-400" />}
+                        leftIcon={
+                          <Filter className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                        }
                         className="flex-1 sm:w-40 h-9 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
                       >
                         <SelectValue placeholder="All Slots" />
@@ -802,14 +692,18 @@ const CounselorDashboardSlotsManager = () => {
               </DialogTitle>
             </div>
             <DialogDescription className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Create a one-time slot for a specific date and time without modifying your recurring availability.
+              Create a one-time slot for a specific date and time without modifying your recurring
+              availability.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Date Input */}
             <div className="space-y-1.5">
-              <Label htmlFor="slot-date" className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+              <Label
+                htmlFor="slot-date"
+                className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200"
+              >
                 Date
               </Label>
               <Input
@@ -825,7 +719,10 @@ const CounselorDashboardSlotsManager = () => {
             {/* Time Range */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1.5">
-                <Label htmlFor="start-time" className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                <Label
+                  htmlFor="start-time"
+                  className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200"
+                >
                   Start Time
                 </Label>
                 <Select
@@ -839,7 +736,10 @@ const CounselorDashboardSlotsManager = () => {
                     });
                   }}
                 >
-                  <SelectTrigger id="start-time" className="h-10 rounded-xl border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm">
+                  <SelectTrigger
+                    id="start-time"
+                    className="h-10 rounded-xl border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm"
+                  >
                     <SelectValue placeholder="Select start time" />
                   </SelectTrigger>
                   <SelectContent className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
@@ -856,7 +756,10 @@ const CounselorDashboardSlotsManager = () => {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="end-time" className="text-xs sm:text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  <Label
+                    htmlFor="end-time"
+                    className="text-xs sm:text-sm font-semibold text-neutral-700 dark:text-neutral-300"
+                  >
                     End Time
                   </Label>
                   <span className="text-[11px] text-primary-600 dark:text-primary-400 font-medium">
@@ -879,7 +782,10 @@ const CounselorDashboardSlotsManager = () => {
 
             {/* Price Input */}
             <div className="space-y-1.5">
-              <Label htmlFor="slot-price" className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+              <Label
+                htmlFor="slot-price"
+                className="text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200"
+              >
                 Price (₹)
               </Label>
               <div className="relative">
