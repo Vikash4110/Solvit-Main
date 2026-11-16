@@ -15,8 +15,7 @@ import {
   Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_ENDPOINTS } from '../../../config/api';
-import api from '@/lib/axios';
+import { useRecurringAvailability } from '../../../hooks/useRecurringAvailability';
 import {
   TIME_OPTIONS_5_MIN as timeOptions,
   SLOT_DURATION_MINUTES,
@@ -81,179 +80,119 @@ const DAY_SHORT_MAP = {
 const getDayShort = (day) => DAY_SHORT_MAP[day] || day;
 
 const RecurringAvailabilityComponent = () => {
-  const [weeklyAvailability, setWeeklyAvailability] = useState([
-    { dayOfWeek: 'Monday', isAvailable: false, timeRanges: [] },
-    { dayOfWeek: 'Tuesday', isAvailable: false, timeRanges: [] },
-    { dayOfWeek: 'Wednesday', isAvailable: false, timeRanges: [] },
-    { dayOfWeek: 'Thursday', isAvailable: false, timeRanges: [] },
-    { dayOfWeek: 'Friday', isAvailable: false, timeRanges: [] },
-    { dayOfWeek: 'Saturday', isAvailable: false, timeRanges: [] },
-    { dayOfWeek: 'Sunday', isAvailable: false, timeRanges: [] },
-  ]);
+  // Layer 3 Recurring Availability Hook (Decoupled from Layer 4 Presentation)
+  const {
+    weeklyAvailability,
+    setWeeklyAvailability,
+    selectedDayIndex,
+    setSelectedDayIndex,
+    selectedDay,
+    globalPrice,
+    setGlobalPrice,
+    loading,
+    initialLoading,
+    showDialog,
+    setShowDialog,
+    priceConstraints,
+    summary,
+    handleConfirmSave,
+    validatePriceInput,
+  } = useRecurringAvailability();
 
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [globalPrice, setGlobalPrice] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [priceConstraints, setPriceConstraints] = useState({
-    minPrice: 0,
-    maxPrice: 0,
-    experienceLevel: '',
-  });
-
-  const fetchPriceConstraints = useCallback(async () => {
-    try {
-      const response = await api.get(API_ENDPOINTS.PRICE_CONSTRAINTS);
-      const { minPrice, maxPrice, experienceLevel } = response.data.data;
-      setPriceConstraints({ minPrice, maxPrice, experienceLevel });
-    } catch (error) {
-      setPriceConstraints({ minPrice: 500, maxPrice: 5000, experienceLevel: '' });
-    }
-  }, []);
-
-  const fetchExistingAvailability = useCallback(async () => {
-    try {
-      setInitialLoading(true);
-      const response = await api.get(API_ENDPOINTS.SLOT_MANAGEMENT_MY_RECURRING);
-      const data = response.data;
-      if (data.availability && data.availability.length > 0) {
-        const availabilityMap = {};
-        let existingPrice = '';
-
-        data.availability.forEach((dayData) => {
-          availabilityMap[dayData.dayOfWeek] = {
-            isAvailable: dayData.isAvailable,
-            timeRanges: dayData.timeRanges || [],
-          };
-          if (dayData.isAvailable && dayData.price && !existingPrice) {
-            existingPrice = dayData.price.toString();
-          }
-        });
-
-        setGlobalPrice(existingPrice);
-        setWeeklyAvailability((prev) =>
-          prev.map((day) => ({
-            ...day,
-            isAvailable: availabilityMap[day.dayOfWeek]?.isAvailable || false,
-            timeRanges: availabilityMap[day.dayOfWeek]?.timeRanges || [],
-          }))
-        );
-      }
-    } catch (error) {
-      if (error.response?.status !== 404) {
-        toast.error('Failed to load availability data');
-      }
-    } finally {
-      setInitialLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPriceConstraints();
-    fetchExistingAvailability();
-  }, [fetchPriceConstraints, fetchExistingAvailability]);
-
-  const toggleDayAvailability = useCallback((dayIndex) => {
-    setWeeklyAvailability((prev) => {
-      const updated = [...prev];
-      const isNowAvailable = !updated[dayIndex].isAvailable;
-      updated[dayIndex] = {
-        ...updated[dayIndex],
-        isAvailable: isNowAvailable,
-        timeRanges: isNowAvailable
-          ? [{ startTime: '9:00 AM', endTime: calculateEndTime('9:00 AM', SLOT_DURATION_MINUTES) }]
-          : [],
-      };
-      return updated;
-    });
-  }, []);
-
-  const addTimeRange = useCallback((dayIndex) => {
-    setWeeklyAvailability((prev) => {
-      const updated = [...prev];
-      const existingRanges = updated[dayIndex].timeRanges || [];
-      let nextStartTime = '9:00 AM';
-
-      if (existingRanges.length > 0) {
-        const lastRange = existingRanges[existingRanges.length - 1];
-        if (lastRange.endTime) {
-          nextStartTime = lastRange.endTime;
-        }
-      }
-
-      const nextEndTime = calculateEndTime(nextStartTime, SLOT_DURATION_MINUTES);
-
-      updated[dayIndex] = {
-        ...updated[dayIndex],
-        timeRanges: [
-          ...existingRanges,
-          { startTime: nextStartTime, endTime: nextEndTime },
-        ],
-      };
-      return updated;
-    });
-  }, []);
-
-  const removeTimeRange = useCallback((dayIndex, timeRangeIndex) => {
-    setWeeklyAvailability((prev) => {
-      const updated = [...prev];
-      updated[dayIndex] = {
-        ...updated[dayIndex],
-        timeRanges: updated[dayIndex].timeRanges.filter((_, idx) => idx !== timeRangeIndex),
-      };
-      return updated;
-    });
-  }, []);
-
-  const updateTimeRange = useCallback((dayIndex, timeRangeIndex, field, value) => {
-    setWeeklyAvailability((prev) => {
-      const updated = [...prev];
-      updated[dayIndex] = {
-        ...updated[dayIndex],
-        timeRanges: updated[dayIndex].timeRanges.map((range, idx) => {
-          if (idx !== timeRangeIndex) return range;
-
-          let newStartTime = field === 'startTime' ? value : range.startTime;
-          let newEndTime = field === 'endTime' ? value : range.endTime;
-
-          if (field === 'startTime') {
-            // When start time is selected, automatically set end time to exactly +50 mins
-            newEndTime = calculateEndTime(value, SLOT_DURATION_MINUTES);
-          } else if (field === 'endTime') {
-            const diff = getTimeDifferenceInMinutes(newStartTime, value);
-            if (diff <= 0) {
-              toast.error('End time must be after start time');
-            } else if (diff > SLOT_DURATION_MINUTES) {
-              toast.error(`Slot duration cannot be more than ${SLOT_DURATION_MINUTES} minutes`);
-            }
-          }
-
-          return { startTime: newStartTime, endTime: newEndTime };
-        }),
-      };
-      return updated;
-    });
-  }, []);
-
-  const validatePriceInput = useCallback(
-    (price) => {
-      if (!price || price.trim() === '') {
-        return { isValid: false, message: 'Price is required' };
-      }
-      const priceNum = Number(price);
-      if (isNaN(priceNum)) {
-        return { isValid: false, message: 'Price must be a number' };
-      }
-      if (priceNum < priceConstraints.minPrice || priceNum > priceConstraints.maxPrice) {
-        return {
-          isValid: false,
-          message: `Price must be between ₹${priceConstraints.minPrice} - ₹${priceConstraints.maxPrice}`,
+  const toggleDayAvailability = useCallback(
+    (dayIndex) => {
+      setWeeklyAvailability((prev) => {
+        const updated = [...prev];
+        const isNowAvailable = !updated[dayIndex].isAvailable;
+        updated[dayIndex] = {
+          ...updated[dayIndex],
+          isAvailable: isNowAvailable,
+          timeRanges: isNowAvailable
+            ? [
+                {
+                  startTime: '9:00 AM',
+                  endTime: calculateEndTime('9:00 AM', SLOT_DURATION_MINUTES),
+                },
+              ]
+            : [],
         };
-      }
-      return { isValid: true, message: '' };
+        return updated;
+      });
     },
-    [priceConstraints]
+    [setWeeklyAvailability]
+  );
+
+  const addTimeRange = useCallback(
+    (dayIndex) => {
+      setWeeklyAvailability((prev) => {
+        const updated = [...prev];
+        const existingRanges = updated[dayIndex].timeRanges || [];
+        let nextStartTime = '9:00 AM';
+
+        if (existingRanges.length > 0) {
+          const lastRange = existingRanges[existingRanges.length - 1];
+          if (lastRange.endTime) {
+            nextStartTime = lastRange.endTime;
+          }
+        }
+
+        const nextEndTime = calculateEndTime(nextStartTime, SLOT_DURATION_MINUTES);
+
+        updated[dayIndex] = {
+          ...updated[dayIndex],
+          timeRanges: [...existingRanges, { startTime: nextStartTime, endTime: nextEndTime }],
+        };
+        return updated;
+      });
+    },
+    [setWeeklyAvailability]
+  );
+
+  const removeTimeRange = useCallback(
+    (dayIndex, timeRangeIndex) => {
+      setWeeklyAvailability((prev) => {
+        const updated = [...prev];
+        updated[dayIndex] = {
+          ...updated[dayIndex],
+          timeRanges: updated[dayIndex].timeRanges.filter((_, idx) => idx !== timeRangeIndex),
+        };
+        return updated;
+      });
+    },
+    [setWeeklyAvailability]
+  );
+
+  const updateTimeRange = useCallback(
+    (dayIndex, timeRangeIndex, field, value) => {
+      setWeeklyAvailability((prev) => {
+        const updated = [...prev];
+        updated[dayIndex] = {
+          ...updated[dayIndex],
+          timeRanges: updated[dayIndex].timeRanges.map((range, idx) => {
+            if (idx !== timeRangeIndex) return range;
+
+            let newStartTime = field === 'startTime' ? value : range.startTime;
+            let newEndTime = field === 'endTime' ? value : range.endTime;
+
+            if (field === 'startTime') {
+              // When start time is selected, automatically set end time to exactly +50 mins
+              newEndTime = calculateEndTime(value, SLOT_DURATION_MINUTES);
+            } else if (field === 'endTime') {
+              const diff = getTimeDifferenceInMinutes(newStartTime, value);
+              if (diff <= 0) {
+                toast.error('End time must be after start time');
+              } else if (diff > SLOT_DURATION_MINUTES) {
+                toast.error(`Slot duration cannot be more than ${SLOT_DURATION_MINUTES} minutes`);
+              }
+            }
+
+            return { startTime: newStartTime, endTime: newEndTime };
+          }),
+        };
+        return updated;
+      });
+    },
+    [setWeeklyAvailability]
   );
 
   const handleSaveClick = useCallback(() => {
@@ -268,7 +207,9 @@ const RecurringAvailabilityComponent = () => {
         for (let timeRange of day.timeRanges) {
           const diff = getTimeDifferenceInMinutes(timeRange.startTime, timeRange.endTime);
           if (diff <= 0) {
-            toast.error(`Invalid time range on ${day.dayOfWeek}: End time must be after start time`);
+            toast.error(
+              `Invalid time range on ${day.dayOfWeek}: End time must be after start time`
+            );
             return;
           }
           if (diff > SLOT_DURATION_MINUTES) {
@@ -281,53 +222,23 @@ const RecurringAvailabilityComponent = () => {
       }
     }
     setShowDialog(true);
-  }, [globalPrice, validatePriceInput, weeklyAvailability]);
-
-  const handleConfirmSave = useCallback(async () => {
-    setShowDialog(false);
-    setLoading(true);
-
-    try {
-      const weeklyAvailabilityWithPrice = weeklyAvailability.map((day) => ({
-        ...day,
-        price: day.isAvailable ? Number(globalPrice) : 0,
-      }));
-
-      await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_SET_RECURRING, {
-        weeklyAvailability: weeklyAvailabilityWithPrice,
-      });
-
-      try {
-        await api.post(API_ENDPOINTS.SLOT_MANAGEMENT_GENERATE_SLOTS);
-        toast.success('Availability updated successfully!', {
-          description: 'Your weekly schedule is now active and slots have been generated.',
-        });
-      } catch (error) {
-        toast.success('Availability updated successfully!');
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update availability');
-    } finally {
-      setLoading(false);
-    }
-  }, [globalPrice, weeklyAvailability]);
-
-  const summary = useMemo(() => {
-    const availableDays = weeklyAvailability.filter((d) => d.isAvailable);
-    const totalSlots = availableDays.reduce((sum, d) => sum + d.timeRanges.length, 0);
-    return { availableDaysCount: availableDays.length, totalSlots, availableDays };
-  }, [weeklyAvailability]);
-
-  const selectedDay = weeklyAvailability[selectedDayIndex] || weeklyAvailability[0];
+  }, [globalPrice, setShowDialog, validatePriceInput, weeklyAvailability]);
 
   if (initialLoading) {
     return (
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-transparent py-16">
-        <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="max-w-4xl mx-auto p-4">
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="max-w-4xl mx-auto p-4"
+        >
           <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 shadow-lg">
             <CardContent className="py-12 flex flex-col items-center gap-3">
               <Loader2 className="w-7 h-7 animate-spin text-primary-600" />
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading availability settings...</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Loading availability settings...
+              </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -373,7 +284,8 @@ const RecurringAvailabilityComponent = () => {
                     Days Active
                   </span>
                   <p className="text-lg font-extrabold text-neutral-900 dark:text-white mt-1">
-                    {summary.availableDaysCount} <span className="text-xs font-normal text-neutral-400">/ 7</span>
+                    {summary.availableDaysCount}{' '}
+                    <span className="text-xs font-normal text-neutral-400">/ 7</span>
                   </p>
                 </div>
 
@@ -382,7 +294,8 @@ const RecurringAvailabilityComponent = () => {
                     Total Slots
                   </span>
                   <p className="text-lg font-extrabold text-neutral-900 dark:text-white mt-1">
-                    {summary.totalSlots} <span className="text-xs font-normal text-neutral-400">slots</span>
+                    {summary.totalSlots}{' '}
+                    <span className="text-xs font-normal text-neutral-400">slots</span>
                   </p>
                 </div>
 
@@ -403,7 +316,8 @@ const RecurringAvailabilityComponent = () => {
                     Schedule Details
                   </span>
                   <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0.5">
-                    {summary.availableDays.length} day{summary.availableDays.length !== 1 ? 's' : ''} configured
+                    {summary.availableDays.length} day
+                    {summary.availableDays.length !== 1 ? 's' : ''} configured
                   </Badge>
                 </div>
 
@@ -431,7 +345,9 @@ const RecurringAvailabilityComponent = () => {
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300 shadow-2xs"
                             >
                               <Timer className="w-3 h-3 text-primary-600 dark:text-primary-400 shrink-0" />
-                              <span>{range.startTime} – {range.endTime}</span>
+                              <span>
+                                {range.startTime} – {range.endTime}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -451,7 +367,8 @@ const RecurringAvailabilityComponent = () => {
               <div className="flex items-start gap-2.5 p-3 rounded-xl bg-primary-50/60 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/40 text-xs text-neutral-600 dark:text-neutral-300">
                 <Info className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5" />
                 <span>
-                  Saving will generate recurring time slots automatically for student bookings across the next booking window.
+                  Saving will generate recurring time slots automatically for student bookings
+                  across the next booking window.
                 </span>
               </div>
             </div>
@@ -485,8 +402,7 @@ const RecurringAvailabilityComponent = () => {
         </Dialog>
 
         {/* Header Section */}
-        <motion.div className="text-center mb-12 space-y-4" variants={containerVariants}>         
-
+        <motion.div className="text-center mb-12 space-y-4" variants={containerVariants}>
           <motion.h2
             className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.1] tracking-tight"
             variants={fadeInUp}
@@ -502,7 +418,8 @@ const RecurringAvailabilityComponent = () => {
             className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed"
             variants={fadeInUp}
           >
-            Configure your recurring schedule and session pricing. Set your availability once and let clients book when it suits you both.
+            Configure your recurring schedule and session pricing. Set your availability once and
+            let clients book when it suits you both.
           </motion.p>
         </motion.div>
 
@@ -510,7 +427,7 @@ const RecurringAvailabilityComponent = () => {
         <motion.div variants={fadeInUp} className="mb-6">
           <Card className="group relative bg-gradient-to-br from-white via-white to-primary-50/30 dark:from-neutral-900 dark:via-neutral-900 dark:to-primary-950/30 border border-neutral-200 dark:border-neutral-800 hover:border-primary-400 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-500/10 dark:hover:shadow-primary-500/5 transition-all duration-500">
             <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
+
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -528,12 +445,17 @@ const RecurringAvailabilityComponent = () => {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="global-price" className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  <Label
+                    htmlFor="global-price"
+                    className="text-xs font-medium text-neutral-700 dark:text-neutral-300"
+                  >
                     Price per Session
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative w-28">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm font-medium">₹</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm font-medium">
+                        ₹
+                      </span>
                       <Input
                         id="global-price"
                         type="number"
@@ -542,7 +464,9 @@ const RecurringAvailabilityComponent = () => {
                         value={globalPrice}
                         onChange={(e) => setGlobalPrice(e.target.value)}
                         className={`pl-6 h-9 text-sm ${
-                          globalPrice && !validatePriceInput(globalPrice).isValid ? 'border-red-500' : ''
+                          globalPrice && !validatePriceInput(globalPrice).isValid
+                            ? 'border-red-500'
+                            : ''
                         }`}
                         placeholder={priceConstraints.minPrice.toString()}
                       />
@@ -580,7 +504,10 @@ const RecurringAvailabilityComponent = () => {
               >
                 <span className="font-semibold text-xs">{getDayShort(day.dayOfWeek)}</span>
                 {day.isAvailable && (
-                  <Badge variant="secondary" className="ml-1.5 h-4 min-w-4 px-1 text-xs bg-white/20">
+                  <Badge
+                    variant="secondary"
+                    className="ml-1.5 h-4 min-w-4 px-1 text-xs bg-white/20"
+                  >
                     {day.timeRanges.length}
                   </Badge>
                 )}
@@ -600,7 +527,8 @@ const RecurringAvailabilityComponent = () => {
               {/* Day Header */}
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg transition-all duration-300 ${
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg transition-all duration-300 ${
                       selectedDay.isAvailable
                         ? 'bg-gradient-to-br from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 text-white group-hover:scale-110 group-hover:rotate-6'
                         : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
@@ -614,7 +542,8 @@ const RecurringAvailabilityComponent = () => {
                     </h3>
                     {selectedDay.isAvailable && (
                       <p className="text-xs font-semibold text-primary-600 dark:text-primary-400">
-                        {selectedDay.timeRanges.length} slot{selectedDay.timeRanges.length !== 1 ? 's' : ''}
+                        {selectedDay.timeRanges.length} slot
+                        {selectedDay.timeRanges.length !== 1 ? 's' : ''}
                       </p>
                     )}
                   </div>
@@ -623,7 +552,7 @@ const RecurringAvailabilityComponent = () => {
                   checked={selectedDay.isAvailable}
                   onCheckedChange={() => toggleDayAvailability(selectedDayIndex)}
                   aria-label={`Toggle ${selectedDay.dayOfWeek} availability`}
-                  className ="z-10"
+                  className="z-10"
                 />
               </div>
 
@@ -655,7 +584,9 @@ const RecurringAvailabilityComponent = () => {
                             <Timer className="w-4 h-4 text-primary-600 shrink-0" />
                             <Select
                               value={timeRange.startTime}
-                              onValueChange={(val) => updateTimeRange(selectedDayIndex, idx, 'startTime', val)}
+                              onValueChange={(val) =>
+                                updateTimeRange(selectedDayIndex, idx, 'startTime', val)
+                              }
                             >
                               <SelectTrigger className="h-9 text-xs flex-1 min-w-0">
                                 <SelectValue />
@@ -670,10 +601,14 @@ const RecurringAvailabilityComponent = () => {
                                 </ScrollArea>
                               </SelectContent>
                             </Select>
-                            <span className="text-xs text-neutral-400 font-medium shrink-0">to</span>
+                            <span className="text-xs text-neutral-400 font-medium shrink-0">
+                              to
+                            </span>
                             <Select
                               value={timeRange.endTime}
-                              onValueChange={(val) => updateTimeRange(selectedDayIndex, idx, 'endTime', val)}
+                              onValueChange={(val) =>
+                                updateTimeRange(selectedDayIndex, idx, 'endTime', val)
+                              }
                             >
                               <SelectTrigger className="h-9 text-xs flex-1 min-w-0">
                                 <SelectValue />
@@ -703,7 +638,8 @@ const RecurringAvailabilityComponent = () => {
                         {!isValidTimeRange(timeRange.startTime, timeRange.endTime) && (
                           <p className="text-[11px] text-red-500 dark:text-red-400 mt-1 pl-1 flex items-center gap-1 font-medium">
                             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                            Slot duration cannot exceed {SLOT_DURATION_MINUTES} minutes and end time must be after start time.
+                            Slot duration cannot exceed {SLOT_DURATION_MINUTES} minutes and end time
+                            must be after start time.
                           </p>
                         )}
                       </motion.div>
@@ -782,7 +718,9 @@ const RecurringAvailabilityComponent = () => {
                 {/* Available Days Stat */}
                 <div className="bg-neutral-50/90 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-700/60 rounded-xl p-4 transition-all duration-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60">
                   <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider">Available Days</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider">
+                      Available Days
+                    </span>
                     <div className="w-7 h-7 rounded-lg bg-primary-100/70 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 flex items-center justify-center">
                       <Calendar className="w-4 h-4" />
                     </div>
@@ -813,7 +751,9 @@ const RecurringAvailabilityComponent = () => {
                 {/* Total Time Slots Stat */}
                 <div className="bg-neutral-50/90 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-700/60 rounded-xl p-4 transition-all duration-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60">
                   <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider">Total Time Slots</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider">
+                      Total Time Slots
+                    </span>
                     <div className="w-7 h-7 rounded-lg bg-primary-100/70 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 flex items-center justify-center">
                       <Clock className="w-4 h-4" />
                     </div>
@@ -830,7 +770,8 @@ const RecurringAvailabilityComponent = () => {
                   <div className="mt-3 flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 bg-white/70 dark:bg-neutral-900/60 py-1.5 px-2.5 rounded-lg border border-neutral-200/50 dark:border-neutral-800">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <span className="font-medium">
-                      ~{((summary.totalSlots * SLOT_DURATION_MINUTES) / 60).toFixed(1)} hrs total counseling
+                      ~{((summary.totalSlots * SLOT_DURATION_MINUTES) / 60).toFixed(1)} hrs total
+                      counseling
                     </span>
                   </div>
                 </div>
@@ -868,10 +809,12 @@ const RecurringAvailabilityComponent = () => {
                             : 'bg-neutral-50/60 dark:bg-neutral-800/30 border-neutral-200/70 dark:border-neutral-800 text-neutral-400 dark:text-neutral-500 hover:border-neutral-300 dark:hover:border-neutral-700'
                         }`}
                       >
-                        <span className={`text-[11px] sm:text-xs font-bold ${isActive ? 'text-primary-700 dark:text-primary-300' : 'text-neutral-500 dark:text-neutral-400'}`}>
+                        <span
+                          className={`text-[11px] sm:text-xs font-bold ${isActive ? 'text-primary-700 dark:text-primary-300' : 'text-neutral-500 dark:text-neutral-400'}`}
+                        >
                           {getDayShort(day.dayOfWeek)}
                         </span>
-                        
+
                         <div className="mt-1 flex items-center justify-center">
                           {isActive ? (
                             <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-primary-600 text-white dark:bg-primary-500 shadow-xs">
@@ -898,12 +841,15 @@ const RecurringAvailabilityComponent = () => {
                       Active Days & Slot Allocation
                     </span>
                     <span className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
-                      {summary.availableDays.length} day{summary.availableDays.length !== 1 ? 's' : ''} configured
+                      {summary.availableDays.length} day
+                      {summary.availableDays.length !== 1 ? 's' : ''} configured
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {summary.availableDays.map((day) => {
-                      const dayIdx = weeklyAvailability.findIndex((d) => d.dayOfWeek === day.dayOfWeek);
+                      const dayIdx = weeklyAvailability.findIndex(
+                        (d) => d.dayOfWeek === day.dayOfWeek
+                      );
                       const isCurrent = selectedDayIndex === dayIdx;
                       return (
                         <button
@@ -917,11 +863,13 @@ const RecurringAvailabilityComponent = () => {
                           }`}
                         >
                           <span>{day.dayOfWeek}</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                            isCurrent
-                              ? 'bg-white/20 text-white'
-                              : 'bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400'
-                          }`}>
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                              isCurrent
+                                ? 'bg-white/20 text-white'
+                                : 'bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400'
+                            }`}
+                          >
                             {day.timeRanges.length} slot{day.timeRanges.length !== 1 ? 's' : ''}
                           </span>
                         </button>
@@ -932,32 +880,40 @@ const RecurringAvailabilityComponent = () => {
               ) : (
                 <div className="p-4 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 text-center bg-neutral-50/50 dark:bg-neutral-900/30">
                   <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    No active days configured. Toggle days on above to build your recurring schedule.
+                    No active days configured. Toggle days on above to build your recurring
+                    schedule.
                   </p>
                 </div>
               )}
 
               {/* Revenue projection notice if price is set */}
-              {globalPrice && !isNaN(Number(globalPrice)) && Number(globalPrice) > 0 && summary.totalSlots > 0 && (
-                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-200/70 dark:border-emerald-800/40 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center font-bold text-[11px] shadow-xs">
-                      ₹
+              {globalPrice &&
+                !isNaN(Number(globalPrice)) &&
+                Number(globalPrice) > 0 &&
+                summary.totalSlots > 0 && (
+                  <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-200/70 dark:border-emerald-800/40 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center font-bold text-[11px] shadow-xs">
+                        ₹
+                      </div>
+                      <div>
+                        <span className="font-semibold text-emerald-900 dark:text-emerald-200">
+                          Max Weekly Potential: ₹
+                          {(summary.totalSlots * Number(globalPrice)).toLocaleString('en-IN')}
+                        </span>
+                        <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">
+                          ({summary.totalSlots} slots × ₹{globalPrice}/session)
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-semibold text-emerald-900 dark:text-emerald-200">
-                        Max Weekly Potential: ₹{(summary.totalSlots * Number(globalPrice)).toLocaleString('en-IN')}
-                      </span>
-                      <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">
-                        ({summary.totalSlots} slots × ₹{globalPrice}/session)
-                      </p>
-                    </div>
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-[10px] bg-white/60 dark:bg-neutral-900/60"
+                    >
+                      Est. Revenue
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-[10px] bg-white/60 dark:bg-neutral-900/60">
-                    Est. Revenue
-                  </Badge>
-                </div>
-              )}
+                )}
             </CardContent>
           </Card>
 
@@ -975,8 +931,6 @@ const RecurringAvailabilityComponent = () => {
             Save Availability & Generate Slots
           </Button>
         </motion.div>
-
-        
       </motion.div>
     </section>
   );

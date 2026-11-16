@@ -13,8 +13,8 @@ import {
   ShieldCheck,
   Check,
 } from 'lucide-react';
-import api from '../../../lib/axios';
 import { toast } from 'react-toastify';
+import { videoSessionService } from '../../../services/video';
 
 export function LeaveScreen({
   setIsMeetingLeft,
@@ -49,7 +49,9 @@ export function LeaveScreen({
       try {
         const savedDraft = sessionStorage.getItem(`live_session_notes_${bookingId}`);
         if (savedDraft) return savedDraft;
-      } catch (err) {}
+      } catch (err) {
+        /* ignore storage error */
+      }
     }
     return '';
   });
@@ -101,7 +103,7 @@ export function LeaveScreen({
 
     try {
       setIsSubmitting(true);
-      await api.post(`/meeting/session/${bookingId}/feedback`, {
+      await videoSessionService.submitSessionFeedback(bookingId, {
         rating: clientRating,
         review: clientReview,
         tags: selectedClientTags,
@@ -130,7 +132,7 @@ export function LeaveScreen({
 
     try {
       setIsSubmitting(true);
-      await api.post(`/meeting/session/${bookingId}/notes`, {
+      await videoSessionService.saveClinicalNotes(bookingId, {
         notes: counselorNotes,
         tags: selectedCounselorTags,
         followUpRequired,
@@ -140,7 +142,9 @@ export function LeaveScreen({
       if (bookingId) {
         try {
           sessionStorage.removeItem(`live_session_notes_${bookingId}`);
-        } catch (err) {}
+        } catch (err) {
+          /* ignore storage error */
+        }
       }
       toast.success('Clinical notes saved securely.');
       setTimeout(() => {
@@ -168,7 +172,11 @@ export function LeaveScreen({
         {/* Header section */}
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-primary-600/20 border border-primary-500/30 flex items-center justify-center text-primary-400 shrink-0">
-            {isSessionExpired ? <Clock className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
+            {isSessionExpired ? (
+              <Clock className="w-6 h-6" />
+            ) : (
+              <CheckCircle2 className="w-6 h-6" />
+            )}
           </div>
           <div className="text-left flex-1">
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
@@ -239,7 +247,7 @@ export function LeaveScreen({
                     ))}
                   </div>
                   <span className="text-xs font-medium text-amber-300 min-h-[16px]">
-                    {(hoverRating || clientRating)
+                    {hoverRating || clientRating
                       ? ratingDescriptions[hoverRating || clientRating]
                       : 'Tap a star to rate'}
                   </span>

@@ -40,19 +40,17 @@ import {
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
 } from 'lucide-react';
-import { API_ENDPOINTS } from '../../config/api';
-import api from '../../lib/axios';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { TIMEZONE, DEFAULT_LANGUAGES } from '../../constants/constants';
+import { TIMEZONE } from '../../constants/constants';
 import { toast } from 'sonner';
 import HeroImage from '../../assets/browseCounselors/counselor_hero.jpg';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
-import useSmartRefresh from '../../hooks/useSmartRefresh';
+import { useCounselorDiscovery, getCounselorPrice } from '../../hooks/useCounselorDiscovery';
 import Footer from '../../components/Home/Footer.jsx';
 
 // Shadcn UI imports
@@ -139,25 +137,6 @@ const SPECIALIZATION_ICONS = {
   'Life & Personal Development': Compass,
   'Academic Counselling': GraduationCap,
   'Health and Wellness Counselling': Activity,
-};
-
-// ============================================
-// HELPER TO EXTRACT ACCURATE STARTING SESSION PRICE
-// ============================================
-const getCounselorPrice = (c) => {
-  if (Array.isArray(c?.availableSlots) && c.availableSlots.length > 0) {
-    const validPrices = c.availableSlots
-      .map((s) => Number(s?.totalPriceAfterPlatformFee))
-      .filter((p) => typeof p === 'number' && !isNaN(p) && p > 0);
-    if (validPrices.length > 0) {
-      return Math.min(...validPrices);
-    }
-  }
-  if (typeof c?.hourlyRate === 'number' && c.hourlyRate > 0) return c.hourlyRate;
-  if (typeof c?.application?.hourlyRate === 'number' && c.application.hourlyRate > 0) {
-    return c.application.hourlyRate;
-  }
-  return 690;
 };
 
 // ============================================
@@ -820,19 +799,35 @@ const BrowseCounselor = () => {
   const { client, clientLoading } = useClientAuth();
   const { counselor: loggedInCounselor, counselorLoading } = useCounselorAuth();
 
-  const [counselors, setCounselors] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
-
-  // Filters - WITH PRICE
-  const [search, setSearch] = useState('');
-  const [spec, setSpec] = useState('all');
-  const [gender, setGender] = useState('all');
-  const [language, setLanguage] = useState('all');
-  const [priceRange, setPriceRange] = useState([0, 10000]);
-  const [sortBy, setSortBy] = useState('rating');
-  const [sortOpen, setSortOpen] = useState(false);
+  // Layer 3 Counselor Discovery Hook (Decoupled from Layer 4 Presentation)
+  const {
+    counselors,
+    loading,
+    currentPage,
+    search,
+    setSearch,
+    spec,
+    setSpec,
+    gender,
+    setGender,
+    language,
+    setLanguage,
+    priceRange,
+    setPriceRange,
+    sortBy,
+    setSortBy,
+    sortOpen,
+    setSortOpen,
+    activeFilterCount,
+    clearFilters,
+    SPECIALIZATIONS,
+    LANGUAGES,
+    visible,
+    currentItems,
+    totalPages,
+    handlePageChange: triggerPageChange,
+    featuredCounselors,
+  } = useCounselorDiscovery();
 
   const isAuthenticated = !!(client || loggedInCounselor);
   const isLoading = clientLoading || counselorLoading;
@@ -845,127 +840,12 @@ const BrowseCounselor = () => {
     }
   }, [loggedInCounselor, counselorLoading, navigate]);
 
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (search && search.trim()) count++;
-    if (spec && spec !== 'all') count++;
-    if (gender && gender !== 'all') count++;
-    if (language && language !== 'all') count++;
-    if (priceRange && (priceRange[0] > 0 || priceRange[1] < 10000)) count++;
-    return count;
-  }, [search, spec, gender, language, priceRange]);
-
-  const SPECIALIZATIONS = useMemo(
-    () => [
-      'Mental Health',
-      'Career Counselling',
-      'Relationship & Family Therapy',
-      'Life & Personal Development',
-      'Academic Counselling',
-      'Health and Wellness Counselling',
-    ],
-    []
-  );
-
-  const LANGUAGES = useMemo(() => {
-    const languageSet = new Set(DEFAULT_LANGUAGES);
-    counselors.forEach((c) => {
-      const langs = c.application?.languages || [];
-      langs.forEach((l) => {
-        if (typeof l === 'string' && l.trim()) {
-          languageSet.add(l.trim());
-        }
-      });
-    });
-    return Array.from(languageSet);
-  }, [counselors]);
-
-  const fetchCounselors = useCallback(async (isAutoRefresh = false) => {
-    try {
-      if (!isAutoRefresh) {
-        setLoading(true);
-      }
-      const response = await api.get(API_ENDPOINTS.BOOKING_AVAILABLE_COUNSELORS);
-      setCounselors(response.data.counselors || []);
-    } catch (e) {
-      if (!isAutoRefresh) {
-        toast.error('Failed to load counselors. Please try again later.');
-      }
-    } finally {
-      if (!isAutoRefresh) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
-  useSmartRefresh(fetchCounselors, { staleTimeMs: 45000 });
-
   const bookCounselor = useCallback(
     (counselorId) => {
       navigate(`/book-counselor/${counselorId}`);
     },
     [navigate]
   );
-
-  const clearFilters = useCallback(() => {
-    setSearch('');
-    setSpec('all');
-    setGender('all');
-    setLanguage('all');
-    setPriceRange([0, 10000]);
-    setSortBy('rating');
-  }, []);
-
-  // Reset pagination to page 1 whenever any filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, spec, gender, language, priceRange, sortBy]);
-
-  // WITH ACCURATE PRICE FILTERING & SORTING
-  const visible = useMemo(() => {
-    return counselors
-      .filter((c) => {
-        const bySearch =
-          !search?.trim() ||
-          c.fullName?.toLowerCase().includes(search.toLowerCase().trim()) ||
-          c.specialization?.some((s) => s.toLowerCase().includes(search.toLowerCase().trim()));
-
-        const bySpec = spec === 'all' || c.specialization?.includes(spec);
-        const byGender = gender === 'all' || c.gender === gender;
-        const byLanguage = language === 'all' || c.application?.languages?.includes(language);
-
-        const price = getCounselorPrice(c);
-        const byPrice = price >= priceRange[0] && price <= priceRange[1];
-
-        return bySearch && bySpec && byGender && byLanguage && byPrice;
-      })
-      .sort((a, b) => {
-        const priceA = getCounselorPrice(a);
-        const priceB = getCounselorPrice(b);
-
-        if (sortBy === 'price_asc' || sortBy === 'price') return priceA - priceB;
-        if (sortBy === 'price_desc') return priceB - priceA;
-        if (sortBy === 'experience') return (b.experienceYears || 0) - (a.experienceYears || 0);
-        if (sortBy === 'rating') {
-          const ratingA = Number(a.rating) || 0;
-          const ratingB = Number(b.rating) || 0;
-          if (ratingB !== ratingA) return ratingB - ratingA;
-          return priceA - priceB; // Secondary tie-breaker: price lowest first
-        }
-        return priceA - priceB;
-      });
-  }, [counselors, search, spec, gender, language, priceRange, sortBy]);
-
-  const paginationData = useMemo(() => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = visible.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(visible.length / itemsPerPage);
-
-    return { currentItems, totalPages };
-  }, [visible, currentPage, itemsPerPage]);
-
-  const { currentItems, totalPages } = paginationData;
 
   const counselorsSectionRef = useRef(null);
 
@@ -986,27 +866,10 @@ const BrowseCounselor = () => {
 
   const handlePageChange = useCallback(
     (pageAction) => {
-      setCurrentPage((prev) => {
-        const targetPage = typeof pageAction === 'function' ? pageAction(prev) : pageAction;
-        if (targetPage !== prev && targetPage >= 1 && targetPage <= totalPages) {
-          requestAnimationFrame(() => {
-            scrollToCounselors();
-          });
-          return targetPage;
-        }
-        return prev;
-      });
+      triggerPageChange(pageAction, scrollToCounselors);
     },
-    [totalPages, scrollToCounselors]
+    [triggerPageChange, scrollToCounselors]
   );
-
-  //not implemented yet so not visible
-  const featuredCounselors = useMemo(() => {
-    return [...counselors]
-      .filter((c) => c.rating && c.rating > 4.5)
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 3);
-  }, [counselors]);
 
   if (loading || isLoading) {
     return (

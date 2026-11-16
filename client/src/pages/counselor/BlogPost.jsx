@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
@@ -15,53 +15,55 @@ import {
   Calendar,
   Lock,
   MessageCircle,
+  Brain,
+  Briefcase,
+  Compass,
+  GraduationCap,
+  Activity,
 } from 'lucide-react';
 import { FaComment, FaSpinner, FaPaperPlane } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import { API_ENDPOINTS } from '../../config/api';
-import api from '../../lib/axios';
-import { useClientAuth } from '../../contexts/ClientAuthContext';
-import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
+import { useBlogPost } from '../../hooks/useBlogPost';
 
 const CATEGORY_THEMES = {
   'mental-health': {
     label: 'Mental Health',
-    icon: '🧠',
+    icon: Brain,
     badge:
       'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800/80',
     headerGradient: 'from-teal-500/15 via-emerald-500/10 to-teal-700/15',
   },
   career: {
     label: 'Career & Work',
-    icon: '💼',
+    icon: Briefcase,
     badge:
       'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/80',
     headerGradient: 'from-blue-500/15 via-indigo-500/10 to-blue-700/15',
   },
   relationship: {
     label: 'Relationship',
-    icon: '❤️',
+    icon: Heart,
     badge:
       'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/80',
     headerGradient: 'from-rose-500/15 via-pink-500/10 to-rose-700/15',
   },
   'life-coaching': {
     label: 'Personal Growth',
-    icon: '🌱',
+    icon: Compass,
     badge:
       'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80',
     headerGradient: 'from-purple-500/15 via-violet-500/10 to-purple-700/15',
   },
   academic: {
     label: 'Academic & Students',
-    icon: '🎓',
+    icon: GraduationCap,
     badge:
       'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/80',
     headerGradient: 'from-sky-500/15 via-cyan-500/10 to-sky-700/15',
   },
   'health-wellness': {
     label: 'Health & Wellness',
-    icon: '🌿',
+    icon: Activity,
     badge:
       'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80',
     headerGradient: 'from-emerald-500/15 via-teal-500/10 to-emerald-700/15',
@@ -75,7 +77,7 @@ const getCategoryTheme = (category) => {
       label: category
         ? category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
         : 'Mental Health',
-      icon: '✨',
+      icon: Sparkles,
       badge:
         'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
       headerGradient: 'from-slate-500/10 via-primary-500/10 to-slate-700/10',
@@ -99,171 +101,25 @@ const getAuthorSpecialization = (author) => {
 const BlogPost = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { client } = useClientAuth();
-  const { counselor } = useCounselorAuth();
-  const [blog, setBlog] = useState(null);
-  const [relatedBlogs, setRelatedBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
-  const [isLiking, setIsLiking] = useState(false);
-  const [commentText, setCommentText] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState(null);
 
-  // Fetch blog using API endpoint
-  const fetchBlog = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const response = await api.get(`${API_ENDPOINTS.BLOGS_GET_BY_SLUG}/${slug}`);
-      const data = response.data;
-      if (data.success && data.data?.blog) {
-        setBlog(data.data.blog);
-        setRelatedBlogs(data.data.relatedBlogs || []);
-        setLikesCount(data.data.blog.likes?.length || 0);
-
-        // Safe user identification and like status checking
-        const currentUserId = (client?._id || counselor?._id)?.toString();
-        if (currentUserId) {
-          const userLiked = data.data.blog.likes?.some((like) => {
-            const likeUserId = (like?.user?._id || like?.user || like?._id)?.toString();
-            return likeUserId === currentUserId;
-          });
-          setLiked(Boolean(userLiked));
-        }
-      } else {
-        toast.error(data.message || 'Failed to load blog');
-      }
-    } catch (error) {
-      console.error('Error fetching blog:', error);
-      toast.error('Failed to load blog');
-    } finally {
-      setLoading(false);
-    }
-  }, [slug, client, counselor]);
-
-  useEffect(() => {
-    const active = Boolean(client || counselor);
-    setIsAuthenticated(active);
-    setUserType(client ? 'client' : counselor ? 'counselor' : null);
-
-    if (slug) {
-      fetchBlog();
-    }
-  }, [slug, client, counselor, fetchBlog]);
-
-  // Robust like/unlike handling with unified endpoint
-  const handleLike = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please login to like this blog', {
-        duration: 3000,
-        style: {
-          borderRadius: '12px',
-          background: '#FEF2F2',
-          color: '#DC2626',
-          border: '1px solid #FECACA',
-        },
-      });
-      navigate('/login');
-      return;
-    }
-
-    if (isLiking || !blog?._id) return;
-
-    try {
-      setIsLiking(true);
-      const response = await api.post(`${API_ENDPOINTS.BLOGS_LIKE}/${blog._id}/like`);
-      const data = response.data;
-      if (data.success) {
-        setLiked(data.data.liked);
-        setLikesCount(data.data.likesCount);
-        toast.success(data.data.liked ? 'Blog liked!' : 'Blog unliked');
-      } else {
-        toast.error(data.message || 'Failed to update like');
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      toast.error('Failed to update like');
-    } finally {
-      setIsLiking(false);
-    }
-  };
-
-  // Simplified comment handling with unified endpoint
-  const handleComment = async (e) => {
-    e.preventDefault();
-
-    if (!isAuthenticated) {
-      toast.error('Please login to comment on this blog', {
-        duration: 3000,
-        style: {
-          borderRadius: '12px',
-          background: '#FEF2F2',
-          color: '#DC2626',
-          border: '1px solid #FECACA',
-        },
-      });
-      navigate('/login');
-      return;
-    }
-
-    if (!commentText.trim()) return;
-
-    try {
-      setSubmittingComment(true);
-
-      const response = await api.post(`${API_ENDPOINTS.BLOGS_COMMENT}/${blog._id}/comments`, {
-        content: commentText.trim(),
-      });
-
-      const data = response.data;
-      if (data.success) {
-        // Better comment state management
-        setBlog((prev) => ({
-          ...prev,
-          comments: [...(prev.comments || []), data.data],
-        }));
-        setCommentText('');
-        toast.success('Comment added successfully!');
-      } else {
-        toast.error(data.message || 'Failed to add comment');
-      }
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
-    } finally {
-      setSubmittingComment(false);
-    }
-  };
-
-  // Better share functionality
-  const handleShare = async () => {
-    const shareData = {
-      title: blog.title,
-      text: blog.excerpt,
-      url: window.location.href,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        toast.success('Shared successfully!');
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success('Link copied to clipboard!');
-      }
-    } catch (error) {
-      // Fallback for when sharing fails
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success('Link copied to clipboard!');
-      } catch (clipboardError) {
-        toast.error('Failed to share blog');
-      }
-    }
-  };
+  // Layer 3 Blog Post Hook (Decoupled from Layer 4 Presentation)
+  const {
+    blog,
+    setBlog,
+    relatedBlogs,
+    loading,
+    liked,
+    likesCount,
+    isLiking,
+    commentText,
+    setCommentText,
+    submittingComment,
+    isAuthenticated,
+    userType,
+    handleLike,
+    handleComment,
+    handleShare,
+  } = useBlogPost(slug);
 
   const handleAuthRequired = (action) => {
     toast.error(`Please login to ${action}`, {
@@ -375,13 +231,15 @@ const BlogPost = () => {
                   ? dayjs(blog.publishedAt).format('MMMM DD, YYYY')
                   : 'Recent';
 
+              const CategoryIcon = theme.icon;
+
               return (
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                   <div className="flex items-center gap-2.5">
                     <span
                       className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border shadow-xs ${theme.badge}`}
                     >
-                      <span>{theme.icon}</span>
+                      <CategoryIcon className="w-3.5 h-3.5" />
                       <span>{theme.label}</span>
                     </span>
                     {blog.featured && (
@@ -636,6 +494,7 @@ const BlogPost = () => {
             >
               {relatedBlogs.map((relatedBlog, index) => {
                 const relTheme = getCategoryTheme(relatedBlog.category);
+                const RelIcon = relTheme.icon;
                 const relFormattedDate =
                   relatedBlog.publishedAt && dayjs(relatedBlog.publishedAt).isValid()
                     ? dayjs(relatedBlog.publishedAt).format('DD MMM YYYY')
@@ -665,9 +524,9 @@ const BlogPost = () => {
 
                         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md border shadow-xs ${relTheme.badge}`}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md border shadow-xs ${relTheme.badge}`}
                           >
-                            <span>{relTheme.icon}</span>
+                            <RelIcon className="w-3 h-3" />
                             <span>{relTheme.label}</span>
                           </span>
                         </div>
@@ -676,14 +535,14 @@ const BlogPost = () => {
                       <div
                         className={`relative h-24 w-full bg-gradient-to-br ${relTheme.headerGradient} border-b border-slate-100 dark:border-slate-800/80 p-3.5 flex flex-col justify-between overflow-hidden shrink-0`}
                       >
-                        <div className="absolute -right-2 -bottom-3 text-5xl opacity-10 select-none pointer-events-none">
-                          {relTheme.icon}
+                        <div className="absolute -right-2 -bottom-3 text-slate-400/20 dark:text-slate-600/20 select-none pointer-events-none">
+                          <RelIcon className="w-16 h-16" />
                         </div>
                         <div className="flex items-center justify-between relative z-10">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm shadow-xs ${relTheme.badge}`}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm shadow-xs ${relTheme.badge}`}
                           >
-                            <span>{relTheme.icon}</span>
+                            <RelIcon className="w-3 h-3" />
                             <span>{relTheme.label}</span>
                           </span>
                         </div>

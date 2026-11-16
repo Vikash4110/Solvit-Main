@@ -17,12 +17,7 @@ import { useEffect, useRef, useCallback } from 'react';
  */
 export function useSmartRefresh(
   fetchFn,
-  {
-    enabled = true,
-    intervalMs = null,
-    staleTimeMs = 30000,
-    deps = [],
-  } = {}
+  { enabled = true, intervalMs = null, staleTimeMs = 30000, deps = [] } = {}
 ) {
   const lastFetchTimeRef = useRef(0);
   const fetchFnRef = useRef(fetchFn);

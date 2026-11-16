@@ -41,8 +41,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_ENDPOINTS } from '../../../config/api';
-import api from '@/lib/axios';
+import { useBlogManager } from '../../../hooks/useBlogManager';
 
 // shadcn/ui components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -73,48 +72,57 @@ const CATEGORY_META = {
   'mental-health': {
     label: 'Mental Health',
     icon: Brain,
-    badgeColor: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800',
+    badgeColor:
+      'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800',
     iconBg: 'bg-teal-100 text-teal-600 dark:bg-teal-900/50 dark:text-teal-300',
   },
   career: {
     label: 'Career Development',
     icon: Briefcase,
-    badgeColor: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+    badgeColor:
+      'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
     iconBg: 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300',
   },
   relationship: {
     label: 'Relationships',
     icon: Heart,
-    badgeColor: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800',
+    badgeColor:
+      'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800',
     iconBg: 'bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-300',
   },
   'life-coaching': {
     label: 'Life Coaching',
     icon: Compass,
-    badgeColor: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
+    badgeColor:
+      'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
     iconBg: 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300',
   },
   academic: {
     label: 'Academic Support',
     icon: GraduationCap,
-    badgeColor: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800',
+    badgeColor:
+      'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800',
     iconBg: 'bg-sky-100 text-sky-600 dark:bg-sky-900/50 dark:text-sky-300',
   },
   'health-wellness': {
     label: 'Health & Wellness',
     icon: Activity,
-    badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+    badgeColor:
+      'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
     iconBg: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300',
   },
 };
 
 const getCategoryMeta = (catKey) => {
-  return CATEGORY_META[catKey] || {
-    label: catKey ? catKey.replace('-', ' ').toUpperCase() : 'General',
-    icon: BookOpen,
-    badgeColor: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-neutral-800 dark:text-slate-300 dark:border-neutral-700',
-    iconBg: 'bg-slate-100 text-slate-600 dark:bg-neutral-800 dark:text-slate-400',
-  };
+  return (
+    CATEGORY_META[catKey] || {
+      label: catKey ? catKey.replace('-', ' ').toUpperCase() : 'General',
+      icon: BookOpen,
+      badgeColor:
+        'bg-slate-50 text-slate-700 border-slate-200 dark:bg-neutral-800 dark:text-slate-300 dark:border-neutral-700',
+      iconBg: 'bg-slate-100 text-slate-600 dark:bg-neutral-800 dark:text-slate-400',
+    }
+  );
 };
 
 const CounselorDashboardBlogManager = () => {
@@ -122,14 +130,26 @@ const CounselorDashboardBlogManager = () => {
   const [currentView, setCurrentView] = useState(
     searchParams.get('action') === 'create' ? 'create' : 'list'
   );
-  const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+
+  // Layer 3 Blog Manager Hook (Decoupled from Layer 4 Presentation)
+  const {
+    blogs,
+    loading,
+    formLoading,
+    isDeleting,
+    statusFilter,
+    setStatusFilter,
+    searchTerm,
+    setSearchTerm,
+    fetchCounselorBlogs,
+    createBlog,
+    updateBlog,
+    deleteBlog,
+  } = useBlogManager();
+
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [deleteModalBlog, setDeleteModalBlog] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // File Upload & Cover Image state
   const fileInputRef = useRef(null);
@@ -149,56 +169,12 @@ const CounselorDashboardBlogManager = () => {
     status: 'draft',
     featured: false,
   });
-  const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('action') === 'create') {
       setCurrentView('create');
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    fetchCounselorBlogs();
-  }, []);
-
-  const fetchCounselorBlogs = async () => {
-    try {
-      setLoading(true);
-
-      const params = new URLSearchParams({
-        page: '1',
-        limit: '50',
-      });
-
-      if (statusFilter !== 'all') {
-        params.append('status', statusFilter);
-      }
-
-      if (searchTerm) {
-        params.append('search', searchTerm);
-      }
-
-      const response = await api.get(
-        `${API_ENDPOINTS.BLOGS_COUNSELOR_MY_BLOGS}?${params}`
-      );
-
-      const data = response.data;
-      if (data.success) {
-        setBlogs(data.data.docs || data.data || []);
-      } else {
-        toast.error('Failed to load blogs', {
-          description: data.message || 'Could not retrieve your blog posts.',
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching blogs:', error);
-      toast.error('Failed to load blogs', {
-        description: 'Unable to connect to the server. Please try again.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleImageFileSelect = (file) => {
     if (!file) return;
@@ -274,8 +250,6 @@ const CounselorDashboardBlogManager = () => {
     }
 
     try {
-      setFormLoading(true);
-
       const formData = new FormData();
       formData.append('title', blogData.title.trim());
       formData.append('content', blogData.content.trim());
@@ -290,28 +264,21 @@ const CounselorDashboardBlogManager = () => {
         formData.append('featuredImage', blogData.featuredImage.trim());
       }
 
-      const response = await api.post(API_ENDPOINTS.BLOGS_CREATE, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const data = response.data;
+      await createBlog(formData);
 
-      if (data.success) {
-        toast.success('Blog Created Successfully!', {
-          description: blogData.status === 'published' ? 'Your blog is now live for readers.' : 'Saved as a draft.',
-        });
-        await fetchCounselorBlogs();
-        resetForm();
-        setCurrentView('list');
-      } else {
-        toast.error('Creation Failed', { description: data.message || 'Could not create blog.' });
-      }
+      toast.success('Blog Created Successfully!', {
+        description:
+          blogData.status === 'published'
+            ? 'Your blog is now live for readers.'
+            : 'Saved as a draft.',
+      });
+      resetForm();
+      setCurrentView('list');
     } catch (error) {
       console.error('Error creating blog:', error);
       toast.error('Creation Failed', {
         description: error.response?.data?.message || error.message || 'Failed to create blog',
       });
-    } finally {
-      setFormLoading(false);
     }
   };
 
@@ -324,8 +291,6 @@ const CounselorDashboardBlogManager = () => {
     }
 
     try {
-      setFormLoading(true);
-
       const formData = new FormData();
       formData.append('title', blogData.title.trim());
       formData.append('content', blogData.content.trim());
@@ -340,31 +305,17 @@ const CounselorDashboardBlogManager = () => {
         formData.append('featuredImage', blogData.featuredImage || '');
       }
 
-      const response = await api.put(
-        `${API_ENDPOINTS.BLOGS_UPDATE}/${selectedBlog._id}`,
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
-      );
+      await updateBlog(selectedBlog._id, formData);
 
-      const data = response.data;
-      if (data.success) {
-        toast.success('Blog Updated Successfully!', {
-          description: 'Your changes have been saved.',
-        });
-        await fetchCounselorBlogs();
-        setCurrentView('list');
-      } else {
-        toast.error('Update Failed', { description: data.message || 'Could not update blog.' });
-      }
+      toast.success('Blog Updated Successfully!', {
+        description: 'Your changes have been saved.',
+      });
+      setCurrentView('list');
     } catch (error) {
       console.error('Error updating blog:', error);
       toast.error('Update Failed', {
         description: error.response?.data?.message || error.message || 'Failed to update blog',
       });
-    } finally {
-      setFormLoading(false);
     }
   };
 
@@ -372,18 +323,13 @@ const CounselorDashboardBlogManager = () => {
     if (!deleteModalBlog) return;
 
     try {
-      setIsDeleting(true);
-      const response = await api.delete(`${API_ENDPOINTS.BLOGS_DELETE}/${deleteModalBlog._id}`);
-      const data = response.data;
+      await deleteBlog(deleteModalBlog._id);
 
-      if (data.success) {
-        toast.success('Blog Deleted', { description: `"${deleteModalBlog.title}" has been deleted.` });
-        await fetchCounselorBlogs();
-        if (selectedBlog && selectedBlog._id === deleteModalBlog._id) {
-          setCurrentView('list');
-        }
-      } else {
-        toast.error('Delete Failed', { description: data.message || 'Could not delete blog.' });
+      toast.success('Blog Deleted', {
+        description: `"${deleteModalBlog.title}" has been deleted.`,
+      });
+      if (selectedBlog && selectedBlog._id === deleteModalBlog._id) {
+        setCurrentView('list');
       }
     } catch (error) {
       console.error('Error deleting blog:', error);
@@ -391,7 +337,6 @@ const CounselorDashboardBlogManager = () => {
         description: error.response?.data?.message || error.message || 'Failed to delete blog',
       });
     } finally {
-      setIsDeleting(false);
       setDeleteModalBlog(null);
     }
   };
@@ -465,23 +410,6 @@ const CounselorDashboardBlogManager = () => {
     }));
   };
 
-  // Debounced search
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (blogs.length > 0) {
-        fetchCounselorBlogs();
-      }
-    }, 400);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
-
-  useEffect(() => {
-    if (blogs.length > 0) {
-      fetchCounselorBlogs();
-    }
-  }, [statusFilter]);
-
   // Client filtering
   const filteredBlogs = blogs.filter((blog) => {
     const matchesSearch =
@@ -539,20 +467,20 @@ const CounselorDashboardBlogManager = () => {
                 {currentView === 'list'
                   ? 'Blog Management'
                   : currentView === 'create'
-                  ? 'Create New Blog Post'
-                  : currentView === 'edit'
-                  ? 'Edit Blog Post'
-                  : 'Article Preview'}
+                    ? 'Create New Blog Post'
+                    : currentView === 'edit'
+                      ? 'Edit Blog Post'
+                      : 'Article Preview'}
               </span>
             </h1>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
               {currentView === 'list'
                 ? 'Manage your published insights and build your professional presence'
                 : currentView === 'create'
-                ? 'Share your clinical expertise, therapeutic insights, and wellness tips'
-                : currentView === 'edit'
-                ? 'Refine and update your published content or draft'
-                : 'Review formatted article layout as seen by your readers'}
+                  ? 'Share your clinical expertise, therapeutic insights, and wellness tips'
+                  : currentView === 'edit'
+                    ? 'Refine and update your published content or draft'
+                    : 'Review formatted article layout as seen by your readers'}
             </p>
           </div>
         </div>
@@ -621,7 +549,9 @@ const CounselorDashboardBlogManager = () => {
                     <Layers className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Posts</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      Total Posts
+                    </p>
                     <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                       {stats.total}
                     </p>
@@ -636,7 +566,9 @@ const CounselorDashboardBlogManager = () => {
                     <CheckCircle2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Published</p>
+                    <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      Published
+                    </p>
                     <p className="text-xl sm:text-2xl font-bold text-emerald-900 dark:text-emerald-200">
                       {stats.published}
                     </p>
@@ -666,7 +598,9 @@ const CounselorDashboardBlogManager = () => {
                     <Eye className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-purple-700 dark:text-purple-400">Total Views</p>
+                    <p className="text-xs font-medium text-purple-700 dark:text-purple-400">
+                      Total Views
+                    </p>
                     <p className="text-xl sm:text-2xl font-bold text-purple-900 dark:text-purple-200">
                       {stats.views}
                     </p>
@@ -681,7 +615,9 @@ const CounselorDashboardBlogManager = () => {
                     <Heart className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-rose-700 dark:text-rose-400">Total Likes</p>
+                    <p className="text-xs font-medium text-rose-700 dark:text-rose-400">
+                      Total Likes
+                    </p>
                     <p className="text-xl sm:text-2xl font-bold text-rose-900 dark:text-rose-200">
                       {stats.likes}
                     </p>
@@ -817,8 +753,8 @@ const CounselorDashboardBlogManager = () => {
                         blog.status === 'published'
                           ? 'border-emerald-200/90 dark:border-emerald-900/50 hover:border-emerald-300 dark:hover:border-emerald-700'
                           : blog.status === 'draft'
-                          ? 'border-amber-200/90 dark:border-amber-900/50 hover:border-amber-300 dark:hover:border-amber-700'
-                          : 'border-slate-200 dark:border-neutral-800'
+                            ? 'border-amber-200/90 dark:border-amber-900/50 hover:border-amber-300 dark:hover:border-amber-700'
+                            : 'border-slate-200 dark:border-neutral-800'
                       }`}
                     >
                       {/* Cover Image or Fallback Gradient */}
@@ -846,8 +782,8 @@ const CounselorDashboardBlogManager = () => {
                               blog.status === 'published'
                                 ? 'bg-emerald-500/90 text-white'
                                 : blog.status === 'draft'
-                                ? 'bg-amber-500/90 text-white'
-                                : 'bg-slate-500/90 text-white'
+                                  ? 'bg-amber-500/90 text-white'
+                                  : 'bg-slate-500/90 text-white'
                             }`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -978,13 +914,17 @@ const CounselorDashboardBlogManager = () => {
                         Article Details
                       </CardTitle>
                       <CardDescription className="text-xs">
-                        Provide a compelling headline and detailed therapeutic content for your audience.
+                        Provide a compelling headline and detailed therapeutic content for your
+                        audience.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="p-5 sm:p-6 space-y-5">
                       {/* Title */}
                       <div className="space-y-1.5">
-                        <Label htmlFor="blog-title" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        <Label
+                          htmlFor="blog-title"
+                          className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                        >
                           Article Title <span className="text-rose-500">*</span>
                         </Label>
                         <Input
@@ -1001,10 +941,15 @@ const CounselorDashboardBlogManager = () => {
                       {/* Excerpt */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <Label htmlFor="blog-excerpt" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                          <Label
+                            htmlFor="blog-excerpt"
+                            className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                          >
                             Summary / Excerpt <span className="text-rose-500">*</span>
                           </Label>
-                          <span className={`text-[11px] ${blogData.excerpt?.length > 280 ? 'text-amber-600' : 'text-slate-400'}`}>
+                          <span
+                            className={`text-[11px] ${blogData.excerpt?.length > 280 ? 'text-amber-600' : 'text-slate-400'}`}
+                          >
                             {blogData.excerpt?.length || 0}/300
                           </span>
                         </div>
@@ -1023,11 +968,15 @@ const CounselorDashboardBlogManager = () => {
                       {/* Content Body */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <Label htmlFor="blog-content" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                          <Label
+                            htmlFor="blog-content"
+                            className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                          >
                             Full Article Content <span className="text-rose-500">*</span>
                           </Label>
                           <span className="text-[11px] text-slate-400">
-                            {getReadingTime(blogData.content)} (~{blogData.content?.split(/\s+/).filter(Boolean).length || 0} words)
+                            {getReadingTime(blogData.content)} (~
+                            {blogData.content?.split(/\s+/).filter(Boolean).length || 0} words)
                           </span>
                         </div>
                         <Textarea
@@ -1043,7 +992,10 @@ const CounselorDashboardBlogManager = () => {
 
                       {/* Tags */}
                       <div className="space-y-2">
-                        <Label htmlFor="blog-tags" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Label
+                          htmlFor="blog-tags"
+                          className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                        >
                           <Tag className="h-3.5 w-3.5 text-primary-600" />
                           Topics & Tags
                         </Label>
@@ -1238,7 +1190,9 @@ const CounselorDashboardBlogManager = () => {
                               <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-0.5">
                                 Click to upload from device
                               </p>
-                              <p className="text-[11px] text-slate-400">or drag & drop your image here</p>
+                              <p className="text-[11px] text-slate-400">
+                                or drag & drop your image here
+                              </p>
                               <div className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-neutral-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-neutral-700">
                                 PNG, JPG, WEBP (Max 5MB)
                               </div>
@@ -1249,7 +1203,10 @@ const CounselorDashboardBlogManager = () => {
                           {imageTab === 'url' && (
                             <div className="space-y-2">
                               <div className="space-y-1.5">
-                                <Label htmlFor="image-url" className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                <Label
+                                  htmlFor="image-url"
+                                  className="text-xs text-slate-600 dark:text-slate-400 font-medium"
+                                >
                                   Direct Image URL
                                 </Label>
                                 <Input
@@ -1302,7 +1259,9 @@ const CounselorDashboardBlogManager = () => {
                                 <span className="w-2 h-2 rounded-full bg-amber-500" />
                                 <div>
                                   <span className="font-semibold block text-xs">Save as Draft</span>
-                                  <span className="text-[10px] text-slate-400">Only visible to you</span>
+                                  <span className="text-[10px] text-slate-400">
+                                    Only visible to you
+                                  </span>
                                 </div>
                               </div>
                             </SelectItem>
@@ -1310,8 +1269,12 @@ const CounselorDashboardBlogManager = () => {
                               <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
                                 <div>
-                                  <span className="font-semibold block text-xs">Publish Publicly</span>
-                                  <span className="text-[10px] text-slate-400">Live for all readers</span>
+                                  <span className="font-semibold block text-xs">
+                                    Publish Publicly
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">
+                                    Live for all readers
+                                  </span>
                                 </div>
                               </div>
                             </SelectItem>
@@ -1515,7 +1478,10 @@ const CounselorDashboardBlogManager = () => {
       {/* ====================================================
           MODAL: DELETE BLOG CONFIRMATION
       ==================================================== */}
-      <Dialog open={Boolean(deleteModalBlog)} onOpenChange={(open) => !open && setDeleteModalBlog(null)}>
+      <Dialog
+        open={Boolean(deleteModalBlog)}
+        onOpenChange={(open) => !open && setDeleteModalBlog(null)}
+      >
         <DialogContent className="sm:max-w-md rounded-2xl bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800">
           <DialogHeader>
             <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-2 border border-rose-200 dark:border-rose-900">
@@ -1525,7 +1491,11 @@ const CounselorDashboardBlogManager = () => {
               Delete Article
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-              Are you sure you want to delete <strong className="text-slate-800 dark:text-slate-200">"{deleteModalBlog?.title}"</strong>? This action cannot be undone and will remove the article from the public blog.
+              Are you sure you want to delete{' '}
+              <strong className="text-slate-800 dark:text-slate-200">
+                "{deleteModalBlog?.title}"
+              </strong>
+              ? This action cannot be undone and will remove the article from the public blog.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0 pt-3">

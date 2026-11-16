@@ -1,5 +1,5 @@
 // File: src/pages/ContactUs.jsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import {
   FaPhone,
@@ -19,10 +19,7 @@ import {
   FaUser,
   FaLock,
 } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
-import api from '../../lib/axios';
-import { useClientAuth } from '../../contexts/ClientAuthContext';
-import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
+import { useContactForm } from '../../hooks/useContactForm';
 import {
   Select,
   SelectContent,
@@ -32,125 +29,17 @@ import {
 } from '@/components/ui/select';
 
 const ContactUs = () => {
-  const { client } = useClientAuth();
-  const { counselor } = useCounselorAuth();
-
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    subject: 'general',
-    message: '',
-    userType: 'client',
-  });
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [prefilledFromProfile, setPrefilledFromProfile] = useState(false);
-  const [lockedFields, setLockedFields] = useState({
-    firstName: false,
-    lastName: false,
-    email: false,
-    userType: false,
-  });
-
-  // Auto-prefill with locked fields from reactive auth context
-  useEffect(() => {
-    const activeUser = client || counselor;
-    if (activeUser) {
-      setIsAuthenticated(true);
-      const userType = client ? 'client' : 'counselor';
-      const firstName = activeUser.firstName || activeUser.fullName?.split(' ')[0] || '';
-      const lastName =
-        activeUser.lastName || activeUser.fullName?.split(' ').slice(1).join(' ') || '';
-      const email = activeUser.email || '';
-
-      setFormData((prev) => ({
-        ...prev,
-        firstName,
-        lastName,
-        email,
-        userType,
-      }));
-
-      setLockedFields({
-        firstName: Boolean(firstName),
-        lastName: Boolean(lastName),
-        email: Boolean(email),
-        userType: true,
-      });
-
-      setPrefilledFromProfile(Boolean(firstName || email));
-    }
-  }, [client, counselor]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    // Prevent changes to locked fields
-    if (lockedFields[name]) {
-      return;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.message) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const response = await api.post('/contact/send-email', {
-        ...formData,
-        submittedAt: new Date().toISOString(),
-        prefilledFromProfile,
-        authenticatedUser: isAuthenticated,
-      });
-
-      const data = response.data;
-
-      if (data.success || response.status === 200) {
-        setSubmitted(true);
-        toast.success("Message sent successfully! We'll get back to you soon.", {
-          duration: 4000,
-        });
-
-        // Reset only non-locked fields after successful submission
-        setTimeout(() => {
-          setFormData((prev) => ({
-            ...prev,
-            subject: 'general',
-            message: '',
-            // Keep locked fields intact
-          }));
-          setSubmitted(false);
-        }, 3000);
-      } else {
-        toast.error(data.message || 'Failed to send message. Please try again.');
-      }
-    } catch (error) {
-      console.error('Contact form error:', error);
-      toast.error('Failed to send message. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Layer 3 Contact Form Hook (Decoupled from Layer 4 Presentation)
+  const {
+    formData,
+    setFormData,
+    loading,
+    submitted,
+    prefilledFromProfile,
+    lockedFields,
+    handleChange,
+    handleSubmit,
+  } = useContactForm();
 
   const contactInfo = [
     {

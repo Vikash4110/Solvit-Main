@@ -83,8 +83,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { TIMEZONE } from '../../../constants/constants';
-import { API_ENDPOINTS } from '@/config/api';
-import api from '@/lib/axios';
+import { useClientProfile } from '../../../hooks/useClientProfile';
 
 // Configure Day.js plugins
 dayjs.extend(utc);
@@ -93,54 +92,54 @@ dayjs.extend(relativeTime);
 
 //const topics
 const topics = [
-  "Stress Management",
-  "Anxiety",
-  "Depression",
-  "Emotional Well-being",
-  "Self-esteem & Confidence",
-  "Anger Management",
-  "Mindfulness & Meditation",
-  "Burnout Recovery",
-  "Coping with Change",
-  "Overthinking & Mental Clarity",
-  "Grief & Loss Support",
-  "Building Resilience",
-  "Inner Peace & Self-Reflection",
-  "Career Planning",
-  "Career Change Guidance",
-  "Job Search Support",
-  "Resume & Interview Preparation",
-  "Workplace Stress",
-  "Professional Growth & Development",
-  "Leadership & Communication Skills",
-  "Work-Life Balance",
-  "Decision-Making Support",
-  "Relationship Issues",
-  "Family Conflicts",
-  "Parenting Support",
-  "Couples Therapy",
-  "Marriage Counselling",
-  "Communication Improvement",
-  "Life Purpose & Goal Setting",
-  "Motivation & Productivity",
-  "Building Healthy Habits",
-  "Time Management",
-  "Self-Discovery",
-  "Financial Planning",
-  "Budgeting",
-  "Debt Management",
-  "Savings & Investments",
-  "Money-related Stress",
-  "Academic Guidance",
-  "Study Techniques",
-  "Exam Preparation",
-  "Course or Major Selection",
-  "Student Motivation",
-  "Health & Wellness",
-  "Nutrition & Diet",
-  "Fitness Motivation",
-  "Sleep & Lifestyle Balance",
-  "Body Image & Self-Care"
+  'Stress Management',
+  'Anxiety',
+  'Depression',
+  'Emotional Well-being',
+  'Self-esteem & Confidence',
+  'Anger Management',
+  'Mindfulness & Meditation',
+  'Burnout Recovery',
+  'Coping with Change',
+  'Overthinking & Mental Clarity',
+  'Grief & Loss Support',
+  'Building Resilience',
+  'Inner Peace & Self-Reflection',
+  'Career Planning',
+  'Career Change Guidance',
+  'Job Search Support',
+  'Resume & Interview Preparation',
+  'Workplace Stress',
+  'Professional Growth & Development',
+  'Leadership & Communication Skills',
+  'Work-Life Balance',
+  'Decision-Making Support',
+  'Relationship Issues',
+  'Family Conflicts',
+  'Parenting Support',
+  'Couples Therapy',
+  'Marriage Counselling',
+  'Communication Improvement',
+  'Life Purpose & Goal Setting',
+  'Motivation & Productivity',
+  'Building Healthy Habits',
+  'Time Management',
+  'Self-Discovery',
+  'Financial Planning',
+  'Budgeting',
+  'Debt Management',
+  'Savings & Investments',
+  'Money-related Stress',
+  'Academic Guidance',
+  'Study Techniques',
+  'Exam Preparation',
+  'Course or Major Selection',
+  'Student Motivation',
+  'Health & Wellness',
+  'Nutrition & Diet',
+  'Fitness Motivation',
+  'Sleep & Lifestyle Balance',
+  'Body Image & Self-Care',
 ];
 
 // Animation variants
@@ -158,16 +157,36 @@ const staggerContainer = {
 };
 
 const ClientDashboardPersonalInfo = () => {
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  // Layer 3 Client Profile Hook (Decoupled from Layer 4 Presentation)
+  const {
+    clientData,
+    formData,
+    setFormData,
+    isFetching,
+    isLoading,
+    setIsLoading,
+    error,
+    profileCompleteness,
+    isEditDialogOpen,
+    setIsEditDialogOpen,
+    customLanguageInput,
+    setCustomLanguageInput,
+    handleInputChange,
+    handleNestedInputChange,
+    handleAddCustomLanguage,
+    handleRemoveCustomLanguage,
+    handleSaveChanges,
+    uploadPhoto,
+    fetchClientData,
+    fetchProfileCompleteness,
+  } = useClientProfile();
+
+  // Presentation-only dialog and crop canvas state
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
   const [isViewPhotoDialogOpen, setIsViewPhotoDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [error, setError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [profileCompleteness, setProfileCompleteness] = useState(null);
 
   // Cropper states
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -176,133 +195,6 @@ const ClientDashboardPersonalInfo = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const fileInputRef = useRef(null);
-
-  const [clientData, setClientData] = useState(null);
-  const [formData, setFormData] = useState(null);
-  const [customLanguageInput, setCustomLanguageInput] = useState('');
-
-  const handleAddCustomLanguage = (e) => {
-    if (e) e.preventDefault();
-    const trimmed = customLanguageInput.trim();
-    if (!trimmed) return;
-    const formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-    const currentLangs = formData?.preferredLanguages || [];
-    if (currentLangs.some((l) => l.toLowerCase() === formatted.toLowerCase())) {
-      toast.info(`${formatted} is already in your selected languages`);
-      setCustomLanguageInput('');
-      return;
-    }
-    const updated = [...currentLangs, formatted];
-    handleInputChange('preferredLanguages', updated);
-    setCustomLanguageInput('');
-    toast.success(`Added ${formatted} to preferred languages`);
-  };
-
-  const handleRemoveCustomLanguage = (langToRemove) => {
-    const currentLangs = formData?.preferredLanguages || [];
-    const updated = currentLangs.filter((l) => l !== langToRemove);
-    handleInputChange('preferredLanguages', updated);
-  };
-
-  // Fetch client data and profile completeness
-  useEffect(() => {
-    fetchClientData();
-    fetchProfileCompleteness();
-  }, []);
-
-  const fetchClientData = async () => {
-    setIsFetching(true);
-    setError(null);
-
-    try {
-      const response = await api.get(API_ENDPOINTS.CLIENT_PROFILE_GET_AND_UPDATE);
-      const result = response.data;
-      const data = result?.data || result;
-
-      const transformedData = {
-        fullName: data?.fullName ,
-        username: data?.username,        
-        email: data?.email,
-        phone: data?.phone,
-        gender: data?.gender,
-        profilePicture: data?.profilePicture || '',
-        preferredLanguages: data?.preferredLanguages || [],
-        bio: data?.bio ? (data.bio.charAt(0).toUpperCase() + data.bio.slice(1)) : '',
-        address: {
-          city: data?.address?.city || '',
-          area: data?.address?.area || '',
-          pincode: data?.address?.pincode || '',
-        },
-        prefferedTopics: data?.prefferedTopics || [],
-        lastLogin: data?.lastLogin,
-        createdAt: data?.createdAt,
-      };
-
-      setClientData(transformedData);
-      setFormData(transformedData);
-    } catch (err) {
-      console.error('Error fetching client data:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to load profile data');
-
-      toast.error('Failed to Load Profile', {
-        description: 'Unable to fetch your profile data. Please try again.',
-      });
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const fetchProfileCompleteness = async () => {
-    try {
-      const response = await api.get(API_ENDPOINTS.CLIENT_PROFILE_COMPLETENESS_VALIDATE);
-      const result = response.data;
-      setProfileCompleteness(result.data || result);
-    } catch (err) {
-      console.error('Error fetching profile completeness:', err);
-    }
-  };
-
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleNestedInputChange = (parent, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent],
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleSaveChanges = async () => {
-    setIsLoading(true);
-
-    try {
-      await api.put(API_ENDPOINTS.CLIENT_PROFILE_GET_AND_UPDATE, formData);
-
-      setClientData(formData);
-      setIsEditDialogOpen(false);
-
-      fetchProfileCompleteness();
-
-      toast.success('Profile Updated Successfully', {
-        description: 'Your personal information has been saved.',
-      });
-    } catch (err) {
-      console.error('Error updating profile:', err);
-
-      toast.error('Update Failed', {
-        description: err.response?.data?.message || err.message || 'Failed to update profile. Please try again.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -428,56 +320,6 @@ const ClientDashboardPersonalInfo = () => {
       toast.error('Crop Failed', {
         description: 'Failed to crop image. Please try again.',
       });
-      setIsLoading(false);
-    }
-  };
-
-  const uploadPhoto = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append('profilePicture', file);
-
-      const response = await api.put(
-        API_ENDPOINTS.CLIENT_PROFILE_PROFILEPICTURE_UPDATE_DELETE,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      const result = response.data;
-      const data = result.data || result;
-
-      const newProfilePicture = data.profilePicture;
-      
-      const storedClientData = JSON.parse(localStorage.getItem("client") || "{}");
-      storedClientData.profilePicture = newProfilePicture;
-      localStorage.setItem("client", JSON.stringify(storedClientData));
-
-      setClientData((prev) => ({
-        ...prev,
-        profilePicture: newProfilePicture,
-      }));
-
-      setFormData((prev) => ({
-        ...prev,
-        profilePicture: newProfilePicture,
-      }));
-
-      fetchProfileCompleteness();
-
-      toast.success('Photo Updated', {
-        description: 'Your profile picture has been changed successfully.',
-      });
-    } catch (err) {
-      console.error('Error uploading photo:', err);
-
-      toast.error('Upload Failed', {
-        description: err.message || 'Failed to upload photo. Please try again.',
-      });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -626,7 +468,7 @@ const ClientDashboardPersonalInfo = () => {
             </div>
 
             {/* Profile Completeness Badge */}
-            {profileCompleteness && !profileCompleteness.isComplete &&(
+            {profileCompleteness && !profileCompleteness.isComplete && (
               <div className="flex items-center gap-3 bg-white dark:bg-slate-900 rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-800">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -734,7 +576,10 @@ const ClientDashboardPersonalInfo = () => {
                         <Calendar className="h-3.5 w-3.5 text-blue-500 shrink-0" />
                         <span>Joined</span>
                       </div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" title={formatDate(clientData.createdAt)}>
+                      <p
+                        className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate"
+                        title={formatDate(clientData.createdAt)}
+                      >
                         {dayjs.utc(clientData.createdAt).tz(TIMEZONE).format('DD MMM YYYY')}
                       </p>
                     </div>
@@ -744,8 +589,13 @@ const ClientDashboardPersonalInfo = () => {
                         <Clock className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                         <span>Last Active</span>
                       </div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" title={formatSmartDate(clientData.lastLogin)}>
-                        {clientData.lastLogin ? dayjs.utc(clientData.lastLogin).tz(TIMEZONE).format('DD MMM, hh:mm A') : 'Recently'}
+                      <p
+                        className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate"
+                        title={formatSmartDate(clientData.lastLogin)}
+                      >
+                        {clientData.lastLogin
+                          ? dayjs.utc(clientData.lastLogin).tz(TIMEZONE).format('DD MMM, hh:mm A')
+                          : 'Recently'}
                       </p>
                     </div>
                   </div>
@@ -758,7 +608,10 @@ const ClientDashboardPersonalInfo = () => {
                         Edit Profile
                       </Button>
                     </SheetTrigger>
-                    <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl overflow-hidden p-0 flex flex-col bg-slate-50/80 dark:bg-slate-950">
+                    <SheetContent
+                      side="right"
+                      className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl overflow-hidden p-0 flex flex-col bg-slate-50/80 dark:bg-slate-950"
+                    >
                       {/* Sticky Modal Header */}
                       <div className="p-5 sm:p-6 pb-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
                         <SheetHeader>
@@ -799,7 +652,10 @@ const ClientDashboardPersonalInfo = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-1.5">
-                                <Label htmlFor="fullName" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="fullName"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   Full Name <span className="text-rose-500">*</span>
                                 </Label>
                                 <Input
@@ -812,7 +668,10 @@ const ClientDashboardPersonalInfo = () => {
                               </div>
 
                               <div className="space-y-1.5">
-                                <Label htmlFor="username" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="username"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   Username <span className="text-rose-500">*</span>
                                 </Label>
                                 <Input
@@ -825,7 +684,10 @@ const ClientDashboardPersonalInfo = () => {
                               </div>
 
                               <div className="space-y-1.5">
-                                <Label htmlFor="email" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="email"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   Email Address <span className="text-rose-500">*</span>
                                 </Label>
                                 <Input
@@ -839,7 +701,10 @@ const ClientDashboardPersonalInfo = () => {
                               </div>
 
                               <div className="space-y-1.5">
-                                <Label htmlFor="phone" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="phone"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   Phone Number <span className="text-rose-500">*</span>
                                 </Label>
                                 <Input
@@ -852,14 +717,20 @@ const ClientDashboardPersonalInfo = () => {
                               </div>
 
                               <div className="space-y-1.5 sm:col-span-2">
-                                <Label htmlFor="gender" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="gender"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   Gender
                                 </Label>
                                 <Select
                                   value={formData.gender}
                                   onValueChange={(value) => handleInputChange('gender', value)}
                                 >
-                                  <SelectTrigger id="gender" className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800">
+                                  <SelectTrigger
+                                    id="gender"
+                                    className="h-10 text-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                                  >
                                     <SelectValue placeholder="Select gender" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -876,7 +747,10 @@ const ClientDashboardPersonalInfo = () => {
 
                             <div className="space-y-1.5">
                               <div className="flex items-center justify-between">
-                                <Label htmlFor="bio" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="bio"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   Bio / About You
                                 </Label>
                                 <span className="text-[11px] text-slate-400">
@@ -930,7 +804,10 @@ const ClientDashboardPersonalInfo = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div className="space-y-1.5">
-                                <Label htmlFor="city" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="city"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   City
                                 </Label>
                                 <Input
@@ -945,7 +822,10 @@ const ClientDashboardPersonalInfo = () => {
                               </div>
 
                               <div className="space-y-1.5">
-                                <Label htmlFor="area" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="area"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   Area
                                 </Label>
                                 <Input
@@ -960,7 +840,10 @@ const ClientDashboardPersonalInfo = () => {
                               </div>
 
                               <div className="space-y-1.5">
-                                <Label htmlFor="pincode" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <Label
+                                  htmlFor="pincode"
+                                  className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+                                >
                                   Pincode
                                 </Label>
                                 <Input
@@ -999,7 +882,10 @@ const ClientDashboardPersonalInfo = () => {
                                   <Globe className="h-3.5 w-3.5 text-slate-500" />
                                   Preferred Languages
                                 </Label>
-                                <Badge variant="secondary" className="text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0">
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0"
+                                >
                                   {formData.preferredLanguages?.length || 0} selected
                                 </Badge>
                               </div>
@@ -1111,7 +997,10 @@ const ClientDashboardPersonalInfo = () => {
                                   <Heart className="h-3.5 w-3.5 text-slate-500" />
                                   Preferred Topics
                                 </Label>
-                                <Badge variant="secondary" className="text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0">
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0"
+                                >
                                   {formData.prefferedTopics?.length || 0} selected
                                 </Badge>
                               </div>
@@ -1207,12 +1096,7 @@ const ClientDashboardPersonalInfo = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <InfoItem icon={Mail} label="Email Address" value={clientData.email} />
                     <InfoItem icon={Phone} label="Phone Number" value={clientData.phone} />
-                    <InfoItem
-                      icon={User}
-                      label="Gender"
-                      value={clientData.gender}
-                      badge
-                    />
+                    <InfoItem icon={User} label="Gender" value={clientData.gender} badge />
                   </div>
                 </CardContent>
               </Card>
@@ -1404,8 +1288,6 @@ const ClientDashboardPersonalInfo = () => {
                   onChange={handleFileInput}
                 />
               </div>
-
-              
             </div>
           </DialogContent>
         </Dialog>

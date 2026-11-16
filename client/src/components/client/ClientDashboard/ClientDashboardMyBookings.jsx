@@ -40,8 +40,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-import { API_ENDPOINTS } from '../../../config/api';
-import api from '@/lib/axios';
 import { TIMEZONE } from '../../../constants/constants';
 
 import dayjs from 'dayjs';
@@ -50,56 +48,40 @@ import timezone from 'dayjs/plugin/timezone.js';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter.js';
 import PreSessionGuidelines from '../ClientDashboard/ClientDashboardPreSessionGuidelines';
+import { useClientBookings } from '../../../hooks/useClientBookings';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 
-const EARLY_JOIN_MINUTES = 10; // must match earlyJoinMinutesForSession constant on the server
-
 const fadeInUp = {
   hidden: { opacity: 0, y: 14 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 };
 
-// ─── Pure helper — recompute canJoin from the booking's slot times ────────────
-// This is evaluated both on fetch AND every 30 s via a timer so the button
-// locks/unlocks in real time without a page reload.
-const computeCanJoin = (booking) => {
-  if (!booking?.videoSDKRoomId || !booking?.startTime || !booking?.endTime) return false;
-  if (booking.status !== 'confirmed') return false;
-
-  const now = dayjs().utc();
-  const start = dayjs.utc(booking.startTime);
-  const end = dayjs.utc(booking.endTime);
-
-  if (!start.isValid() || !end.isValid()) return false;
-
-  // Mirror server logic: join window = [start − EARLY_JOIN_MINUTES, end]
-  return now.isSameOrAfter(start.subtract(EARLY_JOIN_MINUTES, 'minute')) && now.isBefore(end);
-};
-
 const ClientDashboardMyBookings = () => {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('upcoming');
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalCount: 0,
-  });
-
-  const [cancelModal, setCancelModal] = useState({ show: false, booking: null });
-  const [cancelReason, setCancelReason] = useState('');
-  const [cancelLoading, setCancelLoading] = useState(false);
-
-  // Guidelines modal: store the booking to join so the closure captures it correctly
-  const [guidelinesState, setGuidelinesState] = useState({ show: false, booking: null });
-
-  const timerRef = useRef(null);
+  // Layer 3 Client Bookings Hook (Decoupled from Layer 4 Presentation)
+  const {
+    activeTab,
+    setActiveTab,
+    bookings,
+    loading,
+    pagination,
+    cancelModal,
+    setCancelModal,
+    cancelReason,
+    setCancelReason,
+    cancelLoading,
+    guidelinesState,
+    setGuidelinesState,
+    fetchBookings,
+    handleJoinSession,
+    handleProceedToSession,
+    handleCancelBooking,
+  } = useClientBookings();
 
   const tabs = [
     { key: 'upcoming', label: 'Upcoming', icon: Clock },
@@ -107,116 +89,6 @@ const ClientDashboardMyBookings = () => {
     { key: 'issuesRaised', label: 'Issues Raised', icon: MessageSquare },
     { key: 'completed', label: 'Completed', icon: CheckCircle2 },
   ];
-
-  // ── Fetch ────────────────────────────────────────────────────────────────────
-  const fetchBookings = useCallback(
-    async (page = 1) => {
-      try {
-        setLoading(true);
-
-        const queryParams = new URLSearchParams({
-          filter: activeTab,
-          page: page.toString(),
-          perPage: '10',
-        });
-
-        const response = await api.get(
-          `${API_ENDPOINTS.CLIENT_BOOKINGS}?${queryParams}`
-        );
-
-        const data = response.data;
-
-        if (data.success) {
-          // Recompute canJoin client-side on every fetch
-          const enriched = (data.data.bookings || []).map((b) => ({
-            ...b,
-            canJoin: computeCanJoin(b),
-          }));
-          setBookings(enriched);
-          setPagination(data.data.pagination);
-        } else {
-          toast.error(data.message || 'Failed to load bookings');
-        }
-      } catch (error) {
-        console.error('Error fetching bookings:', error);
-        if (error.response?.status !== 401) {
-          toast.error(error.response?.data?.message || 'Failed to load bookings');
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [activeTab]
-  );
-
-  useEffect(() => {
-    fetchBookings();
-  }, [fetchBookings]);
-
-  // ── Live timer: recompute canJoin every 30 s for the 'upcoming' tab ──────────
-  // This ensures the Join button enables/disables at the right moment without
-  // requiring a manual refresh, and also locks out users once the session ends.
-  useEffect(() => {
-    if (activeTab !== 'upcoming') return;
-
-    timerRef.current = setInterval(() => {
-      setBookings((prev) =>
-        prev.map((b) => ({
-          ...b,
-          canJoin: computeCanJoin(b),
-        }))
-      );
-    }, 30_000); // every 30 seconds
-
-    return () => clearInterval(timerRef.current);
-  }, [activeTab]);
-
-  // ── Join handlers ────────────────────────────────────────────────────────────
-  const handleJoinSession = (booking) => {
-    // Double-check locally before even showing guidelines
-    if (!computeCanJoin(booking)) {
-      toast.error('The join window for this session is not open.');
-      return;
-    }
-    setGuidelinesState({ show: true, booking });
-  };
-
-  const handleProceedToSession = (bookingId, videoSDKRoomId) => {
-    setGuidelinesState({ show: false, booking: null });
-    navigate(`/meeting/${bookingId}/${videoSDKRoomId}`);
-  };
-
-  // ── Cancel ───────────────────────────────────────────────────────────────────
-  const handleCancelBooking = async () => {
-    if (!cancelModal.booking || !cancelReason.trim()) {
-      toast.error('Please provide a cancellation reason');
-      return;
-    }
-
-    try {
-      setCancelLoading(true);
-
-      const response = await api.post(
-        `${API_ENDPOINTS.CLIENT_BOOKING_CANCEL}/${cancelModal.booking.bookingId}/cancel`,
-        { reason: cancelReason }
-      );
-
-      const data = response.data;
-      if (data.success) {
-        toast.success(data.message || 'Booking cancelled successfully');
-        setCancelModal({ show: false, booking: null });
-        setCancelReason('');
-        fetchBookings();
-      } else {
-        toast.error(data.message || 'Failed to cancel booking');
-      }
-    } catch (error) {
-      console.error('Cancel error:', error);
-      toast.error(error.response?.data?.message || 'Failed to cancel booking');
-    } finally {
-      setCancelLoading(false);
-    }
-  };
 
   // ── UI helpers ───────────────────────────────────────────────────────────────
   const getStatusUI = (booking) => {
@@ -384,7 +256,9 @@ const ClientDashboardMyBookings = () => {
                 </div>
 
                 <div className="self-start sm:self-center shrink-0">
-                  <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}>
+                  <span
+                    className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg shadow-xs shrink-0 inline-block ${statusUI.className}`}
+                  >
                     {statusUI.label}
                   </span>
                 </div>
@@ -438,7 +312,7 @@ const ClientDashboardMyBookings = () => {
                       ₹{booking.price}
                     </p>
                   </div>
-                  {!!booking.invoice ? (
+                  {booking.invoice ? (
                     <div className="pt-0.5">
                       <Button
                         variant="outline"
