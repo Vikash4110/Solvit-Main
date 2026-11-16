@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FaSearch,
   FaFilter,
@@ -13,7 +13,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
 } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
 import {
   Clock,
@@ -25,9 +24,13 @@ import {
   Calendar,
   PenSquare,
   Plus,
+  Brain,
+  Briefcase,
+  Compass,
+  GraduationCap,
+  Activity,
 } from 'lucide-react';
-import { API_ENDPOINTS } from '../../config/api';
-import api from '../../lib/axios';
+import { useBlogFeed } from '../../hooks/useBlogFeed';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 import {
   Select,
@@ -40,149 +43,25 @@ import {
 const Blogs = () => {
   const navigate = useNavigate();
   const { counselor } = useCounselorAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [blogs, setBlogs] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
-  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'latest');
-  const [showFilters, setShowFilters] = useState(false);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalDocs: 0,
-    hasNextPage: false,
-    hasPrevPage: false,
-  });
 
-  useEffect(() => {
-    fetchBlogs();
-    fetchCategories();
-  }, [selectedCategory, sortBy, searchParams.get('page')]);
-
-  // ✅ UPDATED: Fetch blogs without authentication (public endpoint)
-  const fetchBlogs = async () => {
-    try {
-      setLoading(true);
-
-      const params = new URLSearchParams({
-        page: searchParams.get('page') || '1',
-        limit: '12',
-        sort: sortBy,
-      });
-
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (searchTerm) params.append('search', searchTerm);
-
-      // ✅ Public endpoint - no authentication required
-      const response = await api.get(`${API_ENDPOINTS.BLOGS_GET_ALL}?${params}`);
-
-      const data = response.data;
-      if (data.success) {
-        setBlogs(data.data.docs);
-        setPagination({
-          currentPage: data.data.page,
-          totalPages: data.data.totalPages,
-          totalDocs: data.data.totalDocs,
-          hasNextPage: data.data.hasNextPage,
-          hasPrevPage: data.data.hasPrevPage,
-        });
-      } else {
-        toast.error(data.message || 'Failed to load blogs');
-      }
-    } catch (error) {
-      console.error('Error fetching blogs:', error);
-      toast.error('Failed to load blogs');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ✅ UPDATED: Fetch categories without authentication (public endpoint)
-  const fetchCategories = async () => {
-    try {
-      const response = await api.get(API_ENDPOINTS.BLOGS_GET_CATEGORIES);
-
-      const data = response.data;
-      if (data.success) {
-        setCategories(data.data);
-      } else {
-        // ✅ Fail silently for categories if there's an issue
-        console.log('Categories not available');
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      // ✅ Don't show error toast for categories - they're optional
-    }
-  };
-
-  // ✅ OPTIMIZED: Debounced search to reduce API calls
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const params = new URLSearchParams(searchParams);
-    if (searchTerm.trim()) {
-      params.set('search', searchTerm.trim());
-    } else {
-      params.delete('search');
-    }
-    params.set('page', '1');
-    setSearchParams(params);
-    fetchBlogs();
-  };
-
-  const handleCategoryFilter = (category) => {
-    const params = new URLSearchParams(searchParams);
-    if (category) {
-      params.set('category', category);
-    } else {
-      params.delete('category');
-    }
-    params.set('page', '1');
-    setSearchParams(params);
-    setSelectedCategory(category);
-  };
-
-  const handleSortChange = (sort) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('sort', sort);
-    params.set('page', '1');
-    setSearchParams(params);
-    setSortBy(sort);
-  };
-
-  const handlePageChange = (page) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', page);
-    setSearchParams(params);
-    // ✅ Scroll to top on page change for better UX
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('');
-    setSortBy('latest');
-    setSearchParams({});
-  };
-
-  // ✅ NEW: Debounced search effect to reduce API calls
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchTerm !== (searchParams.get('search') || '')) {
-        const params = new URLSearchParams(searchParams);
-        if (searchTerm.trim()) {
-          params.set('search', searchTerm.trim());
-        } else {
-          params.delete('search');
-        }
-        params.set('page', '1');
-        setSearchParams(params);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  // Layer 3 Blog Feed Hook (Decoupled from Layer 4 Presentation)
+  const {
+    blogs,
+    categories,
+    loading,
+    pagination,
+    searchTerm,
+    setSearchTerm,
+    selectedCategory,
+    sortBy,
+    showFilters,
+    setShowFilters,
+    handleSearch,
+    handleCategoryFilter,
+    handleSortChange,
+    handlePageChange,
+    clearFilters,
+  } = useBlogFeed();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 pt-24 sm:pt-28 pb-16">
@@ -281,10 +160,19 @@ const Blogs = () => {
                 <SelectTrigger className="w-[140px] sm:w-[150px] h-10 px-3.5 py-2 text-sm rounded-xl border border-gray-200 bg-white shadow-xs">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent align="start" className="rounded-xl border border-gray-100 shadow-xl bg-white p-1">
-                  <SelectItem value="latest" className="rounded-lg cursor-pointer">Latest</SelectItem>
-                  <SelectItem value="popular" className="rounded-lg cursor-pointer">Most Popular</SelectItem>
-                  <SelectItem value="alphabetical" className="rounded-lg cursor-pointer">A-Z</SelectItem>
+                <SelectContent
+                  align="start"
+                  className="rounded-xl border border-gray-100 shadow-xl bg-white p-1"
+                >
+                  <SelectItem value="latest" className="rounded-lg cursor-pointer">
+                    Latest
+                  </SelectItem>
+                  <SelectItem value="popular" className="rounded-lg cursor-pointer">
+                    Most Popular
+                  </SelectItem>
+                  <SelectItem value="alphabetical" className="rounded-lg cursor-pointer">
+                    A-Z
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -349,7 +237,7 @@ const Blogs = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* ✅ IMPROVED: Results count display */}
+        {/* Results count display */}
         {!loading && blogs.length > 0 && (
           <motion.div
             className="text-center mb-8"
@@ -489,38 +377,44 @@ const Blogs = () => {
 const CATEGORY_THEMES = {
   'mental-health': {
     label: 'Mental Health',
-    icon: '🧠',
-    badge: 'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800/80',
+    icon: Brain,
+    badge:
+      'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800/80',
     headerGradient: 'from-teal-500/15 via-emerald-500/10 to-teal-700/15',
   },
   career: {
     label: 'Career & Work',
-    icon: '💼',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/80',
+    icon: Briefcase,
+    badge:
+      'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/80',
     headerGradient: 'from-blue-500/15 via-indigo-500/10 to-blue-700/15',
   },
   relationship: {
     label: 'Relationship',
-    icon: '❤️',
-    badge: 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/80',
+    icon: Heart,
+    badge:
+      'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/80',
     headerGradient: 'from-rose-500/15 via-pink-500/10 to-rose-700/15',
   },
   'life-coaching': {
     label: 'Personal Growth',
-    icon: '🌱',
-    badge: 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80',
+    icon: Compass,
+    badge:
+      'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80',
     headerGradient: 'from-purple-500/15 via-violet-500/10 to-purple-700/15',
   },
   academic: {
     label: 'Academic & Students',
-    icon: '🎓',
-    badge: 'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/80',
+    icon: GraduationCap,
+    badge:
+      'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/80',
     headerGradient: 'from-sky-500/15 via-cyan-500/10 to-sky-700/15',
   },
   'health-wellness': {
     label: 'Health & Wellness',
-    icon: '🌿',
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80',
+    icon: Activity,
+    badge:
+      'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80',
     headerGradient: 'from-emerald-500/15 via-teal-500/10 to-emerald-700/15',
   },
 };
@@ -529,9 +423,12 @@ const getCategoryTheme = (category) => {
   const normalized = category?.toLowerCase()?.trim() || '';
   return (
     CATEGORY_THEMES[normalized] || {
-      label: category ? category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Mental Health',
-      icon: '✨',
-      badge: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+      label: category
+        ? category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+        : 'Mental Health',
+      icon: Sparkles,
+      badge:
+        'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
       headerGradient: 'from-slate-500/10 via-primary-500/10 to-slate-700/10',
     }
   );
@@ -554,9 +451,11 @@ const getAuthorSpecialization = (author) => {
 // Modern, Professional Mental Health Blog Card
 const BlogCard = ({ blog, index }) => {
   const theme = getCategoryTheme(blog.category);
-  const formattedDate = blog.publishedAt && dayjs(blog.publishedAt).isValid()
-    ? dayjs(blog.publishedAt).format('DD MMM YYYY')
-    : 'Recent';
+  const CategoryIcon = theme.icon;
+  const formattedDate =
+    blog.publishedAt && dayjs(blog.publishedAt).isValid()
+      ? dayjs(blog.publishedAt).format('DD MMM YYYY')
+      : 'Recent';
 
   return (
     <motion.div
@@ -578,11 +477,13 @@ const BlogCard = ({ blog, index }) => {
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-80" />
-          
+
           {/* Badges on Image */}
           <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between pointer-events-none">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md border shadow-xs ${theme.badge}`}>
-              <span>{theme.icon}</span>
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md border shadow-xs ${theme.badge}`}
+            >
+              <CategoryIcon className="w-3.5 h-3.5" />
               <span>{theme.label}</span>
             </span>
             {blog.featured && (
@@ -594,13 +495,17 @@ const BlogCard = ({ blog, index }) => {
           </div>
         </div>
       ) : (
-        <div className={`relative h-28 w-full bg-gradient-to-br ${theme.headerGradient} border-b border-slate-100 dark:border-slate-800/80 p-4 flex flex-col justify-between overflow-hidden shrink-0`}>
-          <div className="absolute -right-2 -bottom-3 text-6xl opacity-10 select-none pointer-events-none">
-            {theme.icon}
+        <div
+          className={`relative h-28 w-full bg-gradient-to-br ${theme.headerGradient} border-b border-slate-100 dark:border-slate-800/80 p-4 flex flex-col justify-between overflow-hidden shrink-0`}
+        >
+          <div className="absolute -right-2 -bottom-3 text-slate-400/20 dark:text-slate-600/20 select-none pointer-events-none">
+            <CategoryIcon className="w-20 h-20" />
           </div>
           <div className="flex items-center justify-between relative z-10">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm shadow-xs ${theme.badge}`}>
-              <span>{theme.icon}</span>
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm shadow-xs ${theme.badge}`}
+            >
+              <CategoryIcon className="w-3.5 h-3.5" />
               <span>{theme.label}</span>
             </span>
             {blog.featured && (
