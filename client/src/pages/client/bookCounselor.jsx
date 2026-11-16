@@ -48,11 +48,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
-import { API_ENDPOINTS } from '../../config/api';
-import api, { getActiveToken } from '../../lib/axios';
+import { getActiveToken } from '../../lib/axios';
 import { fetchApplicableCoupon, validateCoupon } from '../../services/couponService';
 import { usePaymentCheckout } from '../../hooks/usePaymentCheckout';
-import useSmartRefresh from '../../hooks/useSmartRefresh';
+import { useCounselorBooking } from '../../hooks/useCounselorBooking';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useCounselorAuth } from '../../contexts/CounselorAuthContext';
 import dayjs from 'dayjs';
@@ -140,18 +139,6 @@ const BookCounselorCalendar = () => {
     return currentUser._id.toString() === counselorId.toString();
   }, [currentUser, counselorId]);
 
-  // ==========================================
-  // STATE MANAGEMENT
-  // ==========================================
-  const [counselor, setCounselor] = useState(null);
-  const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [imgError, setImgError] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
-
   // Layer 3 Payment Checkout Hook (Decoupled from Layer 4 UI)
   const {
     bookingLoading,
@@ -162,6 +149,21 @@ const BookCounselorCalendar = () => {
     initiatePayment: triggerPaymentCheckout,
     checkBookingStatus,
   } = usePaymentCheckout();
+
+  // Layer 3 Counselor Booking Hook (Decoupled from Layer 4 UI)
+  const { counselor, setCounselor, slots, setSlots, markSlotBooked, loading, fetchCounselorData } =
+    useCounselorBooking({
+      counselorId,
+      bookingLoading,
+      isRazorpayOpen,
+    });
+
+  // Presentation-only modal & date state
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [imgError, setImgError] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Network & resilience state
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -237,50 +239,6 @@ const BookCounselorCalendar = () => {
     checkForStaleBooking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
-
-  // ==========================================
-  // FETCH COUNSELOR DATA (RACE CONDITION FIX)
-  // ==========================================
-  const fetchCounselorData = useCallback(
-    async (skipLoading = false) => {
-      try {
-        if (!skipLoading) {
-          setLoading(true);
-        }
-
-        const response = await api.get(
-          `${API_ENDPOINTS.BOOKING_COUNSELOR_SLOTS}/${counselorId}/slots`
-        );
-
-        const data = response.data;
-        setCounselor(data.counselor);
-
-        // Don't update slots if payment is in progress
-        if (!bookingLoading && !isRazorpayOpen) {
-          setSlots(data.slots || []);
-        }
-      } catch (error) {
-        console.error('Fetch error:', error);
-        if (!skipLoading) {
-          toast.error('Unable to retrieve counselor information');
-        }
-      } finally {
-        if (!skipLoading) {
-          setLoading(false);
-        }
-      }
-    },
-    [counselorId, bookingLoading, isRazorpayOpen]
-  );
-
-  // ==========================================
-  // SMART AUTO-REFRESH (FOCUS & TAB AWARE)
-  // ==========================================
-  useSmartRefresh(fetchCounselorData, {
-    intervalMs: 120000, // 2-min active foreground refresh
-    staleTimeMs: 30000, // Refetch when returning to tab after 30s
-    deps: [counselorId],
-  });
 
   // ==========================================
   // HELPER FUNCTIONS
@@ -469,13 +427,7 @@ const BookCounselorCalendar = () => {
         formatDateToString,
         currentUser,
         onBookingSuccess: ({ slotId }) => {
-          setSlots((prev) =>
-            prev.map((slot) =>
-              slot._id === (slotId || selectedSlot?._id)
-                ? { ...slot, status: 'booked', isBooked: true }
-                : slot
-            )
-          );
+          markSlotBooked(slotId || selectedSlot?._id);
           setShowBookingModal(false);
           setSelectedSlot(null);
         },
