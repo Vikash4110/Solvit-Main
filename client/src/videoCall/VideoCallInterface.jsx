@@ -6,7 +6,7 @@ import { MeetingContainer } from './meeting/MeetingContainer';
 import { LeaveScreen } from './components/screens/LeaveScreen';
 import { JoiningScreen } from './components/screens/JoiningScreen';
 import { toast } from 'react-toastify';
-import api from '../lib/axios';
+import { useMeetingSession } from '../hooks/useMeetingSession';
 
 // Helper to safely terminate media tracks and streams
 const stopMediaStreamOrTrack = (streamOrTrack) => {
@@ -29,15 +29,22 @@ const stopMediaStreamOrTrack = (streamOrTrack) => {
 
 function VideoCallInterface() {
   const navigate = useNavigate();
-  const [token, setToken] = useState('');
-  const [sessionData, setSessionData] = useState(null);
-  const [userType, setUserType] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const { bookingId } = useParams();
-  const [meetingId, setMeetingId] = useState('');
-  const [participantId, setParticipantId] = useState('');
-  const [participantName, setParticipantName] = useState('');
+
+  // Layer 3 Meeting Session Hook (Decoupled from Layer 4 Presentation)
+  const {
+    sessionData,
+    userType,
+    participantId,
+    participantName,
+    setParticipantName,
+    meetingId,
+    setMeetingId,
+    loading,
+    error,
+  } = useMeetingSession(bookingId);
+
+  const [token, setToken] = useState('');
   const [micOn, setMicOn] = useState(false);
   const [webcamOn, setWebcamOn] = useState(false);
   const [customAudioStream, setCustomAudioStream] = useState(null);
@@ -72,56 +79,6 @@ function VideoCallInterface() {
       };
     }
   }, [isMobile]);
-
-  useEffect(() => {
-    const initializeSession = async () => {
-      try {
-        setLoading(true);
-
-        // Get session details via authenticated API transport
-        const detailsResponse = await api.get(`/meeting/session/${bookingId}/details`);
-        const detailsData = detailsResponse.data;
-
-        setSessionData(detailsData.data);
-
-        //setting user Type wether client or counselor
-        setUserType(detailsData.data.userType);
-        // console.log(userType)
-
-        //setting participant id and participant name
-        setParticipantId(
-          detailsData.data.userType === 'client'
-            ? `client - ${detailsData.data.booking.clientId._id}`
-            : `counselor - ${detailsData.data.booking.slotId.counselorId._id}`
-        );
-
-        // Name is set as "fullName_mongoId" — unique per person, used by VideoSDK for display.
-        // The primary duplicate-join check uses participantId embedded in the JWT,
-        // but a unique name also prevents any name-based collisions in VideoSDK's participant list.
-        const _client = detailsData.data.booking.clientId;
-        const _counselor = detailsData.data.booking.slotId.counselorId;
-        setParticipantName(
-          detailsData.data.userType === 'client'
-            ? `${_client.fullName}_${_client._id}`
-            : `${_counselor.fullName}_${_counselor._id}`
-        );
-
-        // setting meeting id
-        setMeetingId(detailsData.data.booking.videoSDKRoomId);
-      } catch (err) {
-        console.error('Session initialization error:', err);
-        const errMsg = err?.message || 'Failed to load session details.';
-        setError(errMsg);
-        toast.error(errMsg, { autoClose: 5000 });
-      } finally {
-        // setLoading(false);
-      }
-    };
-
-    if (bookingId) {
-      initializeSession();
-    }
-  }, [bookingId]);
 
   return (
     <>

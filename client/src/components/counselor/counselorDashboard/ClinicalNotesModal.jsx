@@ -29,7 +29,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '@/lib/axios';
+import { useClinicalNotes } from '../../../hooks/useClinicalNotes';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -53,130 +53,29 @@ const CLINICAL_TAG_OPTIONS = [
   'Self-Esteem',
 ];
 
-export const ClinicalNotesModal = ({
-  isOpen,
-  onClose,
-  booking,
-  onNotesSaved,
-}) => {
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  // Note data state
-  const [noteData, setNoteData] = useState(null);
-  const [notesText, setNotesText] = useState('');
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [followUpRequired, setFollowUpRequired] = useState(false);
-  const [followUpDate, setFollowUpDate] = useState('');
-
+export const ClinicalNotesModal = ({ isOpen, onClose, booking, onNotesSaved }) => {
   const bookingId = booking?.bookingId || booking?._id;
 
-  // Fetch note when modal opens
-  useEffect(() => {
-    if (!isOpen || !bookingId) return;
-
-    let isMounted = true;
-    const fetchNote = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/meeting/session/${bookingId}/notes`);
-        if (!isMounted) return;
-
-        const fetchedNote = response.data?.data;
-        if (fetchedNote && fetchedNote.notes) {
-          setNoteData(fetchedNote);
-          setNotesText(fetchedNote.notes);
-          setSelectedTags(Array.isArray(fetchedNote.tags) ? fetchedNote.tags : []);
-          setFollowUpRequired(Boolean(fetchedNote.followUpRequired));
-          setFollowUpDate(
-            fetchedNote.followUpDate
-              ? dayjs(fetchedNote.followUpDate).format('YYYY-MM-DD')
-              : ''
-          );
-          setIsEditing(false);
-        } else {
-          setNoteData(null);
-          setNotesText('');
-          setSelectedTags([]);
-          setFollowUpRequired(false);
-          setFollowUpDate('');
-          setIsEditing(true); // Open in edit mode if no notes exist yet
-        }
-      } catch (err) {
-        console.error('Failed to fetch counselor note:', err);
-        if (isMounted) {
-          setNoteData(null);
-          setNotesText('');
-          setSelectedTags([]);
-          setFollowUpRequired(false);
-          setFollowUpDate('');
-          setIsEditing(true);
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchNote();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, bookingId]);
-
-  const toggleTag = (tag) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const handleCopyNotes = async () => {
-    if (!notesText) return;
-    try {
-      await navigator.clipboard.writeText(notesText);
-      setCopied(true);
-      toast.success('Clinical notes copied to clipboard');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error('Failed to copy to clipboard');
-    }
-  };
-
-  const handleSaveNotes = async (e) => {
-    e?.preventDefault();
-    if (!notesText.trim()) {
-      toast.warning('Please enter clinical notes before saving');
-      return;
-    }
-
-    try {
-      setSaving(true);
-      const payload = {
-        notes: notesText.trim(),
-        tags: selectedTags,
-        followUpRequired,
-        followUpDate: followUpRequired && followUpDate ? followUpDate : undefined,
-      };
-
-      const response = await api.post(`/meeting/session/${bookingId}/notes`, payload);
-      const savedNote = response.data?.data;
-
-      setNoteData(savedNote);
-      setIsEditing(false);
-      toast.success('Clinical notes saved successfully');
-
-      if (typeof onNotesSaved === 'function') {
-        onNotesSaved(bookingId, savedNote);
-      }
-    } catch (err) {
-      console.error('Failed to save clinical notes:', err);
-      toast.error(err.response?.data?.message || 'Could not save clinical notes');
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Layer 3 Clinical Notes Hook (Decoupled from Layer 4 Presentation)
+  const {
+    loading,
+    saving,
+    isEditing,
+    setIsEditing,
+    copied,
+    noteData,
+    notesText,
+    setNotesText,
+    selectedTags,
+    setSelectedTags,
+    toggleTag,
+    followUpRequired,
+    setFollowUpRequired,
+    followUpDate,
+    setFollowUpDate,
+    handleCopyNotes,
+    handleSaveNotes,
+  } = useClinicalNotes({ bookingId, isOpen, onNotesSaved });
 
   if (!booking) return null;
 
@@ -422,7 +321,12 @@ export const ClinicalNotesModal = ({
           <div className="flex items-center gap-2.5">
             {!isEditing && noteData ? (
               <>
-                <Button variant="outline" size="sm" onClick={onClose} className="rounded-xl px-4 py-2 text-xs">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onClose}
+                  className="rounded-xl px-4 py-2 text-xs"
+                >
                   Close
                 </Button>
                 <Button
@@ -458,7 +362,13 @@ export const ClinicalNotesModal = ({
                   </Button>
                 )}
                 {!noteData && (
-                  <Button variant="outline" size="sm" onClick={onClose} disabled={saving} className="rounded-xl px-4 py-2 text-xs">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onClose}
+                    disabled={saving}
+                    className="rounded-xl px-4 py-2 text-xs"
+                  >
                     Close
                   </Button>
                 )}
