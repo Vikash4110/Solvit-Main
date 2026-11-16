@@ -1,7 +1,5 @@
 // pages/general/CampusAmbassadorLanding.jsx - Public Campus Ambassador Program Landing & Application
 
-import { useState } from 'react';
-import { toast } from 'sonner';
 import {
   GraduationCap,
   Users,
@@ -14,8 +12,7 @@ import {
   Wallet,
   ArrowRight,
 } from 'lucide-react';
-import api from '@/lib/axios';
-import { API_ENDPOINTS } from '@/config/api';
+import { useCampusAmbassador } from '@/hooks/useCampusAmbassador';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,92 +21,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import Footer from '@/components/Home/Footer';
 
 export default function CampusAmbassadorLanding() {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    collegeName: '',
-    degreeAndYear: '',
-    upiId: '',
-    reasonToJoin: '',
-  });
-
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [submittedData, setSubmittedData] = useState(null);
-  const [errors, setErrors] = useState({});
-
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-  };
-
-  const validate = () => {
-    const errs = {};
-    if (!formData.fullName.trim() || formData.fullName.trim().length < 3) {
-      errs.fullName = 'Full name must be at least 3 characters.';
-    }
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) {
-      errs.email = 'Please enter a valid email address.';
-    }
-    const phoneRegex = /^\+?[1-9]\d{7,14}$/;
-    if (!formData.phone.trim() || !phoneRegex.test(formData.phone.trim().replace(/[\s-]/g, ''))) {
-      errs.phone = 'Please enter a valid phone number with country code if applicable.';
-    }
-    if (!formData.collegeName.trim() || formData.collegeName.trim().length < 3) {
-      errs.collegeName = 'College name is required.';
-    }
-    if (!formData.degreeAndYear.trim() || formData.degreeAndYear.trim().length < 2) {
-      errs.degreeAndYear = 'Please provide your degree and year (e.g. B.Tech 3rd Year).';
-    }
-    if (!formData.upiId.trim() || !formData.upiId.includes('@')) {
-      errs.upiId = 'Please enter a valid UPI ID (e.g. yourname@oksbi).';
-    }
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) {
-      toast.error('Please resolve validation errors before submitting.');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const response = await api.post(API_ENDPOINTS.CAMPUS_AMBASSADOR_REGISTER, {
-        fullName: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
-        collegeName: formData.collegeName.trim(),
-        degreeAndYear: formData.degreeAndYear.trim(),
-        upiId: formData.upiId.trim(),
-        reasonToJoin: formData.reasonToJoin.trim(),
-      });
-
-      if (response.data?.success) {
-        setSubmitted(true);
-        setSubmittedData(response.data.data);
-        toast.success('Application submitted successfully!');
-      } else {
-        toast.error(response.data?.message || 'Failed to submit application.');
-      }
-    } catch (err) {
-      const message = err.response?.data?.message || 'An unexpected error occurred during registration.';
-      toast.error(message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Layer 3 Campus Ambassador Hook (Decoupled from Layer 4 Presentation)
+  const {
+    formData,
+    setFormData,
+    errors,
+    submitting,
+    submitted,
+    setSubmitted,
+    submittedData,
+    handleChange,
+    handleSubmit,
+  } = useCampusAmbassador();
 
   return (
     <div className="min-h-screen bg-slate-50/60 text-slate-900">
@@ -128,7 +51,9 @@ export default function CampusAmbassadorLanding() {
           </h1>
 
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-600 leading-relaxed">
-            Represent Solvit at your university. Help your peers access professional, confidential emotional counseling and earn an ongoing 5% monthly revenue share on every session they complete during their first 60 days.
+            Represent Solvit at your university. Help your peers access professional, confidential
+            emotional counseling and earn an ongoing 5% monthly revenue share on every session they
+            complete during their first 60 days.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-2">
@@ -146,7 +71,9 @@ export default function CampusAmbassadorLanding() {
       {/* 2. Program Highlights */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-primary-600">How The Program Works</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-primary-600">
+            How The Program Works
+          </h2>
           <p className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
             Built for Transparency and Reliable Monthly Payouts
           </p>
@@ -160,7 +87,9 @@ export default function CampusAmbassadorLanding() {
               </div>
               <h3 className="text-base font-bold text-slate-900">1. Frictionless Link Sharing</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Receive your unique Solvit tracking link upon admin approval. When students open your link, they are automatically attributed to you without needing to type promo codes.
+                Receive your unique Solvit tracking link upon admin approval. When students open
+                your link, they are automatically attributed to you without needing to type promo
+                codes.
               </p>
             </CardContent>
           </Card>
@@ -170,9 +99,12 @@ export default function CampusAmbassadorLanding() {
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                 <Percent className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">2. Multi-Session Revenue Share (60 Days)</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                2. Multi-Session Revenue Share (60 Days)
+              </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Earn a flat 5% incentive on every session your referred student completes on Solvit for 60 days from their first booking.
+                Earn a flat 5% incentive on every session your referred student completes on Solvit
+                for 60 days from their first booking.
               </p>
             </CardContent>
           </Card>
@@ -182,9 +114,13 @@ export default function CampusAmbassadorLanding() {
               <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
                 <Wallet className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">3. Direct Monthly UPI Settlements</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                3. Direct Monthly UPI Settlements
+              </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                All earnings accrue in an auditable ledger. On a monthly cycle, administrators review your accumulated balance and disburse payments directly to your registered UPI ID.
+                All earnings accrue in an auditable ledger. On a monthly cycle, administrators
+                review your accumulated balance and disburse payments directly to your registered
+                UPI ID.
               </p>
             </CardContent>
           </Card>
@@ -199,7 +135,8 @@ export default function CampusAmbassadorLanding() {
               Campus Ambassador Application
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Complete your student profile below. Our admissions team reviews and activates ambassador accounts within 24 to 48 hours.
+              Complete your student profile below. Our admissions team reviews and activates
+              ambassador accounts within 24 to 48 hours.
             </p>
           </div>
 
@@ -211,7 +148,11 @@ export default function CampusAmbassadorLanding() {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900">Application Submitted!</h3>
                 <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                  Thank you for applying, <span className="font-semibold text-slate-800">{submittedData?.fullName}</span>. Your application for <span className="font-semibold text-slate-800">{submittedData?.collegeName}</span> is currently under administrative review.
+                  Thank you for applying,{' '}
+                  <span className="font-semibold text-slate-800">{submittedData?.fullName}</span>.
+                  Your application for{' '}
+                  <span className="font-semibold text-slate-800">{submittedData?.collegeName}</span>{' '}
+                  is currently under administrative review.
                 </p>
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 max-w-md mx-auto text-left text-xs space-y-2">
                   <div className="flex items-center gap-2 text-slate-700 font-medium">
@@ -219,7 +160,8 @@ export default function CampusAmbassadorLanding() {
                     <span>Review Window: 24 - 48 business hours</span>
                   </div>
                   <p className="text-slate-500">
-                    Once approved, your unique referral code and tracking link will be activated and sent to your registered email address ({submittedData?.email}).
+                    Once approved, your unique referral code and tracking link will be activated and
+                    sent to your registered email address ({submittedData?.email}).
                   </p>
                 </div>
                 <div className="pt-4">
@@ -254,7 +196,10 @@ export default function CampusAmbassadorLanding() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="amb-name" className="text-xs font-semibold text-slate-700 block mb-1.5">
+                      <Label
+                        htmlFor="amb-name"
+                        className="text-xs font-semibold text-slate-700 block mb-1.5"
+                      >
                         Full Name <span className="text-red-500">*</span>
                       </Label>
                       <Input
@@ -267,12 +212,17 @@ export default function CampusAmbassadorLanding() {
                         }`}
                       />
                       {errors.fullName && (
-                        <p className="text-[11px] text-red-600 mt-1 font-medium">{errors.fullName}</p>
+                        <p className="text-[11px] text-red-600 mt-1 font-medium">
+                          {errors.fullName}
+                        </p>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="amb-email" className="text-xs font-semibold text-slate-700 block mb-1.5">
+                      <Label
+                        htmlFor="amb-email"
+                        className="text-xs font-semibold text-slate-700 block mb-1.5"
+                      >
                         Email Address <span className="text-red-500">*</span>
                       </Label>
                       <Input
@@ -292,7 +242,10 @@ export default function CampusAmbassadorLanding() {
                   </div>
 
                   <div>
-                    <Label htmlFor="amb-phone" className="text-xs font-semibold text-slate-700 block mb-1.5">
+                    <Label
+                      htmlFor="amb-phone"
+                      className="text-xs font-semibold text-slate-700 block mb-1.5"
+                    >
                       WhatsApp / Phone Number <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -319,7 +272,10 @@ export default function CampusAmbassadorLanding() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="amb-college" className="text-xs font-semibold text-slate-700 block mb-1.5">
+                      <Label
+                        htmlFor="amb-college"
+                        className="text-xs font-semibold text-slate-700 block mb-1.5"
+                      >
                         College or University Name <span className="text-red-500">*</span>
                       </Label>
                       <Input
@@ -332,12 +288,17 @@ export default function CampusAmbassadorLanding() {
                         }`}
                       />
                       {errors.collegeName && (
-                        <p className="text-[11px] text-red-600 mt-1 font-medium">{errors.collegeName}</p>
+                        <p className="text-[11px] text-red-600 mt-1 font-medium">
+                          {errors.collegeName}
+                        </p>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="amb-degree" className="text-xs font-semibold text-slate-700 block mb-1.5">
+                      <Label
+                        htmlFor="amb-degree"
+                        className="text-xs font-semibold text-slate-700 block mb-1.5"
+                      >
                         Degree & Academic Year <span className="text-red-500">*</span>
                       </Label>
                       <Input
@@ -350,7 +311,9 @@ export default function CampusAmbassadorLanding() {
                         }`}
                       />
                       {errors.degreeAndYear && (
-                        <p className="text-[11px] text-red-600 mt-1 font-medium">{errors.degreeAndYear}</p>
+                        <p className="text-[11px] text-red-600 mt-1 font-medium">
+                          {errors.degreeAndYear}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -364,7 +327,10 @@ export default function CampusAmbassadorLanding() {
                   </h3>
 
                   <div>
-                    <Label htmlFor="amb-upi" className="text-xs font-semibold text-slate-700 block mb-1.5">
+                    <Label
+                      htmlFor="amb-upi"
+                      className="text-xs font-semibold text-slate-700 block mb-1.5"
+                    >
                       UPI ID for Payouts <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -380,13 +346,17 @@ export default function CampusAmbassadorLanding() {
                       <p className="text-[11px] text-red-600 mt-1 font-medium">{errors.upiId}</p>
                     ) : (
                       <p className="text-[11px] text-slate-400 mt-1">
-                        Monthly 5% commission settlements will be directly transferred to this UPI address.
+                        Monthly 5% commission settlements will be directly transferred to this UPI
+                        address.
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <Label htmlFor="amb-reason" className="text-xs font-semibold text-slate-700 block mb-1.5">
+                    <Label
+                      htmlFor="amb-reason"
+                      className="text-xs font-semibold text-slate-700 block mb-1.5"
+                    >
                       Why do you want to be a Solvit Campus Ambassador? (Optional)
                     </Label>
                     <Textarea

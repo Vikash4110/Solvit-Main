@@ -1,7 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
@@ -13,10 +11,13 @@ import {
   AlertTriangle,
   Info,
   Shield,
+  Image,
+  Video,
+  Music,
+  FileText,
+  Paperclip,
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { disputeFormSchema } from '@/validators/disputeFormSchema';
-import { useClientAuth } from '../../../contexts/ClientAuthContext';
+import { useDisputeForm } from '../../../hooks/useDisputeForm';
 
 // Shadcn components
 import { Button } from '@/components/ui/button';
@@ -51,9 +52,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-
-import { API_ENDPOINTS } from '../../../config/api.js';
-import api from '@/lib/axios';
 
 // CONSTANTS
 const ISSUE_TYPES = [
@@ -105,214 +103,28 @@ const renderFileIcon = (fileType) => {
 
 const RaiseIssueForm = () => {
   const { bookingId } = useParams();
-  console.log(bookingId);
   const navigate = useNavigate();
-  const { client, isAuthenticated } = useClientAuth();
 
-  // REACT HOOK FORM WITH ZOD
-  const form = useForm({
-    resolver: zodResolver(disputeFormSchema),
-    defaultValues: {
-      issueType: '',
-      description: '',
-      needFollowUpCall: false,
-    },
-  });
-
-  // STATE
-  const [files, setFiles] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [showWarningModal, setShowWarningModal] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Watch description for character count
-  const description = form.watch('description');
-  const remainingChars = 2000 - (description?.length || 0);
-
-  // VALIDATE FILE
-  const validateFile = useCallback((file) => {
-    if (file.size > FILE_LIMITS.MAX_FILE_SIZE) {
-      return {
-        valid: false,
-        error: `File too large (max ${formatFileSize(FILE_LIMITS.MAX_FILE_SIZE)})`,
-      };
-    }
-
-    if (!FILE_LIMITS.ALLOWED_TYPES.includes(file.type)) {
-      return { valid: false, error: 'Invalid file type' };
-    }
-
-    const extension = '.' + file.name.split('.').pop().toLowerCase();
-    if (!FILE_LIMITS.ALLOWED_EXTENSIONS.includes(extension)) {
-      return { valid: false, error: 'Invalid file extension' };
-    }
-
-    return { valid: true };
-  }, []);
-
-  // PROCESS FILES
-  const processFiles = useCallback(
-    (selectedFiles) => {
-      if (files.length + selectedFiles.length > FILE_LIMITS.MAX_FILES) {
-        toast.error(`Maximum ${FILE_LIMITS.MAX_FILES} files allowed`);
-        return;
-      }
-
-      const validFiles = [];
-      const errors = [];
-
-      for (const file of selectedFiles) {
-        const validation = validateFile(file);
-        if (validation.valid) {
-          validFiles.push(file);
-        } else {
-          errors.push(`${file.name}: ${validation.error}`);
-        }
-      }
-
-      if (errors.length > 0) {
-        errors.forEach((error) => toast.error(error));
-      }
-
-      if (validFiles.length > 0) {
-        setFiles((prev) => [...prev, ...validFiles]);
-        toast.success(`${validFiles.length} file(s) added`);
-      }
-    },
-    [files, validateFile]
-  );
-
-  // HANDLE FILE UPLOAD
-  const handleFileChange = useCallback(
-    (e) => {
-      const selectedFiles = Array.from(e.target.files);
-      processFiles(selectedFiles);
-      e.target.value = '';
-    },
-    [processFiles]
-  );
-
-  // DRAG AND DROP
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const droppedFiles = Array.from(e.dataTransfer.files);
-      processFiles(droppedFiles);
-    },
-    [processFiles]
-  );
-
-  // REMOVE FILE
-  const removeFile = useCallback((index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-    toast.info('File removed');
-  }, []);
-
-  // HANDLE FORM SUBMIT
-  const onSubmit = async (data) => {
-    setShowWarningModal(true);
-  };
-
-  // CONFIRM SUBMIT
-  const confirmSubmit = useCallback(async () => {
-    setShowWarningModal(false);
-    setIsSubmitting(true);
-    setUploadProgress(0);
-    let progressInterval;
-
-    try {
-      if (!isAuthenticated && !client) {
-        toast.error('Authentication required. Please login again.');
-        navigate('/login');
-        return;
-      }
-
-      const formValues = form.getValues();
-      const formDataToSend = new FormData();
-
-      formDataToSend.append('bookingId', bookingId);
-      formDataToSend.append('issueType', formValues.issueType);
-      formDataToSend.append('description', formValues.description.trim());
-      formDataToSend.append('needFollowUpCall', formValues.needFollowUpCall);
-
-      files.forEach((file) => {
-        formDataToSend.append('evidence', file);
-      });
-
-      progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 300);
-
-      const response = await api.post('/client/bookings/dispute/raise', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      const data = response.data;
-
-      if (data.success) {
-        setSubmitSuccess(true);
-        toast.success(data.message || 'Complaint submitted successfully!');
-
-        setTimeout(() => {
-          navigate('/client/dashboard/bookings');
-        }, 3000);
-      }
-    } catch (error) {
-      clearInterval(progressInterval);
-      console.error('Submit error:', error);
-
-      const status = error.response?.status;
-      const data = error.response?.data || {};
-
-      if (status === 400) {
-        if (data.errors && Array.isArray(data.errors)) {
-          data.errors.forEach((err) => {
-            toast.error(err.message || err.field + ': ' + err.message || err);
-          });
-        } else {
-          toast.error(data.message || 'Validation failed');
-        }
-      } else if (status === 403) {
-        toast.error('You are not authorized to raise a dispute for this booking');
-      } else if (status === 404) {
-        toast.error('Booking not found');
-      } else if (status === 429) {
-        toast.error('Too many requests. Please try again later.');
-      } else if (status === 401) {
-        // Handled by interceptor, but display message if needed
-        toast.error('Session expired. Please login again.');
-      } else {
-        toast.error(data.message || 'Failed to submit complaint');
-      }
-
-      setIsSubmitting(false);
-      setUploadProgress(0);
-    }
-  }, [bookingId, client, files, form, isAuthenticated, navigate]);
+  // Layer 3 Dispute Hook (Decoupled from Layer 4 Presentation)
+  const {
+    form,
+    files,
+    isSubmitting,
+    submitSuccess,
+    uploadProgress,
+    showWarningModal,
+    setShowWarningModal,
+    isDragging,
+    description,
+    remainingChars,
+    handleFileChange,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    removeFile,
+    onSubmit,
+    confirmSubmit,
+  } = useDisputeForm(bookingId);
 
   // SUCCESS SCREEN
   if (submitSuccess) {
