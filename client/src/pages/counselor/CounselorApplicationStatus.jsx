@@ -80,7 +80,8 @@ const CounselorApplicationStatus = () => {
   const reapplyAppealStatus =
     counselor?.reapplyAppealStatus || counselor?.application?.reapplyAppealStatus || 'none';
 
-  const isLimitReached = attempts >= 3 && applicationStatus !== 'approved';
+  const isAppealApproved = reapplyAppealStatus === 'approved';
+  const isLimitReached = attempts >= 3 && applicationStatus === 'rejected' && !isAppealApproved;
 
   useEffect(() => {
     if (counselorLoading) return;
@@ -184,7 +185,23 @@ const CounselorApplicationStatus = () => {
       };
     }
 
-    // State 2: Soft Rejection ("changes_requested")
+    // State 2: Appeal Approved -> Re-application Authorized
+    if (isAppealApproved) {
+      return {
+        title: 'Appeal Approved: Re-application Authorized',
+        badge: `Attempt ${attempts} of 3 • Re-apply Granted`,
+        badgeVariant: 'secondary',
+        borderColor: 'border-emerald-500 dark:border-emerald-600',
+        iconBg: 'bg-emerald-100 dark:bg-emerald-950/40',
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
+        icon: CheckCircle,
+        message:
+          'Your formal appeal has been reviewed and approved by Solvit administration. You may now update your pre-filled credentials and submit your application for reconsideration.',
+        detail: 'Click "Re-apply Now" below to edit and submit your application.',
+      };
+    }
+
+    // State 3: Soft Rejection ("changes_requested")
     if (applicationStatus === 'changes_requested') {
       return {
         title: 'Action Required: Updates Needed',
@@ -201,7 +218,7 @@ const CounselorApplicationStatus = () => {
       };
     }
 
-    // State 3: Appeal is pending review
+    // State 4: Appeal is pending review
     if (applicationStatus === 'rejected' && reapplyAppealStatus === 'pending') {
       return {
         title: 'Appeal Under Administrative Review',
@@ -217,7 +234,7 @@ const CounselorApplicationStatus = () => {
       };
     }
 
-    // State 4: Hard Rejection
+    // State 5: Hard Rejection
     if (applicationStatus === 'rejected') {
       return {
         title: 'Application Not Approved',
@@ -357,20 +374,26 @@ const CounselorApplicationStatus = () => {
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                {/* Soft rejection -> Direct Update & Resubmit */}
-                {applicationStatus === 'changes_requested' && !isLimitReached && (
-                  <Button
-                    onClick={() => navigate('/counselor/application')}
-                    className="w-full h-11 sm:h-12 bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-md transition-all duration-200"
-                  >
-                    <FileEdit className="mr-2 h-4 w-4" />
-                    Update & Resubmit Application
-                  </Button>
-                )}
+                {/* Soft rejection or Approved Appeal -> Direct Update & Resubmit */}
+                {(applicationStatus === 'changes_requested' || isAppealApproved) &&
+                  !isLimitReached && (
+                    <Button
+                      onClick={() => navigate('/counselor/application')}
+                      className={`w-full h-11 sm:h-12 font-semibold shadow-md transition-all duration-200 text-white ${
+                        isAppealApproved
+                          ? 'bg-emerald-600 hover:bg-emerald-700'
+                          : 'bg-amber-600 hover:bg-amber-700'
+                      }`}
+                    >
+                      <FileEdit className="mr-2 h-4 w-4" />
+                      {isAppealApproved ? 'Re-apply Now' : 'Update & Resubmit Application'}
+                    </Button>
+                  )}
 
-                {/* Hard rejection with available attempts and no pending appeal -> Appeal Modal */}
+                {/* Hard rejection with available attempts and no pending or approved appeal -> Appeal Modal */}
                 {applicationStatus === 'rejected' &&
                   !isLimitReached &&
+                  !isAppealApproved &&
                   reapplyAppealStatus !== 'pending' && (
                     <Button
                       onClick={() => setIsAppealOpen(true)}

@@ -102,6 +102,8 @@ const CounselorApplication = () => {
 
   const applicationStatus =
     counselor?.applicationStatus || counselor?.application?.applicationStatus;
+  const attempts =
+    counselor?.applicationAttempts || counselor?.application?.applicationAttempts || 1;
   const isAppealApproved = counselor?.application?.reapplyAppealStatus === 'approved';
 
   useEffect(() => {
@@ -111,12 +113,14 @@ const CounselorApplication = () => {
       navigate('/counselor/login', { replace: true });
     } else if (applicationStatus === 'approved') {
       navigate('/counselor/dashboard', { replace: true });
+    } else if (attempts >= 3 && applicationStatus !== 'changes_requested' && !isAppealApproved) {
+      navigate('/counselor/application-status', { replace: true });
     } else if (applicationStatus === 'pending') {
       navigate('/counselor/application-status', { replace: true });
     } else if (applicationStatus === 'rejected' && !isAppealApproved) {
       navigate('/counselor/application-status', { replace: true });
     }
-  }, [counselor, applicationStatus, isAppealApproved, counselorLoading, navigate]);
+  }, [counselor, applicationStatus, attempts, isAppealApproved, counselorLoading, navigate]);
 
   // Pre-fill previous application data when resubmitting or editing
   useEffect(() => {
