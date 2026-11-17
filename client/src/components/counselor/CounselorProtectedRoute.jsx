@@ -16,15 +16,20 @@ const CounselorProtectedRoute = ({ children }) => {
     return <Navigate to="/counselor/login" replace />;
   }
 
-  const applicationStatus = counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
+  const applicationStatus =
+    counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
 
   // If application is not submitted, redirect to application
   if (applicationStatus === 'not_submitted') {
     return <Navigate to="/counselor/application" replace />;
   }
 
-  // If application is pending or rejected, redirect to status page
-  if (applicationStatus === 'pending' || applicationStatus === 'rejected') {
+  // If application is pending, rejected, or changes requested, redirect to status page
+  if (
+    applicationStatus === 'pending' ||
+    applicationStatus === 'rejected' ||
+    applicationStatus === 'changes_requested'
+  ) {
     return <Navigate to="/counselor/application-status" replace />;
   }
 
