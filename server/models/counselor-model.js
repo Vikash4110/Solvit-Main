@@ -125,8 +125,36 @@ const counselorSchema = new mongoose.Schema(
       },
       applicationStatus: {
         type: String,
-        enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+        enum: ['not_submitted', 'pending', 'changes_requested', 'approved', 'rejected'],
         default: 'not_submitted',
+      },
+      rejectionType: {
+        type: String,
+        enum: ['none', 'soft', 'hard'],
+        default: 'none',
+      },
+      adminFeedback: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: [2000, 'Admin feedback must not exceed 2000 characters'],
+      },
+      rejectionReason: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: [2000, 'Rejection reason must not exceed 2000 characters'],
+      },
+      applicationAttempts: {
+        type: Number,
+        default: 1,
+        min: 1,
+        max: 3,
+      },
+      reapplyAppealStatus: {
+        type: String,
+        enum: ['none', 'pending', 'approved', 'rejected'],
+        default: 'none',
       },
       applicationSubmittedAt: {
         type: Date,
@@ -200,6 +228,7 @@ counselorSchema.methods.generateRefreshToken = function () {
 // INDEXES FOR HIGH-CONCURRENCY PERFORMANCE
 // ==========================================
 counselorSchema.index({ 'application.applicationStatus': 1, isBlocked: 1 });
+counselorSchema.index({ 'application.applicationStatus': 1, 'application.applicationAttempts': 1 });
 counselorSchema.index({ specialization: 1, isBlocked: 1 });
 counselorSchema.index({ isBlocked: 1, createdAt: -1 });
 
