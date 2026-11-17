@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { API_ENDPOINTS } from '../config/api';
 import api from '../lib/axios';
@@ -15,13 +16,24 @@ export const useCounselorAuth = () => {
 
 const normalizeCounselor = (data) => {
   if (!data) return null;
-  const status = data.applicationStatus || data.application?.applicationStatus || 'not_submitted';
+  const app = data.application || {};
+  const status = data.applicationStatus || app.applicationStatus || 'not_submitted';
   return {
     ...data,
     applicationStatus: status,
+    rejectionType: app.rejectionType || data.rejectionType || 'none',
+    adminFeedback: app.adminFeedback || data.adminFeedback || '',
+    rejectionReason: app.rejectionReason || data.rejectionReason || '',
+    applicationAttempts: app.applicationAttempts || data.applicationAttempts || 1,
+    reapplyAppealStatus: app.reapplyAppealStatus || data.reapplyAppealStatus || 'none',
     application: {
-      ...(data.application || {}),
+      ...app,
       applicationStatus: status,
+      rejectionType: app.rejectionType || data.rejectionType || 'none',
+      adminFeedback: app.adminFeedback || data.adminFeedback || '',
+      rejectionReason: app.rejectionReason || data.rejectionReason || '',
+      applicationAttempts: app.applicationAttempts || data.applicationAttempts || 1,
+      reapplyAppealStatus: app.reapplyAppealStatus || data.reapplyAppealStatus || 'none',
     },
   };
 };
@@ -175,21 +187,34 @@ export const CounselorAuthProvider = ({ children }) => {
 
   const submitApplication = async (applicationData) => {
     try {
-      await api.post(API_ENDPOINTS.COUNSELOR_APPLICATION, applicationData, {
+      const response = await api.post(API_ENDPOINTS.COUNSELOR_APPLICATION, applicationData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      const updatedCounselor = {
+      const nextAttempts =
+        response.data?.attempts || (counselor?.application?.applicationAttempts || 1) + 1;
+
+      const updatedCounselor = normalizeCounselor({
         ...counselor,
         applicationStatus: 'pending',
+        rejectionType: 'none',
+        adminFeedback: '',
+        rejectionReason: '',
+        applicationAttempts: Math.min(3, nextAttempts),
+        reapplyAppealStatus: 'none',
         application: {
           ...counselor?.application,
           applicationStatus: 'pending',
+          rejectionType: 'none',
+          adminFeedback: '',
+          rejectionReason: '',
+          applicationAttempts: Math.min(3, nextAttempts),
+          reapplyAppealStatus: 'none',
           applicationSubmittedAt: new Date(),
         },
-      };
+      });
 
       setCounselor(updatedCounselor);
       try {
@@ -203,6 +228,55 @@ export const CounselorAuthProvider = ({ children }) => {
       const message = getErrorMessage(error, 'Application submission failed');
       return { success: false, error: message };
     }
+  };
+
+  const submitAppeal = async ({ appealReason, supportingDocumentUrl }) => {
+    try {
+      const response = await api.post(API_ENDPOINTS.COUNSELOR_APPLICATION_APPEAL, {
+        appealReason,
+        supportingDocumentUrl,
+      });
+
+      const updatedCounselor = normalizeCounselor({
+        ...counselor,
+        reapplyAppealStatus: 'pending',
+        application: {
+          ...counselor?.application,
+          reapplyAppealStatus: 'pending',
+        },
+      });
+
+      setCounselor(updatedCounselor);
+      try {
+        localStorage.setItem('counselor', JSON.stringify(updatedCounselor));
+      } catch {
+        // Ignore storage restrictions
+      }
+
+      return { success: true, data: response.data?.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to submit appeal');
+      return { success: false, error: message };
+    }
+  };
+
+  const refreshProfile = async () => {
+    try {
+      const profile = await counselorAuthService.getProfile();
+      if (profile) {
+        const normalized = normalizeCounselor(profile);
+        setCounselor(normalized);
+        try {
+          localStorage.setItem('counselor', JSON.stringify(normalized));
+        } catch {
+          // Ignore storage restrictions
+        }
+        return normalized;
+      }
+    } catch (error) {
+      console.error('Failed to refresh counselor profile:', error);
+    }
+    return counselor;
   };
 
   const counselorLogout = async () => {
@@ -227,8 +301,11 @@ export const CounselorAuthProvider = ({ children }) => {
       forgotPassword,
       resetPassword,
       submitApplication,
+      submitAppeal,
+      refreshProfile,
       counselorLogout,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [counselor, counselorLoading]
   );
 

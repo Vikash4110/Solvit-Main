@@ -1430,6 +1430,201 @@ Solvit Pvt. Ltd. Atal Nagar, Naya Raipur - 493661, India`,
   }
 }
 
+async function sendCounselorApplicationChangesRequested(
+  email,
+  userName,
+  adminFeedback,
+  attemptNumber = 1
+) {
+  const emailOptions = {
+    sender: {
+      email: process.env.BREVO_SENDER_EMAIL || 'system@solvitcounselling.com',
+      name: process.env.BREVO_SENDER_NAME || 'Solvit Counseling',
+    },
+    to: [{ email, name: userName || email }],
+    subject: 'Action Required: Updates Needed for Counselor Application - Solvit',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Updates Needed for Your Application</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                <tr>
+                  <td style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); padding: 48px 40px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700;">
+                      Action Required: Updates Needed
+                    </h1>
+                    <p style="color: #fef3c7; margin: 8px 0 0 0; font-size: 14px;">
+                      Attempt ${attemptNumber} of 3
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 48px 40px;">
+                    <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">
+                      Dear ${userName || 'Counselor'},
+                    </h2>
+                    <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+                      Our clinical verification team reviewed your application and noted items that require your attention or correction.
+                    </p>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                      <tr>
+                        <td style="background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 18px;">
+                          <p style="color: #92400e; font-size: 13px; font-weight: 700; margin: 0 0 6px 0; text-transform: uppercase;">
+                            Verification Feedback:
+                          </p>
+                          <p style="color: #78350f; font-size: 14px; line-height: 1.6; margin: 0;">
+                            ${adminFeedback || 'Please review and update the requested sections of your application.'}
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
+                      You can log into your account immediately to make the necessary changes and resubmit your application without starting from scratch.
+                    </p>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                      <tr>
+                        <td align="center">
+                          <a href="${process.env.CLIENT_URL || 'https://solvitcounselling.com'}/counselor/application-status" style="display: inline-block; background-color: #d97706; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 8px;">
+                            Update & Resubmit Application
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                      If you have questions, please reach out to <a href="mailto:support@solvitcounselling.com" style="color: #b45309;">support@solvitcounselling.com</a>.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    textContent: `ACTION REQUIRED: UPDATES NEEDED FOR COUNSELOR APPLICATION (Attempt ${attemptNumber} of 3)\n\nDear ${userName || 'Counselor'},\n\nOur clinical verification team reviewed your application and noted items that require your attention.\n\nVERIFICATION FEEDBACK:\n${adminFeedback || 'Please review and update the requested sections of your application.'}\n\nYou can log into your account to update and resubmit your application:\n${process.env.CLIENT_URL || 'https://solvitcounselling.com'}/counselor/application-status\n\nSupport: support@solvitcounselling.com`,
+  };
+
+  try {
+    return await sendEmailWithRetry(emailOptions);
+  } catch (error) {
+    console.error('Failed to send changes requested email:', error.message);
+    throw new Error('Unable to send application update. Please try again later.');
+  }
+}
+
+async function sendCounselorAppealDecision(email, userName, decision, reviewNote) {
+  const isApproved = decision === 'approved';
+  const emailOptions = {
+    sender: {
+      email: process.env.BREVO_SENDER_EMAIL || 'system@solvitcounselling.com',
+      name: process.env.BREVO_SENDER_NAME || 'Solvit Counseling',
+    },
+    to: [{ email, name: userName || email }],
+    subject: isApproved
+      ? 'Appeal Approved: You Can Now Resubmit Your Counselor Application - Solvit'
+      : 'Counselor Application Appeal Decision - Solvit',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Application Appeal Decision</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                <tr>
+                  <td style="background: ${isApproved ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' : 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'}; padding: 48px 40px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
+                      ${isApproved ? 'Appeal Approved' : 'Appeal Not Approved'}
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 48px 40px;">
+                    <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">
+                      Dear ${userName || 'Counselor'},
+                    </h2>
+                    <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+                      ${
+                        isApproved
+                          ? 'Your appeal has been reviewed and approved by the Solvit Administrative team. You may now update and resubmit your counselor application.'
+                          : 'Your appeal has been reviewed by the Solvit Administrative team. After re-evaluating the submission, the disqualification stands.'
+                      }
+                    </p>
+                    ${
+                      reviewNote
+                        ? `
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                      <tr>
+                        <td style="background: #f9fafb; border-left: 4px solid ${isApproved ? '#16a34a' : '#dc2626'}; border-radius: 8px; padding: 18px;">
+                          <p style="color: #374151; font-size: 13px; font-weight: 700; margin: 0 0 6px 0;">
+                            Administrative Review Note:
+                          </p>
+                          <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0;">
+                            ${reviewNote}
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    `
+                        : ''
+                    }
+                    ${
+                      isApproved
+                        ? `
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                      <tr>
+                        <td align="center">
+                          <a href="${process.env.CLIENT_URL || 'https://solvitcounselling.com'}/counselor/application-status" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 8px;">
+                            Re-apply Now
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    `
+                        : `
+                    <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                      If you require additional assistance, please reach out to <a href="mailto:support@solvitcounselling.com" style="color: #dc2626;">support@solvitcounselling.com</a>.
+                    </p>
+                    `
+                    }
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    textContent: `APPLICATION APPEAL DECISION: ${isApproved ? 'APPROVED' : 'NOT APPROVED'}\n\nDear ${userName || 'Counselor'},\n\n${
+      isApproved
+        ? 'Your appeal has been reviewed and approved. You can now update and resubmit your application.'
+        : 'Your appeal has been reviewed. After re-evaluating the submission, the decision stands.'
+    }\n\n${reviewNote ? `ADMINISTRATIVE NOTE:\n${reviewNote}\n\n` : ''}Support: support@solvitcounselling.com`,
+  };
+
+  try {
+    return await sendEmailWithRetry(emailOptions);
+  } catch (error) {
+    console.error('Failed to send appeal decision email:', error.message);
+    throw new Error('Unable to send appeal decision. Please try again later.');
+  }
+}
+
 // ========================================
 // Booking Confirmation Emails (Payment)
 // ========================================
@@ -2267,6 +2462,8 @@ export {
   sendCounselorApplicationSubmitted,
   sendCounselorApplicationApproved,
   sendCounselorApplicationRejected,
+  sendCounselorApplicationChangesRequested,
+  sendCounselorAppealDecision,
   sendBookingConfirmationToClient,
   sendBookingNotificationToCounselor,
   sendRefundNotificationToClient,

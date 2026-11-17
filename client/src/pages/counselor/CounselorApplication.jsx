@@ -102,6 +102,9 @@ const CounselorApplication = () => {
 
   const applicationStatus =
     counselor?.applicationStatus || counselor?.application?.applicationStatus;
+  const attempts =
+    counselor?.applicationAttempts || counselor?.application?.applicationAttempts || 1;
+  const isAppealApproved = counselor?.application?.reapplyAppealStatus === 'approved';
 
   useEffect(() => {
     if (counselorLoading) return;
@@ -110,10 +113,58 @@ const CounselorApplication = () => {
       navigate('/counselor/login', { replace: true });
     } else if (applicationStatus === 'approved') {
       navigate('/counselor/dashboard', { replace: true });
-    } else if (applicationStatus === 'pending' || applicationStatus === 'rejected') {
+    } else if (attempts >= 3 && applicationStatus !== 'changes_requested' && !isAppealApproved) {
+      navigate('/counselor/application-status', { replace: true });
+    } else if (applicationStatus === 'pending') {
+      navigate('/counselor/application-status', { replace: true });
+    } else if (applicationStatus === 'rejected' && !isAppealApproved) {
       navigate('/counselor/application-status', { replace: true });
     }
-  }, [counselor, applicationStatus, counselorLoading, navigate]);
+  }, [counselor, applicationStatus, attempts, isAppealApproved, counselorLoading, navigate]);
+
+  // Pre-fill previous application data when resubmitting or editing
+  useEffect(() => {
+    if (counselor?.application) {
+      const app = counselor.application;
+      setFormData((prev) => ({
+        education: {
+          graduation: {
+            university:
+              app.education?.graduation?.university || prev.education.graduation.university || '',
+            degree: app.education?.graduation?.degree || prev.education.graduation.degree || '',
+            year: app.education?.graduation?.year
+              ? String(app.education.graduation.year)
+              : prev.education.graduation.year || '',
+          },
+          postGraduation: {
+            university:
+              app.education?.postGraduation?.university ||
+              prev.education.postGraduation.university ||
+              '',
+            degree:
+              app.education?.postGraduation?.degree || prev.education.postGraduation.degree || '',
+            year: app.education?.postGraduation?.year
+              ? String(app.education.postGraduation.year)
+              : prev.education.postGraduation.year || '',
+          },
+        },
+        experience:
+          app.experience ||
+          (counselor.experienceYears ? String(counselor.experienceYears) : prev.experience || ''),
+        professionalSummary: app.professionalSummary || prev.professionalSummary || '',
+        languages: app.languages && app.languages.length > 0 ? app.languages : prev.languages || [],
+        license: {
+          licenseNo: app.license?.licenseNo || prev.license.licenseNo || '',
+          issuingAuthority: app.license?.issuingAuthority || prev.license.issuingAuthority || '',
+        },
+        bankDetails: {
+          accountNo: app.bankDetails?.accountNo || prev.bankDetails.accountNo || '',
+          ifscCode: app.bankDetails?.ifscCode || prev.bankDetails.ifscCode || '',
+          branchName: app.bankDetails?.branchName || prev.bankDetails.branchName || '',
+        },
+      }));
+    }
+  }, [counselor]);
 
   const handleExitToLogin = async () => {
     try {
@@ -316,10 +367,12 @@ const CounselorApplication = () => {
       'Bank Account Number': formData.bankDetails.accountNo?.trim(),
       'IFSC Code': formData.bankDetails.ifscCode?.trim(),
       'Branch Name': formData.bankDetails.branchName?.trim(),
-      Resume: files.resume,
-      'Degree Certificate': files.degreeCertificate,
-      'Government ID': files.governmentId,
-      'License Certificate': files.licenseCertificate,
+      Resume: files.resume || counselor?.application?.documents?.resume,
+      'Degree Certificate':
+        files.degreeCertificate || counselor?.application?.documents?.degreeCertificate,
+      'Government ID': files.governmentId || counselor?.application?.documents?.governmentId,
+      'License Certificate':
+        files.licenseCertificate || counselor?.application?.documents?.licenseCertificate,
     };
 
     const missingFields = Object.entries(requiredFields)
@@ -396,7 +449,8 @@ const CounselorApplication = () => {
   // Calculate completion percentage
   const calculateProgress = () => {
     let completed = 0;
-    const total = 12;
+    const total = 15;
+    const existingDocs = counselor?.application?.documents || {};
 
     if (formData.education.graduation.university) completed++;
     if (formData.education.graduation.degree) completed++;
@@ -407,10 +461,10 @@ const CounselorApplication = () => {
     if (formData.bankDetails.accountNo) completed++;
     if (formData.bankDetails.ifscCode) completed++;
     if (formData.bankDetails.branchName) completed++;
-    if (files.resume) completed++;
-    if (files.degreeCertificate) completed++;
-    if (files.governmentId) completed++;
-    if (files.licenseCertificate) completed++;
+    if (files.resume || existingDocs.resume) completed++;
+    if (files.degreeCertificate || existingDocs.degreeCertificate) completed++;
+    if (files.governmentId || existingDocs.governmentId) completed++;
+    if (files.licenseCertificate || existingDocs.licenseCertificate) completed++;
     if (formData.license.licenseNo) completed++;
     if (formData.license.issuingAuthority) completed++;
 
@@ -439,7 +493,7 @@ const CounselorApplication = () => {
   if (
     applicationStatus === 'pending' ||
     applicationStatus === 'approved' ||
-    applicationStatus === 'rejected'
+    (applicationStatus === 'rejected' && !isAppealApproved)
   ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-primary-50 dark:from-neutral-900 dark:to-neutral-800">
@@ -557,6 +611,30 @@ const CounselorApplication = () => {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Changes Requested / Resubmission Notice */}
+        {(applicationStatus === 'changes_requested' || isAppealApproved) && (
+          <motion.div
+            variants={cardVariants}
+            initial="initial"
+            animate="animate"
+            className="mb-6 p-4 sm:p-5 rounded-xl border border-amber-300 bg-amber-50/90 dark:border-amber-800/60 dark:bg-amber-950/30 text-amber-950 dark:text-amber-100 shadow-sm"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+              <h3 className="font-bold text-sm sm:text-base">
+                Action Required: Resubmission Instructions
+              </h3>
+              <Badge variant="warning" className="ml-auto text-xs font-semibold">
+                Attempt {Math.min(3, (counselor?.application?.applicationAttempts || 1) + 1)} of 3
+              </Badge>
+            </div>
+            <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+              {counselor?.application?.adminFeedback ||
+                'Please update the requested sections of your application and resubmit for verification.'}
+            </p>
+          </motion.div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Education Section */}
@@ -1108,7 +1186,7 @@ const CounselorApplication = () => {
                                     {currentFile.name}
                                   </p>
                                   <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                    {formatFileSize(currentFile.size)} • PDF
+                                    {formatFileSize(currentFile.size)} • PDF (New Upload)
                                   </p>
                                 </div>
                               </div>
@@ -1129,6 +1207,28 @@ const CounselorApplication = () => {
                                   <X className="h-4 w-4" />
                                 </button>
                               </div>
+                            </div>
+                          ) : counselor?.application?.documents?.[doc.id] ? (
+                            <div className="flex items-center justify-between p-3 sm:p-4 gap-3 bg-emerald-50/50 dark:bg-emerald-950/20">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 shrink-0">
+                                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-white truncate">
+                                    Previously Uploaded Document Attached
+                                  </p>
+                                  <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                                    Verified on record • Click replace to upload a new version
+                                  </p>
+                                </div>
+                              </div>
+                              <Label
+                                htmlFor={doc.id}
+                                className="text-xs font-semibold text-primary-700 dark:text-primary-400 hover:underline cursor-pointer px-3 py-1.5 rounded-lg border border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-950/40 shrink-0"
+                              >
+                                Replace File
+                              </Label>
                             </div>
                           ) : (
                             <Label
@@ -1196,6 +1296,12 @@ const CounselorApplication = () => {
                 <>
                   <AlertCircle className="mr-2 h-5 w-5" aria-hidden="true" />
                   Complete All Required Fields
+                </>
+              ) : applicationStatus === 'changes_requested' || isAppealApproved ? (
+                <>
+                  Resubmit Application (Attempt{' '}
+                  {Math.min(3, (counselor?.application?.applicationAttempts || 1) + 1)} of 3)
+                  <CheckCircle className="ml-2 h-5 w-5" aria-hidden="true" />
                 </>
               ) : (
                 <>

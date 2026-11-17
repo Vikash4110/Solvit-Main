@@ -186,7 +186,8 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
           counselor.application.education.graduation = {};
         }
         if (education.graduation.university !== undefined) {
-          counselor.application.education.graduation.university = education.graduation.university.trim();
+          counselor.application.education.graduation.university =
+            education.graduation.university.trim();
         }
         if (education.graduation.degree !== undefined) {
           counselor.application.education.graduation.degree = education.graduation.degree.trim();
@@ -203,10 +204,12 @@ export const updateCounselorProfile = wrapper(async (req, res) => {
           counselor.application.education.postGraduation = {};
         }
         if (education.postGraduation.university !== undefined) {
-          counselor.application.education.postGraduation.university = education.postGraduation.university.trim();
+          counselor.application.education.postGraduation.university =
+            education.postGraduation.university.trim();
         }
         if (education.postGraduation.degree !== undefined) {
-          counselor.application.education.postGraduation.degree = education.postGraduation.degree.trim();
+          counselor.application.education.postGraduation.degree =
+            education.postGraduation.degree.trim();
         }
         if (education.postGraduation.year !== undefined) {
           counselor.application.education.postGraduation.year = education.postGraduation.year
@@ -298,10 +301,14 @@ export const createCounselorProfileRequest = wrapper(async (req, res) => {
     isChecked: false,
   });
 
-  logger.info(`Profile change request created for counselor ${counselorId}, requestId: ${newRequest._id}`);
+  logger.info(
+    `Profile change request created for counselor ${counselorId}, requestId: ${newRequest._id}`
+  );
   return res
     .status(201)
-    .json(new ApiResponse(201, newRequest, 'Profile change request submitted successfully to admin'));
+    .json(
+      new ApiResponse(201, newRequest, 'Profile change request submitted successfully to admin')
+    );
 });
 
 /**
@@ -313,7 +320,12 @@ export const createCounselorEducationRequest = wrapper(async (req, res) => {
   const counselorId = req.verifiedCounselorId._id;
   const { graduation, postGraduation, message } = req.body;
 
-  if (!graduation || !graduation.university?.trim() || !graduation.degree?.trim() || !graduation.year) {
+  if (
+    !graduation ||
+    !graduation.university?.trim() ||
+    !graduation.degree?.trim() ||
+    !graduation.year
+  ) {
     throw new ApiError(400, 'Graduation university, degree, and passing year are required');
   }
 
@@ -331,7 +343,10 @@ export const createCounselorEducationRequest = wrapper(async (req, res) => {
   }
 
   if (!message || !message.trim()) {
-    throw new ApiError(400, 'Please provide a message/reason explaining why you are updating your education details');
+    throw new ApiError(
+      400,
+      'Please provide a message/reason explaining why you are updating your education details'
+    );
   }
 
   const counselor = await Counselor.findById(counselorId);
@@ -388,10 +403,14 @@ export const createCounselorEducationRequest = wrapper(async (req, res) => {
     isChecked: false,
   });
 
-  logger.info(`Education change request created for counselor ${counselorId}, requestId: ${newRequest._id}`);
+  logger.info(
+    `Education change request created for counselor ${counselorId}, requestId: ${newRequest._id}`
+  );
   return res
     .status(201)
-    .json(new ApiResponse(201, newRequest, 'Education update request submitted successfully to admin'));
+    .json(
+      new ApiResponse(201, newRequest, 'Education update request submitted successfully to admin')
+    );
 });
 
 /**
@@ -415,7 +434,10 @@ export const createCounselorDocumentsRequest = wrapper(async (req, res) => {
     (files.governmentId && files.governmentId.length > 0);
 
   if (!hasFiles) {
-    throw new ApiError(400, 'Please upload at least one document (Resume, Degree Certificate, License Certificate, or Government ID) to update');
+    throw new ApiError(
+      400,
+      'Please upload at least one document (Resume, Degree Certificate, License Certificate, or Government ID) to update'
+    );
   }
 
   const counselor = await Counselor.findById(counselorId);
@@ -444,8 +466,12 @@ export const createCounselorDocumentsRequest = wrapper(async (req, res) => {
   };
 
   const newResumeUrl = files.resume?.[0] ? await uploadDoc(files.resume[0]) : null;
-  const newDegreeCertUrl = files.degreeCertificate?.[0] ? await uploadDoc(files.degreeCertificate[0]) : null;
-  const newLicenseCertUrl = files.licenseCertificate?.[0] ? await uploadDoc(files.licenseCertificate[0]) : null;
+  const newDegreeCertUrl = files.degreeCertificate?.[0]
+    ? await uploadDoc(files.degreeCertificate[0])
+    : null;
+  const newLicenseCertUrl = files.licenseCertificate?.[0]
+    ? await uploadDoc(files.licenseCertificate[0])
+    : null;
   const newGovtIdUrl = files.governmentId?.[0] ? await uploadDoc(files.governmentId[0]) : null;
 
   const currentDocs = counselor.application?.documents || {};
@@ -474,10 +500,14 @@ export const createCounselorDocumentsRequest = wrapper(async (req, res) => {
     isChecked: false,
   });
 
-  logger.info(`Document change request created for counselor ${counselorId}, requestId: ${newRequest._id}`);
+  logger.info(
+    `Document change request created for counselor ${counselorId}, requestId: ${newRequest._id}`
+  );
   return res
     .status(201)
-    .json(new ApiResponse(201, newRequest, 'Document update request submitted successfully to admin'));
+    .json(
+      new ApiResponse(201, newRequest, 'Document update request submitted successfully to admin')
+    );
 });
 
 /**
@@ -736,12 +766,35 @@ export const submitCounselorApplication = wrapper(async (req, res) => {
     throw new ApiError(404, 'Counselor not found');
   }
 
-  // Check if already submitted
+  const currentAttempts = counselor.application?.applicationAttempts || 1;
+  const currentStatus = counselor.application?.applicationStatus || 'not_submitted';
+
   if (
-    counselor.application?.applicationStatus !== 'not_submitted' &&
-    counselor.application?.applicationStatus !== 'rejected'
+    currentAttempts >= 3 &&
+    currentStatus !== 'not_submitted' &&
+    currentStatus !== 'changes_requested' &&
+    counselor.application?.reapplyAppealStatus !== 'approved'
   ) {
-    throw new ApiError(400, 'Application has already been submitted');
+    throw new ApiError(
+      403,
+      'You have reached the limit for applying as a counselor in solvit so you can not aply anymore here and if still something needs to be corrected or any mistake has benn there please do contact our support team fro furtehr application or related details'
+    );
+  }
+
+  // Check if already pending or approved
+  if (currentStatus === 'pending') {
+    throw new ApiError(400, 'Application has already been submitted and is pending review');
+  }
+
+  if (currentStatus === 'approved') {
+    throw new ApiError(400, 'Application has already been approved');
+  }
+
+  if (currentStatus === 'rejected' && counselor.application?.reapplyAppealStatus !== 'approved') {
+    throw new ApiError(
+      400,
+      'Your application was not approved. Please submit an appeal for reconsideration before applying again.'
+    );
   }
 
   // Validate profile completeness before submission
@@ -753,8 +806,21 @@ export const submitCounselorApplication = wrapper(async (req, res) => {
     );
   }
 
+  let newAttemptCount = currentAttempts;
+  if (
+    currentStatus === 'changes_requested' ||
+    counselor.application?.reapplyAppealStatus === 'approved'
+  ) {
+    newAttemptCount = Math.min(3, currentAttempts + 1);
+  }
+
   // Update application status
   counselor.application.applicationStatus = 'pending';
+  counselor.application.rejectionType = 'none';
+  counselor.application.adminFeedback = '';
+  counselor.application.rejectionReason = '';
+  counselor.application.applicationAttempts = newAttemptCount;
+  counselor.application.reapplyAppealStatus = 'none';
   counselor.application.applicationSubmittedAt = new Date();
   await counselor.save();
 
@@ -764,6 +830,7 @@ export const submitCounselorApplication = wrapper(async (req, res) => {
       200,
       {
         applicationStatus: counselor.application.applicationStatus,
+        applicationAttempts: counselor.application.applicationAttempts,
         submittedAt: counselor.application.applicationSubmittedAt,
       },
       'Application submitted successfully. You will be notified once reviewed.'
@@ -781,7 +848,9 @@ export const getCounselorApplicationStatus = wrapper(async (req, res) => {
   logger.info(`Fetching application status for counselor: ${counselorId}`);
 
   const counselor = await Counselor.findById(counselorId)
-    .select('application.applicationStatus application.applicationSubmittedAt')
+    .select(
+      'application.applicationStatus application.applicationSubmittedAt application.rejectionType application.adminFeedback application.rejectionReason application.applicationAttempts application.reapplyAppealStatus'
+    )
     .lean();
 
   if (!counselor) {
@@ -791,6 +860,11 @@ export const getCounselorApplicationStatus = wrapper(async (req, res) => {
   const statusInfo = {
     status: counselor.application?.applicationStatus || 'not_submitted',
     submittedAt: counselor.application?.applicationSubmittedAt || null,
+    rejectionType: counselor.application?.rejectionType || 'none',
+    adminFeedback: counselor.application?.adminFeedback || '',
+    rejectionReason: counselor.application?.rejectionReason || '',
+    applicationAttempts: counselor.application?.applicationAttempts || 1,
+    reapplyAppealStatus: counselor.application?.reapplyAppealStatus || 'none',
   };
 
   logger.info(`Application status retrieved for counselor: ${counselorId}`);

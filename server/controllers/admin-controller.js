@@ -14,10 +14,13 @@ import { Client } from '../models/client-model.js';
 import { Payment } from '../models/payment-model.js';
 import { PaymentRefund } from '../models/paymentRefund.model.js';
 import { CounselorProfileRequest } from '../models/counselorProfileRequest.model.js';
+import { CounselorReapplyRequest } from '../models/counselor-reapply-request-model.js';
 import { Blog } from '../models/blog-model.js';
 import {
   sendCounselorApplicationRejected,
   sendCounselorApplicationApproved,
+  sendCounselorApplicationChangesRequested,
+  sendCounselorAppealDecision,
 } from '../services/emailService.js';
 import { wrapper } from '../utils/wrapper.js';
 import mongoose from 'mongoose';
@@ -115,7 +118,7 @@ const getAllCounselorApplications = wrapper(async (req, res) => {
   const { status } = req.query;
 
   let filter = {};
-  if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+  if (status && ['pending', 'approved', 'rejected', 'changes_requested'].includes(status)) {
     filter['application.applicationStatus'] = status;
   }
 
@@ -150,12 +153,13 @@ const getCounselorApplication = wrapper(async (req, res) => {
 
 const updateApplicationStatus = wrapper(async (req, res) => {
   const { counselorId } = req.params;
-  const { status, rejectionReason } = req.body;
+  const { status, rejectionReason, adminFeedback } = req.body;
 
-  if (!['approved', 'rejected'].includes(status)) {
+  const validStatuses = ['approved', 'changes_requested', 'rejected'];
+  if (!validStatuses.includes(status)) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid status. Must be "approved" or "rejected"',
+      message: 'Invalid status. Must be "approved", "changes_requested", or "rejected"',
     });
   }
 
@@ -174,22 +178,49 @@ const updateApplicationStatus = wrapper(async (req, res) => {
     });
   }
 
-  // Update application status
+  // Update application status and corresponding audit fields
   counselor.application.applicationStatus = status;
 
-  if (status === 'rejected' && rejectionReason) {
-    counselor.application.rejectionReason = rejectionReason;
+  if (status === 'approved') {
+    counselor.application.rejectionType = 'none';
+    counselor.application.adminFeedback = '';
+    counselor.application.rejectionReason = '';
+    counselor.application.reapplyAppealStatus = 'none';
+  } else if (status === 'changes_requested') {
+    counselor.application.rejectionType = 'soft';
+    counselor.application.adminFeedback =
+      adminFeedback?.trim() ||
+      rejectionReason?.trim() ||
+      'Please update the requested sections of your application.';
+    counselor.application.reapplyAppealStatus = 'none';
+  } else if (status === 'rejected') {
+    counselor.application.rejectionType = 'hard';
+    counselor.application.rejectionReason =
+      rejectionReason?.trim() ||
+      adminFeedback?.trim() ||
+      'Your application does not meet our clinical verification guidelines.';
+    counselor.application.reapplyAppealStatus = 'none';
   }
 
   await counselor.save({ validateBeforeSave: false });
 
   // Send email notification
-
   try {
     if (status === 'approved') {
       await sendCounselorApplicationApproved(counselor.email, counselor.fullName);
+    } else if (status === 'changes_requested') {
+      await sendCounselorApplicationChangesRequested(
+        counselor.email,
+        counselor.fullName,
+        counselor.application.adminFeedback,
+        counselor.application.applicationAttempts || 1
+      );
     } else if (status === 'rejected') {
-      await sendCounselorApplicationRejected(counselor.email, counselor.fullName, rejectionReason);
+      await sendCounselorApplicationRejected(
+        counselor.email,
+        counselor.fullName,
+        counselor.application.rejectionReason
+      );
     }
   } catch (emailError) {
     console.error('Failed to send status update email:', emailError);
@@ -197,8 +228,133 @@ const updateApplicationStatus = wrapper(async (req, res) => {
 
   return res.status(200).json({
     success: true,
-    message: `Application ${status} successfully`,
+    message:
+      status === 'changes_requested'
+        ? 'Application changes requested successfully'
+        : `Application ${status} successfully`,
     data: counselor,
+  });
+});
+
+/**
+ * Get all counselor re-apply appeal requests
+ * Route: GET /api/admin/reapply-requests
+ */
+const getAllReapplyRequests = wrapper(async (req, res) => {
+  const { status, page = 1, limit = 10 } = req.query;
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.max(1, Math.min(50, parseInt(limit, 10) || 10));
+  const skip = (pageNum - 1) * limitNum;
+
+  const filter = {};
+  if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+    filter.status = status;
+  }
+
+  const [requests, total] = await Promise.all([
+    CounselorReapplyRequest.find(filter)
+      .populate(
+        'counselorId',
+        'fullName email phone specialization profilePicture application.applicationAttempts application.applicationStatus'
+      )
+      .populate('reviewedBy', 'fullName email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean(),
+    CounselorReapplyRequest.countDocuments(filter),
+  ]);
+
+  return res.status(200).json({
+    success: true,
+    data: requests,
+    pagination: {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum) || 1,
+    },
+  });
+});
+
+/**
+ * Review a counselor re-apply appeal request
+ * Route: PUT /api/admin/reapply-requests/:requestId/review
+ */
+const reviewReapplyRequest = wrapper(async (req, res) => {
+  const { requestId } = req.params;
+  const { decision, reviewNote } = req.body;
+
+  if (!['approved', 'rejected'].includes(decision)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Decision must be either "approved" or "rejected"',
+    });
+  }
+
+  const appealRequest = await CounselorReapplyRequest.findById(requestId);
+  if (!appealRequest) {
+    return res.status(404).json({
+      success: false,
+      message: 'Re-apply appeal request not found',
+    });
+  }
+
+  if (appealRequest.status !== 'pending') {
+    return res.status(400).json({
+      success: false,
+      message: `Appeal request has already been ${appealRequest.status}`,
+    });
+  }
+
+  const counselor = await Counselor.findById(appealRequest.counselorId);
+  if (!counselor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Associated counselor not found',
+    });
+  }
+
+  appealRequest.status = decision;
+  appealRequest.adminReviewNote = reviewNote?.trim() || '';
+  appealRequest.reviewedBy = req.admin?._id;
+  appealRequest.reviewedAt = new Date();
+  await appealRequest.save();
+
+  if (decision === 'approved') {
+    counselor.application.reapplyAppealStatus = 'approved';
+    counselor.application.applicationStatus = 'changes_requested';
+    counselor.application.adminFeedback =
+      reviewNote?.trim() ||
+      'Your appeal has been approved. Please update and resubmit your application.';
+  } else {
+    counselor.application.reapplyAppealStatus = 'rejected';
+    if (reviewNote?.trim()) {
+      counselor.application.rejectionReason = reviewNote.trim();
+    }
+  }
+
+  await counselor.save({ validateBeforeSave: false });
+
+  try {
+    await sendCounselorAppealDecision(
+      counselor.email,
+      counselor.fullName,
+      decision,
+      appealRequest.adminReviewNote
+    );
+  } catch (emailError) {
+    console.error('Failed to send appeal decision email:', emailError);
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: `Appeal ${decision} successfully`,
+    data: {
+      appealRequest,
+      counselorStatus: counselor.application.applicationStatus,
+    },
   });
 });
 
@@ -2314,6 +2470,8 @@ export {
   getAllCounselorApplications,
   getCounselorApplication,
   updateApplicationStatus,
+  getAllReapplyRequests,
+  reviewReapplyRequest,
   getAllDisputes,
   getDisputeDetail,
   updateDisputeStatus,

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { adminAuthService } from '../services/auth/adminAuth.service';
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { API_ENDPOINTS } from '../config/api';
@@ -89,16 +90,60 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
-  const updateApplicationStatus = async (counselorId, status, rejectionReason = '') => {
+  const updateApplicationStatus = async (counselorId, status, options = {}) => {
     try {
+      const payload = { status };
+      if (typeof options === 'string') {
+        if (status === 'changes_requested') {
+          payload.adminFeedback = options;
+        } else {
+          payload.rejectionReason = options;
+        }
+      } else {
+        if (options.rejectionReason) payload.rejectionReason = options.rejectionReason;
+        if (options.adminFeedback) payload.adminFeedback = options.adminFeedback;
+      }
+
       const response = await api.put(
         `${API_ENDPOINTS.ADMIN_UPDATE_APPLICATION_STATUS}/${counselorId}`,
-        { status, rejectionReason }
+        payload
       );
 
       return { success: true, data: response.data.data };
     } catch (error) {
       const message = getErrorMessage(error, 'Failed to update application status');
+      return { success: false, error: message };
+    }
+  };
+
+  const getAllReapplyRequests = async ({ status = '', page = 1, limit = 10 } = {}) => {
+    try {
+      const query = new URLSearchParams();
+      if (status) query.append('status', status);
+      if (page) query.append('page', page);
+      if (limit) query.append('limit', limit);
+
+      const response = await api.get(`${API_ENDPOINTS.ADMIN_REAPPLY_REQUESTS}?${query.toString()}`);
+      return {
+        success: true,
+        data: response.data.data || [],
+        pagination: response.data.pagination || {},
+      };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to fetch re-apply appeals');
+      return { success: false, error: message };
+    }
+  };
+
+  const reviewReapplyRequest = async (requestId, { decision, reviewNote = '' }) => {
+    try {
+      const response = await api.put(API_ENDPOINTS.ADMIN_REVIEW_REAPPLY_REQUEST(requestId), {
+        decision,
+        reviewNote,
+      });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      const message = getErrorMessage(error, 'Failed to review appeal request');
       return { success: false, error: message };
     }
   };
@@ -767,7 +812,10 @@ export const AdminAuthProvider = ({ children }) => {
       toggleAmbassadorStatusAdmin,
       getAmbassadorLedgerAdmin,
       settleAmbassadorPayoutAdmin,
+      getAllReapplyRequests,
+      reviewReapplyRequest,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [admin, adminLoading]
   );
 

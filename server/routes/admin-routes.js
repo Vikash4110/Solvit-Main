@@ -8,6 +8,8 @@ import {
   getAllCounselorApplications,
   getCounselorApplication,
   updateApplicationStatus,
+  getAllReapplyRequests,
+  reviewReapplyRequest,
   getAllDisputes,
   getDisputeDetail,
   updateDisputeStatus,
@@ -62,6 +64,10 @@ adminRouter
 adminRouter
   .route('/update-application-status/:counselorId')
   .put(verifyJWTAdmin, updateApplicationStatus);
+
+// Counselor re-apply appeals management
+adminRouter.route('/reapply-requests').get(verifyJWTAdmin, getAllReapplyRequests);
+adminRouter.route('/reapply-requests/:requestId/review').put(verifyJWTAdmin, reviewReapplyRequest);
 
 // ✅ ----- NEW DISPUTE MANAGEMENT ROUTES -----
 adminRouter.route('/disputes').get(verifyJWTAdmin, getAllDisputes);

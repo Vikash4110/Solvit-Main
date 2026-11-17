@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
   COUNSELOR_FORGOT_PASSWORD: '/counselors/forgot-password',
   COUNSELOR_RESET_PASSWORD: '/counselors/reset-password',
   COUNSELOR_APPLICATION: '/counselors/submit-application',
+  COUNSELOR_APPLICATION_APPEAL: '/counselors/application/appeal',
 
   // Booking endpoints
   BOOKING_COUNSELOR_SLOTS: '/booking/counselor',
@@ -117,6 +118,8 @@ export const API_ENDPOINTS = {
   ADMIN_COUNSELOR_APPLICATIONS: '/admin/counselor-applications',
   ADMIN_COUNSELOR_APPLICATION: '/admin/counselor-application',
   ADMIN_UPDATE_APPLICATION_STATUS: '/admin/update-application-status',
+  ADMIN_REAPPLY_REQUESTS: '/admin/reapply-requests',
+  ADMIN_REVIEW_REAPPLY_REQUEST: (requestId) => `/admin/reapply-requests/${requestId}/review`,
   ADMIN_DISPUTES: '/admin/disputes',
   ADMIN_DISPUTE_DETAIL: '/admin/disputes',
   ADMIN_DISPUTE_UPDATE_STATUS: '/admin/disputes',

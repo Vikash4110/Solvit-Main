@@ -24,17 +24,13 @@ import {
   BookOpen,
   TicketPercent,
   GraduationCap,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }) => {
   const { adminLogout, admin } = useAdminAuth();
@@ -72,6 +68,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }
           icon: FileText,
           path: '/admin/applications',
           badge: null, // You can make this dynamic
+        },
+        {
+          name: 'Re-apply Appeals',
+          icon: RotateCcw,
+          path: '/admin/reapply-requests',
+          badge: null,
         },
         {
           name: 'Disputes',
@@ -187,14 +189,18 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }
       } bg-white flex flex-col transition-all duration-300 ease-in-out`}
     >
       {/* Header */}
-      <div className={`h-16 flex items-center justify-between px-4 ${isMobile ? 'pr-14' : ''} border-b border-slate-200`}>
+      <div
+        className={`h-16 flex items-center justify-between px-4 ${isMobile ? 'pr-14' : ''} border-b border-slate-200`}
+      >
         {(!collapsed || isMobile) && (
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">Admin Panel</h1>
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                Admin Panel
+              </h1>
             </div>
           </div>
         )}
@@ -205,11 +211,7 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }
             onClick={() => setCollapsed(!collapsed)}
             className="hover:bg-slate-100"
           >
-            {collapsed ? (
-              <ChevronRight className="w-4 h-4" />
-            ) : (
-              <ChevronLeft className="w-4 h-4" />
-            )}
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </Button>
         )}
       </div>
@@ -295,7 +297,9 @@ const AdminSidebar = ({ collapsed, setCollapsed, onItemClick, isMobile = false }
               <p className="text-sm font-medium text-slate-900 truncate">
                 {admin?.fullName || 'Admin'}
               </p>
-              <p className="text-xs text-slate-500 truncate">{admin?.email || 'admin@solvit.com'}</p>
+              <p className="text-xs text-slate-500 truncate">
+                {admin?.email || 'admin@solvit.com'}
+              </p>
             </div>
           )}
         </div>

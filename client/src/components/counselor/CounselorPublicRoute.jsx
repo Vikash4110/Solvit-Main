@@ -13,11 +13,16 @@ const CounselorPublicRoute = ({ children }) => {
   }
 
   if (counselor) {
-    const applicationStatus = counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
+    const applicationStatus =
+      counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
     if (!applicationStatus || applicationStatus === 'not_submitted') {
       return <Navigate to="/counselor/application" replace />;
     }
-    if (applicationStatus === 'pending' || applicationStatus === 'rejected') {
+    if (
+      applicationStatus === 'pending' ||
+      applicationStatus === 'rejected' ||
+      applicationStatus === 'changes_requested'
+    ) {
       return <Navigate to="/counselor/application-status" replace />;
     }
     return <Navigate to="/counselor/dashboard" replace />;

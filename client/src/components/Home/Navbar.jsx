@@ -89,9 +89,7 @@ const Navbar = () => {
     setMobileServicesOpen(false); // ADD THIS LINE
   }, [location]);
 
-
   // useEffect(()=>{},[client])
-  
 
   // Logout handlers
   const handleLogoutCounselor = async () => {
@@ -105,7 +103,6 @@ const Navbar = () => {
     showToast.success('Logged out successfully');
     navigate('/');
   };
-
 
   // Services data
   const servicesLinks = [
@@ -248,7 +245,6 @@ const Navbar = () => {
                 About
               </Button>
 
-              
               {!counselor && (
                 <Button
                   variant="ghost"
@@ -301,32 +297,41 @@ const Navbar = () => {
             </nav>
             {/* Right Side Actions (Desktop) */}
             <div className="hidden lg:flex items-center gap-3">
-              {counselor && !counselorLoading && (() => {
-                const appStatus = counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
-                const isUnderReview = appStatus === 'pending';
-                const isRejected = appStatus === 'rejected';
-                const isNotSubmitted = appStatus === 'not_submitted';
+              {counselor &&
+                !counselorLoading &&
+                (() => {
+                  const appStatus =
+                    counselor.applicationStatus ||
+                    counselor.application?.applicationStatus ||
+                    'not_submitted';
+                  const isUnderReview = appStatus === 'pending';
+                  const isChangesRequested = appStatus === 'changes_requested';
+                  const isRejected = appStatus === 'rejected';
+                  const isNotSubmitted = appStatus === 'not_submitted';
 
-                const targetPath = (isUnderReview || isRejected)
-                  ? '/counselor/application-status'
-                  : isNotSubmitted
-                  ? '/counselor/application'
-                  : '/counselor/dashboard';
+                  const targetPath =
+                    isUnderReview || isRejected || isChangesRequested
+                      ? '/counselor/application-status'
+                      : isNotSubmitted
+                        ? '/counselor/application'
+                        : '/counselor/dashboard';
 
-                const subtitle = isUnderReview
-                  ? 'Application Under Review'
-                  : isRejected
-                  ? 'Application Status'
-                  : isNotSubmitted
-                  ? 'Complete Application'
-                  : 'Open Dashboard';
+                  const subtitle = isUnderReview
+                    ? 'Application Under Review'
+                    : isChangesRequested
+                      ? 'Action Required'
+                      : isRejected
+                        ? 'Application Status'
+                        : isNotSubmitted
+                          ? 'Complete Application'
+                          : 'Open Dashboard';
 
-                return (
-                  <button
-                    onClick={() => {
-                      navigate(targetPath);
-                    }}
-                    className="
+                  return (
+                    <button
+                      onClick={() => {
+                        navigate(targetPath);
+                      }}
+                      className="
                         flex items-center gap-3 px-4 py-2 h-auto
                         bg-white/80 dark:bg-neutral-800/80
                         backdrop-blur-sm border border-primary-200 dark:border-primary-800
@@ -335,27 +340,27 @@ const Navbar = () => {
                         hover:shadow-xl hover:scale-105
                         transition-all duration-300
                     "
-                    aria-label={`${counselor?.fullName} account menu`}
-                    aria-expanded={isOpen}
-                    aria-haspopup="true"
-                  >
-                    <Avatar className="h-10 w-10 ring-2 ring-primary-200 dark:ring-primary-800">
-                      <AvatarImage src={counselor?.profilePicture} alt={counselor?.fullName} />
-                      <AvatarFallback className="bg-gradient-to-r from-primary-700 to-primary-600 text-white font-semibold">
-                        {counselor?.fullName?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="hidden md:flex flex-col items-start">
-                      <span className="font-semibold text-sm text-neutral-800 dark:text-neutral-200">
-                        {counselor?.fullName}
-                      </span>
-                      <span className="text-xs text-neutral-600 dark:text-neutral-400">
-                        {subtitle}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })()}
+                      aria-label={`${counselor?.fullName} account menu`}
+                      aria-expanded={isOpen}
+                      aria-haspopup="true"
+                    >
+                      <Avatar className="h-10 w-10 ring-2 ring-primary-200 dark:ring-primary-800">
+                        <AvatarImage src={counselor?.profilePicture} alt={counselor?.fullName} />
+                        <AvatarFallback className="bg-gradient-to-r from-primary-700 to-primary-600 text-white font-semibold">
+                          {counselor?.fullName?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="hidden md:flex flex-col items-start">
+                        <span className="font-semibold text-sm text-neutral-800 dark:text-neutral-200">
+                          {counselor?.fullName}
+                        </span>
+                        <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                          {subtitle}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })()}
 
               {client && !clientLoading && (
                 <button
@@ -511,20 +516,32 @@ const Navbar = () => {
                           Counselor Workspace
                         </p>
                         {(() => {
-                          const appStatus = counselor.applicationStatus || counselor.application?.applicationStatus || 'not_submitted';
+                          const appStatus =
+                            counselor.applicationStatus ||
+                            counselor.application?.applicationStatus ||
+                            'not_submitted';
                           if (appStatus !== 'approved') {
-                            const isReview = appStatus === 'pending' || appStatus === 'rejected';
+                            const isReview =
+                              appStatus === 'pending' ||
+                              appStatus === 'rejected' ||
+                              appStatus === 'changes_requested';
                             return (
                               <Button
                                 variant="ghost"
                                 onClick={() => {
-                                  navigate(isReview ? '/counselor/application-status' : '/counselor/application');
+                                  navigate(
+                                    isReview
+                                      ? '/counselor/application-status'
+                                      : '/counselor/application'
+                                  );
                                   setIsOpen(false);
                                 }}
                                 className="w-full justify-start gap-3 px-3.5 py-2.5 h-auto rounded-xl hover:bg-primary-50 dark:hover:bg-primary-950/40 text-neutral-800 dark:text-neutral-200 font-medium text-sm transition"
                               >
                                 <LayoutDashboard className="h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0" />
-                                <span>{isReview ? 'Application Status' : 'Complete Application'}</span>
+                                <span>
+                                  {isReview ? 'Application Status' : 'Complete Application'}
+                                </span>
                               </Button>
                             );
                           }

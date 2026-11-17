@@ -1,6 +1,6 @@
 // components/admin/ApplicationDetail.js
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { toast } from 'sonner';
 import {
@@ -9,6 +9,10 @@ import {
   Eye,
   CheckCircle,
   XCircle,
+  AlertCircle,
+  FileEdit,
+  RotateCcw,
+  Info,
   User,
   Mail,
   Phone,
@@ -20,7 +24,19 @@ import {
   Languages,
   Banknote,
   Building,
+  Loader2,
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 const ApplicationDetail = () => {
   const { counselorId } = useParams();
@@ -32,8 +48,16 @@ const ApplicationDetail = () => {
   const [updating, setUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
 
+  // Dialog Modals State
+  const [changesModalOpen, setChangesModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [adminFeedbackInput, setAdminFeedbackInput] = useState('');
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+
   useEffect(() => {
     fetchApplicationDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [counselorId]);
 
   const fetchApplicationDetail = async () => {
@@ -48,23 +72,70 @@ const ApplicationDetail = () => {
     setLoading(false);
   };
 
-  const handleStatusUpdate = async (status) => {
-    let rejectionReason = '';
-
-    if (status === 'rejected') {
-      rejectionReason = prompt('Please enter rejection reason:');
-      if (!rejectionReason) return;
-    }
-
+  const handleApprove = async () => {
     setUpdating(true);
-    const result = await updateApplicationStatus(counselorId, status, rejectionReason);
+    const result = await updateApplicationStatus(counselorId, 'approved');
     if (result.success) {
-      toast.success(`Application ${status} successfully`);
-      fetchApplicationDetail(); // Refresh data
+      toast.success('Application approved successfully');
+      fetchApplicationDetail();
     } else {
-      toast.error(result.error || 'Failed to update status');
+      toast.error(result.error || 'Failed to approve application');
     }
     setUpdating(false);
+  };
+
+  const openChangesModal = () => {
+    setAdminFeedbackInput(application?.application?.adminFeedback || '');
+    setChangesModalOpen(true);
+  };
+
+  const openRejectModal = () => {
+    setRejectionReasonInput(application?.application?.rejectionReason || '');
+    setRejectModalOpen(true);
+  };
+
+  const submitChangesRequested = async () => {
+    if (!adminFeedbackInput.trim()) {
+      toast.error('Please enter the required modifications or feedback for the counselor.');
+      return;
+    }
+
+    setModalSubmitting(true);
+    const result = await updateApplicationStatus(counselorId, 'changes_requested', {
+      adminFeedback: adminFeedbackInput.trim(),
+    });
+    setModalSubmitting(false);
+
+    if (result.success) {
+      toast.success('Changes requested successfully. Counselor notified via email.');
+      setChangesModalOpen(false);
+      setAdminFeedbackInput('');
+      fetchApplicationDetail();
+    } else {
+      toast.error(result.error || 'Failed to request changes');
+    }
+  };
+
+  const submitRejection = async () => {
+    if (!rejectionReasonInput.trim()) {
+      toast.error('Please specify a rejection reason for the applicant.');
+      return;
+    }
+
+    setModalSubmitting(true);
+    const result = await updateApplicationStatus(counselorId, 'rejected', {
+      rejectionReason: rejectionReasonInput.trim(),
+    });
+    setModalSubmitting(false);
+
+    if (result.success) {
+      toast.success('Application rejected. Counselor notified via email.');
+      setRejectModalOpen(false);
+      setRejectionReasonInput('');
+      fetchApplicationDetail();
+    } else {
+      toast.error(result.error || 'Failed to reject application');
+    }
   };
 
   const handleDownloadDocument = (documentUrl, documentName) => {
@@ -110,11 +181,13 @@ const ApplicationDetail = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-amber-100 text-amber-800 border-amber-300';
+      case 'changes_requested':
+        return 'bg-orange-100 text-orange-800 border-orange-300';
       case 'approved':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300';
       case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-rose-100 text-rose-800 border-rose-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -126,7 +199,7 @@ const ApplicationDetail = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center space-x-4">
                 <button
                   onClick={() => navigate('/admin/dashboard')}
@@ -143,30 +216,50 @@ const ApplicationDetail = () => {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(application.application?.applicationStatus)}`}
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+                    application.application?.applicationStatus
+                  )}`}
                 >
-                  {application.application?.applicationStatus?.toUpperCase() || 'NOT SUBMITTED'}
+                  {application.application?.applicationStatus?.replace(/_/g, ' ')?.toUpperCase() ||
+                    'NOT SUBMITTED'}
                 </span>
 
-                {application.application?.applicationStatus === 'pending' && (
-                  <div className="flex space-x-2">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                  Attempt {application.application?.applicationAttempts || 1} of 3
+                </span>
+
+                {(application.application?.applicationStatus === 'pending' ||
+                  application.application?.applicationStatus === 'changes_requested') && (
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleStatusUpdate('approved')}
+                      onClick={handleApprove}
                       disabled={updating}
-                      className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                      className="flex items-center px-3.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
                     >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      {updating ? 'Approving...' : 'Approve'}
+                      {updating ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      ) : (
+                        <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                      )}
+                      Approve
                     </button>
                     <button
-                      onClick={() => handleStatusUpdate('rejected')}
+                      onClick={openChangesModal}
                       disabled={updating}
-                      className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                      className="flex items-center px-3.5 py-1.5 border border-amber-300 text-xs font-medium rounded-md text-amber-800 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 transition-colors shadow-sm"
                     >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      {updating ? 'Rejecting...' : 'Reject'}
+                      <FileEdit className="h-3.5 w-3.5 mr-1.5 text-amber-600" />
+                      Request Changes
+                    </button>
+                    <button
+                      onClick={openRejectModal}
+                      disabled={updating}
+                      className="flex items-center px-3.5 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 transition-colors shadow-sm"
+                    >
+                      <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                      Reject
                     </button>
                   </div>
                 )}
@@ -188,9 +281,11 @@ const ApplicationDetail = () => {
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-2 border-gray-200"
                 />
                 <h2 className="text-xl font-bold text-gray-900">{application.fullName}</h2>
-                <p className="text-sm text-gray-600 mb-2">{application.specialization.map((specialization)=>{
-                  {specialization}
-                })}</p>
+                <p className="text-sm text-gray-600 mb-2">
+                  {Array.isArray(application.specialization)
+                    ? application.specialization.join(', ')
+                    : application.specialization || 'General Counseling'}
+                </p>
                 <p className="text-xs text-gray-500">
                   {application.experienceLevel} • {application.experienceYears} years
                 </p>
@@ -223,6 +318,56 @@ const ApplicationDetail = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
+            {/* Feedback / Rejection / Appeals Banners */}
+            {application.application?.applicationStatus === 'changes_requested' && (
+              <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-amber-900 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-semibold text-amber-900">
+                      Changes Requested by Admin
+                    </h4>
+                    <p className="text-xs text-amber-800 leading-relaxed whitespace-pre-wrap">
+                      {application.application.adminFeedback || 'No feedback note provided.'}
+                    </p>
+                    <p className="text-[11px] text-amber-700/80 mt-1">
+                      The counselor can update their pre-filled profile and resubmit directly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {application.application?.applicationStatus === 'rejected' && (
+              <div className="mb-6 p-4 rounded-xl border border-rose-200 bg-rose-50/90 text-rose-900 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <XCircle className="w-5 h-5 text-rose-600 mt-0.5 shrink-0" />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-semibold text-rose-900">
+                      Application Disqualified (Hard Rejection)
+                    </h4>
+                    <p className="text-xs text-rose-800 leading-relaxed whitespace-pre-wrap">
+                      <span className="font-semibold">Reason:</span>{' '}
+                      {application.application.rejectionReason ||
+                        'Application does not meet eligibility requirements.'}
+                    </p>
+                    {application.application.reapplyAppealStatus === 'pending' && (
+                      <div className="mt-2.5 p-2.5 rounded-lg bg-white/80 border border-rose-200 flex items-center justify-between">
+                        <span className="text-xs text-slate-700">
+                          The counselor has submitted a formal re-apply appeal.
+                        </span>
+                        <Link
+                          to="/admin/reapply-requests"
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 underline"
+                        >
+                          Review Appeal in Queue
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Tab Navigation */}
             <div className="bg-white rounded-lg shadow-sm border mb-6">
               <div className="border-b">
@@ -293,9 +438,13 @@ const ApplicationDetail = () => {
                         <dl className="space-y-3">
                           <div>
                             <dt className="text-sm font-medium text-gray-500">Specialization</dt>
-                            <dd className="text-sm text-gray-900">{application.specialization.map((specialization)=>{
-                              {specialization}
-                            })}</dd>
+                            <dd className="text-sm text-gray-900">
+                              {application.specialization.map((specialization) => {
+                                {
+                                  specialization;
+                                }
+                              })}
+                            </dd>
                           </div>
                           <div>
                             <dt className="text-sm font-medium text-gray-500">Experience Level</dt>
@@ -684,6 +833,161 @@ const ApplicationDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Request Changes Modal */}
+      <Dialog open={changesModalOpen} onOpenChange={setChangesModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <FileEdit className="w-5 h-5 text-amber-600" />
+              Request Modifications
+            </DialogTitle>
+            <DialogDescription>
+              Specify the missing or incorrect details that {application?.fullName} needs to update.
+              The counselor will be able to update their pre-filled application directly without
+              admin re-authorization.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-neutral-800 text-xs text-slate-600 dark:text-neutral-300 space-y-1">
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Applicant:
+                </span>{' '}
+                {application?.fullName}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">Email:</span>{' '}
+                {application?.email}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Current Attempt:
+                </span>{' '}
+                {application?.application?.applicationAttempts || 1} of 3
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="detailAdminFeedback" className="text-xs font-semibold">
+                Feedback for Counselor <span className="text-rose-500">*</span>
+              </Label>
+              <Textarea
+                id="detailAdminFeedback"
+                rows={4}
+                value={adminFeedbackInput}
+                onChange={(e) => setAdminFeedbackInput(e.target.value)}
+                placeholder="e.g. Please upload an official degree certificate showing degree completion date and provide an updated government ID."
+                className="text-xs leading-relaxed"
+              />
+              <p className="text-[11px] text-slate-500">
+                This note will appear prominently on the counselor&apos;s status screen and will be
+                dispatched to their email.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setChangesModalOpen(false)}
+              disabled={modalSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={submitChangesRequested}
+              disabled={modalSubmitting || !adminFeedbackInput.trim()}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {modalSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Send Changes Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Application Modal */}
+      <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-700">
+              <XCircle className="w-5 h-5 text-rose-600" />
+              Reject Application
+            </DialogTitle>
+            <DialogDescription>
+              Disqualify {application?.fullName}&apos;s counselor application. The applicant will
+              only be able to re-apply by filing a formal appeal with Solvit management.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-neutral-800 text-xs text-slate-600 dark:text-neutral-300 space-y-1">
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Applicant:
+                </span>{' '}
+                {application?.fullName}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">Email:</span>{' '}
+                {application?.email}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Current Attempt:
+                </span>{' '}
+                {application?.application?.applicationAttempts || 1} of 3
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="detailRejectionReason" className="text-xs font-semibold">
+                Reason for Disqualification <span className="text-rose-500">*</span>
+              </Label>
+              <Textarea
+                id="detailRejectionReason"
+                rows={4}
+                value={rejectionReasonInput}
+                onChange={(e) => setRejectionReasonInput(e.target.value)}
+                placeholder="e.g. Ineligible credentials: Provided license has expired or does not meet clinical practice requirements."
+                className="text-xs leading-relaxed"
+              />
+              <p className="text-[11px] text-slate-500">
+                This official reason will be displayed to the counselor and sent in the notification
+                email.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRejectModalOpen(false)}
+              disabled={modalSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={submitRejection}
+              disabled={modalSubmitting || !rejectionReasonInput.trim()}
+            >
+              {modalSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
