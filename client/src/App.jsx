@@ -33,18 +33,28 @@ const TermCondition = lazy(() => import('./components/Legals/TermCondition'));
 // CLIENT PAGES (Lazy Loaded)
 const Login = lazy(() => import('./pages/client/ClientLogin'));
 const Register = lazy(() => import('./pages/client/ClientRegister'));
-const ClientForgotPassword = lazy(() => import('./components/client/clientLoginRegister/ClientForgotPassword'));
-const ClientResetPassword = lazy(() => import('./components/client/clientLoginRegister/ClientResetPassword'));
+const ClientForgotPassword = lazy(
+  () => import('./components/client/clientLoginRegister/ClientForgotPassword')
+);
+const ClientResetPassword = lazy(
+  () => import('./components/client/clientLoginRegister/ClientResetPassword')
+);
 const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'));
-const ClientDashboardDisputeForm = lazy(() => import('./components/client/ClientDashboard/ClientDashboardDisputeForm'));
+const ClientDashboardDisputeForm = lazy(
+  () => import('./components/client/ClientDashboard/ClientDashboardDisputeForm')
+);
 const BrowseCounselor = lazy(() => import('./pages/client/browseCounselor'));
 const BookCounselorCalendar = lazy(() => import('./pages/client/bookCounselor'));
 
 // COUNSELOR PAGES (Lazy Loaded)
 const CounselorLogin = lazy(() => import('./pages/counselor/CounselorLogin'));
 const CounselorRegister = lazy(() => import('./pages/counselor/CounselorRegister'));
-const CounselorForgotPassword = lazy(() => import('./components/counselor/counselorLoginRegister/CounselorForgotPassword'));
-const CounselorResetPassword = lazy(() => import('./components/counselor/counselorLoginRegister/CounselorResetPassword'));
+const CounselorForgotPassword = lazy(
+  () => import('./components/counselor/counselorLoginRegister/CounselorForgotPassword')
+);
+const CounselorResetPassword = lazy(
+  () => import('./components/counselor/counselorLoginRegister/CounselorResetPassword')
+);
 const CounselorDashboard = lazy(() => import('./pages/counselor/CounselorDashboard'));
 const CounselorApplication = lazy(() => import('./pages/counselor/CounselorApplication'));
 const ApplicationStatus = lazy(() => import('./pages/counselor/CounselorApplicationStatus'));
@@ -60,13 +70,22 @@ const ApplicationDetail = lazy(() => import('./pages/admin/ApplicationDetail'));
 const ApplicationsPage = lazy(() => import('./components/admin/ApplicationsPage'));
 const AdminDisputeManagement = lazy(() => import('./components/admin/AdminDisputeManagement'));
 const AdminClientsManagement = lazy(() => import('./components/admin/AdminClientsManagement'));
-const AdminCounselorsManagement = lazy(() => import('./components/admin/AdminCounselorsManagement'));
+const AdminCounselorsManagement = lazy(
+  () => import('./components/admin/AdminCounselorsManagement')
+);
 const AdminPaymentsManagement = lazy(() => import('./components/admin/AdminPaymentsManagement'));
 const AdminBookingsManagement = lazy(() => import('./components/admin/AdminBookingsManagement'));
-const AdminCounselorRequestsManagement = lazy(() => import('./components/admin/AdminCounselorRequestsManagement'));
+const AdminCounselorRequestsManagement = lazy(
+  () => import('./components/admin/AdminCounselorRequestsManagement')
+);
 const AdminBlogsManagement = lazy(() => import('./components/admin/AdminBlogsManagement'));
+const AdminReapplyRequestsManagement = lazy(
+  () => import('./components/admin/AdminReapplyRequestsManagement')
+);
 const AdminCouponsManagement = lazy(() => import('./components/admin/AdminCouponsManagement'));
-const AdminCampusAmbassadorsManagement = lazy(() => import('./components/admin/AdminCampusAmbassadorsManagement'));
+const AdminCampusAmbassadorsManagement = lazy(
+  () => import('./components/admin/AdminCampusAmbassadorsManagement')
+);
 
 function App() {
   const location = useLocation();
@@ -233,12 +252,19 @@ function App() {
                     <Route path="disputes" element={<AdminDisputeManagement />} />
                     <Route path="applications" element={<ApplicationsPage />} />
                     <Route path="application/:counselorId" element={<ApplicationDetail />} />
+                    <Route path="reapply-requests" element={<AdminReapplyRequestsManagement />} />
                     <Route path="clients" element={<AdminClientsManagement />} />
                     <Route path="counselors" element={<AdminCounselorsManagement />} />
-                    <Route path="counselor-requests" element={<AdminCounselorRequestsManagement />} />
+                    <Route
+                      path="counselor-requests"
+                      element={<AdminCounselorRequestsManagement />}
+                    />
                     <Route path="payments" element={<AdminPaymentsManagement />} />
                     <Route path="coupons" element={<AdminCouponsManagement />} />
-                    <Route path="campus-ambassadors" element={<AdminCampusAmbassadorsManagement />} />
+                    <Route
+                      path="campus-ambassadors"
+                      element={<AdminCampusAmbassadorsManagement />}
+                    />
                     <Route path="bookings" element={<AdminBookingsManagement />} />
                     <Route path="blogs" element={<AdminBlogsManagement />} />
                   </Route>

@@ -12,6 +12,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  AlertCircle,
+  FileEdit,
   Search,
   Filter,
   Eye,
@@ -41,6 +43,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -71,8 +83,17 @@ const ApplicationsPage = () => {
   const [copiedId, setCopiedId] = useState(null);
   const itemsPerPage = 15;
 
+  // Dialog Modals State
+  const [changesModalOpen, setChangesModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [activeModalApp, setActiveModalApp] = useState(null);
+  const [adminFeedbackInput, setAdminFeedbackInput] = useState('');
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+
   useEffect(() => {
     fetchApplications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStatus]);
 
   const fetchApplications = async () => {
@@ -86,16 +107,76 @@ const ApplicationsPage = () => {
     setLoading(false);
   };
 
-  const handleStatusUpdate = async (counselorId, status, rejectionReason = '') => {
+  const handleStatusUpdate = async (counselorId, status, payload = {}) => {
     setUpdatingId(counselorId);
-    const result = await updateApplicationStatus(counselorId, status, rejectionReason);
+    const result = await updateApplicationStatus(counselorId, status, payload);
     if (result.success) {
-      toast.success(`Application marked as ${status} successfully`);
+      toast.success(`Application marked as ${status.replace(/_/g, ' ')} successfully`);
       fetchApplications();
     } else {
       toast.error(result.error || `Failed to update application status`);
     }
     setUpdatingId(null);
+  };
+
+  const openChangesModal = (app) => {
+    setActiveModalApp(app);
+    setAdminFeedbackInput(app.application?.adminFeedback || '');
+    setChangesModalOpen(true);
+  };
+
+  const openRejectModal = (app) => {
+    setActiveModalApp(app);
+    setRejectionReasonInput(app.application?.rejectionReason || '');
+    setRejectModalOpen(true);
+  };
+
+  const handleConfirmChangesRequested = async () => {
+    if (!adminFeedbackInput.trim()) {
+      toast.error('Please enter the required modifications or feedback for the counselor.');
+      return;
+    }
+    if (!activeModalApp) return;
+
+    setModalSubmitting(true);
+    const result = await updateApplicationStatus(activeModalApp._id, 'changes_requested', {
+      adminFeedback: adminFeedbackInput.trim(),
+    });
+    setModalSubmitting(false);
+
+    if (result.success) {
+      toast.success('Changes requested successfully. Counselor notified via email.');
+      setChangesModalOpen(false);
+      setActiveModalApp(null);
+      setAdminFeedbackInput('');
+      fetchApplications();
+    } else {
+      toast.error(result.error || 'Failed to submit changes request');
+    }
+  };
+
+  const handleConfirmRejection = async () => {
+    if (!rejectionReasonInput.trim()) {
+      toast.error('Please specify a rejection reason for the applicant.');
+      return;
+    }
+    if (!activeModalApp) return;
+
+    setModalSubmitting(true);
+    const result = await updateApplicationStatus(activeModalApp._id, 'rejected', {
+      rejectionReason: rejectionReasonInput.trim(),
+    });
+    setModalSubmitting(false);
+
+    if (result.success) {
+      toast.success('Application rejected. Counselor notified via email.');
+      setRejectModalOpen(false);
+      setActiveModalApp(null);
+      setRejectionReasonInput('');
+      fetchApplications();
+    } else {
+      toast.error(result.error || 'Failed to reject application');
+    }
   };
 
   const handleCopyText = (text, type, id) => {
@@ -130,15 +211,15 @@ const ApplicationsPage = () => {
   const stats = useMemo(() => {
     return {
       total: applications.length,
-      pending: applications.filter(
-        (app) => app.application?.applicationStatus === 'pending'
+      pending: applications.filter((app) => app.application?.applicationStatus === 'pending')
+        .length,
+      changes_requested: applications.filter(
+        (app) => app.application?.applicationStatus === 'changes_requested'
       ).length,
-      approved: applications.filter(
-        (app) => app.application?.applicationStatus === 'approved'
-      ).length,
-      rejected: applications.filter(
-        (app) => app.application?.applicationStatus === 'rejected'
-      ).length,
+      approved: applications.filter((app) => app.application?.applicationStatus === 'approved')
+        .length,
+      rejected: applications.filter((app) => app.application?.applicationStatus === 'rejected')
+        .length,
     };
   }, [applications]);
 
@@ -146,6 +227,8 @@ const ApplicationsPage = () => {
     switch (status) {
       case 'pending':
         return 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800';
+      case 'changes_requested':
+        return 'bg-orange-50 text-orange-700 border-orange-200/80 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800';
       case 'approved':
         return 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
       case 'rejected':
@@ -159,6 +242,8 @@ const ApplicationsPage = () => {
     switch (status) {
       case 'pending':
         return <Clock className="w-3.5 h-3.5 shrink-0" />;
+      case 'changes_requested':
+        return <AlertCircle className="w-3.5 h-3.5 shrink-0" />;
       case 'approved':
         return <CheckCircle className="w-3.5 h-3.5 shrink-0" />;
       case 'rejected':
@@ -172,6 +257,8 @@ const ApplicationsPage = () => {
     switch (status) {
       case 'pending':
         return 'Pending Review';
+      case 'changes_requested':
+        return 'Changes Requested';
       case 'approved':
         return 'Approved';
       case 'rejected':
@@ -223,8 +310,8 @@ const ApplicationsPage = () => {
         </div>
       </div>
 
-      {/* 4 Stat KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* 5 Stat KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         {/* Total Applications */}
         <Card className="bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border-indigo-500/20 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-4 px-4">
@@ -257,6 +344,24 @@ const ApplicationsPage = () => {
             </div>
             <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 font-medium mt-0.5">
               Awaiting admin decision
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Changes Requested */}
+        <Card className="bg-white dark:bg-neutral-900 border-slate-200/80 dark:border-neutral-800 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-1.5 pt-4 px-4">
+            <CardTitle className="text-xs font-semibold text-orange-700 dark:text-orange-400">
+              Changes Requested
+            </CardTitle>
+            <AlertCircle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 tracking-tight">
+              {stats.changes_requested.toLocaleString()}
+            </div>
+            <p className="text-[11px] text-orange-600/80 dark:text-orange-400/80 font-medium mt-0.5">
+              Awaiting counselor update
             </p>
           </CardContent>
         </Card>
@@ -336,13 +441,14 @@ const ApplicationsPage = () => {
               >
                 <SelectTrigger
                   leftIcon={<Filter className="w-3.5 h-3.5 text-slate-400" />}
-                  className="h-9 text-xs w-full sm:w-[160px] bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-700"
+                  className="h-9 text-xs w-full sm:w-[170px] bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-700"
                 >
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="changes_requested">Changes Requested</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
@@ -378,6 +484,19 @@ const ApplicationsPage = () => {
               }`}
             >
               Pending ({stats.pending})
+            </button>
+            <button
+              onClick={() => {
+                setSelectedStatus('changes_requested');
+                setCurrentPage(1);
+              }}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedStatus === 'changes_requested'
+                  ? 'bg-orange-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 dark:bg-neutral-800 dark:text-neutral-300 hover:bg-slate-200'
+              }`}
+            >
+              Changes Requested ({stats.changes_requested})
             </button>
             <button
               onClick={() => {
@@ -465,13 +584,16 @@ const ApplicationsPage = () => {
                     <th className="py-3.5 px-2.5">Specializations</th>
                     <th className="py-3.5 px-2.5 whitespace-nowrap">Submitted At</th>
                     <th className="py-3.5 px-2.5 text-center whitespace-nowrap">Status</th>
-                    <th className="py-3.5 pr-4 sm:pr-5 pl-2 text-center whitespace-nowrap">Actions</th>
+                    <th className="py-3.5 pr-4 sm:pr-5 pl-2 text-center whitespace-nowrap">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-neutral-800 text-xs sm:text-sm">
                   {paginatedApplications.map((application) => {
                     const appStatus = application.application?.applicationStatus || 'not_submitted';
-                    const submittedAt = application.application?.applicationSubmittedAt || application.createdAt;
+                    const submittedAt =
+                      application.application?.applicationSubmittedAt || application.createdAt;
                     const specializations = application.specialization || [];
 
                     return (
@@ -503,7 +625,9 @@ const ApplicationsPage = () => {
                                 </span>
                                 {application.gender && (
                                   <>
-                                    <span className="text-slate-300 dark:text-neutral-700 shrink-0">•</span>
+                                    <span className="text-slate-300 dark:text-neutral-700 shrink-0">
+                                      •
+                                    </span>
                                     <span className="text-[11px] text-slate-500 dark:text-neutral-400 shrink-0">
                                       {application.gender}
                                     </span>
@@ -519,13 +643,18 @@ const ApplicationsPage = () => {
                           <div className="space-y-1 text-xs">
                             <div className="flex items-center gap-1.5 text-slate-700 dark:text-neutral-300">
                               <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[150px] sm:max-w-[190px]" title={application.email}>
+                              <span
+                                className="truncate max-w-[150px] sm:max-w-[190px]"
+                                title={application.email}
+                              >
                                 {application.email || 'N/A'}
                               </span>
                               {application.email && (
                                 <button
                                   type="button"
-                                  onClick={() => handleCopyText(application.email, 'Email', application._id)}
+                                  onClick={() =>
+                                    handleCopyText(application.email, 'Email', application._id)
+                                  }
                                   title="Copy email"
                                   className="text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 p-0.5 rounded transition-colors shrink-0"
                                 >
@@ -544,7 +673,9 @@ const ApplicationsPage = () => {
                                 <span className="truncate max-w-[140px]">{application.phone}</span>
                                 <button
                                   type="button"
-                                  onClick={() => handleCopyText(application.phone, 'Phone', application._id)}
+                                  onClick={() =>
+                                    handleCopyText(application.phone, 'Phone', application._id)
+                                  }
                                   title="Copy phone"
                                   className="text-slate-400 hover:text-slate-600 dark:hover:text-neutral-200 p-0.5 rounded transition-colors shrink-0"
                                 >
@@ -581,7 +712,9 @@ const ApplicationsPage = () => {
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 italic">General Counseling</span>
+                            <span className="text-xs text-slate-400 italic">
+                              General Counseling
+                            </span>
                           )}
                         </td>
 
@@ -601,15 +734,20 @@ const ApplicationsPage = () => {
 
                         {/* Status Column */}
                         <td className="py-3.5 px-2.5 text-center whitespace-nowrap">
-                          <Badge
-                            variant="outline"
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full border shadow-xs whitespace-nowrap ${getStatusColor(
-                              appStatus
-                            )}`}
-                          >
-                            {getStatusIcon(appStatus)}
-                            <span>{getStatusLabel(appStatus)}</span>
-                          </Badge>
+                          <div className="inline-flex flex-col items-center gap-1">
+                            <Badge
+                              variant="outline"
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full border shadow-xs whitespace-nowrap ${getStatusColor(
+                                appStatus
+                              )}`}
+                            >
+                              {getStatusIcon(appStatus)}
+                              <span>{getStatusLabel(appStatus)}</span>
+                            </Badge>
+                            <span className="text-[10px] font-medium text-slate-500 dark:text-neutral-400">
+                              Attempt {application.application?.applicationAttempts || 1} of 3
+                            </span>
+                          </div>
                         </td>
 
                         {/* Actions Column */}
@@ -625,13 +763,14 @@ const ApplicationsPage = () => {
                               View
                             </Button>
 
-                            {appStatus === 'pending' && (
-                              <div className="flex items-center gap-1.5">
+                            {(appStatus === 'pending' || appStatus === 'changes_requested') && (
+                              <div className="flex items-center gap-1">
                                 <Button
                                   size="sm"
                                   onClick={() => handleStatusUpdate(application._id, 'approved')}
                                   disabled={updatingId === application._id}
                                   className="h-7 px-2 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-none"
+                                  title="Approve Application"
                                 >
                                   {updatingId === application._id ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -642,17 +781,26 @@ const ApplicationsPage = () => {
                                     </>
                                   )}
                                 </Button>
+
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openChangesModal(application)}
+                                  disabled={updatingId === application._id}
+                                  className="h-7 px-2 text-[11px] font-semibold border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/40 shadow-none"
+                                  title="Request Changes"
+                                >
+                                  <FileEdit className="w-3 h-3 mr-1 text-amber-600" />
+                                  Changes
+                                </Button>
+
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => {
-                                    const reason = prompt('Please enter rejection reason:');
-                                    if (reason && reason.trim()) {
-                                      handleStatusUpdate(application._id, 'rejected', reason.trim());
-                                    }
-                                  }}
+                                  onClick={() => openRejectModal(application)}
                                   disabled={updatingId === application._id}
                                   className="h-7 px-2 text-[11px] font-semibold shadow-none"
+                                  title="Reject Application"
                                 >
                                   <XCircle className="w-3 h-3 mr-1" />
                                   Reject
@@ -673,8 +821,15 @@ const ApplicationsPage = () => {
           {!loading && filteredApplications.length > 0 && totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900/50">
               <p className="text-xs text-slate-500 dark:text-neutral-400">
-                Showing page <span className="font-semibold text-slate-800 dark:text-neutral-200">{currentPage}</span> of{' '}
-                <span className="font-semibold text-slate-800 dark:text-neutral-200">{totalPages}</span> ({filteredApplications.length} total applications)
+                Showing page{' '}
+                <span className="font-semibold text-slate-800 dark:text-neutral-200">
+                  {currentPage}
+                </span>{' '}
+                of{' '}
+                <span className="font-semibold text-slate-800 dark:text-neutral-200">
+                  {totalPages}
+                </span>{' '}
+                ({filteredApplications.length} total applications)
               </p>
 
               <div className="flex items-center gap-2">
@@ -734,6 +889,161 @@ const ApplicationsPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Request Changes Modal */}
+      <Dialog open={changesModalOpen} onOpenChange={setChangesModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <FileEdit className="w-5 h-5 text-amber-600" />
+              Request Modifications
+            </DialogTitle>
+            <DialogDescription>
+              Specify the missing or incorrect details that {activeModalApp?.fullName} needs to
+              update. The counselor will be able to update their pre-filled application directly
+              without admin re-authorization.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-neutral-800 text-xs text-slate-600 dark:text-neutral-300 space-y-1">
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Applicant:
+                </span>{' '}
+                {activeModalApp?.fullName}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">Email:</span>{' '}
+                {activeModalApp?.email}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Current Attempt:
+                </span>{' '}
+                {activeModalApp?.application?.applicationAttempts || 1} of 3
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="adminFeedback" className="text-xs font-semibold">
+                Feedback for Counselor <span className="text-rose-500">*</span>
+              </Label>
+              <Textarea
+                id="adminFeedback"
+                rows={4}
+                value={adminFeedbackInput}
+                onChange={(e) => setAdminFeedbackInput(e.target.value)}
+                placeholder="e.g. Please upload an official degree certificate showing degree completion date and provide an updated government ID."
+                className="text-xs leading-relaxed"
+              />
+              <p className="text-[11px] text-slate-500">
+                This note will appear prominently on the counselor&apos;s status screen and will be
+                dispatched to their email.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setChangesModalOpen(false)}
+              disabled={modalSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleConfirmChangesRequested}
+              disabled={modalSubmitting || !adminFeedbackInput.trim()}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {modalSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Send Changes Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Application Modal */}
+      <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-700">
+              <XCircle className="w-5 h-5 text-rose-600" />
+              Reject Application
+            </DialogTitle>
+            <DialogDescription>
+              Disqualify {activeModalApp?.fullName}&apos;s counselor application. The applicant will
+              only be able to re-apply by filing a formal appeal with Solvit management.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-neutral-800 text-xs text-slate-600 dark:text-neutral-300 space-y-1">
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Applicant:
+                </span>{' '}
+                {activeModalApp?.fullName}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">Email:</span>{' '}
+                {activeModalApp?.email}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-900 dark:text-neutral-100">
+                  Current Attempt:
+                </span>{' '}
+                {activeModalApp?.application?.applicationAttempts || 1} of 3
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="rejectionReason" className="text-xs font-semibold">
+                Reason for Disqualification <span className="text-rose-500">*</span>
+              </Label>
+              <Textarea
+                id="rejectionReason"
+                rows={4}
+                value={rejectionReasonInput}
+                onChange={(e) => setRejectionReasonInput(e.target.value)}
+                placeholder="e.g. Ineligible credentials: Provided license has expired or does not meet clinical practice requirements."
+                className="text-xs leading-relaxed"
+              />
+              <p className="text-[11px] text-slate-500">
+                This official reason will be displayed to the counselor and sent in the notification
+                email.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRejectModalOpen(false)}
+              disabled={modalSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={handleConfirmRejection}
+              disabled={modalSubmitting || !rejectionReasonInput.trim()}
+            >
+              {modalSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
