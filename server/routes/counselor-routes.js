@@ -8,6 +8,7 @@ import {
   resetPassword,
   sendOtpRegisterEmail,
   submitCounselorApplication,
+  submitReapplyAppeal,
   verifyOtpRegisterEmail,
 } from '../controllers/counselor-controller.js';
 import { verifyJWTCounselor } from '../middlewares/counselorAuth-middleware.js';
@@ -39,6 +40,8 @@ counselorRouter.route('/submit-application').post(
   ]),
   submitCounselorApplication
 );
+
+counselorRouter.route('/application/appeal').post(verifyJWTCounselor, submitReapplyAppeal);
 
 counselorRouter.route('/logout-counselor').post(verifyJWTCounselor, logoutCounselor);
 

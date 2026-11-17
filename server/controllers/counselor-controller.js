@@ -7,6 +7,7 @@ import {
 } from '../utils/cookieOptions.js';
 import { OTP } from '../models/clientOTP-model.js';
 import { Counselor } from '../models/counselor-model.js';
+import { CounselorReapplyRequest } from '../models/counselor-reapply-request-model.js';
 import { uploadOncloudinary } from '../utils/cloudinary.js';
 import { wrapper } from '../utils/wrapper.js';
 import { logger } from '../utils/logger.js';
@@ -547,12 +548,62 @@ const loginCounselor = wrapper(async (req, res) => {
 });
 
 const submitCounselorApplication = wrapper(async (req, res) => {
+  const counselorId = req.verifiedCounselorId?._id;
   const { education, experience, professionalSummary, languages, license, bankDetails } = req.body;
   const files = req.files;
 
-  console.log('Received application data for counselor:', req.verifiedCounselorId._id);
+  const counselor = await Counselor.findById(counselorId);
+  if (!counselor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Counselor not found',
+    });
+  }
 
-  // Parse JSON fields with robust error handling and type safety
+  const currentAttempts = counselor.application?.applicationAttempts || 1;
+  const currentApplicationStatus = counselor.application?.applicationStatus || 'not_submitted';
+
+  // Strict 3-Attempt Hard Ceiling check
+  if (
+    currentAttempts >= 3 &&
+    currentApplicationStatus !== 'not_submitted' &&
+    currentApplicationStatus !== 'changes_requested' &&
+    counselor.application?.reapplyAppealStatus !== 'approved'
+  ) {
+    return res.status(403).json({
+      success: false,
+      message:
+        'You have reached the limit for applying as a counselor in solvit so you can not aply anymore here and if still something needs to be corrected or any mistake has benn there please do contact our support team fro furtehr application or related details',
+    });
+  }
+
+  // State Machine Validation
+  if (currentApplicationStatus === 'pending') {
+    return res.status(400).json({
+      success: false,
+      message: 'Application already submitted and pending review',
+    });
+  }
+
+  if (currentApplicationStatus === 'approved') {
+    return res.status(400).json({
+      success: false,
+      message: 'Application already approved',
+    });
+  }
+
+  if (
+    currentApplicationStatus === 'rejected' &&
+    counselor.application?.reapplyAppealStatus !== 'approved'
+  ) {
+    return res.status(400).json({
+      success: false,
+      message:
+        'Your application was not approved. Please submit an appeal for reconsideration before applying again.',
+    });
+  }
+
+  // Parse JSON fields with robust error handling
   let parsedEducation, parsedLanguages, parsedBankDetails, parsedLicense;
 
   try {
@@ -634,7 +685,17 @@ const submitCounselorApplication = wrapper(async (req, res) => {
     });
   }
 
-  // Validate required fields with proper fallbacks
+  // Document availability: allows keeping existing uploads on resubmission
+  const existingDocs = counselor.application?.documents || {};
+  const resumeFile = files?.resume?.[0];
+  const degreeCertificateFile = files?.degreeCertificate?.[0];
+  const governmentIdFile = files?.governmentId?.[0];
+  const licenseCertificateFile = files?.licenseCertificate?.[0];
+
+  const hasResume = !!(resumeFile || existingDocs.resume);
+  const hasDegreeCertificate = !!(degreeCertificateFile || existingDocs.degreeCertificate);
+  const hasGovernmentId = !!(governmentIdFile || existingDocs.governmentId);
+
   const requiredFields = {
     'education.graduation.university': parsedEducation?.graduation?.university?.trim() || '',
     'education.graduation.degree': parsedEducation?.graduation?.degree?.trim() || '',
@@ -645,30 +706,26 @@ const submitCounselorApplication = wrapper(async (req, res) => {
     'bankDetails.accountNo': parsedBankDetails?.accountNo?.trim() || '',
     'bankDetails.ifscCode': parsedBankDetails?.ifscCode?.trim() || '',
     'bankDetails.branchName': parsedBankDetails?.branchName?.trim() || '',
-    resume: files?.resume?.[0],
-    degreeCertificate: files?.degreeCertificate?.[0],
-    governmentId: files?.governmentId?.[0],
+    resume: hasResume,
+    degreeCertificate: hasDegreeCertificate,
+    governmentId: hasGovernmentId,
   };
 
   const missingFields = Object.entries(requiredFields)
-    .filter(([key, value]) => {
-      if (key === 'languages') return !value; // languages should be array with items
-      return !value; // other fields should have truthy values
-    })
-    .map(([key]) => key.replace(/\.[^.]*$/, '')); // Remove the last property for better readability
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
 
   if (missingFields.length > 0) {
     return res.status(400).json({
       success: false,
-      message: `Missing required fields: ${[...new Set(missingFields)].join(', ')}`,
-      missingFields: [...new Set(missingFields)],
+      message: `Missing required fields: ${missingFields.join(', ')}`,
+      missingFields,
     });
   }
 
-  // Validate years
   const currentYear = new Date().getFullYear();
   if (parsedEducation.graduation.year) {
-    const gradYear = parseInt(parsedEducation.graduation.year);
+    const gradYear = parseInt(parsedEducation.graduation.year, 10);
     if (isNaN(gradYear) || gradYear < 1900 || gradYear > currentYear) {
       return res.status(400).json({
         success: false,
@@ -678,7 +735,7 @@ const submitCounselorApplication = wrapper(async (req, res) => {
   }
 
   if (parsedEducation.postGraduation?.year) {
-    const postGradYear = parseInt(parsedEducation.postGraduation.year);
+    const postGradYear = parseInt(parsedEducation.postGraduation.year, 10);
     if (
       postGradYear &&
       (isNaN(postGradYear) || postGradYear < 1900 || postGradYear > currentYear)
@@ -690,7 +747,6 @@ const submitCounselorApplication = wrapper(async (req, res) => {
     }
   }
 
-  // Validate professional summary length
   if (professionalSummary && professionalSummary.length > 1000) {
     return res.status(400).json({
       success: false,
@@ -698,85 +754,58 @@ const submitCounselorApplication = wrapper(async (req, res) => {
     });
   }
 
-  // File upload helper function
   const uploadFile = async (file, fieldName) => {
-    if (!file) {
-      throw new Error(`Missing file: ${fieldName}`);
-    }
-
-    // Check file type
-    if (file.mimetype !== 'application/pdf') {
-      throw new Error(`${fieldName} must be a PDF file`);
-    }
-
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error(`${fieldName} must be less than 5MB`);
-    }
+    if (!file) throw new Error(`Missing file: ${fieldName}`);
+    if (file.mimetype !== 'application/pdf') throw new Error(`${fieldName} must be a PDF file`);
+    if (file.size > 5 * 1024 * 1024) throw new Error(`${fieldName} must be less than 5MB`);
 
     const result = await uploadOncloudinary(file.path);
-    if (!result) {
-      throw new Error(`Failed to upload ${fieldName}`);
-    }
+    if (!result) throw new Error(`Failed to upload ${fieldName}`);
     return result.url;
   };
 
   try {
-    // Find counselor and update application
-    const counselor = await Counselor.findById(req.verifiedCounselorId._id);
-    if (!counselor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Counselor not found',
-      });
+    let resumeUrl = existingDocs.resume;
+    if (resumeFile) {
+      resumeUrl = await uploadFile(resumeFile, 'resume');
     }
 
-    // FIXED: Better application status check
-    // Check if application already exists and has been submitted
-    const currentApplicationStatus = counselor.application?.applicationStatus;
-
-    console.log('Current application status:', currentApplicationStatus);
-    console.log('Counselor application object:', counselor.application);
-
-    // Only prevent submission if application is already pending or approved
-    if (currentApplicationStatus === 'pending') {
-      return res.status(400).json({
-        success: false,
-        message: 'Application already submitted and pending review',
-      });
+    let degreeCertificateUrl = existingDocs.degreeCertificate;
+    if (degreeCertificateFile) {
+      degreeCertificateUrl = await uploadFile(degreeCertificateFile, 'degreeCertificate');
     }
 
-    if (currentApplicationStatus === 'approved') {
-      return res.status(400).json({
-        success: false,
-        message: 'Application already approved',
-      });
+    let governmentIdUrl = existingDocs.governmentId;
+    if (governmentIdFile) {
+      governmentIdUrl = await uploadFile(governmentIdFile, 'governmentId');
     }
 
-    // Upload files to Cloudinary
-    const resumeUrl = await uploadFile(files.resume[0], 'resume');
-    const degreeCertificateUrl = await uploadFile(files.degreeCertificate[0], 'degreeCertificate');
-    const governmentIdUrl = await uploadFile(files.governmentId[0], 'governmentId');
-
-    let licenseCertificateUrl = null;
-    if (files.licenseCertificate?.[0]) {
-      licenseCertificateUrl = await uploadFile(files.licenseCertificate[0], 'licenseCertificate');
+    let licenseCertificateUrl = existingDocs.licenseCertificate || '';
+    if (licenseCertificateFile) {
+      licenseCertificateUrl = await uploadFile(licenseCertificateFile, 'licenseCertificate');
     }
 
-    // FIXED: Update or create counselor application
-    // Use $set to properly update nested fields
+    // Attempt counter increments on resubmissions (changes_requested or approved appeal)
+    let newAttemptCount = currentAttempts;
+    if (
+      currentApplicationStatus === 'changes_requested' ||
+      counselor.application?.reapplyAppealStatus === 'approved'
+    ) {
+      newAttemptCount = Math.min(3, currentAttempts + 1);
+    }
+
     const updateData = {
       'application.education': {
         graduation: {
           university: parsedEducation.graduation.university.trim(),
           degree: parsedEducation.graduation.degree.trim(),
-          year: parseInt(parsedEducation.graduation.year),
+          year: parseInt(parsedEducation.graduation.year, 10),
         },
         postGraduation: {
           university: parsedEducation.postGraduation?.university?.trim() || '',
           degree: parsedEducation.postGraduation?.degree?.trim() || '',
           year: parsedEducation.postGraduation?.year
-            ? parseInt(parsedEducation.postGraduation.year)
+            ? parseInt(parsedEducation.postGraduation.year, 10)
             : null,
         },
       },
@@ -799,22 +828,30 @@ const submitCounselorApplication = wrapper(async (req, res) => {
         governmentId: governmentIdUrl,
       },
       'application.applicationStatus': 'pending',
+      'application.rejectionType': 'none',
+      'application.adminFeedback': '',
+      'application.rejectionReason': '',
+      'application.applicationAttempts': newAttemptCount,
+      'application.reapplyAppealStatus': 'none',
       'application.applicationSubmittedAt': new Date(),
     };
 
-    // Update the counselor with the application data
     await Counselor.findByIdAndUpdate(
-      req.verifiedCounselorId._id,
+      counselorId,
       { $set: updateData },
       { new: true, runValidators: true }
     );
 
-    // Send confirmation email
-    await sendCounselorApplicationSubmitted(counselor.email, counselor.fullName);
+    try {
+      await sendCounselorApplicationSubmitted(counselor.email, counselor.fullName);
+    } catch (emailError) {
+      console.error('Failed to send application submitted email:', emailError);
+    }
 
     return res.status(200).json({
       success: true,
       message: 'Application submitted successfully. You will be notified within 24-48 hours.',
+      attempts: newAttemptCount,
     });
   } catch (error) {
     console.error('Application submission error:', error);
@@ -824,6 +861,71 @@ const submitCounselorApplication = wrapper(async (req, res) => {
       error: error.message,
     });
   }
+});
+
+/**
+ * Submit appeal for hard rejection
+ * Route: POST /api/counselors/application/appeal
+ */
+const submitReapplyAppeal = wrapper(async (req, res) => {
+  const counselorId = req.verifiedCounselorId?._id;
+  const { appealReason, supportingDocumentUrl } = req.body;
+
+  if (!appealReason?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide an explanation for your reconsideration appeal.',
+    });
+  }
+
+  const counselor = await Counselor.findById(counselorId);
+  if (!counselor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Counselor not found',
+    });
+  }
+
+  if (counselor.application?.applicationStatus !== 'rejected') {
+    return res.status(400).json({
+      success: false,
+      message: 'Appeals can only be submitted for rejected applications',
+    });
+  }
+
+  if ((counselor.application?.applicationAttempts || 1) >= 3) {
+    return res.status(403).json({
+      success: false,
+      message:
+        'You have reached the limit for applying as a counselor in solvit so you can not aply anymore here and if still something needs to be corrected or any mistake has benn there please do contact our support team fro furtehr application or related details',
+    });
+  }
+
+  if (counselor.application?.reapplyAppealStatus === 'pending') {
+    return res.status(400).json({
+      success: false,
+      message: 'You already have an appeal under review by our administration team.',
+    });
+  }
+
+  const appealRequest = await CounselorReapplyRequest.create({
+    counselorId: counselor._id,
+    attemptNumber: counselor.application?.applicationAttempts || 1,
+    hardRejectionReason: counselor.application?.rejectionReason || '',
+    appealReason: appealReason.trim(),
+    supportingDocumentUrl: supportingDocumentUrl?.trim() || '',
+    status: 'pending',
+  });
+
+  counselor.application.reapplyAppealStatus = 'pending';
+  await counselor.save({ validateBeforeSave: false });
+
+  return res.status(201).json({
+    success: true,
+    message:
+      'Your appeal request has been submitted successfully and will be reviewed by the admin team.',
+    data: appealRequest,
+  });
 });
 
 const logoutCounselor = wrapper(async (req, res) => {
@@ -931,5 +1033,6 @@ export {
   resetPassword,
   sendOtpRegisterEmail,
   submitCounselorApplication,
+  submitReapplyAppeal,
   verifyOtpRegisterEmail,
 };
